@@ -4,24 +4,26 @@ A video fitness platform with on-demand classes, livestreaming, push notificatio
 
 ## Current Status
 
-**Phase 1 complete — Clerk auth, Supabase DB, and Vercel deployment all wired up.** (See the full build order with checkmarks in [plan.md](./plan.md).)
+**Phase 3 complete — Mux video classes, RevenueCat payments, and entitlement gating all live.** (See the full build order with checkmarks in [plan.md](./plan.md).)
 
 What's in place:
 
 - Turborepo monorepo with npm workspaces
 - `packages/core` — shared TypeScript types (`User`, `VideoClass`, `Challenge`, `UserAccess`, etc.) and access-control helpers (`hasAccess()`, `isChallengeExpiringSoon()`, `shouldShowUpsell()`). Consumed as source by web and mobile (no separate build step)
 - `apps/web` — Next.js 16 app with Tailwind CSS v4
-  - **Clerk authentication** — sign-in/sign-up pages, `ClerkProvider`, and route protection via `proxy.ts` middleware. Public routes: `/`, `/pricing`, `/sign-in`, `/sign-up`. Protected routes (e.g. `/classes`, `/dashboard`) redirect signed-out users to sign-in.
-  - Branded landing page with auth-aware CTAs
-  - **Supabase database** — `user_profiles` (linked to Clerk via `clerk_id`) and `classes` tables with RLS enabled. Browser and server client helpers in `lib/supabase/`.
-  - **Deployed to Vercel** — live at `www.movemindful.com` (bare domain redirects to `www`). Auto-deploys on push to `main`. Production Clerk + Supabase keys configured via Vercel env vars.
+  - **Clerk authentication** — sign-in/sign-up pages, `ClerkProvider`, and route protection via `proxy.ts` middleware. Public routes: `/`, `/pricing`, `/sign-in`, `/sign-up`. Protected routes (e.g. `/classes`, `/dashboard`) redirect signed-out users to sign-in. Signed-in users on `/` redirect to `/classes`.
+  - **Mux video player** — class catalog with responsive grid, Mux-generated thumbnails, and individual class pages with `@mux/mux-player-react` for adaptive streaming and AirPlay.
+  - **RevenueCat + Stripe payments** — pricing page fetches real offerings from RevenueCat, purchase flow via Web Billing SDK (Stripe-powered). "Move Mindful Pro" entitlement gates access to all member routes.
+  - **Subscription dashboard** — plan status, renewal/expiry date, manage subscription link (RevenueCat hosted management page).
+  - **Custom user menu** — profile photo from Clerk, manage subscription, profile (opens Clerk settings), sign out. Clerk user info (name, email) synced to RevenueCat.
+  - **Supabase database** — `user_profiles` and `classes` tables with RLS enabled.
+  - **Deployed to Vercel** — live at `www.movemindful.com`. Auto-deploys on push to `main`.
 - `apps/mobile` — Expo 56 / React Native app (starter screen, no integrations yet)
 - Shared `tsconfig.base.json` for consistent TypeScript settings across packages
 
 What's not yet built:
-- Entitlement checks on protected routes (Clerk gates auth; RevenueCat will gate paid access)
-- RevenueCat / Stripe payment integration
-- Mux video player and class catalog
+- 30-day challenge expiry tracking and upsell flow
+- iOS app (Expo + React Native)
 - Push notifications
 - Group chat and livestreaming (deferred to later phases per plan)
 
@@ -46,12 +48,14 @@ move-mindful/
 ├── apps/
 │   ├── web/               # Next.js 16 + Tailwind CSS v4
 │   │   ├── src/proxy.ts   # Clerk middleware (route protection)
+│   │   ├── src/lib/       # Supabase + RevenueCat client helpers
+│   │   ├── src/components/# Mux player, user menu, entitlement gate, etc.
 │   │   └── src/app/       # App Router
-│   │       ├── page.tsx        # Public landing page
-│   │       ├── pricing/        # Public pricing page
+│   │       ├── page.tsx        # Public landing (redirects signed-in → /classes)
+│   │       ├── pricing/        # Pricing page (RevenueCat offerings + purchase)
 │   │       ├── sign-in/        # Clerk <SignIn />
 │   │       ├── sign-up/        # Clerk <SignUp />
-│   │       └── (member)/       # Protected: classes, dashboard
+│   │       └── (member)/       # Protected: classes, classes/[id], dashboard
 │   └── mobile/            # Expo 56 / React Native
 │       └── App.tsx        # Entry point
 ├── packages/
@@ -81,7 +85,7 @@ npm install
 
 ### Environment variables
 
-The web app needs Clerk keys. Copy the template and fill in your values:
+The web app needs Clerk, Supabase, RevenueCat, and Mux keys. Copy the template and fill in your values:
 
 ```bash
 cp apps/web/.env.example apps/web/.env.local

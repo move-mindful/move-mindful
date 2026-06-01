@@ -130,33 +130,35 @@ const hasAccess = customerInfo.entitlements.active['premium'] !== undefined
 - [x] Supabase database + RLS policies (`user_profiles`, `classes` tables)
 
 ### Phase 2 — Video classes on web
-- [ ] Mux integration
-- [ ] Class catalog UI
-- [ ] Video player (`@mux/mux-player-react`)
+- [x] Mux integration
+- [x] Class catalog UI (responsive grid with Mux thumbnails)
+- [x] Video player (`@mux/mux-player-react`)
+- [x] Class detail page (`/classes/[id]`)
 
-### Phase 3 — Challenge purchase flow
-- [ ] RevenueCat + Stripe integration
-- [ ] Entitlements and access gating
-- [ ] 30-day expiry tracking
+### Phase 3 — Payments & access gating
+- [x] RevenueCat + Stripe integration (Web Billing SDK)
+- [x] Entitlements and access gating ("Move Mindful Pro" entitlement)
+- [x] Pricing page with real offerings from RevenueCat
+- [x] Subscription dashboard (plan status, renewal date, manage link)
+- [x] Custom user menu (profile photo, manage subscription, profile, sign out)
+- [x] Clerk user info synced to RevenueCat (name, email)
+- [ ] 30-day challenge expiry tracking (future)
+- [ ] Upsell flow from challenge (day 25+ prompts, day 30 lock — future)
 
-### Phase 4 — Membership subscription
-- [ ] RevenueCat subscription setup
-- [ ] Upsell flow from challenge (day 25+ prompts, day 30 lock)
-
-### Phase 5 — iOS app
+### Phase 4 — iOS app
 - [ ] Expo + React Native app
 - [ ] Reuse `packages/core` logic and services
 - [ ] "Sign up at website" flow for unpaid users
 
-### Phase 6 — Push notifications
+### Phase 5 — Push notifications
 - [ ] Expo Notifications for iOS
 - [ ] New class alerts, challenge reminders, live stream starting
 
-### Phase 7 — Group chat
+### Phase 6 — Group chat
 - [ ] Evaluate options (Supabase Realtime, Stream, Sendbird, etc.)
 - [ ] Build when community engagement becomes a priority
 
-### Phase 8 — Livestreaming
+### Phase 7 — Livestreaming
 - [ ] Mux Live for one-to-many broadcast
 
 ---
@@ -176,7 +178,8 @@ const hasAccess = customerInfo.entitlements.active['premium'] !== undefined
 | Domain                | GoDaddy              | ✅ `movemindful.com` → Vercel   | ~$15/year                    |
 | Auth                  | Clerk                | ✅ Production keys configured    | Free → $25/mo (pro)         |
 | Database + storage    | Supabase             | ✅ Tables + RLS live            | Free → $25/mo (pro)         |
-| Video files + CDN     | Mux                  | ⬜ Not yet set up               | Pay-per-use                  |
+| Video files + CDN     | Mux                  | ✅ Player + catalog live        | Pay-per-use                  |
+| Payments/Subs         | RevenueCat + Stripe  | ✅ Web Billing live             | RevenueCat free → $25/mo; Stripe 2.9% + 30¢ |
 | iOS app distribution  | Apple App Store      | ⬜ Not yet set up               | $99/year                     |
 
 ### Estimated Monthly Costs by Stage
