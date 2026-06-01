@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Move Mindful",
+  title: "MoveMindful",
   description: "A video fitness platform — on-demand classes, livestreaming, and community.",
 };
 

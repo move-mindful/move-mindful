@@ -20,7 +20,7 @@ export default async function Home() {
           priority
         />
         <h1 className="text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
-          Move Mindful
+          MoveMindful
         </h1>
         <p className="max-w-md text-lg leading-8 text-zinc-600 text-zinc-400">
           A video fitness platform — on-demand classes, livestreaming, and
