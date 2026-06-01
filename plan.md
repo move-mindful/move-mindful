@@ -121,16 +121,43 @@ const hasAccess = customerInfo.entitlements.active['premium'] !== undefined
 
 ## Build Order
 
-| Phase | What                                         | Details                                           |
-|-------|----------------------------------------------|---------------------------------------------------|
-| 1     | Web app foundation                           | Next.js + Clerk auth + Supabase DB                |
-| 2     | Video classes on web                         | Mux integration, class catalog, player            |
-| 3     | Challenge purchase flow                      | RevenueCat + Stripe, entitlements, expiry tracking |
-| 4     | Membership subscription                      | RevenueCat subscription, upsell flow from challenge |
-| 5     | iOS app                                      | Expo + React Native, reuse core logic/services    |
-| 6     | Push notifications                           | Expo Notifications for iOS                        |
-| 7     | Group chat                                   | Evaluate options above when ready                 |
-| 8     | Livestreaming                                | Mux Live (bolt on last)                           |
+### Phase 1 — Web app foundation
+- [x] Next.js 16 + Tailwind CSS v4 app scaffolded
+- [x] Turborepo monorepo with shared `packages/core`
+- [x] Clerk authentication (sign-in/sign-up, route protection via `proxy.ts` middleware)
+- [x] Vercel deployment with custom domain (`www.movemindful.com`)
+- [x] Production Clerk keys configured on Vercel
+- [ ] Supabase database + RLS policies
+
+### Phase 2 — Video classes on web
+- [ ] Mux integration
+- [ ] Class catalog UI
+- [ ] Video player (`@mux/mux-player-react`)
+
+### Phase 3 — Challenge purchase flow
+- [ ] RevenueCat + Stripe integration
+- [ ] Entitlements and access gating
+- [ ] 30-day expiry tracking
+
+### Phase 4 — Membership subscription
+- [ ] RevenueCat subscription setup
+- [ ] Upsell flow from challenge (day 25+ prompts, day 30 lock)
+
+### Phase 5 — iOS app
+- [ ] Expo + React Native app
+- [ ] Reuse `packages/core` logic and services
+- [ ] "Sign up at website" flow for unpaid users
+
+### Phase 6 — Push notifications
+- [ ] Expo Notifications for iOS
+- [ ] New class alerts, challenge reminders, live stream starting
+
+### Phase 7 — Group chat
+- [ ] Evaluate options (Supabase Realtime, Stream, Sendbird, etc.)
+- [ ] Build when community engagement becomes a priority
+
+### Phase 8 — Livestreaming
+- [ ] Mux Live for one-to-many broadcast
 
 ---
 
@@ -143,12 +170,14 @@ const hasAccess = customerInfo.entitlements.active['premium'] !== undefined
 
 ## Hosting & Infrastructure
 
-| What                  | Where it lives       | Cost                                      |
-|-----------------------|----------------------|-------------------------------------------|
-| Website + API routes  | Vercel               | Free (hobby) → $20/mo (pro)              |
-| Database + storage    | Supabase             | Free → $25/mo (pro)                      |
-| Video files + CDN     | Mux                  | Pay-per-use (included in Mux pricing)     |
-| iOS app distribution  | Apple App Store      | $99/year (Apple Developer Program)        |
+| What                  | Where it lives       | Status | Cost                                      |
+|-----------------------|----------------------|--------|-------------------------------------------|
+| Website + API routes  | Vercel               | ✅ Live at `www.movemindful.com` | Free (hobby) → $20/mo (pro) |
+| Domain                | GoDaddy              | ✅ `movemindful.com` → Vercel   | ~$15/year                    |
+| Auth                  | Clerk                | ✅ Production keys configured    | Free → $25/mo (pro)         |
+| Database + storage    | Supabase             | ⬜ Not yet set up               | Free → $25/mo (pro)         |
+| Video files + CDN     | Mux                  | ⬜ Not yet set up               | Pay-per-use                  |
+| iOS app distribution  | Apple App Store      | ⬜ Not yet set up               | $99/year                     |
 
 ### Estimated Monthly Costs by Stage
 
