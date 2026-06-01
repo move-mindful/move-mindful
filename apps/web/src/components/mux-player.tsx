@@ -1,6 +1,11 @@
 "use client";
 
-import MuxPlayerComponent from "@mux/mux-player-react";
+import dynamic from "next/dynamic";
+
+const MuxPlayerComponent = dynamic(
+  () => import("@mux/mux-player-react").then((mod) => mod.default),
+  { ssr: false },
+);
 
 export function MuxPlayer({
   playbackId,
@@ -17,7 +22,6 @@ export function MuxPlayer({
       metadata={{ video_title: title }}
       style={{ aspectRatio: "16/9", width: "100%", maxWidth: "100%" }}
       playsInline
-      preferPlayback="native"
     />
   );
 }
