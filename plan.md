@@ -145,21 +145,32 @@ const hasAccess = customerInfo.entitlements.active['premium'] !== undefined
 - [ ] 30-day challenge expiry tracking (future)
 - [ ] Upsell flow from challenge (day 25+ prompts, day 30 lock — future)
 
-### Phase 4 — iOS app
+### Phase 4 — Admin dashboard & content management
+- [ ] Admin role/access control (Clerk-based admin check)
+- [ ] Class management (create, edit, publish/unpublish, delete)
+- [ ] Categories & tags (e.g., "Yoga", "HIIT", "Meditation", "Beginner")
+- [ ] Collections/playlists (curated groups like "Beginner Series", "30-Day Challenge")
+- [ ] Manual ordering within collections (drag-to-reorder)
+- [ ] Auto-populate collections based on tags
+- [ ] Member-facing browse UI (category filters, carousels/playlists)
+- [ ] Mux livestream recording import (trim start/end via Mux clipping API, publish to library)
+
+### Phase 5 — iOS app
 - [ ] Expo + React Native app
 - [ ] Reuse `packages/core` logic and services
 - [ ] "Sign up at website" flow for unpaid users
 
-### Phase 5 — Push notifications
+### Phase 6 — Push notifications
 - [ ] Expo Notifications for iOS
 - [ ] New class alerts, challenge reminders, live stream starting
 
-### Phase 6 — Group chat
-- [ ] Evaluate options (Supabase Realtime, Stream, Sendbird, etc.)
-- [ ] Build when community engagement becomes a priority
-
 ### Phase 7 — Livestreaming
 - [ ] Mux Live for one-to-many broadcast
+- [ ] Auto-record livestreams for on-demand library (via Phase 4 admin tools)
+
+### Phase 8 — Group chat
+- [ ] Evaluate options (Supabase Realtime, Stream, Sendbird, etc.)
+- [ ] Build when community engagement becomes a priority
 
 ---
 

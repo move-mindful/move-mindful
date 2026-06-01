@@ -8,7 +8,7 @@ export default function AccountPage() {
         href="/classes"
         className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-800"
       >
-        &larr; Back to classes
+        &larr; Back
       </Link>
       <h1 className="mt-4 text-3xl font-bold tracking-tight">
         Account Settings
