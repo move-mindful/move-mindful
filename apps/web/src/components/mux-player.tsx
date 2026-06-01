@@ -17,6 +17,7 @@ export function MuxPlayer({
       metadata={{ video_title: title }}
       style={{ aspectRatio: "16/9", width: "100%", maxWidth: "100%" }}
       playsInline
+      preferPlayback="native"
     />
   );
 }
