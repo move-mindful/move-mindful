@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { DashboardClient } from "@/components/dashboard-client";
+import { AccountClient } from "@/components/account-client";
 
-export default function DashboardPage() {
+export default function AccountPage() {
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
       <Link
@@ -10,9 +10,11 @@ export default function DashboardPage() {
       >
         &larr; Back to classes
       </Link>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight">Dashboard</h1>
+      <h1 className="mt-4 text-3xl font-bold tracking-tight">
+        Account Settings
+      </h1>
       <div className="mt-8">
-        <DashboardClient />
+        <AccountClient />
       </div>
     </div>
   );

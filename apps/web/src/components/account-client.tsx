@@ -1,12 +1,13 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useUser, useClerk } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { configurePurchases, ENTITLEMENT_ID } from "@/lib/revenuecat";
 import type { EntitlementInfo } from "@revenuecat/purchases-js";
 
-export function DashboardClient() {
+export function AccountClient() {
   const { user } = useUser();
+  const { openUserProfile } = useClerk();
   const [entitlement, setEntitlement] = useState<EntitlementInfo | null>(null);
   const [managementURL, setManagementURL] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,7 +40,7 @@ export function DashboardClient() {
   return (
     <div className="space-y-8">
       <section className="rounded-xl border border-zinc-200 bg-white p-6">
-        <h2 className="text-lg font-semibold">Your Plan</h2>
+        <h2 className="text-lg font-semibold">Plan</h2>
 
         {entitlement ? (
           <div className="mt-4 space-y-3">
@@ -87,9 +88,9 @@ export function DashboardClient() {
                 href={managementURL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-4 inline-block rounded-full border border-zinc-200 px-5 py-2 text-sm font-medium transition-colors hover:bg-zinc-50"
+                className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-zinc-600 hover:text-zinc-900"
               >
-                Manage Subscription
+                Manage Plan &rarr;
               </a>
             )}
           </div>
@@ -99,7 +100,7 @@ export function DashboardClient() {
       </section>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-6">
-        <h2 className="text-lg font-semibold">Account</h2>
+        <h2 className="text-lg font-semibold">Profile</h2>
         <div className="mt-4 space-y-3">
           <div>
             <dt className="text-sm text-zinc-500">Email</dt>
@@ -112,6 +113,12 @@ export function DashboardClient() {
             <dd className="mt-0.5 font-medium">{user?.fullName || "—"}</dd>
           </div>
         </div>
+        <button
+          onClick={() => openUserProfile()}
+          className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-zinc-600 hover:text-zinc-900"
+        >
+          Edit Profile &rarr;
+        </button>
       </section>
     </div>
   );

@@ -4,24 +4,12 @@ import { useUser, useClerk } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
-import { configurePurchases } from "@/lib/revenuecat";
 
 export function UserMenu() {
   const { user } = useUser();
-  const { signOut, openUserProfile } = useClerk();
+  const { signOut } = useClerk();
   const [open, setOpen] = useState(false);
-  const [managementURL, setManagementURL] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    async function loadManagementURL() {
-      const purchases = configurePurchases(user!.id);
-      const info = await purchases.getCustomerInfo();
-      setManagementURL(info.managementURL);
-    }
-    loadManagementURL();
-  }, [user]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -66,36 +54,14 @@ export function UserMenu() {
           </div>
 
           <div className="py-1">
-            {managementURL ? (
-              <a
-                href={managementURL}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-3 px-4 py-2 text-sm text-zinc-600 transition hover:bg-zinc-50"
-              >
-                <CreditCardIcon />
-                Manage Subscription
-              </a>
-            ) : (
-              <MenuLink
-                href="/dashboard"
-                label="Manage Subscription"
-                onClick={() => setOpen(false)}
-              >
-                <CreditCardIcon />
-              </MenuLink>
-            )}
-            <button
-              onClick={() => {
-                setOpen(false);
-                openUserProfile();
-              }}
-              className="flex w-full items-center gap-3 px-4 py-2 text-sm text-zinc-600 transition hover:bg-zinc-50"
+            <Link
+              href="/account"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 px-4 py-2 text-sm text-zinc-600 transition hover:bg-zinc-50"
             >
-              <UserIcon />
-              Profile
-            </button>
+              <SettingsIcon />
+              Account Settings
+            </Link>
           </div>
 
           <div className="border-t border-zinc-100 py-1">
@@ -113,41 +79,10 @@ export function UserMenu() {
   );
 }
 
-function MenuLink({
-  href,
-  label,
-  onClick,
-  children,
-}: {
-  href: string;
-  label: string;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className="flex items-center gap-3 px-4 py-2 text-sm text-zinc-600 transition hover:bg-zinc-50"
-    >
-      {children}
-      {label}
-    </Link>
-  );
-}
-
-function CreditCardIcon() {
+function SettingsIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-zinc-400">
-      <path d="M2.5 4A1.5 1.5 0 0 0 1 5.5V6h18v-.5A1.5 1.5 0 0 0 17.5 4h-15ZM19 8.5H1v6A1.5 1.5 0 0 0 2.5 16h15a1.5 1.5 0 0 0 1.5-1.5v-6ZM3 13.25a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75Zm4.75-.75a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5h-3.5Z" />
-    </svg>
-  );
-}
-
-function UserIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-zinc-400">
-      <path d="M10 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3.465 14.493a1.23 1.23 0 0 0 .41 1.412A9.957 9.957 0 0 0 10 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 0 0-13.074.003Z" />
+      <path fillRule="evenodd" d="M7.84 1.804A1 1 0 0 1 8.82 1h2.36a1 1 0 0 1 .98.804l.331 1.652a6.993 6.993 0 0 1 1.929 1.115l1.598-.54a1 1 0 0 1 1.186.447l1.18 2.044a1 1 0 0 1-.205 1.251l-1.267 1.113a7.047 7.047 0 0 1 0 2.228l1.267 1.113a1 1 0 0 1 .206 1.25l-1.18 2.045a1 1 0 0 1-1.187.447l-1.598-.54a6.993 6.993 0 0 1-1.929 1.115l-.33 1.652a1 1 0 0 1-.98.804H8.82a1 1 0 0 1-.98-.804l-.331-1.652a6.993 6.993 0 0 1-1.929-1.115l-1.598.54a1 1 0 0 1-1.186-.447l-1.18-2.044a1 1 0 0 1 .205-1.251l1.267-1.114a7.05 7.05 0 0 1 0-2.227L1.821 7.773a1 1 0 0 1-.206-1.25l1.18-2.045a1 1 0 0 1 1.187-.447l1.598.54A6.992 6.992 0 0 1 7.51 3.456l.33-1.652ZM10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
     </svg>
   );
 }
