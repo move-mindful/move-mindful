@@ -37,12 +37,10 @@ export default async function ClassDetailPage({
 
       <div className="mt-6">
         {videoClass.mux_playback_id ? (
-          <div className="overflow-hidden rounded-xl">
-            <MuxPlayer
-              playbackId={videoClass.mux_playback_id}
-              title={videoClass.title}
-            />
-          </div>
+          <MuxPlayer
+            playbackId={videoClass.mux_playback_id}
+            title={videoClass.title}
+          />
         ) : (
           <div className="flex aspect-video items-center justify-center rounded-xl bg-zinc-100 text-zinc-400">
             Video not yet available

@@ -11,11 +11,11 @@ What's in place:
 - Turborepo monorepo with npm workspaces
 - `packages/core` — shared TypeScript types (`User`, `VideoClass`, `Challenge`, `UserAccess`, etc.) and access-control helpers (`hasAccess()`, `isChallengeExpiringSoon()`, `shouldShowUpsell()`). Consumed as source by web and mobile (no separate build step)
 - `apps/web` — Next.js 16 app with Tailwind CSS v4
-  - **Clerk authentication** — sign-in/sign-up pages, `ClerkProvider`, and route protection via `proxy.ts` middleware. Public routes: `/`, `/pricing`, `/sign-in`, `/sign-up`. Protected routes (e.g. `/classes`, `/dashboard`) redirect signed-out users to sign-in. Signed-in users on `/` redirect to `/classes`.
+  - **Clerk authentication** — sign-in/sign-up pages, `ClerkProvider`, and route protection via `proxy.ts` middleware. Public routes: `/`, `/pricing`, `/sign-in`, `/sign-up`. Protected routes (e.g. `/classes`, `/account`) redirect signed-out users to sign-in. Signed-in users on `/` redirect to `/classes`.
   - **Mux video player** — class catalog with responsive grid, Mux-generated thumbnails, and individual class pages with `@mux/mux-player-react` for adaptive streaming and AirPlay.
   - **RevenueCat + Stripe payments** — pricing page fetches real offerings from RevenueCat, purchase flow via Web Billing SDK (Stripe-powered). "Move Mindful Pro" entitlement gates access to all member routes.
-  - **Subscription dashboard** — plan status, renewal/expiry date, manage subscription link (RevenueCat hosted management page).
-  - **Custom user menu** — profile photo from Clerk, manage subscription, profile (opens Clerk settings), sign out. Clerk user info (name, email) synced to RevenueCat.
+  - **Account Settings** (`/account`) — plan status with "Manage Plan" link (RevenueCat hosted management page for paying users) and profile section with "Edit Profile" link (opens Clerk modal for name/email/photo changes).
+  - **Custom user menu** — profile photo from Clerk, "Account Settings" link, sign out. Clerk user info (name, email) synced to RevenueCat.
   - **Supabase database** — `user_profiles` and `classes` tables with RLS enabled.
   - **Deployed to Vercel** — live at `www.movemindful.com`. Auto-deploys on push to `main`.
 - `apps/mobile` — Expo 56 / React Native app (starter screen, no integrations yet)
@@ -55,7 +55,7 @@ move-mindful/
 │   │       ├── pricing/        # Pricing page (RevenueCat offerings + purchase)
 │   │       ├── sign-in/        # Clerk <SignIn />
 │   │       ├── sign-up/        # Clerk <SignUp />
-│   │       └── (member)/       # Protected: classes, classes/[id], dashboard
+│   │       └── (member)/       # Protected: classes, classes/[id], account
 │   └── mobile/            # Expo 56 / React Native
 │       └── App.tsx        # Entry point
 ├── packages/
