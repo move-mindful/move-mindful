@@ -4,6 +4,7 @@ import { useUser, useClerk } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
+import { Settings, HelpCircle, LogOut } from "lucide-react";
 
 export function UserMenu() {
   const { user } = useUser();
@@ -59,7 +60,7 @@ export function UserMenu() {
               onClick={() => setOpen(false)}
               className="flex items-center gap-3 px-4 py-2 text-sm text-zinc-600 transition hover:bg-zinc-50"
             >
-              <SettingsIcon />
+              <Settings className="h-4 w-4 text-zinc-400" />
               Account Settings
             </Link>
             <Link
@@ -67,7 +68,7 @@ export function UserMenu() {
               onClick={() => setOpen(false)}
               className="flex items-center gap-3 px-4 py-2 text-sm text-zinc-600 transition hover:bg-zinc-50"
             >
-              <HelpIcon />
+              <HelpCircle className="h-4 w-4 text-zinc-400" />
               Help
             </Link>
           </div>
@@ -77,7 +78,7 @@ export function UserMenu() {
               onClick={() => signOut()}
               className="flex w-full items-center gap-3 px-4 py-2 text-sm text-zinc-600 transition hover:bg-zinc-50"
             >
-              <SignOutIcon />
+              <LogOut className="h-4 w-4 text-zinc-400" />
               Sign out
             </button>
           </div>
@@ -87,27 +88,3 @@ export function UserMenu() {
   );
 }
 
-function SettingsIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-zinc-400">
-      <path fillRule="evenodd" d="M7.84 1.804A1 1 0 0 1 8.82 1h2.36a1 1 0 0 1 .98.804l.331 1.652a6.993 6.993 0 0 1 1.929 1.115l1.598-.54a1 1 0 0 1 1.186.447l1.18 2.044a1 1 0 0 1-.205 1.251l-1.267 1.113a7.047 7.047 0 0 1 0 2.228l1.267 1.113a1 1 0 0 1 .206 1.25l-1.18 2.045a1 1 0 0 1-1.187.447l-1.598-.54a6.993 6.993 0 0 1-1.929 1.115l-.33 1.652a1 1 0 0 1-.98.804H8.82a1 1 0 0 1-.98-.804l-.331-1.652a6.993 6.993 0 0 1-1.929-1.115l-1.598.54a1 1 0 0 1-1.186-.447l-1.18-2.044a1 1 0 0 1 .205-1.251l1.267-1.114a7.05 7.05 0 0 1 0-2.227L1.821 7.773a1 1 0 0 1-.206-1.25l1.18-2.045a1 1 0 0 1 1.187-.447l1.598.54A6.992 6.992 0 0 1 7.51 3.456l.33-1.652ZM10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
-function HelpIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-zinc-400">
-      <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0ZM8.94 6.94a.75.75 0 1 1-1.061-1.061 3.75 3.75 0 0 1 5.303 0 3.75 3.75 0 0 1 .462 4.674c-.514.768-1.394 1.282-1.894 1.53a.75.75 0 0 1-.632-1.36c.48-.223.963-.545 1.216-.918a2.25 2.25 0 0 0-.277-2.804 2.25 2.25 0 0 0-3.182 0ZM10 15a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
-function SignOutIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-zinc-400">
-      <path fillRule="evenodd" d="M3 4.25A2.25 2.25 0 0 1 5.25 2h5.5A2.25 2.25 0 0 1 13 4.25v2a.75.75 0 0 1-1.5 0v-2a.75.75 0 0 0-.75-.75h-5.5a.75.75 0 0 0-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 0 0 .75-.75v-2a.75.75 0 0 1 1.5 0v2A2.25 2.25 0 0 1 10.75 18h-5.5A2.25 2.25 0 0 1 3 15.75V4.25Z" clipRule="evenodd" />
-      <path fillRule="evenodd" d="M19 10a.75.75 0 0 0-.75-.75H8.704l1.048-.943a.75.75 0 1 0-1.004-1.114l-2.5 2.25a.75.75 0 0 0 0 1.114l2.5 2.25a.75.75 0 1 0 1.004-1.114l-1.048-.943h9.546A.75.75 0 0 0 19 10Z" clipRule="evenodd" />
-    </svg>
-  );
-}
