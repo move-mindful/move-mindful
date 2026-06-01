@@ -113,12 +113,24 @@ export function AccountClient() {
             <dd className="mt-0.5 font-medium">{user?.fullName || "—"}</dd>
           </div>
         </div>
-        <button
-          onClick={() => openUserProfile()}
-          className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-zinc-600 hover:text-zinc-900"
-        >
-          Edit Profile &rarr;
-        </button>
+        <div className="mt-4 flex flex-col gap-2">
+          <button
+            onClick={() => openUserProfile()}
+            className="inline-flex items-center gap-2 text-sm font-medium text-zinc-600 hover:text-zinc-900"
+          >
+            Edit Profile &rarr;
+          </button>
+          <button
+            onClick={() =>
+              openUserProfile({
+                __experimental_startPath: "/security",
+              })
+            }
+            className="inline-flex items-center gap-2 text-sm font-medium text-zinc-600 hover:text-zinc-900"
+          >
+            Change Password &rarr;
+          </button>
+        </div>
       </section>
     </div>
   );

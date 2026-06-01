@@ -15,7 +15,8 @@ export function MuxPlayer({
       streamType="on-demand"
       accentColor="#18181b"
       metadata={{ video_title: title }}
-      style={{ aspectRatio: "16/9", width: "100%" }}
+      style={{ aspectRatio: "16/9", width: "100%", maxWidth: "100%" }}
+      playsInline
     />
   );
 }

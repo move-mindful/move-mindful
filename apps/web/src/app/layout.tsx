@@ -16,6 +16,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "MoveMindful",
   description: "A video fitness platform — on-demand classes, livestreaming, and community.",
+  formatDetection: {
+    email: false,
+    telephone: false,
+    address: false,
+  },
 };
 
 export default function RootLayout({

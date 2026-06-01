@@ -45,8 +45,8 @@ export function UserMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-64 rounded-xl border border-zinc-200 bg-white py-2 shadow-lg">
-          <div className="border-b border-zinc-100 px-4 pb-3 pt-2">
+        <div className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-zinc-200 bg-white py-2 shadow-lg">
+          <div className="border-b border-zinc-100 px-4 pb-3 pt-2 pointer-events-none">
             <p className="text-sm font-medium">{user.fullName}</p>
             <p className="text-xs text-zinc-500">
               {user.primaryEmailAddress?.emailAddress}
