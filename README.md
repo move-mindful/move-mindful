@@ -12,7 +12,6 @@ What's in place:
 - `packages/core` — shared TypeScript types (`User`, `VideoClass`, `Challenge`, `UserAccess`, etc.) and access-control helpers (`hasAccess()`, `isChallengeExpiringSoon()`, `shouldShowUpsell()`). Consumed as source by web and mobile (no separate build step)
 - `apps/web` — Next.js 16 app with Tailwind CSS v4 (branded landing page, no Clerk/Mux/Stripe yet)
 - `apps/mobile` — Expo 56 / React Native app (starter screen, no integrations yet)
-- Root-level `index.html` placeholder/landing page
 - Shared `tsconfig.base.json` for consistent TypeScript settings across packages
 
 What's not yet built:
@@ -53,7 +52,6 @@ move-mindful/
 │           ├── types.ts   # User, VideoClass, Challenge, UserAccess, etc.
 │           ├── access.ts  # hasAccess, isChallengeExpiringSoon, shouldShowUpsell
 │           └── index.ts   # Re-exports
-├── index.html             # Static placeholder landing page
 ├── plan.md                # Full architecture, build order, security guidelines
 ├── turbo.json             # Turborepo task config
 ├── tsconfig.base.json     # Shared TypeScript compiler options
