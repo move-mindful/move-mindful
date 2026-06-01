@@ -4,7 +4,7 @@ A video fitness platform with on-demand classes, livestreaming, push notificatio
 
 ## Current Status
 
-**Phase 1 in progress — Clerk auth and Vercel deployment done, Supabase DB next.** (See the full build order with checkmarks in [plan.md](./plan.md).)
+**Phase 1 complete — Clerk auth, Supabase DB, and Vercel deployment all wired up.** (See the full build order with checkmarks in [plan.md](./plan.md).)
 
 What's in place:
 
@@ -13,13 +13,12 @@ What's in place:
 - `apps/web` — Next.js 16 app with Tailwind CSS v4
   - **Clerk authentication** — sign-in/sign-up pages, `ClerkProvider`, and route protection via `proxy.ts` middleware. Public routes: `/`, `/pricing`, `/sign-in`, `/sign-up`. Protected routes (e.g. `/classes`, `/dashboard`) redirect signed-out users to sign-in.
   - Branded landing page with auth-aware CTAs
-  - **Deployed to Vercel** — live at `www.movemindful.com` (bare domain redirects to `www`). Auto-deploys on push to `main`. Production Clerk keys configured via Vercel env vars.
+  - **Supabase database** — `user_profiles` (linked to Clerk via `clerk_id`) and `classes` tables with RLS enabled. Browser and server client helpers in `lib/supabase/`.
+  - **Deployed to Vercel** — live at `www.movemindful.com` (bare domain redirects to `www`). Auto-deploys on push to `main`. Production Clerk + Supabase keys configured via Vercel env vars.
 - `apps/mobile` — Expo 56 / React Native app (starter screen, no integrations yet)
 - Shared `tsconfig.base.json` for consistent TypeScript settings across packages
 
 What's not yet built:
-
-- Supabase database and RLS policies
 - Entitlement checks on protected routes (Clerk gates auth; RevenueCat will gate paid access)
 - RevenueCat / Stripe payment integration
 - Mux video player and class catalog

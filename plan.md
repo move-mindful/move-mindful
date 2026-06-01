@@ -127,7 +127,7 @@ const hasAccess = customerInfo.entitlements.active['premium'] !== undefined
 - [x] Clerk authentication (sign-in/sign-up, route protection via `proxy.ts` middleware)
 - [x] Vercel deployment with custom domain (`www.movemindful.com`)
 - [x] Production Clerk keys configured on Vercel
-- [ ] Supabase database + RLS policies
+- [x] Supabase database + RLS policies (`user_profiles`, `classes` tables)
 
 ### Phase 2 — Video classes on web
 - [ ] Mux integration
@@ -175,7 +175,7 @@ const hasAccess = customerInfo.entitlements.active['premium'] !== undefined
 | Website + API routes  | Vercel               | ✅ Live at `www.movemindful.com` | Free (hobby) → $20/mo (pro) |
 | Domain                | GoDaddy              | ✅ `movemindful.com` → Vercel   | ~$15/year                    |
 | Auth                  | Clerk                | ✅ Production keys configured    | Free → $25/mo (pro)         |
-| Database + storage    | Supabase             | ⬜ Not yet set up               | Free → $25/mo (pro)         |
+| Database + storage    | Supabase             | ✅ Tables + RLS live            | Free → $25/mo (pro)         |
 | Video files + CDN     | Mux                  | ⬜ Not yet set up               | Pay-per-use                  |
 | iOS app distribution  | Apple App Store      | ⬜ Not yet set up               | $99/year                     |
 
