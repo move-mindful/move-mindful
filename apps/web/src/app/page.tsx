@@ -1,8 +1,14 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Show } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
-export default function Home() {
+export default async function Home() {
+  const { userId } = await auth();
+  if (userId) {
+    redirect("/classes");
+  }
+
   return (
     <div className="flex flex-col flex-1 items-center justify-center font-sans">
       <main className="flex flex-col items-center gap-8 text-center px-8 py-32">
@@ -21,28 +27,18 @@ export default function Home() {
           community.
         </p>
         <div className="flex gap-4">
-          <Show when="signed-in">
-            <Link
-              href="/classes"
-              className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-zinc-700"
-            >
-              Go to Classes
-            </Link>
-          </Show>
-          <Show when="signed-out">
-            <Link
-              href="/sign-up"
-              className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-zinc-700"
-            >
-              Get Started
-            </Link>
-            <Link
-              href="/sign-in"
-              className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-medium transition-colors hover:bg-zinc-100"
-            >
-              Sign In
-            </Link>
-          </Show>
+          <Link
+            href="/sign-up"
+            className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-zinc-700"
+          >
+            Get Started
+          </Link>
+          <Link
+            href="/sign-in"
+            className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-medium transition-colors hover:bg-zinc-100"
+          >
+            Sign In
+          </Link>
         </div>
         <Link
           href="/pricing"

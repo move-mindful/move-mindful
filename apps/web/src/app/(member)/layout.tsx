@@ -11,7 +11,7 @@ export default function MemberLayout({
     <div className="flex flex-col flex-1">
       <header className="border-b border-zinc-200">
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-2 text-lg font-bold tracking-tight">
+          <Link href="/classes" className="flex items-center gap-2 text-lg font-bold tracking-tight">
             <Image src="/logo.png" alt="Move Mindful" width={32} height={32} />
             Move Mindful
           </Link>
