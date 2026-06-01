@@ -30,13 +30,7 @@ export default function RootLayout({
       style={{ colorScheme: "light" }}
     >
       <body className="min-h-full flex flex-col">
-        <ClerkProvider
-          localization={{
-            userButton: {
-              action__manageAccount: "Profile",
-            },
-          }}
-        >
+        <ClerkProvider>
           {children}
         </ClerkProvider>
       </body>
