@@ -1,0 +1,20 @@
+{
+  "name": "move-mindful",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "dev:web": "turbo dev --filter=@move-mindful/web",
+    "dev:mobile": "turbo dev --filter=@move-mindful/mobile",
+    "build:web": "turbo build --filter=@move-mindful/web"
+  },
+  "devDependencies": {
+    "turbo": "^2"
+  },
+  "packageManager": "npm@11.13.0"
+}

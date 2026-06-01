@@ -1,4 +1,4 @@
-# WeightsApp — Project Plan
+# Move Mindful — Project Plan
 
 ## Overview
 

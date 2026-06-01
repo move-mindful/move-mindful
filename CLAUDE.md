@@ -1,10 +1,14 @@
-# WeightsApp
+# Move Mindful
 
 A video fitness platform with on-demand classes, livestreaming, push notifications, and group chat. Web and iOS are co-equal platforms.
 
 ## Project Plan
 
 See [plan.md](./plan.md) for the full architecture, tech stack, build order, security guidelines, and cost breakdown.
+
+## README
+
+See [README.md](./README.md) for project overview, current status, setup instructions, and project structure. **Keep the README up to date** — when new features are added, integrations are wired up, or the project structure changes, update the README to reflect the current state.
 
 ## Tech Stack
 
