@@ -4,19 +4,21 @@ A video fitness platform with on-demand classes, livestreaming, push notificatio
 
 ## Current Status
 
-**Monorepo scaffolding complete — integrations not yet wired up.** (Phase 1 per [plan.md](./plan.md) is in progress: Clerk auth and Supabase DB are next.)
+**Phase 1 in progress — Clerk auth wired up, Supabase DB next.** (See the build order in [plan.md](./plan.md).)
 
 What's in place:
 
 - Turborepo monorepo with npm workspaces
 - `packages/core` — shared TypeScript types (`User`, `VideoClass`, `Challenge`, `UserAccess`, etc.) and access-control helpers (`hasAccess()`, `isChallengeExpiringSoon()`, `shouldShowUpsell()`). Consumed as source by web and mobile (no separate build step)
-- `apps/web` — Next.js 16 app with Tailwind CSS v4 (branded landing page, no Clerk/Mux/Stripe yet)
+- `apps/web` — Next.js 16 app with Tailwind CSS v4
+  - **Clerk authentication** — sign-in/sign-up pages, `ClerkProvider`, and route protection via `proxy.ts` middleware. Public routes: `/`, `/pricing`, `/sign-in`, `/sign-up`. Protected routes (e.g. `/classes`, `/dashboard`) redirect signed-out users to sign-in.
+  - Branded landing page with auth-aware CTAs
 - `apps/mobile` — Expo 56 / React Native app (starter screen, no integrations yet)
 - Shared `tsconfig.base.json` for consistent TypeScript settings across packages
 
 What's not yet built:
 
-- Clerk authentication
+- Entitlement checks on protected routes (Clerk gates auth; RevenueCat will gate paid access)
 - Supabase database and RLS policies
 - RevenueCat / Stripe payment integration
 - Mux video player and class catalog
@@ -43,7 +45,13 @@ What's not yet built:
 move-mindful/
 ├── apps/
 │   ├── web/               # Next.js 16 + Tailwind CSS v4
-│   │   └── src/app/       # App Router (layout.tsx, page.tsx)
+│   │   ├── src/proxy.ts   # Clerk middleware (route protection)
+│   │   └── src/app/       # App Router
+│   │       ├── page.tsx        # Public landing page
+│   │       ├── pricing/        # Public pricing page
+│   │       ├── sign-in/        # Clerk <SignIn />
+│   │       ├── sign-up/        # Clerk <SignUp />
+│   │       └── (member)/       # Protected: classes, dashboard
 │   └── mobile/            # Expo 56 / React Native
 │       └── App.tsx        # Entry point
 ├── packages/
@@ -70,6 +78,16 @@ move-mindful/
 ```bash
 npm install
 ```
+
+### Environment variables
+
+The web app needs Clerk keys. Copy the template and fill in your values:
+
+```bash
+cp apps/web/.env.example apps/web/.env.local
+```
+
+Get the `pk_test_…` and `sk_test_…` keys from the [Clerk dashboard](https://dashboard.clerk.com). `.env.local` is gitignored; never commit real keys.
 
 ### Development
 

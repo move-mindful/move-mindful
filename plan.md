@@ -134,6 +134,13 @@ const hasAccess = customerInfo.entitlements.active['premium'] !== undefined
 
 ---
 
+## Early Implementation Notes
+
+- `@move-mindful/core` is currently consumed as a source-only internal package (`src/index.ts`). This is fine for the monorepo, but verify imports from both Next.js and Expo as soon as shared helpers/types are first used in the apps.
+- Shared domain models may use `Date` for in-memory logic, but API and database payloads should use explicit wire/DTO types with ISO date strings before Supabase and API routes are introduced.
+
+---
+
 ## Hosting & Infrastructure
 
 | What                  | Where it lives       | Cost                                      |
