@@ -8,7 +8,7 @@ export default function MemberLayout({
 }) {
   return (
     <div className="flex flex-col flex-1">
-      <header className="border-b border-zinc-200 dark:border-zinc-800">
+      <header className="border-b border-zinc-200">
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link href="/" className="text-lg font-bold tracking-tight">
             Move Mindful
@@ -16,13 +16,13 @@ export default function MemberLayout({
           <div className="flex items-center gap-6">
             <Link
               href="/classes"
-              className="text-sm font-medium text-zinc-600 hover:text-foreground dark:text-zinc-400"
+              className="text-sm font-medium text-zinc-600 hover:text-foreground"
             >
               Classes
             </Link>
             <Link
               href="/dashboard"
-              className="text-sm font-medium text-zinc-600 hover:text-foreground dark:text-zinc-400"
+              className="text-sm font-medium text-zinc-600 hover:text-foreground"
             >
               Dashboard
             </Link>

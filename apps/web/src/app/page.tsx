@@ -8,7 +8,7 @@ export default function Home() {
         <h1 className="text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
           Move Mindful
         </h1>
-        <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+        <p className="max-w-md text-lg leading-8 text-zinc-600 text-zinc-400">
           A video fitness platform — on-demand classes, livestreaming, and
           community.
         </p>
@@ -16,7 +16,7 @@ export default function Home() {
           <Show when="signed-in">
             <Link
               href="/classes"
-              className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-zinc-700 dark:hover:bg-zinc-300"
+              className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-zinc-700"
             >
               Go to Classes
             </Link>
@@ -24,13 +24,13 @@ export default function Home() {
           <Show when="signed-out">
             <Link
               href="/sign-up"
-              className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-zinc-700 dark:hover:bg-zinc-300"
+              className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-zinc-700"
             >
               Get Started
             </Link>
             <Link
               href="/sign-in"
-              className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-medium transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
+              className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-medium transition-colors hover:bg-zinc-100"
             >
               Sign In
             </Link>

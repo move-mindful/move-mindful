@@ -4,7 +4,7 @@ export default function PricingPage() {
       <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
         Pricing
       </h1>
-      <p className="mt-4 max-w-md text-lg text-zinc-600 dark:text-zinc-400">
+      <p className="mt-4 max-w-md text-lg text-zinc-600">
         Choose the plan that works for you — 30-day challenge or full
         membership.
       </p>
