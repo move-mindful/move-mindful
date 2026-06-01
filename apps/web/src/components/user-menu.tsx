@@ -4,7 +4,7 @@ import { useUser, useClerk } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
-import { Settings, HelpCircle, LogOut } from "lucide-react";
+import { Menu, Settings, HelpCircle, LogOut } from "lucide-react";
 
 export function UserMenu() {
   const { user } = useUser();
@@ -28,30 +28,33 @@ export function UserMenu() {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full ring-2 ring-transparent transition hover:ring-zinc-300"
+        className="flex h-8 w-8 items-center justify-center rounded-lg transition hover:bg-zinc-100"
       >
-        {user.imageUrl ? (
-          <Image
-            src={user.imageUrl}
-            alt={user.fullName || "Profile"}
-            width={32}
-            height={32}
-            className="rounded-full object-cover"
-          />
-        ) : (
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-200 text-sm font-medium text-zinc-600">
-            {(user.firstName?.[0] || user.primaryEmailAddress?.emailAddress[0] || "?").toUpperCase()}
-          </div>
-        )}
+        <Menu className="h-5 w-5 text-zinc-600" />
       </button>
 
       {open && (
         <div className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-zinc-200 bg-white py-2 shadow-lg">
-          <div className="border-b border-zinc-100 px-4 pb-3 pt-2 pointer-events-none">
-            <p className="text-sm font-medium">{user.fullName}</p>
-            <p className="text-xs text-zinc-500">
-              {user.primaryEmailAddress?.emailAddress}
-            </p>
+          <div className="flex items-center gap-3 border-b border-zinc-100 px-4 pb-3 pt-2 pointer-events-none">
+            {user.imageUrl ? (
+              <Image
+                src={user.imageUrl}
+                alt={user.fullName || "Profile"}
+                width={36}
+                height={36}
+                className="shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-sm font-medium text-zinc-600">
+                {(user.firstName?.[0] || user.primaryEmailAddress?.emailAddress[0] || "?").toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{user.fullName}</p>
+              <p className="truncate text-xs text-zinc-500">
+                {user.primaryEmailAddress?.emailAddress}
+              </p>
+            </div>
           </div>
 
           <div className="py-1">
