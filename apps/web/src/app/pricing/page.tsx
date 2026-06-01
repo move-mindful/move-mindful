@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
+import { UserButton } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
 import { PricingClient } from "@/components/pricing-client";
@@ -7,8 +8,20 @@ export default async function PricingPage() {
   const { userId } = await auth();
 
   return (
-    <div className="flex flex-col flex-1 items-center px-8 py-16 text-center">
-      <Image src="/logo.png" alt="MoveMindful" width={64} height={64} />
+    <div className="flex flex-col flex-1">
+      {userId && (
+        <header className="border-b border-zinc-200">
+          <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+            <div className="flex items-center gap-2 text-lg font-bold tracking-tight">
+              <Image src="/logo.png" alt="MoveMindful" width={32} height={32} />
+              MoveMindful
+            </div>
+            <UserButton />
+          </nav>
+        </header>
+      )}
+      <div className="flex flex-col flex-1 items-center px-8 py-16 text-center">
+        {!userId && <Image src="/logo.png" alt="MoveMindful" width={64} height={64} />}
       <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-5xl">
         Choose Your Plan
       </h1>
@@ -35,6 +48,7 @@ export default async function PricingPage() {
           </Link>
         </div>
       )}
+      </div>
     </div>
   );
 }
