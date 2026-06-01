@@ -1,10 +1,18 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Show } from "@clerk/nextjs";
 
 export default function Home() {
   return (
     <div className="flex flex-col flex-1 items-center justify-center font-sans">
       <main className="flex flex-col items-center gap-8 text-center px-8 py-32">
+        <Image
+          src="/logo.png"
+          alt="Move Mindful"
+          width={120}
+          height={120}
+          priority
+        />
         <h1 className="text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
           Move Mindful
         </h1>
