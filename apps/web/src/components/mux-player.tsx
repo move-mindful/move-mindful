@@ -16,10 +16,12 @@ export function MuxPlayer({
   title: string;
   streamType?: "on-demand" | "live";
 }) {
+  const backgroundColor = streamType === "live" ? "#000" : "#fff";
+
   return (
     <div
-      className="relative aspect-video w-full overflow-hidden"
-      style={{ backgroundColor: streamType === "live" ? "#000" : "#fff" }}
+      className="flex aspect-video w-full overflow-hidden"
+      style={{ backgroundColor }}
     >
       <MuxPlayerComponent
         playbackId={playbackId}
@@ -27,12 +29,11 @@ export function MuxPlayer({
         accentColor="#18181b"
         metadata={{ video_title: title }}
         style={{
-          position: "absolute",
-          inset: "-1px",
           display: "block",
-          width: "calc(100% + 2px)",
-          height: "calc(100% + 2px)",
-          maxWidth: "none",
+          width: "100%",
+          height: "100%",
+          maxWidth: "100%",
+          "--media-background-color": backgroundColor,
         }}
         playsInline
         defaultHiddenCaptions
