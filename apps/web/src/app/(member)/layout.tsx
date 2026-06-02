@@ -16,28 +16,24 @@ export default async function MemberLayout({
       <div className="flex flex-col flex-1">
         <header className="border-b border-zinc-200">
           <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-            <Link
-              href="/classes"
-              className="flex items-center gap-2 text-lg font-bold tracking-tight"
-            >
-              <Image src="/logo.png" alt="MoveMindful" width={32} height={32} />
-              MoveMindful
-            </Link>
             <div className="flex items-center gap-6">
               <Link
                 href="/classes"
-                className="text-sm font-medium text-zinc-600 transition hover:text-zinc-900"
+                className="flex items-center gap-2 text-lg font-bold tracking-tight"
               >
-                Classes
+                <Image src="/logo.png" alt="MoveMindful" width={32} height={32} />
+                MoveMindful
               </Link>
-              <Link
-                href="/live"
-                className="text-sm font-medium text-zinc-600 transition hover:text-zinc-900"
-              >
-                Live
-              </Link>
-              <UserMenu isAdmin={admin} />
+              <div className="hidden items-center gap-4 text-sm text-zinc-600 sm:flex">
+                <Link href="/classes" className="transition hover:text-zinc-900">
+                  Classes
+                </Link>
+                <Link href="/live" className="transition hover:text-zinc-900">
+                  Live
+                </Link>
+              </div>
             </div>
+            <UserMenu isAdmin={admin} />
           </nav>
         </header>
         <main className="flex-1">{children}</main>

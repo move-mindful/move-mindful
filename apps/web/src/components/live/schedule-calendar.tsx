@@ -1,13 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { DateTime } from "luxon";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import {
-  LIVE_SCHEDULE,
-  classColor,
-  formatAzTime,
-  type ScheduleEntry,
-} from "@/lib/live-schedule";
+import { ARIZONA_ZONE, LIVE_SCHEDULE, classColor } from "@/lib/live-schedule";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_LABELS = [
@@ -15,34 +11,96 @@ const MONTH_LABELS = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-// JS getDay(): 0 = Sun … 6 = Sat. Schedule weekday (ISO): 1 = Mon … 7 = Sun.
-function isoWeekday(jsDay: number): number {
-  return jsDay === 0 ? 7 : jsDay;
+interface DayClass {
+  title: string;
+  time: string;
+  sortKey: number;
 }
 
-function classesForWeekday(weekday: number): ScheduleEntry[] {
-  return LIVE_SCHEDULE.filter((s) => s.weekday === weekday).sort(
-    (a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute),
-  );
+// Build a map of local day-of-month → classes occurring that day, with their
+// times converted into the viewer's local timezone. Because a class defined in
+// Arizona time can fall on a different calendar day for far-away timezones, we
+// bucket by the *local* day each occurrence actually lands on.
+function buildOccurrences(year: number, month0: number): Map<number, DayClass[]> {
+  const localZone = DateTime.local().zoneName;
+  const monthStart = DateTime.fromObject(
+    { year, month: month0 + 1, day: 1 },
+    { zone: localZone },
+  ).startOf("day");
+  const monthEnd = monthStart.endOf("month");
+
+  // Pad the search window by a day on each side (in Arizona time) so occurrences
+  // that cross a date boundary into this month are still caught.
+  const windowStart = monthStart.minus({ days: 1 }).setZone(ARIZONA_ZONE);
+  const windowEnd = monthEnd.plus({ days: 1 }).setZone(ARIZONA_ZONE);
+
+  const map = new Map<number, DayClass[]>();
+
+  for (const s of LIVE_SCHEDULE) {
+    let occ = windowStart.set({
+      weekday: s.weekday as 1 | 2 | 3 | 4 | 5 | 6 | 7,
+      hour: s.hour,
+      minute: s.minute,
+      second: 0,
+      millisecond: 0,
+    });
+    if (occ < windowStart) occ = occ.plus({ weeks: 1 });
+
+    while (occ <= windowEnd) {
+      const local = occ.setZone(localZone);
+      if (local.year === year && local.month === month0 + 1) {
+        const list = map.get(local.day) ?? [];
+        list.push({
+          title: s.title,
+          time: local.toFormat("h:mm a"),
+          sortKey: local.hour * 60 + local.minute,
+        });
+        map.set(local.day, list);
+      }
+      occ = occ.plus({ weeks: 1 });
+    }
+  }
+
+  for (const list of map.values()) list.sort((a, b) => a.sortKey - b.sortKey);
+  return map;
 }
 
 export function ScheduleCalendar() {
-  const today = new Date();
-  const [view, setView] = useState({
-    year: today.getFullYear(),
-    month: today.getMonth(), // 0-indexed
-  });
+  const [mounted, setMounted] = useState(false);
+  const [view, setView] = useState({ year: 2000, month: 0 });
+
+  // Timezone + "current month" are only known in the browser, so resolve them
+  // after mount to avoid a server/client hydration mismatch.
+  useEffect(() => {
+    const now = new Date();
+    setView({ year: now.getFullYear(), month: now.getMonth() });
+    setMounted(true);
+  }, []);
+
+  const occurrences = useMemo(
+    () =>
+      mounted
+        ? buildOccurrences(view.year, view.month)
+        : new Map<number, DayClass[]>(),
+    [mounted, view.year, view.month],
+  );
+
+  if (!mounted) {
+    return (
+      <div className="rounded-xl border border-zinc-200 bg-white">
+        <div className="h-[28rem] animate-pulse rounded-xl bg-zinc-50" />
+      </div>
+    );
+  }
 
   const firstDay = new Date(view.year, view.month, 1);
   const leadingBlanks = firstDay.getDay(); // 0 = Sun
   const daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
 
-  // Build a flat list of cells: leading blanks (null) then day numbers.
   const cells: (number | null)[] = [
     ...Array<null>(leadingBlanks).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
-  // Trailing blanks to complete the final week row.
   while (cells.length % 7 !== 0) cells.push(null);
 
   function shiftMonth(delta: number) {
@@ -52,8 +110,10 @@ export function ScheduleCalendar() {
     });
   }
 
+  const today = new Date();
   const isCurrentMonth =
     view.year === today.getFullYear() && view.month === today.getMonth();
+  const localZoneLabel = DateTime.local().toFormat("ZZZZ"); // e.g. "EDT"
 
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
@@ -97,13 +157,16 @@ export function ScheduleCalendar() {
       <div className="grid grid-cols-7">
         {cells.map((day, i) => {
           if (day === null) {
-            return <div key={`blank-${i}`} className="min-h-20 border-b border-r border-zinc-100 bg-zinc-50/40 last:border-r-0" />;
+            return (
+              <div
+                key={`blank-${i}`}
+                className="min-h-20 border-b border-r border-zinc-100 bg-zinc-50/40 last:border-r-0 sm:min-h-28"
+              />
+            );
           }
 
-          const cellDate = new Date(view.year, view.month, day);
-          const entries = classesForWeekday(isoWeekday(cellDate.getDay()));
-          const isToday =
-            isCurrentMonth && day === today.getDate();
+          const entries = occurrences.get(day) ?? [];
+          const isToday = isCurrentMonth && day === today.getDate();
 
           return (
             <div
@@ -124,11 +187,9 @@ export function ScheduleCalendar() {
                     className={`rounded px-1 py-0.5 text-[10px] leading-tight sm:text-xs ${
                       classColor[e.title] ?? "bg-zinc-100 text-zinc-600"
                     }`}
-                    title={`${e.title} · ${formatAzTime(e.hour, e.minute)} AZ`}
+                    title={`${e.title} · ${e.time}`}
                   >
-                    <span className="block font-medium">
-                      {formatAzTime(e.hour, e.minute)}
-                    </span>
+                    <span className="block font-medium">{e.time}</span>
                     <span className="block truncate">{e.title}</span>
                   </div>
                 ))}
@@ -139,7 +200,8 @@ export function ScheduleCalendar() {
       </div>
 
       <p className="border-t border-zinc-200 px-4 py-2 text-xs text-zinc-400">
-        All times shown in Arizona (MST). Same classes repeat every week.
+        Times shown in your local timezone ({localZoneLabel}). Same classes repeat
+        every week.
       </p>
     </div>
   );

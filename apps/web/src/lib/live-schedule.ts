@@ -41,10 +41,3 @@ export const classColor: Record<string, string> = {
   "Legs Up the Wall Meditation": "bg-teal-100 text-teal-700",
   "Strength & Sculpt Express": "bg-amber-100 text-amber-700",
 };
-
-/** Format an Arizona-time hour/minute as a 12-hour clock string, e.g. "9:00 AM". */
-export function formatAzTime(hour: number, minute: number): string {
-  const period = hour >= 12 ? "PM" : "AM";
-  const h12 = hour % 12 === 0 ? 12 : hour % 12;
-  return `${h12}:${minute.toString().padStart(2, "0")} ${period}`;
-}
