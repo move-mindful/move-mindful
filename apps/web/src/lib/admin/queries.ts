@@ -121,3 +121,64 @@ export async function getAdminClass(id: string): Promise<AdminClassDetail | null
     tagIds: (ct ?? []).map((r) => r.tag_id),
   };
 }
+
+// ── Taxonomy admin (with usage counts for the delete confirm) ──
+
+export interface AdminTagUsage extends AdminTag {
+  classCount: number;
+  collectionCount: number;
+}
+
+export interface AdminTagGroupWithUsage {
+  id: string;
+  name: string;
+  slug: string;
+  position: number;
+  tags: AdminTagUsage[];
+}
+
+export interface TagsAdminData {
+  groups: AdminTagGroupWithUsage[];
+  ungrouped: AdminTagUsage[];
+}
+
+export async function getTagsAdmin(): Promise<TagsAdminData> {
+  const supabase = createAdminClient();
+  const [{ data: groups }, { data: tags }, { data: classTags }, { data: ruleTags }] =
+    await Promise.all([
+      supabase.from("tag_groups").select("*").order("position"),
+      supabase.from("tags").select("*").order("position"),
+      supabase.from("class_tags").select("tag_id"),
+      supabase.from("collection_rule_tags").select("tag_id"),
+    ]);
+
+  const classCounts = new Map<string, number>();
+  for (const r of classTags ?? [])
+    classCounts.set(r.tag_id, (classCounts.get(r.tag_id) ?? 0) + 1);
+  const collectionCounts = new Map<string, number>();
+  for (const r of ruleTags ?? [])
+    collectionCounts.set(r.tag_id, (collectionCounts.get(r.tag_id) ?? 0) + 1);
+
+  const toUsage = (t: { id: string; name: string; slug: string; group_id: string | null; position: number }): AdminTagUsage => ({
+    id: t.id,
+    name: t.name,
+    slug: t.slug,
+    groupId: t.group_id,
+    position: t.position,
+    classCount: classCounts.get(t.id) ?? 0,
+    collectionCount: collectionCounts.get(t.id) ?? 0,
+  });
+
+  const allTags = (tags ?? []).map(toUsage);
+
+  return {
+    groups: (groups ?? []).map((g) => ({
+      id: g.id,
+      name: g.name,
+      slug: g.slug,
+      position: g.position,
+      tags: allTags.filter((t) => t.groupId === g.id),
+    })),
+    ungrouped: allTags.filter((t) => t.groupId === null),
+  };
+}
