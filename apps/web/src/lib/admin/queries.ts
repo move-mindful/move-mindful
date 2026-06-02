@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveSmartClassIds } from "@/lib/collections";
 
 export interface AdminTag {
   id: string;
@@ -181,4 +182,106 @@ export async function getTagsAdmin(): Promise<TagsAdminData> {
     })),
     ungrouped: allTags.filter((t) => t.groupId === null),
   };
+}
+
+// ── Collections admin ──────────────────────────────────
+
+export interface AdminCollectionRow {
+  id: string;
+  title: string;
+  slug: string;
+  kind: "manual" | "smart";
+  matchMode: "any" | "all";
+  position: number;
+  publishedAt: string | null;
+  itemCount: number;
+}
+
+export async function getAdminCollections(): Promise<AdminCollectionRow[]> {
+  const supabase = createAdminClient();
+  const [{ data: cols }, { data: members }, { data: rules }] = await Promise.all([
+    supabase.from("collections").select("*").order("position"),
+    supabase.from("collection_classes").select("collection_id"),
+    supabase.from("collection_rule_tags").select("collection_id"),
+  ]);
+
+  const memberCounts = new Map<string, number>();
+  for (const m of members ?? [])
+    memberCounts.set(m.collection_id, (memberCounts.get(m.collection_id) ?? 0) + 1);
+  const ruleCounts = new Map<string, number>();
+  for (const r of rules ?? [])
+    ruleCounts.set(r.collection_id, (ruleCounts.get(r.collection_id) ?? 0) + 1);
+
+  return (cols ?? []).map((c) => ({
+    id: c.id,
+    title: c.title,
+    slug: c.slug,
+    kind: c.kind,
+    matchMode: c.match_mode,
+    position: c.position,
+    publishedAt: c.published_at,
+    itemCount: c.kind === "smart" ? ruleCounts.get(c.id) ?? 0 : memberCounts.get(c.id) ?? 0,
+  }));
+}
+
+export interface AdminCollectionDetail {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  kind: "manual" | "smart";
+  matchMode: "any" | "all";
+  position: number;
+  publishedAt: string | null;
+  memberClassIds: string[];
+  ruleTagIds: string[];
+}
+
+export async function getAdminCollection(id: string): Promise<AdminCollectionDetail | null> {
+  const supabase = createAdminClient();
+  const { data: c } = await supabase.from("collections").select("*").eq("id", id).single();
+  if (!c) return null;
+
+  const [{ data: members }, { data: rules }] = await Promise.all([
+    supabase
+      .from("collection_classes")
+      .select("class_id,position")
+      .eq("collection_id", id)
+      .order("position"),
+    supabase.from("collection_rule_tags").select("tag_id").eq("collection_id", id),
+  ]);
+
+  return {
+    id: c.id,
+    title: c.title,
+    slug: c.slug,
+    description: c.description ?? "",
+    kind: c.kind,
+    matchMode: c.match_mode,
+    position: c.position,
+    publishedAt: c.published_at,
+    memberClassIds: (members ?? []).map((m) => m.class_id),
+    ruleTagIds: (rules ?? []).map((r) => r.tag_id),
+  };
+}
+
+export interface SmartPreviewClass {
+  id: string;
+  title: string;
+  published: boolean;
+}
+
+export async function getSmartPreview(
+  ruleTagIds: string[],
+  matchMode: "any" | "all",
+): Promise<SmartPreviewClass[]> {
+  const supabase = createAdminClient();
+  const ids = await resolveSmartClassIds(supabase, ruleTagIds, matchMode);
+  if (ids.length === 0) return [];
+  const { data } = await supabase.from("classes").select("id,title,published_at").in("id", ids);
+  return (data ?? []).map((c) => ({
+    id: c.id,
+    title: c.title,
+    published: !!c.published_at,
+  }));
 }
