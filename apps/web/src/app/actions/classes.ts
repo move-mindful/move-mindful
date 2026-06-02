@@ -2,12 +2,13 @@
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { mux } from "@/lib/mux/client";
+import { masterDownloadInfo, mux, type MuxMasterDownloadInfo } from "@/lib/mux/client";
 import type { ClassFormState } from "@/lib/admin/types";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
+type ClassDownloadResult = MuxMasterDownloadInfo & { error?: string };
 
 function parseFields(formData: FormData) {
   return {
@@ -246,6 +247,45 @@ export async function setClassPublished(formData: FormData) {
   revalidatePath("/admin/classes");
   revalidatePath(`/admin/classes/${id}`);
   revalidatePath("/classes");
+}
+
+export async function prepareClassDownload(id: string): Promise<ClassDownloadResult> {
+  await requireAdmin();
+  if (!id) {
+    return { status: "unavailable", url: null, error: "Missing class id." };
+  }
+
+  const supabase = createAdminClient();
+  const { data: cls } = await supabase
+    .from("classes")
+    .select("mux_asset_id")
+    .eq("id", id)
+    .single();
+
+  if (!cls?.mux_asset_id) {
+    return {
+      status: "unavailable",
+      url: null,
+      error: "This class is not linked to a Mux asset.",
+    };
+  }
+
+  try {
+    const asset = await mux.video.assets.updateMasterAccess(cls.mux_asset_id, {
+      master_access: "temporary",
+    });
+    revalidatePath(`/admin/classes/${id}`);
+    return masterDownloadInfo(asset.master);
+  } catch (e) {
+    return {
+      status: "unavailable",
+      url: null,
+      error:
+        e instanceof Error
+          ? `Mux could not prepare the download: ${e.message}`
+          : "Mux could not prepare the download.",
+    };
+  }
 }
 
 export async function deleteClass(formData: FormData) {

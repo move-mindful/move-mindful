@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAdminClass, getTagPickerData, getInstructorOptions } from "@/lib/admin/queries";
-import { getAssetStatus } from "@/lib/mux/client";
+import { getAssetMasterDownload, getAssetStatus } from "@/lib/mux/client";
 import { ClassForm } from "@/components/admin/class-form";
+import { ClassDownloadControl } from "@/components/admin/class-download-control";
 import { DeleteClassButton } from "@/components/admin/delete-class-button";
 import { DeleteRawRecordingButton } from "@/components/admin/delete-raw-recording-button";
 import { setClassPublished } from "@/app/actions/classes";
@@ -29,6 +30,9 @@ export default async function EditClassPage({
     cls.sourceMuxAssetId && cls.muxAssetId
       ? (await getAssetStatus(cls.muxAssetId)) === "ready"
       : false;
+  const masterDownload = cls.muxAssetId
+    ? await getAssetMasterDownload(cls.muxAssetId)
+    : { status: "not_requested" as const, url: null };
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
@@ -52,7 +56,15 @@ export default async function EditClassPage({
         </div>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-8 space-y-4">
+        {cls.muxAssetId && (
+          <ClassDownloadControl
+            classId={cls.id}
+            title={cls.title}
+            initialStatus={masterDownload.status}
+            initialUrl={masterDownload.url}
+          />
+        )}
         <ClassForm
           mode="edit"
           tagData={tagData}
