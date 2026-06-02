@@ -11,16 +11,16 @@ export function MuxPlayer({
   playbackId,
   title,
   streamType = "on-demand",
+  backgroundColor = streamType === "live" ? "#000" : "#fff",
 }: {
   playbackId: string;
   title: string;
   streamType?: "on-demand" | "live";
+  backgroundColor?: string;
 }) {
-  const backgroundColor = streamType === "live" ? "#000" : "#fff";
-
   return (
     <div
-      className="flex aspect-video w-full overflow-hidden rounded-lg"
+      className="flex aspect-video w-full overflow-hidden"
       style={{ backgroundColor }}
     >
       <MuxPlayerComponent

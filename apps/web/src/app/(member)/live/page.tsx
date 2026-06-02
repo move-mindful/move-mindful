@@ -1,4 +1,5 @@
 import { MuxPlayer } from "@/components/mux-player";
+import { VideoTheaterStage } from "@/components/video-theater-stage";
 import { NextClassBanner } from "@/components/live/next-class-banner";
 import { ScheduleCalendar } from "@/components/live/schedule-calendar";
 
@@ -13,15 +14,13 @@ export default function LivePage() {
   return (
     <div>
       {/* Full-width persistent live video */}
-      <section className="w-full bg-black">
-        <div className="mx-auto max-w-6xl">
-          <MuxPlayer
-            playbackId={LIVE_PLAYBACK_ID}
-            title="Move Mindful Live"
-            streamType="live"
-          />
-        </div>
-      </section>
+      <VideoTheaterStage>
+        <MuxPlayer
+          playbackId={LIVE_PLAYBACK_ID}
+          title="Move Mindful Live"
+          streamType="live"
+        />
+      </VideoTheaterStage>
 
       {/* Next-class countdown (personalized to the viewer's local time) */}
       <div className="mx-auto max-w-6xl px-6 py-8">

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { MuxPlayer } from "@/components/mux-player";
+import { VideoTheaterStage } from "@/components/video-theater-stage";
 import { InstructorAvatar } from "@/components/instructor-avatar";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -75,25 +76,31 @@ export default async function ClassDetailPage({
   );
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-8">
-      <Link
-        href="/classes"
-        className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-800"
-      >
-        &larr; Back to classes
-      </Link>
+    <div>
+      <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6">
+        <Link
+          href="/classes"
+          className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-800"
+        >
+          &larr; Back to classes
+        </Link>
+      </div>
 
-      <div className="mt-6">
+      <VideoTheaterStage>
         {videoClass.mux_playback_id ? (
-          <MuxPlayer playbackId={videoClass.mux_playback_id} title={videoClass.title} />
+          <MuxPlayer
+            playbackId={videoClass.mux_playback_id}
+            title={videoClass.title}
+            backgroundColor="#000"
+          />
         ) : (
-          <div className="flex aspect-video items-center justify-center rounded-xl bg-zinc-100 text-zinc-400">
+          <div className="flex aspect-video items-center justify-center bg-zinc-900 text-zinc-400">
             Video not yet available
           </div>
         )}
-      </div>
+      </VideoTheaterStage>
 
-      <div className="mt-6">
+      <div className="mx-auto max-w-6xl px-6 py-6">
         <div className="flex flex-wrap items-center gap-3">
           {disciplineLabel && (
             <span className="text-sm font-medium text-zinc-500">{disciplineLabel}</span>
