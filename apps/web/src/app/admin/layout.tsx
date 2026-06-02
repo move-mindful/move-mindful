@@ -5,6 +5,7 @@ import { UserMenu } from "@/components/user-menu";
 
 const navItems = [
   { href: "/admin/classes", label: "Classes" },
+  { href: "/admin/instructors", label: "Instructors" },
   { href: "/admin/tags", label: "Tags" },
   { href: "/admin/collections", label: "Collections" },
 ];

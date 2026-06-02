@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAdminClass, getTagPickerData } from "@/lib/admin/queries";
+import { getAdminClass, getTagPickerData, getInstructorOptions } from "@/lib/admin/queries";
 import { ClassForm } from "@/components/admin/class-form";
 import { DeleteClassButton } from "@/components/admin/delete-class-button";
 import { setClassPublished } from "@/app/actions/classes";
@@ -13,7 +13,11 @@ export default async function EditClassPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [cls, tagData] = await Promise.all([getAdminClass(id), getTagPickerData()]);
+  const [cls, tagData, instructors] = await Promise.all([
+    getAdminClass(id),
+    getTagPickerData(),
+    getInstructorOptions(),
+  ]);
   if (!cls) notFound();
 
   const published = !!cls.publishedAt;
@@ -44,10 +48,11 @@ export default async function EditClassPage({
         <ClassForm
           mode="edit"
           tagData={tagData}
+          instructors={instructors}
           initial={{
             id: cls.id,
             title: cls.title,
-            instructorName: cls.instructorName,
+            instructorId: cls.instructorId ?? "",
             description: cls.description,
             durationMinutes: cls.durationMinutes,
             muxPlaybackId: cls.muxPlaybackId ?? "",

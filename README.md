@@ -14,12 +14,12 @@ What's in place:
   - **Clerk authentication** — sign-in/sign-up, `ClerkProvider`, route protection via `proxy.ts`. Admin gating via `publicMetadata.role` (a session-token claim) checked optimistically in the proxy and authoritatively server-side with `requireAdmin()`.
   - **Mux video** — class catalog and individual class pages with `@mux/mux-player-react` (adaptive streaming, AirPlay), thumbnails from Mux.
   - **RevenueCat + Stripe payments** — pricing page, Web Billing purchase flow, "Move Mindful Pro" entitlement gating member routes.
-  - **Admin CMS** (`/admin`, admin-only) — **classes**: Sync from Mux (list assets → import), create/edit, publish/unpublish, delete (with optional Mux asset deletion); **tags**: tag groups + tags (create/rename/delete, cascade-safe); **collections**: manual (hand-picked + up/down order) and smart (tag-rule, auto-resolved), publish, row ordering. All writes go through server actions using the Supabase service-role key (`server-only`).
-  - **Member browse** (`/classes`) — curated **collection carousels** (manual + smart, ordered); class card/detail metadata derived from tags (Discipline label · Intensity badge · Focus/Vibe chips). Curation-only: a class appears only if it's in a published collection.
+  - **Admin CMS** (`/admin`, admin-only) — **classes**: Sync from Mux (list assets → import), create/edit, publish/unpublish, delete (with optional Mux asset deletion), assign an instructor; **instructors**: teachers with an uploaded profile photo (client-side square-cropped, stored in Supabase Storage), one assigned per class; **tags**: tag groups + tags (create/rename/delete, cascade-safe); **collections**: manual (hand-picked + up/down order) and smart (tag-rule, auto-resolved), publish, row ordering. All writes go through server actions using the Supabase service-role key (`server-only`).
+  - **Member browse** (`/classes`) — curated **collection carousels** (manual + smart, ordered); class card/detail metadata derived from tags (Discipline label · Intensity badge · Focus/Vibe chips), with the instructor's avatar + name (single-initial fallback) on cards and the class page. Curation-only: a class appears only if it's in a published collection.
   - **Live** (`/live`) — a persistent full-width Mux live stream (`streamType="live"`, playback ID via `NEXT_PUBLIC_MUX_LIVESTREAM_PLAYBACK_ID`), a viewer-local "next class" countdown banner (Luxon), and a hardcoded recurring weekly schedule rendered as a month calendar (class times defined in Arizona time, converted to the viewer's local timezone, prev/next month nav).
   - **Account Settings** (`/account`) — plan status and profile.
   - **Custom user menu** — Clerk user info synced to RevenueCat.
-  - **Supabase database** — `user_profiles`, `classes`, `tags`, `tag_groups`, `class_tags`, `collections`, `collection_classes`, `collection_rule_tags`, all with RLS (read-only for members; admin writes via service-role).
+  - **Supabase database** — `user_profiles`, `classes`, `instructors`, `tags`, `tag_groups`, `class_tags`, `collections`, `collection_classes`, `collection_rule_tags`, all with RLS (read-only for members; admin writes via service-role). Instructor avatars live in a public `instructor-avatars` Storage bucket.
   - **Deployed to Vercel** — live at `www.movemindful.com`. Auto-deploys on push to `main`.
 - `apps/mobile` — Expo 56 / React Native app (starter screen, no integrations yet)
 - Shared `tsconfig.base.json` for consistent TypeScript settings across packages
@@ -70,7 +70,7 @@ move-mindful/
 │           ├── types.ts   # User, VideoClass, Tag, TagGroup, Collection, Challenge, …
 │           ├── access.ts  # hasAccess, isChallengeExpiringSoon, shouldShowUpsell
 │           └── index.ts   # Re-exports
-├── supabase/migrations/   # SQL migrations (001 schema, 002 media org, 003 cleanup)
+├── supabase/migrations/   # SQL migrations (001 schema, 002 media org, 003 cleanup, 004 instructors)
 ├── plan.md                # Full architecture, build order, security guidelines
 ├── phase-4-plan.md        # Phase 4 implementation plan (schema, routes, decisions)
 ├── turbo.json             # Turborepo task config

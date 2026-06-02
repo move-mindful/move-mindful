@@ -58,6 +58,7 @@ export interface AdminClassRow {
   id: string;
   title: string;
   instructorName: string;
+  instructorAvatarUrl: string | null;
   durationMinutes: number;
   muxPlaybackId: string | null;
   muxAssetId: string | null;
@@ -71,27 +72,34 @@ export interface AdminClassRow {
  */
 export async function getAdminClasses(): Promise<AdminClassRow[]> {
   const supabase = createAdminClient();
-  const [{ data: classes }, surfaced] = await Promise.all([
+  const [{ data: classes }, { data: instructors }, surfaced] = await Promise.all([
     supabase.from("classes").select("*").order("created_at", { ascending: false }),
+    supabase.from("instructors").select("id,name,avatar_url"),
     getSurfacedClassIds(supabase),
   ]);
 
-  return (classes ?? []).map((c) => ({
-    id: c.id,
-    title: c.title,
-    instructorName: c.instructor_name,
-    durationMinutes: c.duration_minutes,
-    muxPlaybackId: c.mux_playback_id,
-    muxAssetId: c.mux_asset_id,
-    publishedAt: c.published_at,
-    surfaced: surfaced.has(c.id),
-  }));
+  const instructorById = new Map((instructors ?? []).map((i) => [i.id, i]));
+
+  return (classes ?? []).map((c) => {
+    const inst = c.instructor_id ? instructorById.get(c.instructor_id) : null;
+    return {
+      id: c.id,
+      title: c.title,
+      instructorName: inst?.name ?? c.instructor_name ?? "",
+      instructorAvatarUrl: inst?.avatar_url ?? null,
+      durationMinutes: c.duration_minutes,
+      muxPlaybackId: c.mux_playback_id,
+      muxAssetId: c.mux_asset_id,
+      publishedAt: c.published_at,
+      surfaced: surfaced.has(c.id),
+    };
+  });
 }
 
 export interface AdminClassDetail {
   id: string;
   title: string;
-  instructorName: string;
+  instructorId: string | null;
   description: string;
   durationMinutes: number;
   muxPlaybackId: string | null;
@@ -114,7 +122,7 @@ export async function getAdminClass(id: string): Promise<AdminClassDetail | null
   return {
     id: c.id,
     title: c.title,
-    instructorName: c.instructor_name,
+    instructorId: c.instructor_id ?? null,
     description: c.description ?? "",
     durationMinutes: c.duration_minutes,
     muxPlaybackId: c.mux_playback_id,
@@ -122,6 +130,48 @@ export async function getAdminClass(id: string): Promise<AdminClassDetail | null
     publishedAt: c.published_at,
     tagIds: (ct ?? []).map((r) => r.tag_id),
   };
+}
+
+// ── Instructors admin ──────────────────────────────────
+
+export interface AdminInstructor {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  classCount: number;
+}
+
+/** All instructors with how many classes each is assigned to (for delete confirms). */
+export async function getInstructors(): Promise<AdminInstructor[]> {
+  const supabase = createAdminClient();
+  const [{ data: instructors }, { data: classes }] = await Promise.all([
+    supabase.from("instructors").select("*").order("name"),
+    supabase.from("classes").select("instructor_id"),
+  ]);
+
+  const counts = new Map<string, number>();
+  for (const c of classes ?? []) {
+    if (c.instructor_id) counts.set(c.instructor_id, (counts.get(c.instructor_id) ?? 0) + 1);
+  }
+
+  return (instructors ?? []).map((i) => ({
+    id: i.id,
+    name: i.name,
+    avatarUrl: i.avatar_url,
+    classCount: counts.get(i.id) ?? 0,
+  }));
+}
+
+export interface InstructorOption {
+  id: string;
+  name: string;
+}
+
+/** Lightweight instructor list for the class form picker. */
+export async function getInstructorOptions(): Promise<InstructorOption[]> {
+  const supabase = createAdminClient();
+  const { data } = await supabase.from("instructors").select("id,name").order("name");
+  return (data ?? []).map((i) => ({ id: i.id, name: i.name }));
 }
 
 // ── Taxonomy admin (with usage counts for the delete confirm) ──

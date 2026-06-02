@@ -2,9 +2,10 @@
 
 import { useActionState, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { createClass, updateClass } from "@/app/actions/classes";
 import type { ClassFormState } from "@/lib/admin/types";
-import type { TagPickerData } from "@/lib/admin/queries";
+import type { TagPickerData, InstructorOption } from "@/lib/admin/queries";
 
 const SINGLE_SELECT_GROUPS = ["discipline", "intensity"];
 
@@ -14,7 +15,7 @@ const inputCls =
 export interface ClassFormInitial {
   id?: string;
   title?: string;
-  instructorName?: string;
+  instructorId?: string;
   description?: string;
   durationMinutes?: number | string;
   muxPlaybackId?: string;
@@ -25,10 +26,12 @@ export interface ClassFormInitial {
 export function ClassForm({
   mode,
   tagData,
+  instructors,
   initial = {},
 }: {
   mode: "create" | "edit";
   tagData: TagPickerData;
+  instructors: InstructorOption[];
   initial?: ClassFormInitial;
 }) {
   const action = mode === "create" ? createClass : updateClass;
@@ -71,13 +74,29 @@ export function ClassForm({
         <input name="title" defaultValue={initial.title ?? ""} required className={inputCls} />
       </Labeled>
 
-      <Labeled label="Instructor">
-        <input
-          name="instructorName"
-          defaultValue={initial.instructorName ?? ""}
-          className={inputCls}
-        />
-      </Labeled>
+      <div>
+        <Labeled label="Instructor">
+          <select
+            name="instructorId"
+            defaultValue={initial.instructorId ?? ""}
+            className={inputCls}
+          >
+            <option value="">— none —</option>
+            {instructors.map((i) => (
+              <option key={i.id} value={i.id}>
+                {i.name}
+              </option>
+            ))}
+          </select>
+        </Labeled>
+        <p className="mt-1 text-xs text-zinc-400">
+          Add teachers and their photos in{" "}
+          <Link href="/admin/instructors" className="underline hover:text-zinc-600">
+            Instructors
+          </Link>
+          .
+        </p>
+      </div>
 
       <Labeled label="Description">
         <textarea

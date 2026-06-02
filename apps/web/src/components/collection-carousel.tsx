@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { InstructorAvatar } from "@/components/instructor-avatar";
 import type { BrowseRow } from "@/lib/collections";
 
 const intensityBadge: Record<string, string> = {
@@ -60,7 +61,16 @@ export function CollectionCarousel({ row }: { row: BrowseRow }) {
               <h3 className="mt-1.5 font-semibold leading-snug group-hover:text-zinc-600">
                 {c.title}
               </h3>
-              <p className="mt-0.5 text-sm text-zinc-500">{c.instructorName}</p>
+              {c.instructorName && (
+                <div className="mt-1.5 flex items-center gap-2">
+                  <InstructorAvatar
+                    name={c.instructorName}
+                    src={c.instructorAvatarUrl}
+                    size={24}
+                  />
+                  <p className="truncate text-sm text-zinc-500">{c.instructorName}</p>
+                </div>
+              )}
             </div>
           </Link>
         ))}

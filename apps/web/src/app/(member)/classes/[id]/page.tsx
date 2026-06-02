@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { MuxPlayer } from "@/components/mux-player";
+import { InstructorAvatar } from "@/components/instructor-avatar";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -32,6 +33,20 @@ export default async function ClassDetailPage({
 
   if (!videoClass) {
     notFound();
+  }
+
+  let instructorName: string = videoClass.instructor_name ?? "";
+  let instructorAvatarUrl: string | null = null;
+  if (videoClass.instructor_id) {
+    const { data: inst } = await supabase
+      .from("instructors")
+      .select("name,avatar_url")
+      .eq("id", videoClass.instructor_id)
+      .single();
+    if (inst) {
+      instructorName = inst.name ?? instructorName;
+      instructorAvatarUrl = inst.avatar_url ?? null;
+    }
   }
 
   // Tags (RLS allows class_tags for published classes; tags/groups are public).
@@ -96,7 +111,12 @@ export default async function ClassDetailPage({
         </div>
 
         <h1 className="mt-3 text-2xl font-bold tracking-tight">{videoClass.title}</h1>
-        <p className="mt-1 text-zinc-500">with {videoClass.instructor_name}</p>
+        {instructorName && (
+          <div className="mt-2 flex items-center gap-2">
+            <InstructorAvatar name={instructorName} src={instructorAvatarUrl} size={32} />
+            <p className="text-zinc-500">with {instructorName}</p>
+          </div>
+        )}
 
         {videoClass.description && (
           <p className="mt-4 leading-relaxed text-zinc-600">{videoClass.description}</p>

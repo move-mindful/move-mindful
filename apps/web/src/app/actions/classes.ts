@@ -12,7 +12,7 @@ type AdminClient = ReturnType<typeof createAdminClient>;
 function parseFields(formData: FormData) {
   return {
     title: ((formData.get("title") as string) ?? "").trim(),
-    instructorName: ((formData.get("instructorName") as string) ?? "").trim(),
+    instructorId: ((formData.get("instructorId") as string) ?? "").trim() || null,
     description: ((formData.get("description") as string) ?? "").trim(),
     durationMinutes: Number(formData.get("durationMinutes")),
     muxPlaybackId: ((formData.get("muxPlaybackId") as string) ?? "").trim(),
@@ -63,7 +63,7 @@ export async function createClass(
     .from("classes")
     .insert({
       title: f.title,
-      instructor_name: f.instructorName,
+      instructor_id: f.instructorId,
       description: f.description,
       duration_minutes: f.durationMinutes,
       mux_playback_id: f.muxPlaybackId,
@@ -99,7 +99,7 @@ export async function updateClass(
     .from("classes")
     .update({
       title: f.title,
-      instructor_name: f.instructorName,
+      instructor_id: f.instructorId,
       description: f.description,
       duration_minutes: f.durationMinutes,
       mux_playback_id: f.muxPlaybackId,

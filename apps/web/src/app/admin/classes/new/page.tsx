@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getTagPickerData } from "@/lib/admin/queries";
+import { getTagPickerData, getInstructorOptions } from "@/lib/admin/queries";
 import { ClassForm } from "@/components/admin/class-form";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,10 @@ export default async function NewClassPage({
   }>;
 }) {
   const sp = await searchParams;
-  const tagData = await getTagPickerData();
+  const [tagData, instructors] = await Promise.all([
+    getTagPickerData(),
+    getInstructorOptions(),
+  ]);
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
@@ -33,6 +36,7 @@ export default async function NewClassPage({
         <ClassForm
           mode="create"
           tagData={tagData}
+          instructors={instructors}
           initial={{
             muxAssetId: sp.assetId,
             muxPlaybackId: sp.playbackId,

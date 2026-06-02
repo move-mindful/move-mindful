@@ -93,6 +93,7 @@ export interface BrowseCard {
   id: string;
   title: string;
   instructorName: string;
+  instructorAvatarUrl: string | null;
   durationMinutes: number;
   muxPlaybackId: string | null;
   disciplineLabel: string | null;
@@ -127,21 +128,26 @@ export async function getBrowseRows(): Promise<BrowseRow[]> {
     { data: groups },
     { data: members },
     { data: ruleTags },
+    { data: instructors },
   ] = await Promise.all([
     supabase
       .from("classes")
-      .select("id,title,instructor_name,duration_minutes,mux_playback_id,published_at"),
+      .select(
+        "id,title,instructor_name,instructor_id,duration_minutes,mux_playback_id,published_at",
+      ),
     supabase.from("class_tags").select("class_id,tag_id"),
     supabase.from("tags").select("id,name,slug,group_id"),
     supabase.from("tag_groups").select("id,slug"),
     supabase.from("collection_classes").select("collection_id,class_id,position").order("position"),
     supabase.from("collection_rule_tags").select("collection_id,tag_id"),
+    supabase.from("instructors").select("id,name,avatar_url"),
   ]);
 
   const disciplineGroupId = (groups ?? []).find((g) => g.slug === "discipline")?.id ?? null;
   const intensityGroupId = (groups ?? []).find((g) => g.slug === "intensity")?.id ?? null;
   const tagById = new Map((tags ?? []).map((t) => [t.id, t]));
   const classById = new Map((classes ?? []).map((c) => [c.id, c]));
+  const instructorById = new Map((instructors ?? []).map((i) => [i.id, i]));
 
   const tagsByClass = new Map<string, string[]>();
   for (const ct of classTags ?? []) {
@@ -165,10 +171,12 @@ export async function getBrowseRows(): Promise<BrowseRow[]> {
         intensityLabel = t.name;
       }
     }
+    const inst = c.instructor_id ? instructorById.get(c.instructor_id) : null;
     return {
       id: c.id,
       title: c.title,
-      instructorName: c.instructor_name,
+      instructorName: inst?.name ?? c.instructor_name ?? "",
+      instructorAvatarUrl: inst?.avatar_url ?? null,
       durationMinutes: c.duration_minutes,
       muxPlaybackId: c.mux_playback_id,
       disciplineLabel,
