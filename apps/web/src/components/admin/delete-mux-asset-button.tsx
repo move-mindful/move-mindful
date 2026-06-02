@@ -1,29 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { deleteRawRecording } from "@/app/actions/classes";
+import { deleteMuxAsset } from "@/app/actions/classes";
 
-export function DeleteRawRecordingButton({
-  id,
-  ready,
-  label = "Delete raw recording",
+export function DeleteMuxAssetButton({
+  assetId,
+  title,
 }: {
-  id: string;
-  ready: boolean;
-  label?: string;
+  assetId: string;
+  title: string;
 }) {
   const [open, setOpen] = useState(false);
-
-  if (!ready) {
-    return (
-      <span
-        className="text-sm text-amber-600"
-        title="The trimmed clip is still encoding in Mux — reload in a moment to delete the original."
-      >
-        Clip processing…
-      </span>
-    );
-  }
 
   return (
     <>
@@ -32,20 +19,21 @@ export function DeleteRawRecordingButton({
         onClick={() => setOpen(true)}
         className="text-sm font-medium text-red-600 hover:underline"
       >
-        {label}
+        Delete
       </button>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold">Delete the original recording?</h3>
+            <h3 className="text-lg font-semibold">Delete this video from Mux?</h3>
             <p className="mt-2 text-sm text-zinc-500">
-              This permanently deletes the full, untrimmed recording from Mux. The
-              trimmed clip your members watch is a separate asset and is not
-              affected. This cannot be undone.
+              This permanently deletes{" "}
+              <span className="font-medium">{title || "this asset"}</span> from
+              Mux. It hasn&rsquo;t been imported as a class, so nothing in the
+              catalog is affected. This cannot be undone.
             </p>
-            <form action={deleteRawRecording} className="mt-4 space-y-4">
-              <input type="hidden" name="id" value={id} />
+            <form action={deleteMuxAsset} className="mt-4 space-y-4">
+              <input type="hidden" name="assetId" value={assetId} />
               <div className="flex justify-end gap-3">
                 <button
                   type="button"
@@ -58,7 +46,7 @@ export function DeleteRawRecordingButton({
                   type="submit"
                   className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
                 >
-                  Delete original
+                  Delete from Mux
                 </button>
               </div>
             </form>

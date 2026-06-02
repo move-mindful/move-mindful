@@ -26,14 +26,14 @@ export default async function TrimClassPage({
         href="/admin/classes/import"
         className="text-sm text-zinc-500 hover:text-zinc-800"
       >
-        &larr; Sync from Mux
+        &larr; Import
       </Link>
       <h1 className="mt-3 text-3xl font-bold tracking-tight">Trim &amp; import</h1>
 
       {!sp.assetId || !sp.playbackId ? (
         <p className="mt-6 text-zinc-500">
-          Open this from <span className="font-medium">Sync from Mux</span> by
-          choosing &ldquo;Trim &amp; import&rdquo; on a recording.
+          Open this from <span className="font-medium">Import</span> by choosing
+          &ldquo;Trim &amp; import&rdquo; on a recording.
         </p>
       ) : (
         <>

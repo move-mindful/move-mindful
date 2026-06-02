@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { listMuxAssets } from "@/lib/mux/client";
 import { getAdminClasses } from "@/lib/admin/queries";
+import { DeleteMuxAssetButton } from "@/components/admin/delete-mux-asset-button";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,7 @@ export default async function ImportFromMuxPage() {
       </Link>
       <div className="mt-3 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Sync from Mux</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Import</h1>
           <p className="mt-1 text-zinc-500">
             {newAssets.length} new video{newAssets.length !== 1 && "s"} found
           </p>
@@ -64,63 +65,64 @@ export default async function ImportFromMuxPage() {
         </p>
       )}
 
-      <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {newAssets.map((a) => {
-          const minutes = a.durationSeconds
-            ? Math.max(1, Math.round(a.durationSeconds / 60))
-            : "";
-          const params = new URLSearchParams({
-            assetId: a.assetId,
-            playbackId: a.playbackId ?? "",
-            duration: String(minutes),
-            title: a.title ?? "",
-          });
-          const trimParams = new URLSearchParams({
-            assetId: a.assetId,
-            playbackId: a.playbackId ?? "",
-            durationSeconds: String(a.durationSeconds ?? ""),
-            title: a.title ?? "",
-          });
-          return (
-            <div key={a.assetId} className="overflow-hidden rounded-xl border border-zinc-200">
-              <div className="relative aspect-video bg-zinc-100">
-                {a.playbackId && (
-                  <Image
-                    src={`https://image.mux.com/${a.playbackId}/thumbnail.webp?width=640&height=360&fit_mode=smartcrop`}
-                    alt=""
-                    fill
-                    unoptimized
-                    className="object-cover"
-                  />
-                )}
-              </div>
-              <div className="p-4">
-                <p className="truncate text-sm font-medium">
-                  {a.title ?? "Untitled asset"}
-                </p>
-                <p className="mt-1 text-xs text-zinc-500">
-                  {minutes ? `${minutes} min · ` : ""}
-                  {new Date(a.createdAtISO).toLocaleDateString()}
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
+      {newAssets.length > 0 && (
+        <div className="mt-8 divide-y divide-zinc-200 rounded-xl border border-zinc-200">
+          {newAssets.map((a) => {
+            const minutes = a.durationSeconds
+              ? Math.max(1, Math.round(a.durationSeconds / 60))
+              : "";
+            const params = new URLSearchParams({
+              assetId: a.assetId,
+              playbackId: a.playbackId ?? "",
+              duration: String(minutes),
+              title: a.title ?? "",
+            });
+            const trimParams = new URLSearchParams({
+              assetId: a.assetId,
+              playbackId: a.playbackId ?? "",
+              durationSeconds: String(a.durationSeconds ?? ""),
+              title: a.title ?? "",
+            });
+            return (
+              <div key={a.assetId} className="flex items-center gap-4 p-4">
+                <div className="relative h-14 w-24 shrink-0 overflow-hidden rounded bg-zinc-100">
+                  {a.playbackId && (
+                    <Image
+                      src={`https://image.mux.com/${a.playbackId}/thumbnail.webp?width=240&height=140&fit_mode=smartcrop`}
+                      alt=""
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{a.title ?? "Untitled asset"}</p>
+                  <p className="truncate text-sm text-zinc-500">
+                    {minutes ? `${minutes} min · ` : ""}
+                    {new Date(a.createdAtISO).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
                   <Link
                     href={`/admin/classes/new?${params.toString()}`}
-                    className="inline-block rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-zinc-700"
+                    className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-zinc-700"
                   >
                     Import
                   </Link>
                   <Link
                     href={`/admin/classes/trim?${trimParams.toString()}`}
-                    className="inline-block rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium transition hover:bg-zinc-50"
+                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium transition hover:bg-zinc-50"
                   >
                     Trim &amp; import
                   </Link>
+                  <DeleteMuxAssetButton assetId={a.assetId} title={a.title ?? ""} />
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -312,3 +312,20 @@ export async function deleteRawRecording(formData: FormData) {
   revalidatePath("/admin/classes");
   revalidatePath(`/admin/classes/${id}`);
 }
+
+// Delete a Mux asset straight from the Import list (e.g. a test upload you don't
+// want to keep), without a trip to the Mux dashboard. The Import list only shows
+// assets not yet tied to a class, so there's no catalog row to clean up.
+export async function deleteMuxAsset(formData: FormData) {
+  await requireAdmin();
+  const assetId = (formData.get("assetId") as string) || "";
+  if (!assetId) return;
+
+  try {
+    await mux.video.assets.delete(assetId);
+  } catch {
+    // Asset may already be gone in Mux; refreshing the list is what matters.
+  }
+
+  revalidatePath("/admin/classes/import");
+}

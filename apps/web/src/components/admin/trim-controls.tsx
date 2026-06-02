@@ -31,10 +31,19 @@ export function TrimControls({
   sourceAssetId: string;
   durationSeconds: number;
 }) {
-  const max = durationSeconds > 0 ? durationSeconds : undefined;
+  // Mark whole-second boundaries — precise enough for trimming dead air, and it
+  // keeps the values clean (no 20.925266 step-validation errors). Clamp the end
+  // to the recording length.
+  const endMax = durationSeconds > 0 ? Math.floor(durationSeconds) : undefined;
   const [currentTime, setCurrentTime] = useState(0);
   const [start, setStart] = useState(0);
-  const [end, setEnd] = useState(durationSeconds || 0);
+  const [end, setEnd] = useState(endMax ?? 0);
+
+  const setStartTo = (t: number) => setStart(Math.min(Math.round(t), end));
+  const setEndTo = (t: number) => {
+    const v = Math.max(Math.round(t), start);
+    setEnd(endMax !== undefined ? Math.min(v, endMax) : v);
+  };
 
   const length = Math.max(0, end - start);
   const valid = end > start && length >= 0.5;
@@ -64,7 +73,7 @@ export function TrimControls({
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
-          onClick={() => setStart(Math.min(currentTime, end))}
+          onClick={() => setStartTo(currentTime)}
           className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium transition hover:bg-zinc-50"
         >
           Set start to playhead
@@ -72,7 +81,7 @@ export function TrimControls({
         <span className="text-sm text-zinc-600">Start: {fmt(start)}</span>
         <button
           type="button"
-          onClick={() => setEnd(max ? Math.min(Math.max(currentTime, start), max) : Math.max(currentTime, start))}
+          onClick={() => setEndTo(currentTime)}
           className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium transition hover:bg-zinc-50"
         >
           Set end to playhead
@@ -86,10 +95,10 @@ export function TrimControls({
           <input
             type="number"
             min={0}
-            max={max}
-            step="0.1"
+            max={endMax}
+            step="any"
             value={start}
-            onChange={(e) => setStart(Math.max(0, Number(e.target.value)))}
+            onChange={(e) => setStartTo(Number(e.target.value))}
             className="mt-1 block w-28 rounded-lg border border-zinc-300 px-2 py-1 text-sm"
           />
         </label>
@@ -98,10 +107,10 @@ export function TrimControls({
           <input
             type="number"
             min={0}
-            max={max}
-            step="0.1"
+            max={endMax}
+            step="any"
             value={end}
-            onChange={(e) => setEnd(Math.max(0, Number(e.target.value)))}
+            onChange={(e) => setEndTo(Number(e.target.value))}
             className="mt-1 block w-28 rounded-lg border border-zinc-300 px-2 py-1 text-sm"
           />
         </label>

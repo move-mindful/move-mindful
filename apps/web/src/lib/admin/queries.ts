@@ -2,6 +2,7 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveSmartClassIds, getSurfacedClassIds } from "@/lib/collections";
+import { getAssetStatus } from "@/lib/mux/client";
 
 export interface AdminTag {
   id: string;
@@ -63,6 +64,8 @@ export interface AdminClassRow {
   muxPlaybackId: string | null;
   muxAssetId: string | null;
   sourceMuxAssetId: string | null;
+  /** True when this class is a trimmed clip whose Mux asset has finished encoding. */
+  clipReady: boolean;
   publishedAt: string | null;
   surfaced: boolean;
 }
@@ -81,7 +84,7 @@ export async function getAdminClasses(): Promise<AdminClassRow[]> {
 
   const instructorById = new Map((instructors ?? []).map((i) => [i.id, i]));
 
-  return (classes ?? []).map((c) => {
+  const rows: AdminClassRow[] = (classes ?? []).map((c) => {
     const inst = c.instructor_id ? instructorById.get(c.instructor_id) : null;
     return {
       id: c.id,
@@ -92,10 +95,24 @@ export async function getAdminClasses(): Promise<AdminClassRow[]> {
       muxPlaybackId: c.mux_playback_id,
       muxAssetId: c.mux_asset_id,
       sourceMuxAssetId: c.source_mux_asset_id ?? null,
+      clipReady: false,
       publishedAt: c.published_at,
       surfaced: surfaced.has(c.id),
     };
   });
+
+  // Only a trimmed clip still awaiting cleanup has a source recording. Resolve
+  // its encode status (in parallel, just for that small subset) so the overview
+  // can gate the "delete raw" action on the clip being ready.
+  await Promise.all(
+    rows.map(async (r) => {
+      if (r.sourceMuxAssetId && r.muxAssetId) {
+        r.clipReady = (await getAssetStatus(r.muxAssetId)) === "ready";
+      }
+    }),
+  );
+
+  return rows;
 }
 
 export interface AdminClassDetail {

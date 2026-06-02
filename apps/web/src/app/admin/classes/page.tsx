@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getAdminClasses } from "@/lib/admin/queries";
 import { setClassPublished } from "@/app/actions/classes";
+import { DeleteRawRecordingButton } from "@/components/admin/delete-raw-recording-button";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ export default async function AdminClassesPage() {
             href="/admin/classes/import"
             className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium transition hover:bg-zinc-50"
           >
-            Sync from Mux
+            Import
           </Link>
           <Link
             href="/admin/classes/new"
@@ -35,7 +36,7 @@ export default async function AdminClassesPage() {
 
       {classes.length === 0 ? (
         <p className="mt-10 text-zinc-500">
-          No classes yet — use Sync from Mux to import your videos.
+          No classes yet — use Import to add your videos.
         </p>
       ) : (
         <div className="mt-8 divide-y divide-zinc-200 rounded-xl border border-zinc-200">
@@ -96,6 +97,9 @@ export default async function AdminClassesPage() {
                   >
                     Edit
                   </Link>
+                  {c.sourceMuxAssetId && (
+                    <DeleteRawRecordingButton id={c.id} ready={c.clipReady} label="Delete raw" />
+                  )}
                 </div>
               </div>
             );
