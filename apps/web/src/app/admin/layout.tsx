@@ -4,7 +4,6 @@ import { requireAdmin } from "@/lib/auth/admin";
 import { UserMenu } from "@/components/user-menu";
 
 const navItems = [
-  { href: "/admin", label: "Dashboard" },
   { href: "/admin/classes", label: "Classes" },
   { href: "/admin/tags", label: "Tags" },
   { href: "/admin/collections", label: "Collections" },
@@ -24,7 +23,7 @@ export default async function AdminLayout({
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-6">
             <Link
-              href="/admin"
+              href="/admin/classes"
               className="flex items-center gap-2 text-lg font-bold tracking-tight"
             >
               <Image src="/logo.png" alt="MoveMindful" width={32} height={32} />
