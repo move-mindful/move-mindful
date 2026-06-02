@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { resolveSmartClassIds } from "@/lib/collections";
+import { resolveSmartClassIds, getSurfacedClassIds } from "@/lib/collections";
 
 export interface AdminTag {
   id: string;
@@ -62,18 +62,19 @@ export interface AdminClassRow {
   muxPlaybackId: string | null;
   muxAssetId: string | null;
   publishedAt: string | null;
-  inCollection: boolean;
+  surfaced: boolean;
 }
 
-/** All classes (drafts included) for the admin list, with a manual-collection flag. */
+/**
+ * All classes (drafts included) for the admin list. `surfaced` is true when a
+ * published collection (manual or smart) would show the class on the member side.
+ */
 export async function getAdminClasses(): Promise<AdminClassRow[]> {
   const supabase = createAdminClient();
-  const [{ data: classes }, { data: memberships }] = await Promise.all([
+  const [{ data: classes }, surfaced] = await Promise.all([
     supabase.from("classes").select("*").order("created_at", { ascending: false }),
-    supabase.from("collection_classes").select("class_id"),
+    getSurfacedClassIds(supabase),
   ]);
-
-  const inCollection = new Set((memberships ?? []).map((m) => m.class_id));
 
   return (classes ?? []).map((c) => ({
     id: c.id,
@@ -83,7 +84,7 @@ export async function getAdminClasses(): Promise<AdminClassRow[]> {
     muxPlaybackId: c.mux_playback_id,
     muxAssetId: c.mux_asset_id,
     publishedAt: c.published_at,
-    inCollection: inCollection.has(c.id),
+    surfaced: surfaced.has(c.id),
   }));
 }
 

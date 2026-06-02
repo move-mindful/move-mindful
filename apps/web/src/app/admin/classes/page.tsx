@@ -41,7 +41,7 @@ export default async function AdminClassesPage() {
         <div className="mt-8 divide-y divide-zinc-200 rounded-xl border border-zinc-200">
           {classes.map((c) => {
             const published = !!c.publishedAt;
-            const unlisted = published && !c.inCollection;
+            const unlisted = published && !c.surfaced;
             return (
               <div key={c.id} className="flex items-center gap-4 p-4">
                 <div className="relative h-14 w-24 shrink-0 overflow-hidden rounded bg-zinc-100">
