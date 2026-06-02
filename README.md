@@ -4,24 +4,27 @@ A video fitness platform with on-demand classes, livestreaming, push notificatio
 
 ## Current Status
 
-**Phase 3 complete — Mux video classes, RevenueCat payments, and entitlement gating all live.** (See the full build order with checkmarks in [plan.md](./plan.md).)
+**Phase 4 complete — admin CMS (Mux sync, tags, collections) and a curated, collection-based member browse, on top of Mux video, RevenueCat payments, and entitlement gating.** (See the full build order with checkmarks in [plan.md](./plan.md).)
 
 What's in place:
 
 - Turborepo monorepo with npm workspaces
-- `packages/core` — shared TypeScript types (`User`, `VideoClass`, `Challenge`, `UserAccess`, etc.) and access-control helpers (`hasAccess()`, `isChallengeExpiringSoon()`, `shouldShowUpsell()`). Consumed as source by web and mobile (no separate build step)
+- `packages/core` — shared TypeScript types (`User`, `VideoClass`, `Tag`, `TagGroup`, `Collection`, `Challenge`, `UserAccess`, etc.) and access-control helpers (`hasAccess()`, `isChallengeExpiringSoon()`, `shouldShowUpsell()`). Consumed as source by web and mobile (no separate build step)
 - `apps/web` — Next.js 16 app with Tailwind CSS v4
-  - **Clerk authentication** — sign-in/sign-up pages, `ClerkProvider`, and route protection via `proxy.ts` middleware. Public routes: `/`, `/pricing`, `/sign-in`, `/sign-up`. Protected routes (e.g. `/classes`, `/account`) redirect signed-out users to sign-in. Signed-in users on `/` redirect to `/classes`.
-  - **Mux video player** — class catalog with responsive grid, Mux-generated thumbnails, and individual class pages with `@mux/mux-player-react` for adaptive streaming and AirPlay.
-  - **RevenueCat + Stripe payments** — pricing page fetches real offerings from RevenueCat, purchase flow via Web Billing SDK (Stripe-powered). "Move Mindful Pro" entitlement gates access to all member routes.
-  - **Account Settings** (`/account`) — plan status with "Manage Plan" link (RevenueCat hosted management page for paying users) and profile section with "Edit Profile" link (opens Clerk modal for name/email/photo changes).
-  - **Custom user menu** — profile photo from Clerk, "Account Settings" link, sign out. Clerk user info (name, email) synced to RevenueCat.
-  - **Supabase database** — `user_profiles` and `classes` tables with RLS enabled.
+  - **Clerk authentication** — sign-in/sign-up, `ClerkProvider`, route protection via `proxy.ts`. Admin gating via `publicMetadata.role` (a session-token claim) checked optimistically in the proxy and authoritatively server-side with `requireAdmin()`.
+  - **Mux video** — class catalog and individual class pages with `@mux/mux-player-react` (adaptive streaming, AirPlay), thumbnails from Mux.
+  - **RevenueCat + Stripe payments** — pricing page, Web Billing purchase flow, "Move Mindful Pro" entitlement gating member routes.
+  - **Admin CMS** (`/admin`, admin-only) — **classes**: Sync from Mux (list assets → import), create/edit, publish/unpublish, delete (with optional Mux asset deletion); **tags**: tag groups + tags (create/rename/delete, cascade-safe); **collections**: manual (hand-picked + up/down order) and smart (tag-rule, auto-resolved), publish, row ordering. All writes go through server actions using the Supabase service-role key (`server-only`).
+  - **Member browse** (`/classes`) — curated **collection carousels** (manual + smart, ordered); class card/detail metadata derived from tags (Discipline label · Intensity badge · Focus/Vibe chips). Curation-only: a class appears only if it's in a published collection.
+  - **Account Settings** (`/account`) — plan status and profile.
+  - **Custom user menu** — Clerk user info synced to RevenueCat.
+  - **Supabase database** — `user_profiles`, `classes`, `tags`, `tag_groups`, `class_tags`, `collections`, `collection_classes`, `collection_rule_tags`, all with RLS (read-only for members; admin writes via service-role).
   - **Deployed to Vercel** — live at `www.movemindful.com`. Auto-deploys on push to `main`.
 - `apps/mobile` — Expo 56 / React Native app (starter screen, no integrations yet)
 - Shared `tsconfig.base.json` for consistent TypeScript settings across packages
 
 What's not yet built:
+- In-browser Mux direct upload (admins upload in the Mux dashboard, then Sync) and Mux livestream recording import (deferred to Phase 7)
 - 30-day challenge expiry tracking and upsell flow
 - iOS app (Expo + React Native)
 - Push notifications
@@ -47,24 +50,28 @@ What's not yet built:
 move-mindful/
 ├── apps/
 │   ├── web/               # Next.js 16 + Tailwind CSS v4
-│   │   ├── src/proxy.ts   # Clerk middleware (route protection)
-│   │   ├── src/lib/       # Supabase + RevenueCat client helpers
-│   │   ├── src/components/# Mux player, user menu, entitlement gate, etc.
+│   │   ├── src/proxy.ts   # Clerk middleware (route + optimistic admin gating)
+│   │   ├── src/lib/       # supabase (anon + service-role), mux, auth, admin queries, collections
+│   │   ├── src/components/# Mux player, user menu, entitlement gate, carousel, admin/*
 │   │   └── src/app/       # App Router
 │   │       ├── page.tsx        # Public landing (redirects signed-in → /classes)
 │   │       ├── pricing/        # Pricing page (RevenueCat offerings + purchase)
 │   │       ├── sign-in/        # Clerk <SignIn />
 │   │       ├── sign-up/        # Clerk <SignUp />
-│   │       └── (member)/       # Protected: classes, classes/[id], account
+│   │       ├── actions/        # Server actions (classes, tags, collections)
+│   │       ├── admin/          # Admin CMS: classes, tags, collections (admin-only)
+│   │       └── (member)/       # Protected: classes (carousels), classes/[id], account
 │   └── mobile/            # Expo 56 / React Native
 │       └── App.tsx        # Entry point
 ├── packages/
 │   └── core/              # Shared TypeScript
 │       └── src/
-│           ├── types.ts   # User, VideoClass, Challenge, UserAccess, etc.
+│           ├── types.ts   # User, VideoClass, Tag, TagGroup, Collection, Challenge, …
 │           ├── access.ts  # hasAccess, isChallengeExpiringSoon, shouldShowUpsell
 │           └── index.ts   # Re-exports
+├── supabase/migrations/   # SQL migrations (001 schema, 002 media org, 003 cleanup)
 ├── plan.md                # Full architecture, build order, security guidelines
+├── phase-4-plan.md        # Phase 4 implementation plan (schema, routes, decisions)
 ├── turbo.json             # Turborepo task config
 ├── tsconfig.base.json     # Shared TypeScript compiler options
 └── package.json           # Root workspace config

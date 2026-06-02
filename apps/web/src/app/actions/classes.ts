@@ -39,23 +39,6 @@ async function syncClassTags(supabase: AdminClient, classId: string, tagIds: str
   }
 }
 
-// Resolve the chosen Discipline/Intensity tag slugs for the legacy mirror columns.
-async function mirrorSlugs(
-  supabase: AdminClient,
-  disciplineTagId: string,
-  intensityTagId: string,
-): Promise<{ category: string | null; difficulty: string | null }> {
-  const ids = [disciplineTagId, intensityTagId].filter(Boolean);
-  if (ids.length === 0) return { category: null, difficulty: null };
-  const { data } = await supabase.from("tags").select("id,slug").in("id", ids);
-  const slugFor = (id: string) =>
-    (data ?? []).find((t) => t.id === id)?.slug ?? null;
-  return {
-    category: disciplineTagId ? slugFor(disciplineTagId) : null,
-    difficulty: intensityTagId ? slugFor(intensityTagId) : null,
-  };
-}
-
 function validate(f: ReturnType<typeof parseFields>): string | null {
   if (!f.title) return "Title is required.";
   if (!f.durationMinutes || f.durationMinutes <= 0)
@@ -74,8 +57,7 @@ export async function createClass(
   const invalid = validate(f);
   if (invalid) return { error: invalid };
 
-  const { disciplineTagId, intensityTagId, tagIds } = parseTagSelections(formData);
-  const mirror = await mirrorSlugs(supabase, disciplineTagId, intensityTagId);
+  const { tagIds } = parseTagSelections(formData);
 
   const { data: created, error } = await supabase
     .from("classes")
@@ -86,8 +68,6 @@ export async function createClass(
       duration_minutes: f.durationMinutes,
       mux_playback_id: f.muxPlaybackId,
       mux_asset_id: f.muxAssetId,
-      category: mirror.category,
-      difficulty: mirror.difficulty,
       // published_at left null → draft
     })
     .select("id")
@@ -113,8 +93,7 @@ export async function updateClass(
   const invalid = validate(f);
   if (invalid) return { error: invalid };
 
-  const { disciplineTagId, intensityTagId, tagIds } = parseTagSelections(formData);
-  const mirror = await mirrorSlugs(supabase, disciplineTagId, intensityTagId);
+  const { tagIds } = parseTagSelections(formData);
 
   const { error } = await supabase
     .from("classes")
@@ -125,8 +104,6 @@ export async function updateClass(
       duration_minutes: f.durationMinutes,
       mux_playback_id: f.muxPlaybackId,
       mux_asset_id: f.muxAssetId,
-      category: mirror.category,
-      difficulty: mirror.difficulty,
     })
     .eq("id", id);
 

@@ -146,14 +146,17 @@ const hasAccess = customerInfo.entitlements.active['premium'] !== undefined
 - [ ] Upsell flow from challenge (day 25+ prompts, day 30 lock — future)
 
 ### Phase 4 — Admin dashboard & content management
-- [ ] Admin role/access control (Clerk-based admin check)
-- [ ] Class management (create, edit, publish/unpublish, delete)
-- [ ] Categories & tags (e.g., "Yoga", "HIIT", "Meditation", "Beginner")
-- [ ] Collections/playlists (curated groups like "Beginner Series", "30-Day Challenge")
-- [ ] Manual ordering within collections (drag-to-reorder)
-- [ ] Auto-populate collections based on tags
-- [ ] Member-facing browse UI (category filters, carousels/playlists)
-- [ ] Mux livestream recording import (trim start/end via Mux clipping API, publish to library)
+- [x] Admin role/access control (Clerk `publicMetadata.role` + server-side `requireAdmin()`)
+- [x] Class management (Sync from Mux import, create, edit, publish/unpublish, delete + optional Mux asset deletion)
+- [x] Tags & tag groups (unified taxonomy — "category" folded into tags; create/edit/delete)
+- [x] Collections/playlists (manual hand-picked + smart tag-rule)
+- [x] Manual ordering within collections (up/down) + collection row ordering
+- [x] Auto-populate collections based on tags (smart collections)
+- [x] Member-facing browse UI (curated collection carousels; curation-only by design)
+- [ ] Mux livestream recording import (deferred to Phase 7)
+- [ ] In-browser Mux direct upload (deferred; admins upload in the Mux dashboard, then Sync)
+
+See [phase-4-plan.md](./phase-4-plan.md) for the full implementation plan, schema, and decisions.
 
 ### Phase 5 — iOS app
 - [ ] Expo + React Native app
