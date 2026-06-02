@@ -226,7 +226,9 @@ export async function getBrowseRows(): Promise<BrowseRow[]> {
       classIds = manualByCol.get(col.id) ?? [];
     }
     const cards = classIds.map(toCard).filter((c): c is BrowseCard => !!c);
-    if (cards.length > 0) rows.push({ id: col.id, title: col.title, classes: cards });
+    const limit = (col.display_limit as number | null) ?? null;
+    const limited = limit && limit > 0 ? cards.slice(0, limit) : cards;
+    if (limited.length > 0) rows.push({ id: col.id, title: col.title, classes: limited });
   }
   return rows;
 }

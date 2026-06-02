@@ -64,10 +64,26 @@ export async function updateCollection(formData: FormData) {
   const title = ((formData.get("title") as string) ?? "").trim();
   const description = ((formData.get("description") as string) ?? "").trim();
   const matchMode = (formData.get("matchMode") as string) === "all" ? "all" : "any";
+  const autoAddNew = formData.get("autoAddNew") === "on";
   if (!id || !title) return;
+
+  // Blank or non-positive → no limit (null).
+  const limitRaw = ((formData.get("displayLimit") as string) ?? "").trim();
+  const limitNum = Number(limitRaw);
+  const displayLimit =
+    limitRaw === "" || !Number.isFinite(limitNum) || limitNum <= 0
+      ? null
+      : Math.floor(limitNum);
+
   await supabase
     .from("collections")
-    .update({ title, description, match_mode: matchMode })
+    .update({
+      title,
+      description,
+      match_mode: matchMode,
+      auto_add_new: autoAddNew,
+      display_limit: displayLimit,
+    })
     .eq("id", id);
   revalidateCollections(id);
 }

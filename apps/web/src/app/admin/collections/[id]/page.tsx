@@ -253,6 +253,35 @@ export default async function EditCollectionPage({
         ) : (
           <input type="hidden" name="matchMode" value={collection.matchMode} />
         )}
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-zinc-700">
+            Max classes shown
+          </span>
+          <input
+            name="displayLimit"
+            type="number"
+            min={1}
+            placeholder="No limit"
+            defaultValue={collection.displayLimit ?? ""}
+            className={inputCls}
+          />
+          <span className="mt-1 block text-xs text-zinc-400">
+            Caps how many classes appear in this row on the browse page. Leave blank for no limit.
+          </span>
+        </label>
+        {collection.kind === "manual" && (
+          <label className="flex items-start gap-2">
+            <input
+              type="checkbox"
+              name="autoAddNew"
+              defaultChecked={collection.autoAddNew}
+              className="mt-0.5"
+            />
+            <span className="text-sm text-zinc-700">
+              Automatically add new classes to the top of this collection
+            </span>
+          </label>
+        )}
         <button className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700">
           Save details
         </button>

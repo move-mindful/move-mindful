@@ -284,6 +284,8 @@ export interface AdminCollectionDetail {
   matchMode: "any" | "all";
   position: number;
   publishedAt: string | null;
+  autoAddNew: boolean;
+  displayLimit: number | null;
   memberClassIds: string[];
   ruleTagIds: string[];
 }
@@ -311,6 +313,8 @@ export async function getAdminCollection(id: string): Promise<AdminCollectionDet
     matchMode: c.match_mode,
     position: c.position,
     publishedAt: c.published_at,
+    autoAddNew: !!c.auto_add_new,
+    displayLimit: c.display_limit ?? null,
     memberClassIds: (members ?? []).map((m) => m.class_id),
     ruleTagIds: (rules ?? []).map((r) => r.tag_id),
   };

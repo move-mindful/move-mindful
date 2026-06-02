@@ -39,6 +39,29 @@ async function syncClassTags(supabase: AdminClient, classId: string, tagIds: str
   }
 }
 
+// Insert a newly created class at the top of every manual collection flagged
+// `auto_add_new` (smallest position sorts first → newest leads).
+async function addToAutoCollections(supabase: AdminClient, classId: string) {
+  const { data: cols } = await supabase
+    .from("collections")
+    .select("id")
+    .eq("auto_add_new", true)
+    .eq("kind", "manual");
+
+  for (const col of cols ?? []) {
+    const { data: minRow } = await supabase
+      .from("collection_classes")
+      .select("position")
+      .eq("collection_id", col.id)
+      .order("position", { ascending: true })
+      .limit(1);
+    const position = ((minRow?.[0]?.position ?? 0) as number) - 1;
+    await supabase
+      .from("collection_classes")
+      .insert({ collection_id: col.id, class_id: classId, position });
+  }
+}
+
 function validate(f: ReturnType<typeof parseFields>): string | null {
   if (!f.title) return "Title is required.";
   if (!f.durationMinutes || f.durationMinutes <= 0)
@@ -75,8 +98,10 @@ export async function createClass(
 
   if (error || !created) return { error: error?.message ?? "Failed to create class." };
   await syncClassTags(supabase, created.id, tagIds);
+  await addToAutoCollections(supabase, created.id);
 
   revalidatePath("/admin/classes");
+  revalidatePath("/classes");
   redirect("/admin/classes");
 }
 
