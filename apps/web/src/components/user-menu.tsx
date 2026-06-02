@@ -4,9 +4,9 @@ import { useUser, useClerk } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
-import { Menu, Settings, HelpCircle, LogOut } from "lucide-react";
+import { Menu, Shield, Settings, HelpCircle, LogOut } from "lucide-react";
 
-export function UserMenu() {
+export function UserMenu({ isAdmin = false }: { isAdmin?: boolean }) {
   const { user } = useUser();
   const { signOut } = useClerk();
   const [open, setOpen] = useState(false);
@@ -57,6 +57,19 @@ export function UserMenu() {
             </div>
           </div>
 
+          {isAdmin && (
+            <div className="border-b border-zinc-100 py-1">
+              <Link
+                href="/admin"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 px-4 py-2 text-sm text-zinc-600 transition hover:bg-zinc-50"
+              >
+                <Shield className="h-4 w-4 text-zinc-400" />
+                Admin
+              </Link>
+            </div>
+          )}
+
           <div className="py-1">
             <Link
               href="/account"
@@ -90,4 +103,3 @@ export function UserMenu() {
     </div>
   );
 }
-
