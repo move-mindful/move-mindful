@@ -31,6 +31,22 @@ What's not yet built:
 - Push notifications
 - Group chat and livestreaming (deferred to later phases per plan)
 
+## Known tech debt / dormant code
+
+Tracked here so it doesn't get lost. None of these affect current functionality — they're cleanup waiting on confidence or a future migration.
+
+**Dormant / transitional database columns** (on `public.classes`):
+
+| Column | Status | Notes |
+|---|---|---|
+| `instructor_name` | Transitional | Superseded by `instructor_id` + the `instructors` join (migration `004`). Still read as a fallback (`inst?.name ?? instructor_name`) but **no longer written**. Drop in a future migration once confident nothing depends on it. |
+| `category`, `difficulty` | Deprecated | Replaced by the unified tags model in Phase 4. **No code references remain.** `supabase/migrations/003_drop_legacy_class_columns.sql` drops them — apply it in Supabase if it hasn't been run yet. |
+| `thumbnail_url` | Dormant | Never read. Thumbnails are generated from the Mux playback ID (`image.mux.com/<id>/thumbnail.webp`). The `VideoClass.thumbnailUrl` field in `packages/core` is likewise unused by the web app. |
+
+**Dormant code:**
+
+- **Admin dashboard** — `/admin` redirects to `/admin/classes`; the original dashboard UI is parked (unrendered) in `apps/web/src/components/admin/admin-dashboard.tsx`, kept in case the `/admin` slot is repurposed. Re-route it from `apps/web/src/app/admin/page.tsx` to bring it back.
+
 ## Tech Stack
 
 | Layer | Tool |
