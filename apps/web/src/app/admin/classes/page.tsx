@@ -3,6 +3,7 @@ import Image from "next/image";
 import { getAdminClasses } from "@/lib/admin/queries";
 import { setClassPublished } from "@/app/actions/classes";
 import { DeleteRawRecordingButton } from "@/components/admin/delete-raw-recording-button";
+import { DeleteClassButton } from "@/components/admin/delete-class-button";
 
 export const dynamic = "force-dynamic";
 
@@ -100,6 +101,7 @@ export default async function AdminClassesPage() {
                   {c.sourceMuxAssetId && (
                     <DeleteRawRecordingButton id={c.id} ready={c.clipReady} label="Delete raw" />
                   )}
+                  <DeleteClassButton id={c.id} hasMuxAsset={!!c.muxAssetId} />
                 </div>
               </div>
             );

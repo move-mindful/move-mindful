@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { createClass, updateClass, createTrimmedClass } from "@/app/actions/classes";
 import { TrimControls } from "@/components/admin/trim-controls";
+import { MuxPlayer } from "@/components/mux-player";
 import type { ClassFormState } from "@/lib/admin/types";
 import type { TagPickerData, InstructorOption } from "@/lib/admin/queries";
 
@@ -81,6 +82,9 @@ export function ClassForm({
           sourceAssetId={trim.sourceAssetId}
           durationSeconds={trim.rawDurationSeconds}
         />
+      ) : mode === "edit" && playbackId ? (
+        // Full player on the edit page so the video can be reviewed in place.
+        <MuxPlayer playbackId={playbackId} title={initial.title ?? ""} />
       ) : (
         playbackId && (
           <Image
