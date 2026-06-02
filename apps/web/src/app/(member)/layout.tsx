@@ -23,7 +23,21 @@ export default async function MemberLayout({
               <Image src="/logo.png" alt="MoveMindful" width={32} height={32} />
               MoveMindful
             </Link>
-            <UserMenu isAdmin={admin} />
+            <div className="flex items-center gap-6">
+              <Link
+                href="/classes"
+                className="text-sm font-medium text-zinc-600 transition hover:text-zinc-900"
+              >
+                Classes
+              </Link>
+              <Link
+                href="/live"
+                className="text-sm font-medium text-zinc-600 transition hover:text-zinc-900"
+              >
+                Live
+              </Link>
+              <UserMenu isAdmin={admin} />
+            </div>
           </nav>
         </header>
         <main className="flex-1">{children}</main>
