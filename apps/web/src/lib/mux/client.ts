@@ -36,3 +36,19 @@ export async function listMuxAssets(): Promise<MuxAssetSummary[]> {
   }
   return out;
 }
+
+/**
+ * Current processing status of a single Mux asset, or null if it can't be
+ * fetched. Used to gate the "delete raw recording" action on a trimmed clip
+ * having finished encoding.
+ */
+export async function getAssetStatus(
+  assetId: string,
+): Promise<"preparing" | "ready" | "errored" | null> {
+  try {
+    const asset = await mux.video.assets.retrieve(assetId);
+    return asset.status;
+  } catch {
+    return null;
+  }
+}

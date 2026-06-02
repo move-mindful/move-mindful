@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAdminClass, getTagPickerData, getInstructorOptions } from "@/lib/admin/queries";
+import { getAssetStatus } from "@/lib/mux/client";
 import { ClassForm } from "@/components/admin/class-form";
 import { DeleteClassButton } from "@/components/admin/delete-class-button";
+import { DeleteRawRecordingButton } from "@/components/admin/delete-raw-recording-button";
 import { setClassPublished } from "@/app/actions/classes";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +23,12 @@ export default async function EditClassPage({
   if (!cls) notFound();
 
   const published = !!cls.publishedAt;
+  // Only a trimmed clip still awaiting cleanup has a source recording. Fetch its
+  // status so the delete button is gated on the clip having finished encoding.
+  const clipReady =
+    cls.sourceMuxAssetId && cls.muxAssetId
+      ? (await getAssetStatus(cls.muxAssetId)) === "ready"
+      : false;
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
@@ -61,6 +69,21 @@ export default async function EditClassPage({
           }}
         />
       </div>
+
+      {cls.sourceMuxAssetId && (
+        <div className="mt-8 max-w-2xl rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+          <p className="text-sm font-medium text-zinc-700">Original recording</p>
+          <p className="mt-1 text-xs text-zinc-500">
+            This class is a trimmed clip. The full, untrimmed recording is still in
+            Mux. Once the clip has finished processing you can delete the original
+            to keep your Mux library tidy — the clip is independent and won&rsquo;t
+            be affected.
+          </p>
+          <div className="mt-3">
+            <DeleteRawRecordingButton id={cls.id} ready={clipReady} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

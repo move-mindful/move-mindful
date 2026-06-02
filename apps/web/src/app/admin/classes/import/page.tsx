@@ -17,6 +17,9 @@ export default async function ImportFromMuxPage() {
   const classes = await getAdminClasses();
   const usedAssetIds = new Set(classes.map((c) => c.muxAssetId).filter(Boolean));
   const usedPlaybackIds = new Set(classes.map((c) => c.muxPlaybackId).filter(Boolean));
+  // Raw recordings that have already been trimmed into a clip — don't re-offer
+  // them for import (the published class points at the clip, not the raw asset).
+  const sourceAssetIds = new Set(classes.map((c) => c.sourceMuxAssetId).filter(Boolean));
 
   // A class predating sync has a playback id but no asset id — match on both so it
   // is not re-surfaced as new.
@@ -25,6 +28,7 @@ export default async function ImportFromMuxPage() {
       a.status === "ready" &&
       a.playbackId &&
       !usedAssetIds.has(a.assetId) &&
+      !sourceAssetIds.has(a.assetId) &&
       !usedPlaybackIds.has(a.playbackId),
   );
 
@@ -71,6 +75,12 @@ export default async function ImportFromMuxPage() {
             duration: String(minutes),
             title: a.title ?? "",
           });
+          const trimParams = new URLSearchParams({
+            assetId: a.assetId,
+            playbackId: a.playbackId ?? "",
+            durationSeconds: String(a.durationSeconds ?? ""),
+            title: a.title ?? "",
+          });
           return (
             <div key={a.assetId} className="overflow-hidden rounded-xl border border-zinc-200">
               <div className="relative aspect-video bg-zinc-100">
@@ -92,12 +102,20 @@ export default async function ImportFromMuxPage() {
                   {minutes ? `${minutes} min · ` : ""}
                   {new Date(a.createdAtISO).toLocaleDateString()}
                 </p>
-                <Link
-                  href={`/admin/classes/new?${params.toString()}`}
-                  className="mt-3 inline-block rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-zinc-700"
-                >
-                  Import
-                </Link>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link
+                    href={`/admin/classes/new?${params.toString()}`}
+                    className="inline-block rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-zinc-700"
+                  >
+                    Import
+                  </Link>
+                  <Link
+                    href={`/admin/classes/trim?${trimParams.toString()}`}
+                    className="inline-block rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium transition hover:bg-zinc-50"
+                  >
+                    Trim &amp; import
+                  </Link>
+                </div>
               </div>
             </div>
           );

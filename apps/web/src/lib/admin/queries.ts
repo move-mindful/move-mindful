@@ -62,6 +62,7 @@ export interface AdminClassRow {
   durationMinutes: number;
   muxPlaybackId: string | null;
   muxAssetId: string | null;
+  sourceMuxAssetId: string | null;
   publishedAt: string | null;
   surfaced: boolean;
 }
@@ -90,6 +91,7 @@ export async function getAdminClasses(): Promise<AdminClassRow[]> {
       durationMinutes: c.duration_minutes,
       muxPlaybackId: c.mux_playback_id,
       muxAssetId: c.mux_asset_id,
+      sourceMuxAssetId: c.source_mux_asset_id ?? null,
       publishedAt: c.published_at,
       surfaced: surfaced.has(c.id),
     };
@@ -104,6 +106,7 @@ export interface AdminClassDetail {
   durationMinutes: number;
   muxPlaybackId: string | null;
   muxAssetId: string | null;
+  sourceMuxAssetId: string | null;
   publishedAt: string | null;
   tagIds: string[];
 }
@@ -127,6 +130,7 @@ export async function getAdminClass(id: string): Promise<AdminClassDetail | null
     durationMinutes: c.duration_minutes,
     muxPlaybackId: c.mux_playback_id,
     muxAssetId: c.mux_asset_id,
+    sourceMuxAssetId: c.source_mux_asset_id ?? null,
     publishedAt: c.published_at,
     tagIds: (ct ?? []).map((r) => r.tag_id),
   };
