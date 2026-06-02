@@ -17,14 +17,26 @@ export function MuxPlayer({
   streamType?: "on-demand" | "live";
 }) {
   return (
-    <MuxPlayerComponent
-      playbackId={playbackId}
-      streamType={streamType}
-      accentColor="#18181b"
-      metadata={{ video_title: title }}
-      style={{ display: "block", aspectRatio: "16/9", width: "100%", maxWidth: "100%" }}
-      playsInline
-      defaultHiddenCaptions
-    />
+    <div
+      className="relative aspect-video w-full overflow-hidden"
+      style={{ backgroundColor: streamType === "live" ? "#000" : "#fff" }}
+    >
+      <MuxPlayerComponent
+        playbackId={playbackId}
+        streamType={streamType}
+        accentColor="#18181b"
+        metadata={{ video_title: title }}
+        style={{
+          position: "absolute",
+          inset: "-1px",
+          display: "block",
+          width: "calc(100% + 2px)",
+          height: "calc(100% + 2px)",
+          maxWidth: "none",
+        }}
+        playsInline
+        defaultHiddenCaptions
+      />
+    </div>
   );
 }
