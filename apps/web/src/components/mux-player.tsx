@@ -20,7 +20,7 @@ export function MuxPlayer({
 
   return (
     <div
-      className="flex aspect-video w-full overflow-hidden"
+      className="flex aspect-video w-full overflow-hidden rounded-lg"
       style={{ backgroundColor }}
     >
       <MuxPlayerComponent
