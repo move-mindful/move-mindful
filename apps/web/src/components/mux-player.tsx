@@ -22,7 +22,7 @@ export function MuxPlayer({
       streamType={streamType}
       accentColor="#18181b"
       metadata={{ video_title: title }}
-      style={{ aspectRatio: "16/9", width: "100%", maxWidth: "100%" }}
+      style={{ display: "block", aspectRatio: "16/9", width: "100%", maxWidth: "100%" }}
       playsInline
       defaultHiddenCaptions
     />
