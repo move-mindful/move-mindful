@@ -19,6 +19,7 @@ export default function LivePage() {
           playbackId={LIVE_PLAYBACK_ID}
           title="Move Mindful Live"
           streamType="live"
+          liveOfflineOverlay
         />
       </VideoTheaterStage>
 
