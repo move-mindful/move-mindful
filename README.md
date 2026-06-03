@@ -12,12 +12,13 @@ What's in place:
 - `packages/core` — shared TypeScript types (`User`, `VideoClass`, `Tag`, `TagGroup`, `Collection`, `Challenge`, `UserAccess`, etc.) and access-control helpers (`hasAccess()`, `isChallengeExpiringSoon()`, `shouldShowUpsell()`). Consumed as source by web and mobile (no separate build step)
 - `apps/web` — Next.js 16 app with Tailwind CSS v4
   - **Clerk authentication** — sign-in/sign-up, `ClerkProvider`, route protection via `proxy.ts`. Admin gating via `publicMetadata.role` (a session-token claim) checked optimistically in the proxy and authoritatively server-side with `requireAdmin()`.
-  - **Mux video** — class catalog and individual class pages with `@mux/mux-player-react` (adaptive streaming, AirPlay), thumbnails from Mux.
+  - **Mux video** — class catalog and individual class pages with `@mux/mux-player-react` (adaptive streaming, AirPlay), thumbnails from Mux. Full-width video theater stage on the class detail page (viewport-height-capped, black background).
   - **RevenueCat + Stripe payments** — pricing page, Web Billing purchase flow, "Move Mindful Pro" entitlement gating member routes.
-  - **Admin CMS** (`/admin`, admin-only) — **classes**: Sync from Mux (list assets → import), **Trim & import** (clip a recording's dead air into a new Mux asset and publish only the trimmed clip, with a one-click "delete raw recording" once the clip is ready), create/edit, request a temporary Mux master MP4 download for offline editing, publish/unpublish, delete (with optional Mux asset deletion), assign an instructor; class title edits sync back to the Mux asset's `meta.title` so videos are searchable in the Mux dashboard; **instructors**: teachers with an uploaded profile photo (client-side square-cropped, stored in Supabase Storage), one assigned per class; **tags**: tag groups + tags (create/rename/delete, cascade-safe); **collections**: manual (hand-picked + up/down order) and smart (tag-rule, auto-resolved), publish, row ordering, a per-collection display limit, and an "auto-add new classes to the top" toggle (manual) that pushes every newly created class onto the collection. All writes go through server actions using the Supabase service-role key (`server-only`).
+  - **Admin CMS** (`/admin`, admin-only) — **classes**: Import page (list Mux assets → import or **Trim & import** to clip dead air into a new Mux asset, or delete unwanted assets straight from the list), create/edit (full video player on the edit page for review), request a temporary Mux master MP4 download for offline editing, publish/unpublish, delete from overview rows or the edit page (with optional Mux asset deletion), one-click "delete raw recording" on trimmed clips once the clip is ready, assign an instructor; class title edits sync back to the Mux asset's `meta.title` so videos are searchable in the Mux dashboard; **instructors**: teachers with an uploaded profile photo (client-side square-cropped, stored in Supabase Storage), one assigned per class; **tags**: tag groups + tags (create/rename/delete, cascade-safe); **collections**: manual (hand-picked + up/down order) and smart (tag-rule, auto-resolved), publish, row ordering, a per-collection display limit, and an "auto-add new classes to the top" toggle (manual) that pushes every newly created class onto the collection. All writes go through server actions using the Supabase service-role key (`server-only`).
   - **Member browse** (`/classes`) — curated **collection carousels** (manual + smart, ordered, each capped at its display limit); class card/detail metadata derived from tags (Discipline label · Intensity badge · Focus/Vibe chips), with the instructor's avatar + name (single-initial fallback) on cards and the class page. Curation-only: a class appears only if it's in a published collection.
   - **Live** (`/live`) — a persistent full-width Mux live stream (`streamType="live"`, playback ID via `NEXT_PUBLIC_MUX_LIVESTREAM_PLAYBACK_ID`), a viewer-local "next class" countdown banner (Luxon), and a hardcoded recurring weekly schedule rendered as a month calendar (class times defined in Arizona time, converted to the viewer's local timezone, prev/next month nav).
   - **Account Settings** (`/account`) — plan status and profile.
+  - **Help** (`/help`) — contact page (email link).
   - **Custom user menu** — Clerk user info synced to RevenueCat.
   - **Supabase database** — `user_profiles`, `classes`, `instructors`, `tags`, `tag_groups`, `class_tags`, `collections`, `collection_classes`, `collection_rule_tags`, all with RLS (read-only for members; admin writes via service-role). Instructor avatars live in a public `instructor-avatars` Storage bucket.
   - **Deployed to Vercel** — live at `www.movemindful.com`. Auto-deploys on push to `main`.
@@ -25,7 +26,7 @@ What's in place:
 - Shared `tsconfig.base.json` for consistent TypeScript settings across packages
 
 What's not yet built:
-- In-browser Mux direct upload (admins upload in the Mux dashboard, then Sync) and Mux livestream recording import (deferred to Phase 7)
+- In-browser Mux direct upload (admins upload in the Mux dashboard, then Import)
 - 30-day challenge expiry tracking and upsell flow
 - iOS app (Expo + React Native)
 - Push notifications
@@ -80,8 +81,8 @@ move-mindful/
 │   │       ├── sign-in/        # Clerk <SignIn />
 │   │       ├── sign-up/        # Clerk <SignUp />
 │   │       ├── actions/        # Server actions (classes, tags, collections)
-│   │       ├── admin/          # Admin CMS: classes, tags, collections (admin-only)
-│   │       └── (member)/       # Protected: classes (carousels), classes/[id], account
+│   │       ├── admin/          # Admin CMS: classes (import, trim, edit), tags, collections
+│   │       └── (member)/       # Protected: classes (carousels), classes/[id], live, account, help
 │   └── mobile/            # Expo 56 / React Native
 │       └── App.tsx        # Entry point
 ├── packages/
