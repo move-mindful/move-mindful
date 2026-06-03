@@ -70,11 +70,12 @@ export function NextClassBanner() {
 
       const dayOfWeek = nextLocal.toFormat("cccc");
       const timeLocal = nextLocal.toFormat("h:mm a");
+      const zoneAbbr = nextLocal.toFormat("ZZZZ");
 
       setContent(
         <>
           Next class: <strong>{next.title}</strong> on{" "}
-          <strong>{dayOfWeek}</strong> at <strong>{timeLocal}</strong> your time
+          <strong>{dayOfWeek}</strong> at <strong>{timeLocal}</strong> {zoneAbbr}
           <span className="mt-1.5 block text-base font-normal text-zinc-500">
             Starts in {Math.max(0, Math.floor(diff.days ?? 0))}d{" "}
             {Math.max(0, Math.floor(diff.hours ?? 0))}h{" "}

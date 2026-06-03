@@ -30,6 +30,10 @@ See [README.md](./README.md) for project overview, current status, setup instruc
 /apps/mobile         ← React Native / Expo (iOS app)
 ```
 
+## Local Development
+
+- **Claude Preview (`preview_*` tools) does not work reliably in this environment — don't use it to verify changes.** Navigation/snapshots tend to hang or fail. Verify another way (read the code, run the relevant build/typecheck/tests, or ask the user to check in their own browser).
+
 ## Key Principles
 
 - All purchases happen on the web (no in-app purchases at launch)
