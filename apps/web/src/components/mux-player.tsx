@@ -12,11 +12,13 @@ export function MuxPlayer({
   playbackId,
   title,
   streamType = "on-demand",
+  fillVideo = false,
   liveOfflineOverlay = false,
 }: {
   playbackId: string;
   title: string;
   streamType?: "on-demand" | "live";
+  fillVideo?: boolean;
   liveOfflineOverlay?: boolean;
 }) {
   const showLiveOverlay = liveOfflineOverlay && streamType === "live";
@@ -44,6 +46,7 @@ export function MuxPlayer({
           aspectRatio: "16/9",
           width: "100%",
           maxWidth: "100%",
+          "--media-object-fit": fillVideo ? "cover" : undefined,
         }}
         playsInline
         defaultHiddenCaptions

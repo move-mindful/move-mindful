@@ -81,6 +81,7 @@ export default async function ClassDetailPage({
           <MuxPlayer
             playbackId={videoClass.mux_playback_id}
             title={videoClass.title}
+            fillVideo
           />
         ) : (
           <div className="flex aspect-video items-center justify-center bg-zinc-900 text-zinc-400">
