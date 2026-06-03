@@ -2,7 +2,6 @@ import { createClient } from "@/lib/supabase/server";
 import { MuxPlayer } from "@/components/mux-player";
 import { VideoTheaterStage } from "@/components/video-theater-stage";
 import { InstructorAvatar } from "@/components/instructor-avatar";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 const intensityBadge: Record<string, string> = {
@@ -77,15 +76,6 @@ export default async function ClassDetailPage({
 
   return (
     <div>
-      <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6">
-        <Link
-          href="/classes"
-          className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-800"
-        >
-          &larr; Back to classes
-        </Link>
-      </div>
-
       <VideoTheaterStage>
         {videoClass.mux_playback_id ? (
           <MuxPlayer
