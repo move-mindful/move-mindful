@@ -12,13 +12,11 @@ export function MuxPlayer({
   playbackId,
   title,
   streamType = "on-demand",
-  backgroundColor = streamType === "live" ? "#000" : "#fff",
   liveOfflineOverlay = false,
 }: {
   playbackId: string;
   title: string;
   streamType?: "on-demand" | "live";
-  backgroundColor?: string;
   liveOfflineOverlay?: boolean;
 }) {
   const showLiveOverlay = liveOfflineOverlay && streamType === "live";
@@ -34,27 +32,42 @@ export function MuxPlayer({
     setPlayerAttempt((attempt) => attempt + 1);
   };
 
-  return (
-    <div
-      className="relative flex aspect-video w-full overflow-hidden"
-      style={{ backgroundColor }}
-    >
+  if (!showLiveOverlay) {
+    return (
       <MuxPlayerComponent
-        key={showLiveOverlay ? playerAttempt : undefined}
         playbackId={playbackId}
         streamType={streamType}
         accentColor="#18181b"
         metadata={{ video_title: title }}
         style={{
           display: "block",
+          aspectRatio: "16/9",
           width: "100%",
-          height: "100%",
           maxWidth: "100%",
-          "--media-background-color": backgroundColor,
-          "--dialog": showLiveOverlay ? "none" : undefined,
+        }}
+        playsInline
+        defaultHiddenCaptions
+      />
+    );
+  }
+
+  return (
+    <div className="relative">
+      <MuxPlayerComponent
+        key={playerAttempt}
+        playbackId={playbackId}
+        streamType={streamType}
+        accentColor="#18181b"
+        metadata={{ video_title: title }}
+        style={{
+          display: "block",
+          aspectRatio: "16/9",
+          width: "100%",
+          maxWidth: "100%",
+          "--dialog": "none",
         }}
         onError={() => {
-          if (showLiveOverlay) setHasLiveError(true);
+          setHasLiveError(true);
         }}
         onLoadStart={clearLiveError}
         onLoadedData={clearLiveError}
