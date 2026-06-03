@@ -67,6 +67,7 @@ export function MuxPlayer({
           aspectRatio: "16/9",
           width: "100%",
           maxWidth: "100%",
+          "--media-object-fit": fillVideo ? "cover" : undefined,
           "--dialog": "none",
         }}
         onError={() => {
