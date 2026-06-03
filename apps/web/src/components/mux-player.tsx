@@ -25,15 +25,9 @@ export function MuxPlayer({
 }) {
   const showLiveOverlay = liveOfflineOverlay && streamType === "live";
   const [hasLiveError, setHasLiveError] = useState(false);
-  const [playerAttempt, setPlayerAttempt] = useState(0);
 
   const clearLiveError = () => {
     if (showLiveOverlay) setHasLiveError(false);
-  };
-
-  const retryLivePlayback = () => {
-    setHasLiveError(false);
-    setPlayerAttempt((attempt) => attempt + 1);
   };
 
   if (!showLiveOverlay) {
@@ -59,7 +53,6 @@ export function MuxPlayer({
   return (
     <div className="relative">
       <MuxPlayerComponent
-        key={playerAttempt}
         playbackId={playbackId}
         streamType={streamType}
         accentColor="#18181b"
@@ -91,13 +84,6 @@ export function MuxPlayer({
               </p>
             </>
           )}
-          <button
-            type="button"
-            onClick={retryLivePlayback}
-            className="mt-6 rounded-lg bg-white px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-200"
-          >
-            Refresh
-          </button>
         </div>
       )}
     </div>
