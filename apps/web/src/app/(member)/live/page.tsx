@@ -2,6 +2,7 @@ import { MuxPlayer } from "@/components/mux-player";
 import { VideoTheaterStage } from "@/components/video-theater-stage";
 import { NextClassBanner } from "@/components/live/next-class-banner";
 import { ScheduleCalendar } from "@/components/live/schedule-calendar";
+import { ScheduleWeekList } from "@/components/live/schedule-week-list";
 
 // Public Mux playback ID for the persistent live stream. Overridable via env
 // (set NEXT_PUBLIC_MUX_LIVESTREAM_PLAYBACK_ID in Vercel) but defaults to the
@@ -28,8 +29,11 @@ export default function LivePage() {
         <NextClassBanner />
       </div>
 
-      {/* Recurring weekly schedule */}
-      <div className="mx-auto max-w-6xl px-6 pb-12">
+      {/* Recurring weekly schedule — compact list on mobile, full calendar on sm+ */}
+      <div className="mx-auto max-w-6xl px-6 pb-12 sm:hidden">
+        <ScheduleWeekList />
+      </div>
+      <div className="mx-auto hidden max-w-6xl px-6 pb-12 sm:block">
         <ScheduleCalendar />
       </div>
     </div>
