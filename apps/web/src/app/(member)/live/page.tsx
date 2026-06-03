@@ -1,6 +1,6 @@
 import { MuxPlayer } from "@/components/mux-player";
 import { VideoTheaterStage } from "@/components/video-theater-stage";
-import { NextClassBanner } from "@/components/live/next-class-banner";
+import { LiveOfflineOverlay } from "@/components/live/live-offline-overlay";
 import { ScheduleCalendar } from "@/components/live/schedule-calendar";
 import { ScheduleWeekList } from "@/components/live/schedule-week-list";
 
@@ -22,13 +22,9 @@ export default function LivePage() {
           streamType="live"
           fillVideo
           liveOfflineOverlay
+          offlineOverlay={<LiveOfflineOverlay />}
         />
       </VideoTheaterStage>
-
-      {/* Next-class countdown (personalized to the viewer's local time) */}
-      <div className="mx-auto max-w-6xl px-6 py-8">
-        <NextClassBanner />
-      </div>
 
       {/* Recurring weekly schedule — compact list on mobile, full calendar on sm+ */}
       <div className="mx-auto max-w-6xl px-6 pb-12 sm:hidden">

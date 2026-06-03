@@ -42,11 +42,22 @@ function getCurrentOrNextClass(now: DateTime): NextClass {
   return soonest as NextClass;
 }
 
-export function NextClassBanner() {
-  const [content, setContent] = useState<React.ReactNode>(
-    <span className="text-zinc-400">Loading next class info…</span>,
-  );
-  const [live, setLive] = useState(false);
+export type NextClassState =
+  | { status: "loading" }
+  | { status: "live"; title: string }
+  | {
+      status: "upcoming";
+      title: string;
+      dayOfWeek: string;
+      timeLocal: string;
+      zoneAbbr: string;
+      countdown: { days: number; hours: number; minutes: number; seconds: number };
+    };
+
+// Tracks the live/next class against the viewer's local clock, ticking once a
+// second. Returns plain data so callers can style it however they need.
+export function useNextClass(): NextClassState {
+  const [state, setState] = useState<NextClassState>({ status: "loading" });
 
   useEffect(() => {
     function update() {
@@ -56,34 +67,29 @@ export function NextClassBanner() {
       const classEndAz = classTimeAz.plus({ minutes: next.duration });
 
       if (nowAz >= classTimeAz && nowAz < classEndAz) {
-        setLive(true);
-        setContent(<strong>{next.title} is now live! Click play! ▶</strong>);
+        setState({ status: "live", title: next.title });
         return;
       }
 
-      setLive(false);
       const localZone = DateTime.local().zoneName;
       const nextLocal = classTimeAz.setZone(localZone);
       const diff = nextLocal
         .diffNow(["days", "hours", "minutes", "seconds"])
         .toObject();
 
-      const dayOfWeek = nextLocal.toFormat("cccc");
-      const timeLocal = nextLocal.toFormat("h:mm a");
-      const zoneAbbr = nextLocal.toFormat("ZZZZ");
-
-      setContent(
-        <>
-          Next class: <strong>{next.title}</strong> on{" "}
-          <strong>{dayOfWeek}</strong> at <strong>{timeLocal}</strong> {zoneAbbr}
-          <span className="mt-1.5 block text-base font-normal text-zinc-500">
-            Starts in {Math.max(0, Math.floor(diff.days ?? 0))}d{" "}
-            {Math.max(0, Math.floor(diff.hours ?? 0))}h{" "}
-            {Math.max(0, Math.floor(diff.minutes ?? 0))}m{" "}
-            {Math.max(0, Math.floor(diff.seconds ?? 0))}s
-          </span>
-        </>,
-      );
+      setState({
+        status: "upcoming",
+        title: next.title,
+        dayOfWeek: nextLocal.toFormat("cccc"),
+        timeLocal: nextLocal.toFormat("h:mm a"),
+        zoneAbbr: nextLocal.toFormat("ZZZZ"),
+        countdown: {
+          days: Math.max(0, Math.floor(diff.days ?? 0)),
+          hours: Math.max(0, Math.floor(diff.hours ?? 0)),
+          minutes: Math.max(0, Math.floor(diff.minutes ?? 0)),
+          seconds: Math.max(0, Math.floor(diff.seconds ?? 0)),
+        },
+      });
     }
 
     update();
@@ -91,13 +97,5 @@ export function NextClassBanner() {
     return () => clearInterval(id);
   }, []);
 
-  return (
-    <div
-      className={`text-center text-xl font-medium sm:text-2xl ${
-        live ? "text-emerald-600" : "text-zinc-800"
-      }`}
-    >
-      {content}
-    </div>
-  );
+  return state;
 }
