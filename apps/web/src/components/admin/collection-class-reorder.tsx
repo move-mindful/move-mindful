@@ -41,9 +41,14 @@ export interface ReorderClass {
 export function CollectionClassReorder({
   collectionId,
   initialMembers,
+  removable = true,
+  emptyText = "No classes yet — add some below.",
 }: {
   collectionId: string;
   initialMembers: ReorderClass[];
+  /** Manual collections can drop members; smart membership is tag-driven, so false there. */
+  removable?: boolean;
+  emptyText?: string;
 }) {
   const [members, setMembers] = useState(initialMembers);
   const [, startTransition] = useTransition();
@@ -81,7 +86,7 @@ export function CollectionClassReorder({
   }
 
   if (members.length === 0) {
-    return <p className="mt-2 text-sm text-zinc-500">No classes yet — add some below.</p>;
+    return <p className="mt-2 text-sm text-zinc-500">{emptyText}</p>;
   }
 
   return (
@@ -94,7 +99,12 @@ export function CollectionClassReorder({
       <SortableContext items={members.map((m) => m.id)} strategy={verticalListSortingStrategy}>
         <div className="mt-4 divide-y divide-zinc-200 rounded-xl border border-zinc-200">
           {members.map((c) => (
-            <SortableClassRow key={c.id} member={c} collectionId={collectionId} />
+            <SortableClassRow
+              key={c.id}
+              member={c}
+              collectionId={collectionId}
+              removable={removable}
+            />
           ))}
         </div>
       </SortableContext>
@@ -105,9 +115,11 @@ export function CollectionClassReorder({
 function SortableClassRow({
   member,
   collectionId,
+  removable,
 }: {
   member: ReorderClass;
   collectionId: string;
+  removable: boolean;
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: member.id });
@@ -158,13 +170,15 @@ function SortableClassRow({
         )}
       </div>
 
-      <form action={removeClassFromCollection}>
-        <input type="hidden" name="collectionId" value={collectionId} />
-        <input type="hidden" name="classId" value={member.id} />
-        <button type="submit" className="text-sm text-red-600 hover:underline">
-          Remove
-        </button>
-      </form>
+      {removable && (
+        <form action={removeClassFromCollection}>
+          <input type="hidden" name="collectionId" value={collectionId} />
+          <input type="hidden" name="classId" value={member.id} />
+          <button type="submit" className="text-sm text-red-600 hover:underline">
+            Remove
+          </button>
+        </form>
+      )}
     </div>
   );
 }

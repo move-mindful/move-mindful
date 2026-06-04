@@ -4,7 +4,7 @@ import {
   getAdminCollection,
   getAdminClasses,
   getTagPickerData,
-  getSmartPreview,
+  getSmartCollectionClasses,
   type AdminClassRow,
 } from "@/lib/admin/queries";
 import {
@@ -101,7 +101,11 @@ export default async function EditCollectionPage({
     );
   } else {
     const tagData = await getTagPickerData();
-    const preview = await getSmartPreview(collection.ruleTagIds, collection.matchMode);
+    const smartClasses = await getSmartCollectionClasses(
+      collection.id,
+      collection.ruleTagIds,
+      collection.matchMode,
+    );
 
     body = (
       <section>
@@ -160,22 +164,38 @@ export default async function EditCollectionPage({
           </button>
         </form>
 
-        <div className="mt-6">
-          <h3 className="text-sm font-semibold text-zinc-700">
-            Preview — {preview.length} class{preview.length !== 1 ? "es" : ""} match
-          </h3>
-          {preview.length > 0 && (
-            <ul className="mt-2 space-y-1 text-sm text-zinc-600">
-              {preview.map((p) => (
-                <li key={p.id}>
-                  {p.title}
-                  {!p.published && (
-                    <span className="ml-2 text-xs text-amber-600">draft — hidden from members</span>
-                  )}
-                </li>
-              ))}
-            </ul>
+        <div className="mt-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 className="text-lg font-semibold">
+              Matched classes{" "}
+              <span className="text-sm font-normal text-zinc-500">
+                ({smartClasses.length})
+              </span>
+            </h3>
+            {smartClasses.length > 1 && (
+              <form action={sortCollectionMembersByDate}>
+                <input type="hidden" name="collectionId" value={collection.id} />
+                <button
+                  type="submit"
+                  className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium transition hover:bg-zinc-50"
+                >
+                  Sort by date (newest first)
+                </button>
+              </form>
+            )}
+          </div>
+          {smartClasses.length > 0 && (
+            <p className="mt-1 text-sm text-zinc-500">
+              Matched by the tag rule. Drag to set their order; newly-tagged classes
+              appear at the top automatically.
+            </p>
           )}
+          <CollectionClassReorder
+            collectionId={collection.id}
+            initialMembers={smartClasses}
+            removable={false}
+            emptyText="No classes match this rule yet."
+          />
         </div>
       </section>
     );

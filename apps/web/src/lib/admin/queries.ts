@@ -378,23 +378,61 @@ export async function getAdminCollection(id: string): Promise<AdminCollectionDet
   };
 }
 
-export interface SmartPreviewClass {
+export interface SmartCollectionClass {
   id: string;
   title: string;
-  published: boolean;
+  muxPlaybackId: string | null;
+  publishedAt: string | null;
+  classDate: string | null;
 }
 
-export async function getSmartPreview(
+/**
+ * The classes a smart collection currently matches, in the order they'll appear:
+ * any newly-matched class (no stored position yet) leads, newest published first,
+ * followed by the admin-arranged ones in their saved overlay order. Membership is
+ * always live from the tag rule — the stored positions are only an ordering hint.
+ */
+export async function getSmartCollectionClasses(
+  collectionId: string,
   ruleTagIds: string[],
   matchMode: "any" | "all",
-): Promise<SmartPreviewClass[]> {
+): Promise<SmartCollectionClass[]> {
   const supabase = createAdminClient();
-  const ids = await resolveSmartClassIds(supabase, ruleTagIds, matchMode);
-  if (ids.length === 0) return [];
-  const { data } = await supabase.from("classes").select("id,title,published_at").in("id", ids);
-  return (data ?? []).map((c) => ({
-    id: c.id,
-    title: c.title,
-    published: !!c.published_at,
-  }));
+  const matched = await resolveSmartClassIds(supabase, ruleTagIds, matchMode);
+  if (matched.length === 0) return [];
+
+  const [{ data: classes }, { data: posRows }] = await Promise.all([
+    supabase
+      .from("classes")
+      .select("id,title,mux_playback_id,published_at,class_date")
+      .in("id", matched),
+    supabase
+      .from("collection_classes")
+      .select("class_id,position")
+      .eq("collection_id", collectionId),
+  ]);
+
+  const byId = new Map((classes ?? []).map((c) => [c.id, c]));
+  const posById = new Map((posRows ?? []).map((r) => [r.class_id, r.position as number]));
+  const present = matched.filter((id) => byId.has(id));
+
+  const positioned = present
+    .filter((id) => posById.has(id))
+    .sort((a, b) => posById.get(a)! - posById.get(b)!);
+  const fresh = present
+    .filter((id) => !posById.has(id))
+    .sort((a, b) =>
+      (byId.get(b)?.published_at ?? "").localeCompare(byId.get(a)?.published_at ?? ""),
+    );
+
+  return [...fresh, ...positioned].map((id) => {
+    const c = byId.get(id)!;
+    return {
+      id: c.id,
+      title: c.title,
+      muxPlaybackId: c.mux_playback_id,
+      publishedAt: c.published_at,
+      classDate: c.class_date ?? null,
+    };
+  });
 }

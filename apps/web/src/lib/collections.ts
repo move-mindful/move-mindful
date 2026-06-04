@@ -52,7 +52,13 @@ export async function getSurfacedClassIds(supabase: SupabaseClient): Promise<Set
     .from("collections")
     .select("id,kind,match_mode,published_at");
   const published = (cols ?? []).filter((c) => c.published_at);
-  const publishedIds = new Set(published.map((c) => c.id));
+  // Only manual collections surface classes via collection_classes rows. Smart
+  // collections store positions there too (an ordering overlay), but their
+  // membership is the tag rule — counting those rows would wrongly surface a class
+  // that was reordered and later untagged. Smart surfacing is resolved below.
+  const publishedManualIds = new Set(
+    published.filter((c) => c.kind === "manual").map((c) => c.id),
+  );
 
   const surfaced = new Set<string>();
 
@@ -60,7 +66,7 @@ export async function getSurfacedClassIds(supabase: SupabaseClient): Promise<Set
     .from("collection_classes")
     .select("collection_id,class_id");
   for (const m of members ?? []) {
-    if (publishedIds.has(m.collection_id)) surfaced.add(m.class_id);
+    if (publishedManualIds.has(m.collection_id)) surfaced.add(m.class_id);
   }
 
   const smart = published.filter((c) => c.kind === "smart");
@@ -189,10 +195,20 @@ export async function getBrowseRows(): Promise<BrowseRow[]> {
   };
 
   const manualByCol = new Map<string, string[]>();
+  // class_id → stored position, per collection. For manual collections this is the
+  // membership order; for smart collections it's an ordering overlay on the live
+  // tag-match set (matched classes with no entry here are newly-tagged → top).
+  const posByCol = new Map<string, Map<string, number>>();
   for (const m of members ?? []) {
     const arr = manualByCol.get(m.collection_id) ?? [];
     arr.push(m.class_id);
     manualByCol.set(m.collection_id, arr);
+    let pm = posByCol.get(m.collection_id);
+    if (!pm) {
+      pm = new Map();
+      posByCol.set(m.collection_id, pm);
+    }
+    pm.set(m.class_id, m.position as number);
   }
 
   const rulesByCol = new Map<string, string[]>();
@@ -219,12 +235,23 @@ export async function getBrowseRows(): Promise<BrowseRow[]> {
   for (const col of collections) {
     let classIds: string[];
     if (col.kind === "smart") {
-      classIds = resolveSmart(rulesByCol.get(col.id) ?? [], col.match_mode);
-      classIds.sort((a, b) =>
+      const matched = resolveSmart(rulesByCol.get(col.id) ?? [], col.match_mode);
+      const pm = posByCol.get(col.id);
+      const byPublishedDesc = (a: string, b: string) =>
         (classById.get(b)?.published_at ?? "").localeCompare(
           classById.get(a)?.published_at ?? "",
-        ),
-      );
+        );
+      if (pm && pm.size > 0) {
+        // Admin-arranged order, with newly-matched (unpositioned) classes on top.
+        const positioned = matched
+          .filter((id) => pm.has(id))
+          .sort((a, b) => pm.get(a)! - pm.get(b)!);
+        const fresh = matched.filter((id) => !pm.has(id)).sort(byPublishedDesc);
+        classIds = [...fresh, ...positioned];
+      } else {
+        // No manual order yet — default to newest published first.
+        classIds = matched.sort(byPublishedDesc);
+      }
     } else {
       classIds = manualByCol.get(col.id) ?? [];
     }
