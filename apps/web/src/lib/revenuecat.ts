@@ -1,8 +1,9 @@
 "use client";
 
 import { Purchases } from "@revenuecat/purchases-js";
+import { ENTITLEMENT_ID } from "@/lib/entitlements";
 
-export const ENTITLEMENT_ID = "Move Mindful Pro";
+export { ENTITLEMENT_ID };
 
 export function configurePurchases(appUserId: string): Purchases {
   try {

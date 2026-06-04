@@ -6,6 +6,9 @@ const isPublicRoute = createRouteMatcher([
   "/pricing",
   "/sign-in(.*)",
   "/sign-up(.*)",
+  // Hidden free-membership signup. The /join/[code]/activate route does its own
+  // auth check and grant; the signup page itself must load while signed out.
+  "/join(.*)",
 ]);
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
