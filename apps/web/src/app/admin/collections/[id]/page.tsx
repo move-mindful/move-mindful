@@ -17,6 +17,7 @@ import {
   setCollectionRuleTags,
 } from "@/app/actions/collections";
 import { DeleteCollectionButton } from "@/components/admin/delete-collection-button";
+import { formatClassDate } from "@/lib/format-date";
 
 export const dynamic = "force-dynamic";
 
@@ -64,12 +65,17 @@ export default async function EditCollectionPage({
                     />
                   )}
                 </div>
-                <span className="min-w-0 flex-1 truncate text-sm">
-                  {c.title}
-                  {!c.publishedAt && (
-                    <span className="ml-2 text-xs text-amber-600">draft</span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm">
+                    {c.title}
+                    {!c.publishedAt && (
+                      <span className="ml-2 text-xs text-amber-600">draft</span>
+                    )}
+                  </p>
+                  {c.classDate && (
+                    <p className="text-xs text-zinc-400">{formatClassDate(c.classDate)}</p>
                   )}
-                </span>
+                </div>
                 <div className="flex items-center gap-2">
                   {i > 0 && (
                     <form action={moveClassInCollection}>
@@ -114,6 +120,7 @@ export default async function EditCollectionPage({
               {nonMembers.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.title}
+                  {c.classDate ? ` — ${formatClassDate(c.classDate)}` : ""}
                   {c.publishedAt ? "" : " (draft)"}
                 </option>
               ))}
