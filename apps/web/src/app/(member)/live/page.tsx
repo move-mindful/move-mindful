@@ -27,7 +27,7 @@ export default function LivePage() {
       </VideoTheaterStage>
 
       {/* Recurring weekly schedule — compact list on mobile, full calendar on sm+ */}
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-10 pb-12">
+      <div className="mx-auto max-w-6xl px-6 sm:px-8 pt-10 pb-12">
         <h2 className="mb-6 text-center text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
           Live Schedule
         </h2>

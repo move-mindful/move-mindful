@@ -90,7 +90,7 @@ export default async function ClassDetailPage({
         )}
       </VideoTheaterStage>
 
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6">
+      <div className="mx-auto max-w-6xl px-6 sm:px-8 py-6">
         <div className="flex flex-wrap items-center gap-3">
           {disciplineLabel && (
             <span className="text-sm font-medium text-zinc-500">{disciplineLabel}</span>
