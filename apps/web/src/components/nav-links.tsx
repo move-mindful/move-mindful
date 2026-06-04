@@ -22,10 +22,10 @@ export function NavLinks() {
             key={href}
             href={href}
             aria-current={isActive ? "page" : undefined}
-            className={`border-b-2 pb-1 transition ${
+            className={`transition ${
               isActive
-                ? "border-zinc-900 text-zinc-900"
-                : "border-transparent text-zinc-600 hover:text-zinc-900"
+                ? "font-semibold text-zinc-900"
+                : "font-medium text-zinc-500 hover:text-zinc-900"
             }`}
           >
             {label}
