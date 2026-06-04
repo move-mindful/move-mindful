@@ -72,9 +72,11 @@ A video fitness platform offering on-demand classes, live streaming, group chat,
 
 ### iOS App = Experience
 - No in-app purchases (avoids Apple's 15-30% cut)
-- Users who open the app without a subscription see: "Sign up at yourwebsite.com"
-- No clickable link to purchase page (Apple's anti-steering rules)
-- Marketing (social media, email, search) drives users to the website to purchase
+- Users who open the app without a subscription see a "membership required" state
+- **US — app-to-web checkout:** the in-app paywall can show a button that deep-links to the RevenueCat-hosted Web Billing checkout (Stripe underneath) and returns the user to the app with the "Move Mindful Pro" entitlement already unlocked. Enabled by the 2025 *Epic v. Apple* ruling — **no Apple commission, no scare screen**. One tap, no funnel drop-off; still only Stripe (~2.9% + 30¢) + RevenueCat fees. Identity is handed off so the purchase lands on the same `appUserID` (Clerk user ID) the app logs in with.
+- **Outside the US (fallback):** Apple's anti-steering rules still apply — no clickable link to checkout. Show the generic "membership required" state and let marketing drive users to the website.
+- **Caveats:** US-only, and it rests on a ruling Apple is appealing (Ninth Circuit). Keep the no-link fallback so a rule change isn't a re-architecture. Apple's External Purchase Link disclosure rules + App Review still apply. **Verify current legal/App Review status before shipping.**
+- Marketing (social media, email, search) still drives users to the website to purchase
 
 ### Access Control Logic
 ```typescript
@@ -161,7 +163,9 @@ See [phase-4-plan.md](./phase-4-plan.md) for the full implementation plan, schem
 ### Phase 5 — iOS app
 - [ ] Expo + React Native app
 - [ ] Reuse `packages/core` logic and services
-- [ ] "Sign up at website" flow for unpaid users
+- [ ] Clerk login (`@clerk/clerk-expo`) — same account as web; identify RevenueCat with the Clerk user ID
+- [ ] Entitlement gate (`react-native-purchases`) — unlock on "Move Mindful Pro", else show "membership required"
+- [ ] Unpaid-user paywall: **US** — app-to-web checkout button (deep-link to RevenueCat Web Billing, return with entitlement unlocked); **non-US fallback** — generic "membership required" state, no link (anti-steering). Verify App Review + legal status before shipping
 
 ### Phase 6 — Push notifications
 - [ ] Expo Notifications for iOS
@@ -286,4 +290,5 @@ Enable RLS on every table and write policies that tie rows to Clerk user IDs. Wi
 - **Apple IAP via RevenueCat** — RevenueCat already supports Apple IAP; flip it on if App Store discovery becomes a meaningful acquisition channel and in-app purchase conversion justifies the Apple commission
 - **Chromecast support** — requires Google Cast SDK integration, not automatic like AirPlay
 - **Android app** — React Native / Expo supports Android out of the box; add when there's demand
-- **Apple external purchase link entitlement** — monitor evolving App Store rules (US allows a link but Apple still takes ~27%, plus a scare screen; may improve over time)
+- **Free trial, no credit card (undecided)** — a possible top-of-funnel option: let users try Move Mindful free for a fixed window (e.g. 7–14 days) without entering a card. Recommended mechanism if pursued: a RevenueCat **promotional entitlement** (a grant, *not* a standard subscription free trial, which would require a card) granted server-side at Clerk signup (`user.created` webhook → RevenueCat REST API, secret key). Keeps RevenueCat as the single source of truth — the existing entitlement gate works unchanged on web + mobile, and conversion to paid is the same "Move Mindful Pro" entitlement (no migration). Trade-off: no-card trials are easily abused via new accounts. Not yet decided whether to build this.
+- **Apple external purchase link (app-to-web)** — as of the 2025 *Epic v. Apple* contempt ruling, US apps can link out to external web checkout with **no Apple commission and no scare screen** (this replaced Apple's early-2024 regime of ~27% + a scare screen). RevenueCat's app-to-web flow implements this against Web Billing — see "iOS App = Experience" above. Still **US-only** and **under appeal** at the Ninth Circuit; monitor the legal status and keep a no-link fallback for other storefronts. If the ruling is reversed, fall back to the reader-app (no-link) model — the underlying checkout doesn't change
