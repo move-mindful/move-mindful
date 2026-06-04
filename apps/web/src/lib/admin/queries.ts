@@ -68,6 +68,8 @@ export interface AdminClassRow {
   clipReady: boolean;
   publishedAt: string | null;
   surfaced: boolean;
+  /** Admin display date as YYYY-MM-DD. */
+  classDate: string | null;
 }
 
 /**
@@ -98,6 +100,7 @@ export async function getAdminClasses(): Promise<AdminClassRow[]> {
       clipReady: false,
       publishedAt: c.published_at,
       surfaced: surfaced.has(c.id),
+      classDate: c.class_date ?? null,
     };
   });
 

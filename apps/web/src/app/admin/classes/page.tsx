@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getAdminClasses } from "@/lib/admin/queries";
+import { formatClassDate } from "@/lib/format-date";
 import { setClassPublished } from "@/app/actions/classes";
 import { DeleteRawRecordingButton } from "@/components/admin/delete-raw-recording-button";
 import { DeleteClassButton } from "@/components/admin/delete-class-button";
@@ -81,7 +82,13 @@ export default async function AdminClassesPage() {
                     )}
                   </div>
                   <p className="truncate text-sm text-zinc-500">
-                    {c.instructorName} · {c.durationMinutes} min
+                    {[
+                      c.instructorName,
+                      `${c.durationMinutes} min`,
+                      c.classDate && formatClassDate(c.classDate),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-4">
