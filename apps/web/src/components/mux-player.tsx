@@ -15,6 +15,8 @@ export function MuxPlayer({
   fillVideo = false,
   liveOfflineOverlay = false,
   offlineOverlay,
+  autoPlay,
+  muted,
 }: {
   playbackId: string;
   title: string;
@@ -22,6 +24,8 @@ export function MuxPlayer({
   fillVideo?: boolean;
   liveOfflineOverlay?: boolean;
   offlineOverlay?: ReactNode;
+  autoPlay?: boolean | "muted";
+  muted?: boolean;
 }) {
   const showLiveOverlay = liveOfflineOverlay && streamType === "live";
   const [hasLiveError, setHasLiveError] = useState(false);
@@ -45,6 +49,8 @@ export function MuxPlayer({
           "--media-object-fit": fillVideo ? "cover" : undefined,
         }}
         playsInline
+        autoPlay={autoPlay}
+        muted={muted}
         defaultHiddenCaptions
       />
     );
@@ -72,6 +78,8 @@ export function MuxPlayer({
         onLoadedData={clearLiveError}
         onPlaying={clearLiveError}
         playsInline
+        autoPlay={autoPlay}
+        muted={muted}
         defaultHiddenCaptions
       />
       {showLiveOverlay && hasLiveError && (

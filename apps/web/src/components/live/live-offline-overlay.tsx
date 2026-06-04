@@ -27,7 +27,7 @@ export function LiveOfflineOverlay() {
 
       {state.status === "live" && (
         <p className="mt-3 text-lg font-medium sm:text-xl">
-          {state.title} is starting — hit Refresh!
+          Stay tuned. Live-stream will begin soon.
         </p>
       )}
     </div>
