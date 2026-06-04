@@ -27,6 +27,12 @@ export default async function AdminClassesPage() {
             Import
           </Link>
           <Link
+            href="/admin/classes/upload"
+            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium transition hover:bg-zinc-50"
+          >
+            Upload
+          </Link>
+          <Link
             href="/admin/classes/new"
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700"
           >
