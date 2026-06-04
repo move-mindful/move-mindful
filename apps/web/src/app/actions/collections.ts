@@ -111,21 +111,24 @@ export async function deleteCollection(formData: FormData) {
   redirect("/admin/collections");
 }
 
-export async function moveCollection(formData: FormData) {
+// Persist a full collection ordering from the admin drag-and-drop list. Positions
+// are rewritten to the array index, so the browse page renders rows top-to-bottom
+// in exactly this order. Ids not in the table are ignored (stale client state).
+export async function reorderCollections(orderedIds: string[]) {
   await requireAdmin();
   const supabase = createAdminClient();
-  const id = (formData.get("id") as string) || "";
-  const direction = (formData.get("direction") as string) === "up" ? "up" : "down";
-  const { data: cols } = await supabase.from("collections").select("id,position").order("position");
-  const items = cols ?? [];
-  const idx = items.findIndex((c) => c.id === id);
-  if (idx < 0) return;
-  const j = direction === "up" ? idx - 1 : idx + 1;
-  if (j < 0 || j >= items.length) return;
-  const a = items[idx];
-  const b = items[j];
-  await supabase.from("collections").update({ position: b.position }).eq("id", a.id);
-  await supabase.from("collections").update({ position: a.position }).eq("id", b.id);
+  if (orderedIds.length === 0) return;
+
+  const { data: cols } = await supabase.from("collections").select("id");
+  const valid = new Set((cols ?? []).map((c) => c.id));
+  const ordered = orderedIds.filter((id) => valid.has(id));
+
+  await Promise.all(
+    ordered.map((id, index) =>
+      supabase.from("collections").update({ position: index }).eq("id", id),
+    ),
+  );
+
   revalidateCollections();
 }
 
@@ -169,35 +172,42 @@ export async function removeClassFromCollection(formData: FormData) {
   revalidateCollections(collectionId);
 }
 
-export async function moveClassInCollection(formData: FormData) {
+// Persist a full member ordering for a manual collection from the admin
+// drag-and-drop list. Positions are rewritten to the array index. Only ids that
+// actually belong to the collection are repositioned (guards against stale client
+// state); smart collections are tag-driven and have no manual order.
+export async function reorderClassesInCollection(
+  collectionId: string,
+  orderedClassIds: string[],
+) {
   await requireAdmin();
   const supabase = createAdminClient();
-  const collectionId = (formData.get("collectionId") as string) || "";
-  const classId = (formData.get("classId") as string) || "";
-  const direction = (formData.get("direction") as string) === "up" ? "up" : "down";
-  if (!collectionId || !classId) return;
+  if (!collectionId || orderedClassIds.length === 0) return;
+
+  const { data: col } = await supabase
+    .from("collections")
+    .select("kind")
+    .eq("id", collectionId)
+    .single();
+  if (col?.kind !== "manual") return;
+
   const { data: members } = await supabase
     .from("collection_classes")
-    .select("class_id,position")
-    .eq("collection_id", collectionId)
-    .order("position");
-  const items = members ?? [];
-  const idx = items.findIndex((m) => m.class_id === classId);
-  if (idx < 0) return;
-  const j = direction === "up" ? idx - 1 : idx + 1;
-  if (j < 0 || j >= items.length) return;
-  const a = items[idx];
-  const b = items[j];
-  await supabase
-    .from("collection_classes")
-    .update({ position: b.position })
-    .eq("collection_id", collectionId)
-    .eq("class_id", a.class_id);
-  await supabase
-    .from("collection_classes")
-    .update({ position: a.position })
-    .eq("collection_id", collectionId)
-    .eq("class_id", b.class_id);
+    .select("class_id")
+    .eq("collection_id", collectionId);
+  const valid = new Set((members ?? []).map((m) => m.class_id));
+  const ordered = orderedClassIds.filter((id) => valid.has(id));
+
+  await Promise.all(
+    ordered.map((classId, index) =>
+      supabase
+        .from("collection_classes")
+        .update({ position: index })
+        .eq("collection_id", collectionId)
+        .eq("class_id", classId),
+    ),
+  );
+
   revalidateCollections(collectionId);
 }
 

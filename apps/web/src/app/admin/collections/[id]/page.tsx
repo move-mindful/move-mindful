@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import {
   getAdminCollection,
@@ -12,11 +11,10 @@ import {
   updateCollection,
   setCollectionPublished,
   addClassToCollection,
-  removeClassFromCollection,
-  moveClassInCollection,
   setCollectionRuleTags,
 } from "@/app/actions/collections";
 import { DeleteCollectionButton } from "@/components/admin/delete-collection-button";
+import { CollectionClassReorder } from "@/components/admin/collection-class-reorder";
 import { formatClassDate } from "@/lib/format-date";
 
 export const dynamic = "force-dynamic";
@@ -48,67 +46,19 @@ export default async function EditCollectionPage({
     body = (
       <section>
         <h2 className="text-lg font-semibold">Classes in this collection</h2>
-        {members.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-500">No classes yet — add some below.</p>
-        ) : (
-          <div className="mt-4 divide-y divide-zinc-200 rounded-xl border border-zinc-200">
-            {members.map((c, i) => (
-              <div key={c.id} className="flex items-center gap-3 p-3">
-                <div className="relative h-10 w-16 shrink-0 overflow-hidden rounded bg-zinc-100">
-                  {c.muxPlaybackId && (
-                    <Image
-                      src={`https://image.mux.com/${c.muxPlaybackId}/thumbnail.webp?width=160&height=100&fit_mode=smartcrop`}
-                      alt=""
-                      fill
-                      unoptimized
-                      className="object-cover"
-                    />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm">
-                    {c.title}
-                    {!c.publishedAt && (
-                      <span className="ml-2 text-xs text-amber-600">draft</span>
-                    )}
-                  </p>
-                  {c.classDate && (
-                    <p className="text-xs text-zinc-400">{formatClassDate(c.classDate)}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  {i > 0 && (
-                    <form action={moveClassInCollection}>
-                      <input type="hidden" name="collectionId" value={collection.id} />
-                      <input type="hidden" name="classId" value={c.id} />
-                      <input type="hidden" name="direction" value="up" />
-                      <button type="submit" aria-label="Move up" className="text-zinc-400 hover:text-zinc-700">
-                        ↑
-                      </button>
-                    </form>
-                  )}
-                  {i < members.length - 1 && (
-                    <form action={moveClassInCollection}>
-                      <input type="hidden" name="collectionId" value={collection.id} />
-                      <input type="hidden" name="classId" value={c.id} />
-                      <input type="hidden" name="direction" value="down" />
-                      <button type="submit" aria-label="Move down" className="text-zinc-400 hover:text-zinc-700">
-                        ↓
-                      </button>
-                    </form>
-                  )}
-                  <form action={removeClassFromCollection}>
-                    <input type="hidden" name="collectionId" value={collection.id} />
-                    <input type="hidden" name="classId" value={c.id} />
-                    <button type="submit" className="text-sm text-red-600 hover:underline">
-                      Remove
-                    </button>
-                  </form>
-                </div>
-              </div>
-            ))}
-          </div>
+        {members.length > 0 && (
+          <p className="mt-1 text-sm text-zinc-500">Drag to reorder.</p>
         )}
+        <CollectionClassReorder
+          collectionId={collection.id}
+          initialMembers={members.map((c) => ({
+            id: c.id,
+            title: c.title,
+            muxPlaybackId: c.muxPlaybackId,
+            publishedAt: c.publishedAt,
+            classDate: c.classDate,
+          }))}
+        />
 
         {nonMembers.length > 0 && (
           <form action={addClassToCollection} className="mt-4 flex gap-2">
