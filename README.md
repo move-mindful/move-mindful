@@ -21,6 +21,7 @@ What's in place:
   - **Account Settings** (`/account`) — plan status and profile.
   - **Help** (`/help`) — contact page (email link).
   - **Custom user menu** — Clerk user info synced to RevenueCat.
+  - **Installable web app (PWA)** — a web manifest (`src/app/manifest.ts`) plus `appleWebApp` metadata make the site installable to the iOS/Android home screen as a standalone app. `display: "standalone"` launches it chrome-less to `/classes`, and `scope: "/"` keeps same-origin navigation inside the standalone window (so taps on nav links don't open in an iOS in-app browser overlay). The proxy matcher already leaves `/manifest.webmanifest` public.
   - **Supabase database** — `user_profiles`, `classes`, `instructors`, `tags`, `tag_groups`, `class_tags`, `collections`, `collection_classes`, `collection_rule_tags`, all with RLS (read-only for members; admin writes via service-role). Instructor avatars live in a public `instructor-avatars` Storage bucket.
   - **Deployed to Vercel** — live at `www.movemindful.com`. Auto-deploys on push to `main`.
 - `apps/mobile` — Expo 56 / React Native app (starter screen, no integrations yet)
