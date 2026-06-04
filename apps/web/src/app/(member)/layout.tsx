@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { EntitlementGate } from "@/components/entitlement-gate";
-import { NavLinks } from "@/components/nav-links";
 import { UserMenu } from "@/components/user-menu";
 import { isAdmin } from "@/lib/auth/admin";
 
@@ -25,7 +24,14 @@ export default async function MemberLayout({
                 <Image src="/logo.png" alt="MoveMindful" width={32} height={32} />
                 MoveMindful
               </Link>
-              <NavLinks />
+              <div className="flex items-center gap-4 text-sm text-zinc-600">
+                <Link href="/classes" className="transition hover:text-zinc-900">
+                  Classes
+                </Link>
+                <Link href="/live" className="transition hover:text-zinc-900">
+                  Live
+                </Link>
+              </div>
             </div>
             <UserMenu isAdmin={admin} />
           </nav>
