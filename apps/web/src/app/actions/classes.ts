@@ -2,7 +2,12 @@
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { masterDownloadInfo, mux, type MuxMasterDownloadInfo } from "@/lib/mux/client";
+import {
+  isMuxAssetImportReady,
+  masterDownloadInfo,
+  mux,
+  type MuxMasterDownloadInfo,
+} from "@/lib/mux/client";
 import type { ClassFormState } from "@/lib/admin/types";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -60,6 +65,24 @@ async function syncMuxTitle(assetId: string | null, title: string) {
   } catch {
     // Asset may be gone or Mux unreachable — never block the save on this.
   }
+}
+
+async function validateMuxAssetReadyForImport(assetId: string | null): Promise<string | null> {
+  if (!assetId) return null;
+
+  try {
+    const asset = await mux.video.assets.retrieve(assetId);
+    if (asset.status !== "ready") {
+      return "Mux is still preparing this asset. Refresh Import once it is ready.";
+    }
+    if (!isMuxAssetImportReady(asset)) {
+      return "Mux is still finalizing this live recording. Refresh Import after the recording is complete.";
+    }
+  } catch {
+    return "Could not verify this Mux asset. Refresh Import and try again.";
+  }
+
+  return null;
 }
 
 // Sync a class's manual-collection memberships to the form's checkbox picker
@@ -131,6 +154,8 @@ export async function createClass(
   const f = parseFields(formData);
   const invalid = validate(f);
   if (invalid) return { error: invalid };
+  const muxInvalid = await validateMuxAssetReadyForImport(f.muxAssetId);
+  if (muxInvalid) return { error: muxInvalid };
 
   const { tagIds } = parseTagSelections(formData);
 
@@ -219,6 +244,8 @@ export async function createTrimmedClass(
 
   if (!title) return { error: "Title is required." };
   if (!sourceAssetId) return { error: "Missing source asset — open this from Sync from Mux." };
+  const sourceInvalid = await validateMuxAssetReadyForImport(sourceAssetId);
+  if (sourceInvalid) return { error: sourceInvalid };
   if (
     !Number.isFinite(startSeconds) ||
     !Number.isFinite(endSeconds) ||
@@ -407,7 +434,10 @@ export async function deleteMuxAsset(formData: FormData) {
   if (!assetId) return;
 
   try {
-    await mux.video.assets.delete(assetId);
+    const asset = await mux.video.assets.retrieve(assetId);
+    if (isMuxAssetImportReady(asset)) {
+      await mux.video.assets.delete(assetId);
+    }
   } catch {
     // Asset may already be gone in Mux; refreshing the list is what matters.
   }

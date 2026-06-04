@@ -68,6 +68,7 @@ export default async function ImportFromMuxPage() {
       {newAssets.length > 0 && (
         <div className="mt-8 divide-y divide-zinc-200 rounded-xl border border-zinc-200">
           {newAssets.map((a) => {
+            const importReady = a.liveRecordingFinalized;
             const minutes = a.durationSeconds
               ? Math.max(1, Math.round(a.durationSeconds / 60))
               : "";
@@ -84,7 +85,10 @@ export default async function ImportFromMuxPage() {
               title: a.title ?? "",
             });
             return (
-              <div key={a.assetId} className="flex items-center gap-4 p-4">
+              <div
+                key={a.assetId}
+                className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center"
+              >
                 <div className="relative h-14 w-24 shrink-0 overflow-hidden rounded bg-zinc-100">
                   {a.playbackId && (
                     <Image
@@ -97,26 +101,64 @@ export default async function ImportFromMuxPage() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{a.title ?? "Untitled asset"}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="min-w-0 truncate font-medium">
+                      {a.title ?? "Untitled asset"}
+                    </p>
+                    {a.isLiveRecording && !importReady && (
+                      <span
+                        className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800"
+                        title="Mux has made the recording playable, but its final duration is still settling."
+                      >
+                        Finalizing recording
+                      </span>
+                    )}
+                  </div>
                   <p className="truncate text-sm text-zinc-500">
                     {minutes ? `${minutes} min · ` : ""}
                     {new Date(a.createdAtISO).toLocaleDateString()}
                   </p>
+                  {a.isLiveRecording && !importReady && (
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Wait for Mux to finish the live recording, then refresh before
+                      trimming or importing.
+                    </p>
+                  )}
                 </div>
-                <div className="flex shrink-0 items-center gap-3">
-                  <Link
-                    href={`/admin/classes/new?${params.toString()}`}
-                    className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-zinc-700"
-                  >
-                    Import
-                  </Link>
-                  <Link
-                    href={`/admin/classes/trim?${trimParams.toString()}`}
-                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium transition hover:bg-zinc-50"
-                  >
-                    Trim &amp; import
-                  </Link>
-                  <DeleteMuxAssetButton assetId={a.assetId} title={a.title ?? ""} />
+                <div className="flex flex-wrap items-center gap-3 sm:shrink-0">
+                  {importReady ? (
+                    <>
+                      <Link
+                        href={`/admin/classes/new?${params.toString()}`}
+                        className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-zinc-700"
+                      >
+                        Import
+                      </Link>
+                      <Link
+                        href={`/admin/classes/trim?${trimParams.toString()}`}
+                        className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium transition hover:bg-zinc-50"
+                      >
+                        Trim &amp; import
+                      </Link>
+                      <DeleteMuxAssetButton assetId={a.assetId} title={a.title ?? ""} />
+                    </>
+                  ) : (
+                    <>
+                      <span
+                        aria-disabled="true"
+                        className="rounded-lg bg-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-500"
+                      >
+                        Import
+                      </span>
+                      <span
+                        aria-disabled="true"
+                        className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-400"
+                      >
+                        Trim &amp; import
+                      </span>
+                      <span className="text-sm font-medium text-zinc-400">Delete</span>
+                    </>
+                  )}
                 </div>
               </div>
             );

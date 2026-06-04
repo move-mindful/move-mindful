@@ -4,6 +4,7 @@ import {
   getInstructorOptions,
   getCollectionOptions,
 } from "@/lib/admin/queries";
+import { getMuxAssetSummary } from "@/lib/mux/client";
 import { ClassForm } from "@/components/admin/class-form";
 
 export const dynamic = "force-dynamic";
@@ -19,11 +20,21 @@ export default async function NewClassPage({
   }>;
 }) {
   const sp = await searchParams;
-  const [tagData, instructors, collections] = await Promise.all([
+  const [tagData, instructors, collections, importedAsset] = await Promise.all([
     getTagPickerData(),
     getInstructorOptions(),
     getCollectionOptions(),
+    sp.assetId ? getMuxAssetSummary(sp.assetId) : Promise.resolve(null),
   ]);
+  const importedDurationMinutes = importedAsset?.durationSeconds
+    ? Math.max(1, Math.round(importedAsset.durationSeconds / 60))
+    : sp.duration;
+  const importIsBlocked =
+    sp.assetId &&
+    (!importedAsset ||
+      importedAsset.status !== "ready" ||
+      !importedAsset.playbackId ||
+      (importedAsset.isLiveRecording && !importedAsset.liveRecordingFinalized));
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
@@ -37,20 +48,27 @@ export default async function NewClassPage({
         </p>
       )}
 
-      <div className="mt-8">
-        <ClassForm
-          mode="create"
-          tagData={tagData}
-          instructors={instructors}
-          collections={collections}
-          initial={{
-            muxAssetId: sp.assetId,
-            muxPlaybackId: sp.playbackId,
-            durationMinutes: sp.duration,
-            title: sp.title,
-          }}
-        />
-      </div>
+      {importIsBlocked ? (
+        <p className="mt-8 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          This Mux asset is not ready to import yet. If it is a live recording, wait
+          for Mux to finish finalizing the recording, then refresh Import.
+        </p>
+      ) : (
+        <div className="mt-8">
+          <ClassForm
+            mode="create"
+            tagData={tagData}
+            instructors={instructors}
+            collections={collections}
+            initial={{
+              muxAssetId: sp.assetId,
+              muxPlaybackId: importedAsset?.playbackId ?? sp.playbackId,
+              durationMinutes: importedDurationMinutes,
+              title: importedAsset?.title ?? sp.title,
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

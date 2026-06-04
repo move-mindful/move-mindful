@@ -14,6 +14,11 @@ export interface MuxAssetSummary {
   createdAtISO: string;
   title: string | null;
   status: "preparing" | "ready" | "errored";
+  ingestType: string | null;
+  liveStreamId: string | null;
+  isLiveRecording: boolean;
+  liveStreamActive: boolean;
+  liveRecordingFinalized: boolean;
 }
 
 export type MuxMasterDownloadStatus =
@@ -38,6 +43,53 @@ export function masterDownloadInfo(
   };
 }
 
+type MuxAssetLike = {
+  id: string;
+  created_at: string;
+  duration?: number;
+  ingest_type?: string;
+  is_live?: boolean;
+  live_stream_id?: string;
+  meta?: { title?: string };
+  passthrough?: string;
+  playback_ids?: Array<{ id: string; policy?: string }>;
+  status: "preparing" | "ready" | "errored";
+};
+
+function isLiveRecordingAsset(asset: MuxAssetLike): boolean {
+  return (
+    asset.ingest_type === "live_rtmp" ||
+    asset.ingest_type === "live_srt" ||
+    !!asset.live_stream_id
+  );
+}
+
+export function isMuxAssetImportReady(asset: MuxAssetLike): boolean {
+  const isLiveRecording = isLiveRecordingAsset(asset);
+  return !isLiveRecording || asset.is_live !== true;
+}
+
+function summarizeMuxAsset(asset: MuxAssetLike): MuxAssetSummary {
+  const playbackIds = asset.playback_ids ?? [];
+  const chosen = playbackIds.find((p) => p.policy === "public") ?? playbackIds[0];
+  const isLiveRecording = isLiveRecordingAsset(asset);
+  const liveStreamActive = isLiveRecording && asset.is_live === true;
+
+  return {
+    assetId: asset.id,
+    playbackId: chosen?.id ?? null,
+    durationSeconds: asset.duration ?? null,
+    createdAtISO: new Date(Number(asset.created_at) * 1000).toISOString(),
+    title: asset.meta?.title ?? asset.passthrough ?? null,
+    status: asset.status,
+    ingestType: asset.ingest_type ?? null,
+    liveStreamId: asset.live_stream_id ?? null,
+    isLiveRecording,
+    liveStreamActive,
+    liveRecordingFinalized: !isLiveRecording || !liveStreamActive,
+  };
+}
+
 /**
  * List every asset in the Mux account (auto-paginated), normalized for the
  * "Sync from Mux" import UI. Prefers a public playback id.
@@ -45,18 +97,20 @@ export function masterDownloadInfo(
 export async function listMuxAssets(): Promise<MuxAssetSummary[]> {
   const out: MuxAssetSummary[] = [];
   for await (const asset of mux.video.assets.list({ limit: 100 })) {
-    const playbackIds = asset.playback_ids ?? [];
-    const chosen = playbackIds.find((p) => p.policy === "public") ?? playbackIds[0];
-    out.push({
-      assetId: asset.id,
-      playbackId: chosen?.id ?? null,
-      durationSeconds: asset.duration ?? null,
-      createdAtISO: new Date(Number(asset.created_at) * 1000).toISOString(),
-      title: asset.meta?.title ?? asset.passthrough ?? null,
-      status: asset.status,
-    });
+    out.push(summarizeMuxAsset(asset));
   }
   return out;
+}
+
+export async function getMuxAssetSummary(
+  assetId: string,
+): Promise<MuxAssetSummary | null> {
+  try {
+    const asset = await mux.video.assets.retrieve(assetId);
+    return summarizeMuxAsset(asset);
+  } catch {
+    return null;
+  }
 }
 
 /**

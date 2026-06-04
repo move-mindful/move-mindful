@@ -4,6 +4,7 @@ import {
   getInstructorOptions,
   getCollectionOptions,
 } from "@/lib/admin/queries";
+import { getMuxAssetSummary } from "@/lib/mux/client";
 import { ClassForm } from "@/components/admin/class-form";
 
 export const dynamic = "force-dynamic";
@@ -19,11 +20,16 @@ export default async function TrimClassPage({
   }>;
 }) {
   const sp = await searchParams;
-  const [tagData, instructors, collections] = await Promise.all([
+  const [tagData, instructors, collections, sourceAsset] = await Promise.all([
     getTagPickerData(),
     getInstructorOptions(),
     getCollectionOptions(),
+    sp.assetId ? getMuxAssetSummary(sp.assetId) : Promise.resolve(null),
   ]);
+
+  const rawPlaybackId = sourceAsset?.playbackId ?? sp.playbackId;
+  const rawDurationSeconds =
+    sourceAsset?.durationSeconds ?? (Number(sp.durationSeconds) || 0);
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
@@ -35,10 +41,25 @@ export default async function TrimClassPage({
       </Link>
       <h1 className="mt-3 text-3xl font-bold tracking-tight">Trim &amp; import</h1>
 
-      {!sp.assetId || !sp.playbackId ? (
+      {!sp.assetId ? (
         <p className="mt-6 text-zinc-500">
           Open this from <span className="font-medium">Import</span> by choosing
           &ldquo;Trim &amp; import&rdquo; on a recording.
+        </p>
+      ) : !sourceAsset ? (
+        <p className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          Could not verify this Mux asset. Go back to Import and refresh before
+          trimming.
+        </p>
+      ) : sourceAsset.status !== "ready" || !rawPlaybackId ? (
+        <p className="mt-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Mux is still preparing this recording. Go back to Import and refresh once
+          it is ready.
+        </p>
+      ) : sourceAsset.isLiveRecording && !sourceAsset.liveRecordingFinalized ? (
+        <p className="mt-6 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Mux has made this live recording playable, but its final duration is still
+          settling. Refresh Import after Mux finishes finalizing the recording.
         </p>
       ) : (
         <>
@@ -53,11 +74,11 @@ export default async function TrimClassPage({
               tagData={tagData}
               instructors={instructors}
               collections={collections}
-              initial={{ title: sp.title }}
+              initial={{ title: sourceAsset.title ?? sp.title }}
               trim={{
                 sourceAssetId: sp.assetId,
-                rawPlaybackId: sp.playbackId,
-                rawDurationSeconds: Number(sp.durationSeconds) || 0,
+                rawPlaybackId,
+                rawDurationSeconds,
               }}
             />
           </div>
