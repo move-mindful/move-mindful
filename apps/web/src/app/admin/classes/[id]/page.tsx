@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAdminClass, getTagPickerData, getInstructorOptions } from "@/lib/admin/queries";
+import {
+  getAdminClass,
+  getTagPickerData,
+  getInstructorOptions,
+  getCollectionOptions,
+} from "@/lib/admin/queries";
 import { getAssetMasterDownload, getAssetStatus } from "@/lib/mux/client";
 import { ClassForm } from "@/components/admin/class-form";
 import { ClassDownloadControl } from "@/components/admin/class-download-control";
@@ -16,10 +21,11 @@ export default async function EditClassPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [cls, tagData, instructors] = await Promise.all([
+  const [cls, tagData, instructors, collections] = await Promise.all([
     getAdminClass(id),
     getTagPickerData(),
     getInstructorOptions(),
+    getCollectionOptions(),
   ]);
   if (!cls) notFound();
 
@@ -69,6 +75,7 @@ export default async function EditClassPage({
           mode="edit"
           tagData={tagData}
           instructors={instructors}
+          collections={collections}
           initial={{
             id: cls.id,
             title: cls.title,
@@ -77,7 +84,9 @@ export default async function EditClassPage({
             durationMinutes: cls.durationMinutes,
             muxPlaybackId: cls.muxPlaybackId ?? "",
             muxAssetId: cls.muxAssetId ?? "",
+            classDate: cls.classDate ?? undefined,
             tagIds: cls.tagIds,
+            collectionIds: cls.collectionIds,
           }}
         />
       </div>

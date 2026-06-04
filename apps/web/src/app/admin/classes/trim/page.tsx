@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { getTagPickerData, getInstructorOptions } from "@/lib/admin/queries";
+import {
+  getTagPickerData,
+  getInstructorOptions,
+  getCollectionOptions,
+} from "@/lib/admin/queries";
 import { ClassForm } from "@/components/admin/class-form";
 
 export const dynamic = "force-dynamic";
@@ -15,9 +19,10 @@ export default async function TrimClassPage({
   }>;
 }) {
   const sp = await searchParams;
-  const [tagData, instructors] = await Promise.all([
+  const [tagData, instructors, collections] = await Promise.all([
     getTagPickerData(),
     getInstructorOptions(),
+    getCollectionOptions(),
   ]);
 
   return (
@@ -47,6 +52,7 @@ export default async function TrimClassPage({
               mode="trim"
               tagData={tagData}
               instructors={instructors}
+              collections={collections}
               initial={{ title: sp.title }}
               trim={{
                 sourceAssetId: sp.assetId,

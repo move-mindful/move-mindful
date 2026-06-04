@@ -125,19 +125,23 @@ export interface AdminClassDetail {
   muxAssetId: string | null;
   sourceMuxAssetId: string | null;
   publishedAt: string | null;
+  /** Admin display date as YYYY-MM-DD. */
+  classDate: string | null;
   tagIds: string[];
+  /** Manual collections this class currently belongs to (for the form picker). */
+  collectionIds: string[];
 }
 
-/** A single class with its tag ids, for the edit form. */
+/** A single class with its tag ids + collection memberships, for the edit form. */
 export async function getAdminClass(id: string): Promise<AdminClassDetail | null> {
   const supabase = createAdminClient();
   const { data: c } = await supabase.from("classes").select("*").eq("id", id).single();
   if (!c) return null;
 
-  const { data: ct } = await supabase
-    .from("class_tags")
-    .select("tag_id")
-    .eq("class_id", id);
+  const [{ data: ct }, { data: cc }] = await Promise.all([
+    supabase.from("class_tags").select("tag_id").eq("class_id", id),
+    supabase.from("collection_classes").select("collection_id").eq("class_id", id),
+  ]);
 
   return {
     id: c.id,
@@ -149,7 +153,9 @@ export async function getAdminClass(id: string): Promise<AdminClassDetail | null
     muxAssetId: c.mux_asset_id,
     sourceMuxAssetId: c.source_mux_asset_id ?? null,
     publishedAt: c.published_at,
+    classDate: c.class_date ?? null,
     tagIds: (ct ?? []).map((r) => r.tag_id),
+    collectionIds: (cc ?? []).map((r) => r.collection_id),
   };
 }
 
@@ -267,6 +273,34 @@ export interface AdminCollectionRow {
   position: number;
   publishedAt: string | null;
   itemCount: number;
+}
+
+export interface CollectionOption {
+  id: string;
+  title: string;
+  /** New classes are auto-added to this collection — pre-checked in the class form. */
+  autoAddNew: boolean;
+  published: boolean;
+}
+
+/**
+ * Manual collections for the class-form picker, ordered by browse position. Only
+ * manual collections can have explicit members — smart collections are tag-rule
+ * driven, so they're never selectable here.
+ */
+export async function getCollectionOptions(): Promise<CollectionOption[]> {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("collections")
+    .select("id,title,auto_add_new,published_at")
+    .eq("kind", "manual")
+    .order("position");
+  return (data ?? []).map((c) => ({
+    id: c.id,
+    title: c.title,
+    autoAddNew: !!c.auto_add_new,
+    published: !!c.published_at,
+  }));
 }
 
 export async function getAdminCollections(): Promise<AdminCollectionRow[]> {

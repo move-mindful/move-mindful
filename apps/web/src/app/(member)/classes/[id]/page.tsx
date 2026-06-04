@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { MuxPlayer } from "@/components/mux-player";
 import { VideoTheaterStage } from "@/components/video-theater-stage";
 import { InstructorAvatar } from "@/components/instructor-avatar";
+import { formatClassDate } from "@/lib/format-date";
 import { notFound } from "next/navigation";
 
 const intensityBadge: Record<string, string> = {
@@ -105,6 +106,14 @@ export default async function ClassDetailPage({
             </span>
           )}
           <span className="text-sm text-zinc-400">{videoClass.duration_minutes} min</span>
+          {videoClass.class_date && (
+            <>
+              <span className="text-zinc-300">&middot;</span>
+              <span className="text-sm text-zinc-400">
+                {formatClassDate(videoClass.class_date)}
+              </span>
+            </>
+          )}
         </div>
 
         <h1 className="mt-3 text-2xl font-bold tracking-tight">{videoClass.title}</h1>

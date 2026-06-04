@@ -10,6 +10,15 @@ import { redirect } from "next/navigation";
 type AdminClient = ReturnType<typeof createAdminClient>;
 type ClassDownloadResult = MuxMasterDownloadInfo & { error?: string };
 
+// The admin display date from the form's <input type="date"> (YYYY-MM-DD). The
+// field is required and pre-filled, but fall back to today if it's missing or
+// malformed so the not-null class_date column always gets a valid value.
+function parseClassDate(formData: FormData): string {
+  const raw = ((formData.get("classDate") as string) ?? "").trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  return new Date().toISOString().slice(0, 10);
+}
+
 function parseFields(formData: FormData) {
   return {
     title: ((formData.get("title") as string) ?? "").trim(),
@@ -18,6 +27,7 @@ function parseFields(formData: FormData) {
     durationMinutes: Number(formData.get("durationMinutes")),
     muxPlaybackId: ((formData.get("muxPlaybackId") as string) ?? "").trim(),
     muxAssetId: ((formData.get("muxAssetId") as string) ?? "").trim() || null,
+    classDate: parseClassDate(formData),
   };
 }
 
@@ -52,26 +62,55 @@ async function syncMuxTitle(assetId: string | null, title: string) {
   }
 }
 
-// Insert a newly created class at the top of every manual collection flagged
-// `auto_add_new` (smallest position sorts first → newest leads).
-async function addToAutoCollections(supabase: AdminClient, classId: string) {
-  const { data: cols } = await supabase
+// Sync a class's manual-collection memberships to the form's checkbox picker
+// (the `collectionIds` fields). Only manual collections can have explicit
+// members — smart collections are tag-rule driven — so we ignore anything else.
+// New memberships go to the top of the row (smallest position sorts first →
+// newest leads), matching the auto-add behavior new classes used to get.
+//
+// Works for create/trim (no existing rows → pure insert) and edit (full sync:
+// add newly-checked, remove unchecked).
+async function syncClassCollections(
+  supabase: AdminClient,
+  classId: string,
+  formData: FormData,
+) {
+  const selected = formData.getAll("collectionIds").map(String).filter(Boolean);
+
+  const { data: manual } = await supabase
     .from("collections")
     .select("id")
-    .eq("auto_add_new", true)
     .eq("kind", "manual");
+  const manualIds = new Set((manual ?? []).map((c) => c.id));
+  const targets = selected.filter((id) => manualIds.has(id));
 
-  for (const col of cols ?? []) {
+  const { data: current } = await supabase
+    .from("collection_classes")
+    .select("collection_id")
+    .eq("class_id", classId);
+  const currentIds = (current ?? []).map((r) => r.collection_id);
+
+  // Remove memberships the admin unchecked.
+  for (const collectionId of currentIds.filter((id) => !targets.includes(id))) {
+    await supabase
+      .from("collection_classes")
+      .delete()
+      .eq("collection_id", collectionId)
+      .eq("class_id", classId);
+  }
+
+  // Add newly-checked collections at the top of their row.
+  for (const collectionId of targets.filter((id) => !currentIds.includes(id))) {
     const { data: minRow } = await supabase
       .from("collection_classes")
       .select("position")
-      .eq("collection_id", col.id)
+      .eq("collection_id", collectionId)
       .order("position", { ascending: true })
       .limit(1);
     const position = ((minRow?.[0]?.position ?? 0) as number) - 1;
     await supabase
       .from("collection_classes")
-      .insert({ collection_id: col.id, class_id: classId, position });
+      .insert({ collection_id: collectionId, class_id: classId, position });
   }
 }
 
@@ -104,6 +143,7 @@ export async function createClass(
       duration_minutes: f.durationMinutes,
       mux_playback_id: f.muxPlaybackId,
       mux_asset_id: f.muxAssetId,
+      class_date: f.classDate,
       // published_at left null → draft
     })
     .select("id")
@@ -111,7 +151,7 @@ export async function createClass(
 
   if (error || !created) return { error: error?.message ?? "Failed to create class." };
   await syncClassTags(supabase, created.id, tagIds);
-  await addToAutoCollections(supabase, created.id);
+  await syncClassCollections(supabase, created.id, formData);
   await syncMuxTitle(f.muxAssetId, f.title);
 
   revalidatePath("/admin/classes");
@@ -143,15 +183,18 @@ export async function updateClass(
       duration_minutes: f.durationMinutes,
       mux_playback_id: f.muxPlaybackId,
       mux_asset_id: f.muxAssetId,
+      class_date: f.classDate,
     })
     .eq("id", id);
 
   if (error) return { error: error.message };
   await syncClassTags(supabase, id, tagIds);
+  await syncClassCollections(supabase, id, formData);
   await syncMuxTitle(f.muxAssetId, f.title);
 
   revalidatePath("/admin/classes");
   revalidatePath(`/admin/classes/${id}`);
+  revalidatePath("/classes");
   redirect("/admin/classes");
 }
 
@@ -186,6 +229,7 @@ export async function createTrimmedClass(
   }
 
   const { tagIds } = parseTagSelections(formData);
+  const classDate = parseClassDate(formData);
   // Duration is determined by the trim; round to whole minutes (min 1).
   const durationMinutes = Math.max(1, Math.round((endSeconds - startSeconds) / 60));
 
@@ -219,6 +263,7 @@ export async function createTrimmedClass(
       mux_playback_id: playbackId,
       mux_asset_id: asset.id,
       source_mux_asset_id: sourceAssetId,
+      class_date: classDate,
       // published_at left null → draft
     })
     .select("id")
@@ -226,7 +271,7 @@ export async function createTrimmedClass(
 
   if (error || !created) return { error: error?.message ?? "Failed to create class." };
   await syncClassTags(supabase, created.id, tagIds);
-  await addToAutoCollections(supabase, created.id);
+  await syncClassCollections(supabase, created.id, formData);
 
   revalidatePath("/admin/classes");
   revalidatePath("/classes");

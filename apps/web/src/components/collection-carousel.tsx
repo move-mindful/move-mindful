@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { InstructorAvatar } from "@/components/instructor-avatar";
+import { formatClassDate } from "@/lib/format-date";
 import type { BrowseRow } from "@/lib/collections";
 
 const intensityBadge: Record<string, string> = {
@@ -40,22 +41,29 @@ export function CollectionCarousel({ row }: { row: BrowseRow }) {
             </div>
 
             <div className="p-3">
-              <div className="flex items-center gap-2 text-xs">
-                {c.disciplineLabel && (
-                  <span className="font-medium text-zinc-500">{c.disciplineLabel}</span>
-                )}
-                {c.intensityLabel && (
-                  <>
-                    {c.disciplineLabel && <span className="text-zinc-300">&middot;</span>}
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        (c.intensitySlug && intensityBadge[c.intensitySlug]) ||
-                        "bg-zinc-100 text-zinc-600"
-                      }`}
-                    >
-                      {c.intensityLabel}
+              <div className="flex items-center justify-between gap-2 text-xs">
+                <div className="flex min-w-0 items-center gap-2 overflow-hidden">
+                  {c.disciplineLabel && (
+                    <span className="truncate font-medium text-zinc-500">
+                      {c.disciplineLabel}
                     </span>
-                  </>
+                  )}
+                  {c.intensityLabel && (
+                    <>
+                      {c.disciplineLabel && <span className="text-zinc-300">&middot;</span>}
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+                          (c.intensitySlug && intensityBadge[c.intensitySlug]) ||
+                          "bg-zinc-100 text-zinc-600"
+                        }`}
+                      >
+                        {c.intensityLabel}
+                      </span>
+                    </>
+                  )}
+                </div>
+                {c.classDate && (
+                  <span className="shrink-0 text-zinc-400">{formatClassDate(c.classDate)}</span>
                 )}
               </div>
               <h3 className="mt-1.5 font-semibold leading-snug group-hover:text-zinc-600">

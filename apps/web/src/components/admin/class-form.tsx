@@ -7,9 +7,18 @@ import { createClass, updateClass, createTrimmedClass } from "@/app/actions/clas
 import { TrimControls } from "@/components/admin/trim-controls";
 import { MuxPlayer } from "@/components/mux-player";
 import type { ClassFormState } from "@/lib/admin/types";
-import type { TagPickerData, InstructorOption } from "@/lib/admin/queries";
+import type { TagPickerData, InstructorOption, CollectionOption } from "@/lib/admin/queries";
 
 const SINGLE_SELECT_GROUPS = ["discipline", "intensity"];
+
+// Today's date as YYYY-MM-DD in the admin's local zone — the default for new
+// classes (built from local parts so it doesn't drift a day near UTC midnight).
+function todayLocalISO(): string {
+  const d = new Date();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${month}-${day}`;
+}
 
 const inputCls =
   "w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none";
@@ -22,7 +31,14 @@ export interface ClassFormInitial {
   durationMinutes?: number | string;
   muxPlaybackId?: string;
   muxAssetId?: string;
+  /** Admin display date as YYYY-MM-DD. Defaults to today on create/trim. */
+  classDate?: string;
   tagIds?: string[];
+  /**
+   * Manual collections this class belongs to. Provided on edit to pre-check the
+   * picker; omit on create/trim to fall back to the auto-add collections.
+   */
+  collectionIds?: string[];
 }
 
 export interface TrimSource {
@@ -38,12 +54,14 @@ export function ClassForm({
   mode,
   tagData,
   instructors,
+  collections,
   initial = {},
   trim,
 }: {
   mode: "create" | "edit" | "trim";
   tagData: TagPickerData;
   instructors: InstructorOption[];
+  collections: CollectionOption[];
   initial?: ClassFormInitial;
   trim?: TrimSource;
 }) {
@@ -57,6 +75,11 @@ export function ClassForm({
   const isTrim = mode === "trim";
 
   const selected = new Set(initial.tagIds ?? []);
+  // Edit passes the class's current memberships; create/trim default to the
+  // auto-add collections (the behavior new classes used to get silently).
+  const selectedCollections = new Set(
+    initial.collectionIds ?? collections.filter((c) => c.autoAddNew).map((c) => c.id),
+  );
   const singleGroups = tagData.groups.filter((g) =>
     SINGLE_SELECT_GROUPS.includes(g.slug),
   );
@@ -135,6 +158,16 @@ export function ClassForm({
         />
       </Labeled>
 
+      <Labeled label="Date" required>
+        <input
+          name="classDate"
+          type="date"
+          defaultValue={initial.classDate ?? todayLocalISO()}
+          required
+          className={inputCls}
+        />
+      </Labeled>
+
       {!isTrim && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Labeled label="Duration (minutes)" required>
@@ -194,6 +227,43 @@ export function ClassForm({
             />
           )}
         </div>
+      )}
+
+      {collections.length > 0 && (
+        <fieldset>
+          <legend className="text-sm font-medium text-zinc-700">Collections</legend>
+          <p className="mt-0.5 text-xs text-zinc-400">
+            Rows this class appears in on the browse page. The{" "}
+            <span className="font-medium">Auto</span> collection is pre-selected —
+            uncheck to leave this class out.
+          </p>
+          <div className="mt-1.5 flex flex-wrap gap-2">
+            {collections.map((c) => (
+              <label
+                key={c.id}
+                className="flex items-center gap-1.5 rounded-full border border-zinc-300 px-3 py-1 text-sm"
+              >
+                <input
+                  type="checkbox"
+                  name="collectionIds"
+                  value={c.id}
+                  defaultChecked={selectedCollections.has(c.id)}
+                />
+                {c.title}
+                {c.autoAddNew && (
+                  <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                    Auto
+                  </span>
+                )}
+                {!c.published && (
+                  <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+                    Draft
+                  </span>
+                )}
+              </label>
+            ))}
+          </div>
+        </fieldset>
       )}
 
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}

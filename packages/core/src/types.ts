@@ -27,6 +27,8 @@ export interface VideoClass {
   muxAssetId?: string;
   /** Tags attached to this class (hydrated reads). Source of truth for discipline/intensity. */
   tags?: Tag[];
+  /** Admin-set display date shown on cards and the play page. */
+  classDate?: Date;
   createdAt: Date;
   publishedAt?: Date;
 }

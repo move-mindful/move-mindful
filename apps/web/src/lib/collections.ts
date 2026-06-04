@@ -99,6 +99,8 @@ export interface BrowseCard {
   disciplineLabel: string | null;
   intensitySlug: string | null;
   intensityLabel: string | null;
+  /** Admin display date as YYYY-MM-DD. */
+  classDate: string | null;
 }
 
 export interface BrowseRow {
@@ -133,7 +135,7 @@ export async function getBrowseRows(): Promise<BrowseRow[]> {
     supabase
       .from("classes")
       .select(
-        "id,title,instructor_name,instructor_id,duration_minutes,mux_playback_id,published_at",
+        "id,title,instructor_name,instructor_id,duration_minutes,mux_playback_id,published_at,class_date",
       ),
     supabase.from("class_tags").select("class_id,tag_id"),
     supabase.from("tags").select("id,name,slug,group_id"),
@@ -182,6 +184,7 @@ export async function getBrowseRows(): Promise<BrowseRow[]> {
       disciplineLabel,
       intensitySlug,
       intensityLabel,
+      classDate: c.class_date ?? null,
     };
   };
 
