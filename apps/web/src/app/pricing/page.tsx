@@ -30,23 +30,15 @@ export default async function PricingPage() {
         membership.
       </p>
 
-      {userId ? (
-        <PricingClient userId={userId} />
-      ) : (
-        <div className="mt-10 flex flex-col items-center gap-4">
-          <Link
-            href="/sign-up"
-            className="rounded-full bg-foreground px-8 py-3 text-sm font-medium text-background transition-colors hover:bg-zinc-700"
-          >
-            Sign Up to Get Started
-          </Link>
-          <Link
-            href="/sign-in"
-            className="text-sm text-zinc-500 hover:text-foreground"
-          >
-            Already have an account? Sign in
-          </Link>
-        </div>
+      <PricingClient userId={userId} />
+
+      {!userId && (
+        <Link
+          href="/sign-in"
+          className="mt-8 text-sm text-zinc-500 hover:text-foreground"
+        >
+          Already have an account? Sign in
+        </Link>
       )}
       </div>
     </div>

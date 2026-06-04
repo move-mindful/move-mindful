@@ -5,15 +5,16 @@ import { ENTITLEMENT_ID } from "@/lib/entitlements";
 
 export { ENTITLEMENT_ID };
 
-export function configurePurchases(appUserId: string): Purchases {
-  try {
+export function configurePurchases(appUserId?: string | null): Purchases {
+  if (Purchases.isConfigured()) {
     return Purchases.getSharedInstance();
-  } catch {
-    return Purchases.configure(
-      process.env.NEXT_PUBLIC_REVENUECAT_API_KEY!,
-      appUserId,
-    );
   }
+  // Logged-out visitors get an anonymous ID so we can fetch and display
+  // offerings/prices. A real Clerk ID is only required to make a purchase.
+  return Purchases.configure(
+    process.env.NEXT_PUBLIC_REVENUECAT_API_KEY!,
+    appUserId ?? Purchases.generateRevenueCatAnonymousAppUserId(),
+  );
 }
 
 export async function syncUserAttributes(

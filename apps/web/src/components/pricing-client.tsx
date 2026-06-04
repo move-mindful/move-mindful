@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { configurePurchases, ENTITLEMENT_ID } from "@/lib/revenuecat";
 import type { Package } from "@revenuecat/purchases-js";
 
-export function PricingClient({ userId }: { userId: string }) {
+export function PricingClient({ userId }: { userId: string | null }) {
   const router = useRouter();
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,10 +16,14 @@ export function PricingClient({ userId }: { userId: string }) {
     async function init() {
       const purchases = configurePurchases(userId);
 
-      const customerInfo = await purchases.getCustomerInfo();
-      if (ENTITLEMENT_ID in customerInfo.entitlements.active) {
-        router.replace("/classes");
-        return;
+      // Only signed-in users can have an entitlement; an anonymous shopper
+      // never does, so skip the check (and avoid creating a throwaway customer).
+      if (userId) {
+        const customerInfo = await purchases.getCustomerInfo();
+        if (ENTITLEMENT_ID in customerInfo.entitlements.active) {
+          router.replace("/classes");
+          return;
+        }
       }
 
       const offerings = await purchases.getOfferings();
@@ -33,6 +37,12 @@ export function PricingClient({ userId }: { userId: string }) {
   }, [userId, router]);
 
   async function handlePurchase(pkg: Package) {
+    // Logged-out shoppers must create an account before purchasing. Clerk's
+    // AFTER_SIGN_UP_URL returns them here, signed in, to complete checkout.
+    if (!userId) {
+      router.push("/sign-up");
+      return;
+    }
     setPurchasing(pkg.identifier);
     setError(null);
     try {
