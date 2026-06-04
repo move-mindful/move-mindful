@@ -211,6 +211,60 @@ export async function reorderClassesInCollection(
   revalidateCollections(collectionId);
 }
 
+// One-shot "sort by date" for a manual collection: rewrite member positions so
+// the newest class date leads (missing dates last, created_at breaks ties). It's
+// just a starting arrangement — the admin can still drag rows afterward.
+export async function sortCollectionMembersByDate(formData: FormData) {
+  await requireAdmin();
+  const supabase = createAdminClient();
+  const collectionId = (formData.get("collectionId") as string) || "";
+  if (!collectionId) return;
+
+  const { data: col } = await supabase
+    .from("collections")
+    .select("kind")
+    .eq("id", collectionId)
+    .single();
+  if (col?.kind !== "manual") return;
+
+  const { data: members } = await supabase
+    .from("collection_classes")
+    .select("class_id")
+    .eq("collection_id", collectionId);
+  const classIds = (members ?? []).map((m) => m.class_id);
+  if (classIds.length < 2) return;
+
+  const { data: classes } = await supabase
+    .from("classes")
+    .select("id,class_date,created_at")
+    .in("id", classIds);
+  const byId = new Map((classes ?? []).map((c) => [c.id, c]));
+
+  const sorted = [...classIds].sort((a, b) => {
+    const da = byId.get(a)?.class_date ?? "";
+    const db = byId.get(b)?.class_date ?? "";
+    if (da !== db) {
+      if (!da) return 1; // a has no date → sort after b
+      if (!db) return -1; // b has no date → sort after a
+      return db.localeCompare(da); // later ISO date first (newest leads)
+    }
+    // Same (or both missing) date → newest created_at first.
+    return (byId.get(b)?.created_at ?? "").localeCompare(byId.get(a)?.created_at ?? "");
+  });
+
+  await Promise.all(
+    sorted.map((classId, index) =>
+      supabase
+        .from("collection_classes")
+        .update({ position: index })
+        .eq("collection_id", collectionId)
+        .eq("class_id", classId),
+    ),
+  );
+
+  revalidateCollections(collectionId);
+}
+
 export async function setCollectionRuleTags(formData: FormData) {
   await requireAdmin();
   const supabase = createAdminClient();

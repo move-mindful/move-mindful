@@ -12,6 +12,7 @@ import {
   setCollectionPublished,
   addClassToCollection,
   setCollectionRuleTags,
+  sortCollectionMembersByDate,
 } from "@/app/actions/collections";
 import { DeleteCollectionButton } from "@/components/admin/delete-collection-button";
 import { CollectionClassReorder } from "@/components/admin/collection-class-reorder";
@@ -45,9 +46,25 @@ export default async function EditCollectionPage({
 
     body = (
       <section>
-        <h2 className="text-lg font-semibold">Classes in this collection</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold">Classes in this collection</h2>
+          {members.length > 1 && (
+            <form action={sortCollectionMembersByDate}>
+              <input type="hidden" name="collectionId" value={collection.id} />
+              <button
+                type="submit"
+                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium transition hover:bg-zinc-50"
+              >
+                Sort by date (newest first)
+              </button>
+            </form>
+          )}
+        </div>
         {members.length > 0 && (
-          <p className="mt-1 text-sm text-zinc-500">Drag to reorder.</p>
+          <p className="mt-1 text-sm text-zinc-500">
+            Drag to reorder. Sorting rewrites the current order — you can still
+            drag afterward.
+          </p>
         )}
         <CollectionClassReorder
           collectionId={collection.id}
