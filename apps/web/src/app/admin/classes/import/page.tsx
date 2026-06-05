@@ -36,7 +36,7 @@ export default async function ImportFromMuxPage() {
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
       <Link href="/admin/classes" className="text-sm text-zinc-500 hover:text-zinc-800">
-        &larr; Classes
+        &larr; Back
       </Link>
       <div className="mt-3 flex items-center justify-between">
         <div>

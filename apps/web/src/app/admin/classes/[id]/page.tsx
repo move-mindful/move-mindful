@@ -43,7 +43,7 @@ export default async function EditClassPage({
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
       <Link href="/admin/classes" className="text-sm text-zinc-500 hover:text-zinc-800">
-        &larr; Classes
+        &larr; Back
       </Link>
       <div className="mt-3 flex items-center justify-between gap-4">
         <h1 className="text-3xl font-bold tracking-tight">Edit class</h1>

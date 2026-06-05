@@ -39,7 +39,7 @@ export default async function NewClassPage({
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
       <Link href="/admin/classes" className="text-sm text-zinc-500 hover:text-zinc-800">
-        &larr; Classes
+        &larr; Back
       </Link>
       <h1 className="mt-3 text-3xl font-bold tracking-tight">New class</h1>
       {sp.assetId && (
