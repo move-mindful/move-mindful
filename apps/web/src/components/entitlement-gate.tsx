@@ -16,7 +16,7 @@ export function EntitlementGate({ children }: { children: React.ReactNode }) {
     if (!isLoaded || !user) return;
 
     async function checkEntitlement() {
-      const purchases = configurePurchases(user!.id);
+      const purchases = await configurePurchases(user!.id);
       syncUserAttributes(purchases, user!);
       const customerInfo = await purchases.getCustomerInfo();
       if (ENTITLEMENT_ID in customerInfo.entitlements.active) {

@@ -14,7 +14,7 @@ export function PricingClient({ userId }: { userId: string | null }) {
 
   useEffect(() => {
     async function init() {
-      const purchases = configurePurchases(userId);
+      const purchases = await configurePurchases(userId);
 
       // Only signed-in users can have an entitlement; an anonymous shopper
       // never does, so skip the check (and avoid creating a throwaway customer).
@@ -46,7 +46,8 @@ export function PricingClient({ userId }: { userId: string | null }) {
     setPurchasing(pkg.identifier);
     setError(null);
     try {
-      const { customerInfo } = await configurePurchases(userId).purchase({
+      const purchases = await configurePurchases(userId);
+      const { customerInfo } = await purchases.purchase({
         rcPackage: pkg,
       });
       if (ENTITLEMENT_ID in customerInfo.entitlements.active) {

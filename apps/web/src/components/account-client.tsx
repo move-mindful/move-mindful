@@ -16,7 +16,7 @@ export function AccountClient() {
     if (!user) return;
 
     async function load() {
-      const purchases = configurePurchases(user!.id);
+      const purchases = await configurePurchases(user!.id);
       const customerInfo = await purchases.getCustomerInfo();
       const active = customerInfo.entitlements.active[ENTITLEMENT_ID];
       if (active) {
