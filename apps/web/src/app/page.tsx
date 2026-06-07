@@ -26,7 +26,10 @@ export default async function Home() {
           A video fitness platform — on-demand classes, livestreaming, and
           community.
         </p>
-        <div className="flex gap-4">
+        {/* Onboarding existing members from another platform — self-serve
+            sign-up and pricing are hidden for now. Restore the two commented
+            blocks below to re-enable the public Get Started / Pricing flow. */}
+        {/* <div className="flex gap-4">
           <Link
             href="/sign-up"
             className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-zinc-700"
@@ -39,13 +42,25 @@ export default async function Home() {
           >
             Sign In
           </Link>
-        </div>
+        </div> */}
         <Link
+          href="/sign-in"
+          className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-zinc-700"
+        >
+          Sign In
+        </Link>
+        {/* <Link
           href="/pricing"
           className="text-sm text-zinc-500 hover:text-foreground"
         >
           View Pricing
-        </Link>
+        </Link> */}
+        <a
+          href="mailto:contact@movemindful.com"
+          className="text-sm text-zinc-500 hover:text-foreground"
+        >
+          Need help? contact@movemindful.com
+        </a>
       </main>
     </div>
   );
