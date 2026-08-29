@@ -3,7 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { configurePurchases, syncUserAttributes, ENTITLEMENT_ID } from "@/lib/revenuecat";
+import { configurePurchases, syncUserAttributes, MEMBERSHIP_ENTITLEMENT } from "@/lib/revenuecat";
 
 export function EntitlementGate({ children }: { children: React.ReactNode }) {
   const { user, isLoaded } = useUser();
@@ -19,7 +19,7 @@ export function EntitlementGate({ children }: { children: React.ReactNode }) {
       const purchases = await configurePurchases(user!.id);
       syncUserAttributes(purchases, user!);
       const customerInfo = await purchases.getCustomerInfo();
-      if (ENTITLEMENT_ID in customerInfo.entitlements.active) {
+      if (MEMBERSHIP_ENTITLEMENT in customerInfo.entitlements.active) {
         setStatus("granted");
       } else {
         setStatus("denied");

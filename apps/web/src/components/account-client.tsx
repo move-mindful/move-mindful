@@ -2,7 +2,7 @@
 
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
-import { configurePurchases, ENTITLEMENT_ID } from "@/lib/revenuecat";
+import { configurePurchases, MEMBERSHIP_ENTITLEMENT } from "@/lib/revenuecat";
 import type { EntitlementInfo } from "@revenuecat/purchases-js";
 
 export function AccountClient() {
@@ -18,7 +18,7 @@ export function AccountClient() {
     async function load() {
       const purchases = await configurePurchases(user!.id);
       const customerInfo = await purchases.getCustomerInfo();
-      const active = customerInfo.entitlements.active[ENTITLEMENT_ID];
+      const active = customerInfo.entitlements.active[MEMBERSHIP_ENTITLEMENT];
       if (active) {
         setEntitlement(active);
       }

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { ENTITLEMENT_ID } from "@/lib/entitlements";
+import { MEMBERSHIP_ENTITLEMENT } from "@/lib/entitlements";
 
 const REVENUECAT_API_BASE = "https://api.revenuecat.com/v1";
 
@@ -49,7 +49,7 @@ export async function grantLifetimeMembership(appUserId: string): Promise<void> 
   }
 
   const grantUrl = `${subscriberUrl}/entitlements/${encodeURIComponent(
-    ENTITLEMENT_ID,
+    MEMBERSHIP_ENTITLEMENT,
   )}/promotional`;
 
   const res = await fetch(grantUrl, {

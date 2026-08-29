@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { configurePurchases, ENTITLEMENT_ID } from "@/lib/revenuecat";
+import { configurePurchases, MEMBERSHIP_ENTITLEMENT } from "@/lib/revenuecat";
 import type { Package } from "@revenuecat/purchases-js";
 
 export function PricingClient({ userId }: { userId: string | null }) {
@@ -20,7 +20,7 @@ export function PricingClient({ userId }: { userId: string | null }) {
       // never does, so skip the check (and avoid creating a throwaway customer).
       if (userId) {
         const customerInfo = await purchases.getCustomerInfo();
-        if (ENTITLEMENT_ID in customerInfo.entitlements.active) {
+        if (MEMBERSHIP_ENTITLEMENT in customerInfo.entitlements.active) {
           router.replace("/classes");
           return;
         }
@@ -50,7 +50,7 @@ export function PricingClient({ userId }: { userId: string | null }) {
       const { customerInfo } = await purchases.purchase({
         rcPackage: pkg,
       });
-      if (ENTITLEMENT_ID in customerInfo.entitlements.active) {
+      if (MEMBERSHIP_ENTITLEMENT in customerInfo.entitlements.active) {
         router.push("/classes");
       }
     } catch (e: unknown) {

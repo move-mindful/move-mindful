@@ -1,9 +1,9 @@
 "use client";
 
 import { Purchases } from "@revenuecat/purchases-js";
-import { ENTITLEMENT_ID } from "@/lib/entitlements";
+import { MEMBERSHIP_ENTITLEMENT } from "@/lib/entitlements";
 
-export { ENTITLEMENT_ID };
+export { MEMBERSHIP_ENTITLEMENT };
 
 export async function configurePurchases(
   appUserId?: string | null,
