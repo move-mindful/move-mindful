@@ -37,10 +37,14 @@ export function PricingClient({ userId }: { userId: string | null }) {
   }, [userId, router]);
 
   async function handlePurchase(pkg: Package) {
-    // Logged-out shoppers must create an account before purchasing. Clerk's
-    // AFTER_SIGN_UP_URL returns them here, signed in, to complete checkout.
+    // Logged-out shoppers must create an account before purchasing, then come
+    // straight back here to complete checkout.
     if (!userId) {
-      router.push("/sign-up");
+      // Carry the return path explicitly rather than leaning on the global
+      // AFTER_SIGN_UP_URL, which now points at /home — the right landing for
+      // someone signing up from the homepage with nothing to buy, and the wrong
+      // one for a shopper mid-checkout.
+      router.push("/sign-up?redirect_url=%2Fpricing");
       return;
     }
     setPurchasing(pkg.identifier);
