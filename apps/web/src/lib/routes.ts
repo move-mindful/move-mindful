@@ -6,15 +6,13 @@
  */
 
 /**
- * Where a signed-in member lands.
+ * The signed-in root — not to be confused with "/", which is the public
+ * marketing page. Every entry point lands here: the homepage redirect for
+ * signed-in visitors, the `/join` grant, the PWA start URL, and Clerk's
+ * NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL (keep that env var in sync).
  *
- * The on-demand class library (`/classes`) and the live stream (`/live`) are
- * built but not released — they're locked to admins while the one-time-purchase
- * product is the only thing on sale (see `lib/auth/locked-sections.ts`). So the
- * homepage redirect, the PWA start URL, and the post-signup `/join` grant all
- * point here instead of at `/classes`.
- *
- * When the membership launches, point this back at "/classes" and set
- * NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL to match.
+ * It sits in the `(app)` route group, which requires an account but no
+ * entitlement — so it works for free-tier signups and one-time-product buyers,
+ * not just members.
  */
-export const MEMBER_HOME = "/account";
+export const MEMBER_HOME = "/home";

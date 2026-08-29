@@ -6,6 +6,13 @@ A video fitness platform with on-demand classes, livestreaming, push notificatio
 
 **Phase 4 complete — admin CMS (Mux sync, tags, collections) and a curated, collection-based member browse, on top of Mux video, RevenueCat payments, and entitlement gating.** (See the full build order with checkmarks in [plan.md](./plan.md).)
 
+> **Product status — the class library and live stream are paused.** The next thing to sell
+> is a one-time-purchase product (a short video series, lifetime access); the on-demand
+> library and live classes will return later under the recurring membership. So `/classes`
+> and `/live` are hidden from the member nav and locked to admins (`requireSectionUnlocked()`
+> in `lib/auth/locked-sections.ts`) — built and previewable, but not reachable by members.
+> Signed-in users land on `/home` instead (`MEMBER_HOME` in `lib/routes.ts`).
+
 What's in place:
 
 - Turborepo monorepo with npm workspaces
@@ -14,14 +21,23 @@ What's in place:
   - **Clerk authentication** — sign-in/sign-up, `ClerkProvider`, route protection via `proxy.ts`. Admin gating via `publicMetadata.role` (a session-token claim) checked optimistically in the proxy and authoritatively server-side with `requireAdmin()`.
   - **Mux video** — class catalog and individual class pages with `@mux/mux-player-react` (adaptive streaming, AirPlay), thumbnails from Mux. Full-width video theater stage on the class detail page (viewport-height-capped, black background).
   - **RevenueCat + Stripe payments** — public pricing page (offerings/prices render for logged-out visitors via an anonymous RevenueCat config; sign-up is only required at the point of purchase, after which Clerk's `AFTER_SIGN_UP_URL` returns them to `/pricing` to check out), Web Billing purchase flow, "Move Mindful Pro" entitlement gating member routes.
-  - **Free-membership signup** — a hidden, unlisted page (`/join/[code]`, gated by the `JOIN_SECRET_SLUG` env var) where a user signs up via Clerk and is granted a **lifetime "Move Mindful Pro" promotional entitlement** server-side through RevenueCat's REST API (`REVENUECAT_SECRET_API_KEY`), then lands in `/classes`. Reuses the existing entitlement gate unchanged. Protected by URL obscurity only — anyone with the link can self-enroll.
+  - **Free-membership signup** — a hidden, unlisted page (`/join/[code]`, gated by the `JOIN_SECRET_SLUG` env var) where a user signs up via Clerk and is granted a **lifetime "Move Mindful Pro" promotional entitlement** server-side through RevenueCat's REST API (`REVENUECAT_SECRET_API_KEY`), then lands on `/home`. Reuses the existing entitlement gate unchanged. Protected by URL obscurity only — anyone with the link can self-enroll.
   - **Admin CMS** (`/admin`, admin-only) — **classes**: Upload page (batch direct-upload many video files straight to Mux via signed upload URLs + `@mux/upchunk`, with per-file progress and a small concurrency cap; uploaded assets surface in Import once Mux finishes encoding), Import page (list Mux assets → import or **Trim & import** to clip dead air into a new Mux asset, or delete unwanted assets straight from the list; live recordings stay visible but import/trim/delete wait until Mux finalizes the recording duration), create/edit (full video player on the edit page for review), request a temporary Mux master MP4 download for offline editing, publish/unpublish, delete from overview rows or the edit page (with optional Mux asset deletion), one-click "delete raw recording" on trimmed clips once the clip is ready, assign an instructor, set an admin display date (defaults to today on import/add, shown on cards + the play page), choose which collections the class belongs to right from the create/edit/trim form (the auto-add collection comes pre-selected and can be unchecked per class); class title edits sync back to the Mux asset's `meta.title` so videos are searchable in the Mux dashboard; **instructors**: teachers with an uploaded profile photo (client-side square-cropped, stored in Supabase Storage), one assigned per class; **tags**: tag groups + tags (create/rename/delete, cascade-safe); **collections**: manual (hand-picked + drag-to-reorder member order, via `@dnd-kit`) and smart (tag-rule membership, auto-resolved, with the same drag-to-reorder ordering and "sort by date" layered on top as an overlay — newly-tagged classes appear at the top automatically), publish, drag-to-reorder row ordering, a per-collection display limit, and an "auto-add new classes to the top" toggle (manual) that pre-selects the collection in the class form so new classes land on it by default (uncheckable per class). All writes go through server actions using the Supabase service-role key (`server-only`).
   - **Member browse** (`/classes`) — curated **collection carousels** (manual + smart, ordered, each capped at its display limit); class card/detail metadata derived from tags (Discipline label · Intensity badge · Focus/Vibe chips) plus the admin class date (on cards and the play page), with the instructor's avatar + name (single-initial fallback) on cards and the class page. Curation-only: a class appears only if it's in a published collection.
   - **Live** (`/live`) — a persistent full-width Mux live stream (`streamType="live"`, playback ID via `NEXT_PUBLIC_MUX_LIVESTREAM_PLAYBACK_ID`) that polls a protected `/api/live/status` route for Mux's active-stream state, starts muted playback automatically when the configured stream becomes live, shows a viewer-local "next class" countdown banner (Luxon), and renders a hardcoded recurring weekly schedule as a month calendar (class times defined in Arizona time, converted to the viewer's local timezone, prev/next month nav).
+  - **Home** (`/home`) — the signed-in root (distinct from `/`, the public marketing page).
+    Every entry point lands here: the homepage redirect, the `/join` grant, the PWA
+    `start_url`, and Clerk's `AFTER_SIGN_IN_URL`. Currently a holding page; it becomes the
+    list of what a person owns (free products, the purchased series, the library).
   - **Account Settings** (`/account`) — plan status and profile.
   - **Help** (`/help`) — contact page (email link).
+  - **Two-tier route groups** — `(app)` is the signed-in shell (header + user menu),
+    requiring an account but **no** entitlement, so free signups and one-time-product
+    buyers can reach `/home`, `/account` and `/help`. `(app)/(member)` nests inside it and
+    adds the `EntitlementGate` for the membership-only routes (`/classes`, `/live`),
+    inheriting the header rather than duplicating it.
   - **Custom user menu** — Clerk user info synced to RevenueCat.
-  - **Installable web app (PWA)** — a web manifest (`src/app/manifest.ts`) plus `appleWebApp` metadata make the site installable to the iOS/Android home screen as a standalone app. `display: "standalone"` launches it chrome-less to `/classes`, and `scope: "/"` keeps same-origin navigation inside the standalone window (so taps on nav links don't open in an iOS in-app browser overlay). The proxy matcher already leaves `/manifest.webmanifest` public.
+  - **Installable web app (PWA)** — a web manifest (`src/app/manifest.ts`) plus `appleWebApp` metadata make the site installable to the iOS/Android home screen as a standalone app. `display: "standalone"` launches it chrome-less to `MEMBER_HOME`, and `scope: "/"` keeps same-origin navigation inside the standalone window (so taps on nav links don't open in an iOS in-app browser overlay). The proxy matcher already leaves `/manifest.webmanifest` public.
   - **Supabase database** — `user_profiles`, `classes`, `instructors`, `tags`, `tag_groups`, `class_tags`, `collections`, `collection_classes`, `collection_rule_tags`, all with RLS (read-only for members; admin writes via service-role). Instructor avatars live in a public `instructor-avatars` Storage bucket.
   - **Deployed to Vercel** — live at `www.movemindful.com`. Auto-deploys on push to `main`.
 - `apps/mobile` — Expo 56 / React Native app (starter screen, no integrations yet)
@@ -77,14 +93,15 @@ move-mindful/
 │   │   ├── src/lib/       # supabase (anon + service-role), mux, auth, admin queries, collections
 │   │   ├── src/components/# Mux player, user menu, entitlement gate, carousel, admin/*
 │   │   └── src/app/       # App Router
-│   │       ├── page.tsx        # Public landing (redirects signed-in → /classes)
+│   │       ├── page.tsx        # Public landing (redirects signed-in → /home)
 │   │       ├── pricing/        # Pricing page (RevenueCat offerings + purchase)
 │   │       ├── sign-in/        # Clerk <SignIn />
 │   │       ├── sign-up/        # Clerk <SignUp />
 │   │       ├── join/[code]/    # Hidden free-membership signup (env-gated, lifetime grant)
 │   │       ├── actions/        # Server actions (classes, tags, collections)
 │   │       ├── admin/          # Admin CMS: classes (upload, import, trim, edit), tags, collections
-│   │       └── (member)/       # Protected: classes (carousels), classes/[id], live, account, help
+│   │       ├── (app)/          # Signed-in shell (no entitlement): home, account, help
+│   │       └── (app)/(member)/ # Membership-gated: classes (carousels), classes/[id], live
 │   └── mobile/            # Expo 56 / React Native
 │       └── App.tsx        # Entry point
 ├── packages/
