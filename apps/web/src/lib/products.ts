@@ -59,8 +59,9 @@ export const PRODUCTS: Product[] = [
     title: "Posture Reset",
     tagline: "Five short sessions to undo desk posture and move with ease.",
     entitlement: "posture",
-    // Best guess — the RevenueCat *product* id, not the entitlement id. Confirm
-    // in the dashboard; a mismatch just falls back to the /pricing link.
+    // Confirmed in the dashboard. Same string as the entitlement above, but a
+    // distinct object — the product is what's sold, the entitlement is what it
+    // unlocks. They needn't match for other products.
     revenueCatProductId: "posture",
     // TODO: paste the Mux playback ids once the videos are uploaded. Until then
     // the product page shows its locked/sales state and lists nothing.
