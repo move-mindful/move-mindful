@@ -47,11 +47,21 @@ export function ProductPurchase({
         const purchases = await configurePurchases(userId);
         const offerings = await purchases.getOfferings();
 
+        // Match the RevenueCat *product* identifier, falling back to the
+        // *package* identifier. The dashboard shows products by display name,
+        // so "Posture Reset" in the picker could be backed by an identifier of
+        // posture, PostureReset or posture_reset — and the package sitting
+        // around it has an identifier of its own. Accepting either means the
+        // config value can be whichever one is to hand.
         let match: Package | undefined;
         for (const offering of Object.values(offerings.all)) {
-          match = offering.availablePackages.find(
-            (p) => p.webBillingProduct.identifier === revenueCatProductId,
-          );
+          match =
+            offering.availablePackages.find(
+              (p) => p.webBillingProduct.identifier === revenueCatProductId,
+            ) ??
+            offering.availablePackages.find(
+              (p) => p.identifier === revenueCatProductId,
+            );
           if (match) break;
         }
 
@@ -65,9 +75,10 @@ export function ProductPurchase({
               `Add it to a package in an offering. Currently available:`,
             Object.entries(offerings.all).map(([id, o]) => ({
               offering: id,
-              productIds: o.availablePackages.map(
-                (p) => p.webBillingProduct.identifier,
-              ),
+              packages: o.availablePackages.map((p) => ({
+                packageId: p.identifier,
+                productId: p.webBillingProduct.identifier,
+              })),
             })),
           );
         }
