@@ -38,8 +38,15 @@ export interface Product {
    * RevenueCat entitlement that unlocks it — must match the dashboard exactly.
    * Whether the membership also grants this is decided in RevenueCat (attach
    * the membership product to this entitlement), never here.
+   *
+   * **null means free to anyone with an account.** No RevenueCat entitlement is
+   * involved: a Clerk account is what puts someone in the system, and an
+   * entitlement granted to every signup carries no information while adding a
+   * grant call that can fail at the worst possible moment — right after someone
+   * signed up for a freebie. Give a free product an entitlement only if it
+   * shouldn't go to everyone.
    */
-  entitlement: string;
+  entitlement: string | null;
   /**
    * RevenueCat *product* identifier (distinct from the entitlement above), used
    * to find this product's package across the configured offerings so the sales
@@ -66,6 +73,22 @@ export const PRODUCTS: Product[] = [
     // TODO: paste the Mux playback ids once the videos are uploaded. Until then
     // the product page shows its locked/sales state and lists nothing.
     videos: [],
+  },
+
+  {
+    slug: "posture-routine",
+    title: "12 Minute Posture Routine",
+    tagline: "Stand taller. Move with ease. Feel good in your body.",
+    // Free with any account — the top-of-funnel lead magnet.
+    entitlement: null,
+    videos: [
+      {
+        slug: "routine",
+        title: "12 Minute Posture Routine",
+        playbackId: "s8h8mNGwoi02019exYwLUdHjJo6j0113SdY4BrWXQAN84A",
+        durationMinutes: 12,
+      },
+    ],
   },
 ];
 

@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { getProduct, PRODUCTS } from "@/lib/products";
 import { getViewerAccess, viewerCanAccess } from "@/lib/auth/viewer";
 import { ProductPurchase } from "@/components/product-purchase";
+import { MuxPlayer } from "@/components/mux-player";
 import { auth } from "@clerk/nextjs/server";
 
 export async function generateMetadata({
@@ -51,7 +52,16 @@ export default async function ProductPage({
       </header>
 
       {owned ? (
-        product.videos.length > 0 ? (
+        product.videos.length === 1 ? (
+          // A one-card grid linking to a player is a pointless click, so a
+          // single-video product just plays here.
+          <div className="mt-8 overflow-hidden rounded-xl bg-black">
+            <MuxPlayer
+              playbackId={product.videos[0].playbackId}
+              title={product.videos[0].title}
+            />
+          </div>
+        ) : product.videos.length > 0 ? (
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {product.videos.map((video) => (
               <Link
@@ -89,15 +99,35 @@ export default async function ProductPage({
         )
       ) : (
         <div className="mt-10 max-w-md rounded-xl border border-zinc-200 bg-white p-6">
-          <h2 className="text-lg font-semibold">Get access</h2>
-          <p className="mt-2 text-sm text-zinc-500">
-            A one-time purchase. Yours to keep, with no subscription.
-          </p>
-          <ProductPurchase
-            userId={userId}
-            productSlug={product.slug}
-            revenueCatProductId={product.revenueCatProductId}
-          />
+          {product.entitlement === null ? (
+            <>
+              <h2 className="text-lg font-semibold">Watch it free</h2>
+              {/* Straight about the account up front: promising a video and
+                  then producing a form converts worse than saying so. */}
+              <p className="mt-2 text-sm text-zinc-500">
+                Free with a Move Mindful account. Create one and watch it now —
+                no card, no subscription.
+              </p>
+              <Link
+                href={`/sign-up?redirect_url=${encodeURIComponent(`/${product.slug}`)}`}
+                className="mt-5 inline-flex rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-zinc-700"
+              >
+                Create free account
+              </Link>
+            </>
+          ) : (
+            <>
+              <h2 className="text-lg font-semibold">Get access</h2>
+              <p className="mt-2 text-sm text-zinc-500">
+                A one-time purchase. Yours to keep, with no subscription.
+              </p>
+              <ProductPurchase
+                userId={userId}
+                productSlug={product.slug}
+                revenueCatProductId={product.revenueCatProductId}
+              />
+            </>
+          )}
           {!viewer.signedIn && (
             <p className="mt-4 text-sm text-zinc-500">
               Already bought it?{" "}

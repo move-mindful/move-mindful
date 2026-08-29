@@ -35,7 +35,12 @@ export interface EntitlementOption {
  */
 export const ENTITLEMENT_OPTIONS: EntitlementOption[] = [
   { id: MEMBERSHIP_ENTITLEMENT, label: "Membership — class library + live" },
-  ...PRODUCTS.map((p) => ({ id: p.entitlement, label: `${p.title} — one-time` })),
+  // Free products (entitlement null) have nothing to require, so they're not
+  // options here — a class can't be gated on "free".
+  ...PRODUCTS.filter((p) => p.entitlement !== null).map((p) => ({
+    id: p.entitlement as string,
+    label: `${p.title} — one-time`,
+  })),
 ];
 
 /** How "no entitlement required" reads in the admin picker. */
