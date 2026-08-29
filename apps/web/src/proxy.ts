@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { MEMBER_HOME } from "@/lib/routes";
 
 const isPublicRoute = createRouteMatcher([
   "/",
@@ -12,6 +13,10 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
+
+// Sections that are built but not released to members yet — admins only for now.
+// See lib/auth/locked-sections.ts for the authoritative check and the rationale.
+const isLockedSection = createRouteMatcher(["/classes(.*)", "/live(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
   if (isPublicRoute(req)) return;
@@ -27,8 +32,16 @@ export default clerkMiddleware(async (auth, req) => {
   // Optimistic admin gate only. Real enforcement is server-side via requireAdmin()
   // in the /admin layout + every admin server action. This just stops non-admins
   // from loading the admin UI shell.
-  if (isAdminRoute(req) && sessionClaims?.metadata?.role !== "admin") {
-    return NextResponse.redirect(new URL("/classes", req.url));
+  const admin = sessionClaims?.metadata?.role === "admin";
+
+  if (isAdminRoute(req) && !admin) {
+    return NextResponse.redirect(new URL(MEMBER_HOME, req.url));
+  }
+
+  // Same optimistic-only deal: requireSectionUnlocked() in each locked page is
+  // the real boundary. This just avoids rendering the shell for members.
+  if (isLockedSection(req) && !admin) {
+    return NextResponse.redirect(new URL(MEMBER_HOME, req.url));
   }
 });
 

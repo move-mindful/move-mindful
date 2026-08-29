@@ -1,3 +1,4 @@
+import { requireSectionUnlocked } from "@/lib/auth/locked-sections";
 import { createClient } from "@/lib/supabase/server";
 import { MuxPlayer } from "@/components/mux-player";
 import { VideoTheaterStage } from "@/components/video-theater-stage";
@@ -23,6 +24,8 @@ export default async function ClassDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireSectionUnlocked();
+
   const { id } = await params;
   const supabase = await createClient();
 

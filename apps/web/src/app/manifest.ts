@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { MEMBER_HOME } from "@/lib/routes";
 
 // Declaring an explicit manifest makes the site installable as a standalone
 // home-screen app. `scope: "/"` is the important bit for iOS: it tells the
@@ -11,7 +12,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "MoveMindful",
     description:
       "A video fitness platform — on-demand classes, livestreaming, and community.",
-    start_url: "/classes",
+    start_url: MEMBER_HOME,
     scope: "/",
     display: "standalone",
     background_color: "#ffffff",

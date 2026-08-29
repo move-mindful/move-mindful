@@ -2,11 +2,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { MEMBER_HOME } from "@/lib/routes";
 
 export default async function Home() {
   const { userId } = await auth();
   if (userId) {
-    redirect("/classes");
+    redirect(MEMBER_HOME);
   }
 
   return (

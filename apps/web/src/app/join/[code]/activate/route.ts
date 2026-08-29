@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { grantLifetimeMembership } from "@/lib/revenuecat-admin";
+import { MEMBER_HOME } from "@/lib/routes";
 
 /**
  * Grants the lifetime entitlement to the signed-in user, then sends them into
@@ -34,5 +35,5 @@ export async function GET(
   }
 
   // redirect() throws, so it must live outside the try/catch above.
-  redirect(granted ? "/classes" : "/pricing");
+  redirect(granted ? MEMBER_HOME : "/pricing");
 }

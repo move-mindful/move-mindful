@@ -1,7 +1,10 @@
+import { requireSectionUnlocked } from "@/lib/auth/locked-sections";
 import { getBrowseRows } from "@/lib/collections";
 import { CollectionCarousel } from "@/components/collection-carousel";
 
 export default async function ClassesPage() {
+  await requireSectionUnlocked();
+
   const rows = await getBrowseRows();
 
   if (rows.length === 0) {

@@ -1,10 +1,13 @@
+import { requireSectionUnlocked } from "@/lib/auth/locked-sections";
 import { LIVE_PLAYBACK_ID } from "@/lib/live-stream-config";
 import { VideoTheaterStage } from "@/components/video-theater-stage";
 import { LiveStreamPlayer } from "@/components/live/live-stream-player";
 import { ScheduleCalendar } from "@/components/live/schedule-calendar";
 import { ScheduleWeekList } from "@/components/live/schedule-week-list";
 
-export default function LivePage() {
+export default async function LivePage() {
+  await requireSectionUnlocked();
+
   return (
     <div>
       {/* Full-width persistent live video */}
