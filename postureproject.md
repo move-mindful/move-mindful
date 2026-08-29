@@ -116,6 +116,22 @@ somewhere specific pass `?redirect_url=<relative path>` to `/sign-up` instead:
 sign-up page honours **same-origin relative paths only** — `redirect_url` is
 attacker-controllable, so anything else would make it an open redirect.
 
+### Free class + list building
+- **12 Minute Posture Routine** (`/posture-routine`) — free with any account.
+  A product with `entitlement: null`: no RevenueCat entitlement, nothing to
+  grant, so nothing to fail right after someone signs up for a freebie. Single-
+  video products play inline rather than rendering a one-card grid.
+- **Clerk → Mailchimp**, verified working. `user.created` webhook adds each
+  signup to the audience tagged `signup` plus `source:<product-slug>`, so
+  ManyChat cohorts stay separable — free-class signups and buyers behave very
+  differently, and splitting them later is far harder than recording it now.
+  The source travels as `SignUp` `unsafeMetadata`, resolved against `PRODUCTS`
+  rather than trusted from the query string (it becomes a Mailchimp tag).
+  Uses `status_if_new`, so a past unsubscriber is never silently resurrected.
+- Sign-up carries a plain notice ("We'll send you occasional emails…") rather
+  than a consent checkbox. US CAN-SPAM is opt-out, so this is proportionate;
+  revisit if EU traffic becomes significant.
+
 ## To do — to launch Posture
 
 > **Correction.** An earlier version of this file claimed the site ran on a
@@ -145,12 +161,24 @@ against `npm run dev:web`. Leave Vercel on the production key.
    the only way to verify the Classes/Live lock actually holds.
 
 3. **Write real copy** for the Posture Reset tagline (currently placeholder) and
-   `/pricing` (currently a bare "Get access" heading).
+   `/pricing` (currently a bare "Get access" heading). Context is being gathered
+   from a ChatGPT history export and two Squarespace sites.
 
-4. **Restore the homepage Pricing link** if wanted — it's still commented out
-   from when `/pricing` listed parked products. That's no longer true, so it can
-   come back, though a direct link to `/posture` may serve better while there's
-   one product.
+4. **Exit-intent popup** on `/posture` offering the free routine — on hold.
+   When built, note that classic exit intent needs a cursor leaving the
+   viewport, which phones don't have; ManyChat traffic is mostly mobile, so it
+   must also fire on scroll depth or a time threshold or it reaches almost
+   nobody.
+
+5. **Retire `therapeuticyogamethod.com/postureroutine`** or redirect it. While
+   it serves the same video with no account required, the signup offer is worth
+   less. Currently unlisted and email-gated, so not urgent.
+
+6. **Delete the test signup** from the Mailchimp audience and Clerk.
+
+7. **Homepage has no path to the product** for a logged-out visitor — by
+   design, since `/posture` is the advertised entry point. The Pricing link
+   stays commented out. Revisit if cold traffic to the root domain matters.
 
 ## Flagged, not yet addressed
 
