@@ -22,13 +22,14 @@ export default async function PricingPage() {
       )}
       <div className="flex flex-col flex-1 items-center px-8 py-16 text-center">
         {!userId && <Image src="/logo.png" alt="MoveMindful" width={64} height={64} />}
+      {/* Deliberately neutral: the packages themselves carry their titles,
+          descriptions and prices from RevenueCat, and what's on sale changes by
+          switching the current offering — no deploy. Copy here that names
+          specific plans goes stale the moment that happens, which is exactly
+          what it did. */}
       <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-5xl">
-        Choose Your Plan
+        Get access
       </h1>
-      <p className="mt-4 max-w-md text-lg text-zinc-500">
-        Start your journey with a 30-day challenge or go all-in with a monthly
-        membership.
-      </p>
 
       <PricingClient userId={userId} />
 

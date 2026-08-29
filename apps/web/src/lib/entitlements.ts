@@ -10,6 +10,8 @@
  * membership — all without a deploy.
  */
 
+import { PRODUCTS } from "@/lib/products";
+
 /** The recurring membership: the on-demand class library and live classes. */
 export const MEMBERSHIP_ENTITLEMENT = "Move Mindful Pro";
 
@@ -23,16 +25,17 @@ export interface EntitlementOption {
 /**
  * Everything a class can require, in the order the admin picker shows them.
  *
- * **This list is the only code change needed to launch a new product.** Create
- * the entitlement and product in RevenueCat, add a row here, and it becomes
- * selectable on every class. The picker reads this list rather than accepting
- * free text on purpose: a typo'd identifier would silently make content either
- * unreachable or free, and neither failure is visible from the admin UI.
+ * Derived from PRODUCTS so a product is defined in exactly one place: add it to
+ * lib/products.ts and it becomes selectable here too, which is what lets a
+ * library class be sold as part of a product (a bonus class for buyers, say).
+ *
+ * The picker reads this list rather than accepting free text on purpose: a
+ * typo'd identifier would silently make a class either unreachable or free, and
+ * neither failure shows up anywhere in the admin UI.
  */
 export const ENTITLEMENT_OPTIONS: EntitlementOption[] = [
   { id: MEMBERSHIP_ENTITLEMENT, label: "Membership — class library + live" },
-  // One-time purchases go here, one row per product. For example:
-  // { id: "series_foundations", label: "Foundations Series — one-time" },
+  ...PRODUCTS.map((p) => ({ id: p.entitlement, label: `${p.title} — one-time` })),
 ];
 
 /** How "no entitlement required" reads in the admin picker. */

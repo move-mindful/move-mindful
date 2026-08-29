@@ -48,7 +48,6 @@ export const PRODUCTS: Product[] = [
     slug: "posture",
     title: "Posture",
     tagline: "Five short sessions to undo desk posture and move with ease.",
-    // TODO: confirm against the RevenueCat dashboard once the entitlement exists.
     entitlement: "posture",
     // TODO: paste the Mux playback ids once the videos are uploaded. Until then
     // the product page shows its locked/sales state and lists nothing.
