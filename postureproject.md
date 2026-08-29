@@ -118,21 +118,20 @@ attacker-controllable, so anything else would make it an open redirect.
 
 ## To do — to launch Posture
 
-0. **Switch RevenueCat to the production key. Launch-blocking.**
-   `NEXT_PUBLIC_REVENUECAT_API_KEY` in Vercel is a **sandbox** Web Billing key
-   (`rcb_sb_` prefix; production keys are plain `rcb_`).
+> **Correction.** An earlier version of this file claimed the site ran on a
+> RevenueCat *sandbox* key. That was wrong. The check that produced it grepped
+> the deployed bundle for `rcb_` and took the first match — which was
+> `rcb_sb_`, a constant the purchases-js SDK itself ships to *detect* sandbox
+> keys, not the configured key. The real key is a plain `rcb_` production key,
+> in Vercel and in `.env.local` alike.
 
-   Offerings and packages are project-level, so the sandbox key sees them fine —
-   this is not why checkout was broken (that was the missing package, now fixed).
-   What it means is that **no real money moves**: checkout will appear to
-   succeed, grant the entitlement, and take nothing. Useful right now — the
-   whole purchase flow can be tested for free — and fatal at launch.
+**Purchases are real, in every environment.** Both Vercel and local
+`.env.local` hold the production Web Billing key, so a test purchase — on
+movemindful.com or on localhost — is a live Stripe charge that needs refunding.
 
-   Fix: RevenueCat → Apps & Providers → Configurations → the web configuration
-   holds both keys. Put the production one in Vercel as **Config** (not Secret —
-   it's `NEXT_PUBLIC_`), then **redeploy**; `NEXT_PUBLIC_` values bake in at
-   build time. Production Web Billing needs a live Stripe account connected.
-   Keep the sandbox key in local `.env.local`.
+To test for free, put the **sandbox** key (`rcb_sb_…`, from RevenueCat → Apps &
+Providers → Configurations → the web configuration) in `.env.local` and test
+against `npm run dev:web`. Leave Vercel on the production key.
 
 1. **Upload the five videos** to Mux, then paste them into `lib/products.ts`:
    `{ slug, title, playbackId, durationMinutes }`. This is the last content
