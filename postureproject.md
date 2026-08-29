@@ -96,18 +96,43 @@ the page, routing, public-URL handling, access check and `/home` card all follow
 
 ## To do — to launch Posture
 
-1. **Upload the five videos** to Mux, then paste them into `lib/products.ts`:
+0. **Switch RevenueCat to the production key. Launch-blocking.**
+   `NEXT_PUBLIC_REVENUECAT_API_KEY` in Vercel is currently a **sandbox** Web
+   Billing key — confirmed by the `rcb_sb_` prefix (production keys are plain
+   `rcb_`). Diagnosed from the live site: the SDK sees exactly one offering, and
+   it contains no `posture` package.
+
+   Consequences: no real money can be taken, and if the Posture product and its
+   offering were created in the production environment the sandbox key cannot
+   see them — which is very likely why the buy button still falls back to
+   `/pricing`. The stale products showing on `/pricing` are sandbox test data.
+
+   Fix: RevenueCat dashboard → Apps & Providers → Configurations → the web
+   configuration holds both a production and a sandbox public key. Put the
+   production one in Vercel (type **Config**, not Secret — it's `NEXT_PUBLIC_`),
+   then **redeploy**, since `NEXT_PUBLIC_` values are baked in at build time.
+   Production Web Billing needs a live Stripe account connected.
+
+   Keep the sandbox key for local `.env.local` so test purchases stay off the
+   live account.
+
+1. **Confirm `posture` is in an offering.** Whatever key is in use, the SDK only
+   sees products that sit in a *package inside an offering* — creating a product
+   doesn't put it in one. `/posture` logs a `[product]` console warning naming
+   every offering and product it can see, which is the fastest way to check.
+
+2. **Upload the five videos** to Mux, then paste them into `lib/products.ts`:
    `{ slug, title, playbackId, durationMinutes }`. This is the last blocker.
-2. **Verify the RevenueCat offering.** `/pricing` renders `offerings.current`,
+3. **Verify the RevenueCat offering.** `/pricing` renders `offerings.current`,
    so the Posture product must be in a package inside the offering marked
    **current**, and that product must be attached to the `posture` entitlement.
-3. **Test the purchase end-to-end** — buy, receive the entitlement, land
+4. **Test the purchase end-to-end** — buy, receive the entitlement, land
    somewhere sensible. Not verifiable from the dev side; needs a real run.
    Quick pre-test: grant yourself `posture` in the RevenueCat dashboard and
    confirm the `/home` badge flips Locked → Yours.
-4. **Write real copy** for the Posture tagline (currently placeholder) and
+5. **Write real copy** for the Posture tagline (currently placeholder) and
    `/pricing` (currently a neutral heading).
-5. **Push** the outstanding commits.
+6. **Push** the outstanding commits.
 
 ---
 
