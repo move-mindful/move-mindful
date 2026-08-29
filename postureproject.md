@@ -90,51 +90,68 @@ the page, routing, public-URL handling, access check and `/home` card all follow
 - `CLAUDE.md` push guidance corrected: the remote is now SSH via a pinned host
   alias, so `git push` needs no `gh` account check (only `gh` CLI commands do).
 - Vercel `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` → `/home`.
-- RevenueCat: `posture` entitlement and product created.
+- RevenueCat: `posture` entitlement and product created, packaged as
+  `PostureReset` in the MoveMindful offering.
+- Vercel `AFTER_SIGN_UP_URL` → `/home`.
+- `npm run lint` passes clean: `schedule-calendar.tsx` set state in an effect to
+  defer the current month past hydration; replaced with `useSyncExternalStore`
+  and a derived month.
 
 ---
+
+### Selling
+- `/<product>` shows the package's **real price** and checks out that product
+  directly, found across all offerings by product **or** package identifier.
+  Falls back to a `/pricing` link if no package matches, and logs a `[product]`
+  console warning naming every offering and package it can see — a silent
+  fallback is indistinguishable from working otherwise.
+- The Posture Reset package is in the MoveMindful offering; Challenge and
+  Monthly have been removed, so `/pricing` now lists only what's on sale.
+- Public sign-up is back on the homepage (Get Started / Sign In).
+
+### The sign-up redirect fork — resolved
+Both `AFTER_SIGN_IN_URL` and `AFTER_SIGN_UP_URL` point at `/home`. Flows needing
+somewhere specific pass `?redirect_url=<relative path>` to `/sign-up` instead:
+`/pricing` resumes checkout, product pages return to their own slug. The
+sign-up page honours **same-origin relative paths only** — `redirect_url` is
+attacker-controllable, so anything else would make it an open redirect.
 
 ## To do — to launch Posture
 
 0. **Switch RevenueCat to the production key. Launch-blocking.**
-   `NEXT_PUBLIC_REVENUECAT_API_KEY` in Vercel is currently a **sandbox** Web
-   Billing key — confirmed by the `rcb_sb_` prefix (production keys are plain
-   `rcb_`). Diagnosed from the live site: the SDK sees exactly one offering, and
-   it contains no `posture` package.
+   `NEXT_PUBLIC_REVENUECAT_API_KEY` in Vercel is a **sandbox** Web Billing key
+   (`rcb_sb_` prefix; production keys are plain `rcb_`).
 
-   Consequences: no real money can be taken, and if the Posture product and its
-   offering were created in the production environment the sandbox key cannot
-   see them — which is very likely why the buy button still falls back to
-   `/pricing`. The stale products showing on `/pricing` are sandbox test data.
+   Offerings and packages are project-level, so the sandbox key sees them fine —
+   this is not why checkout was broken (that was the missing package, now fixed).
+   What it means is that **no real money moves**: checkout will appear to
+   succeed, grant the entitlement, and take nothing. Useful right now — the
+   whole purchase flow can be tested for free — and fatal at launch.
 
-   Fix: RevenueCat dashboard → Apps & Providers → Configurations → the web
-   configuration holds both a production and a sandbox public key. Put the
-   production one in Vercel (type **Config**, not Secret — it's `NEXT_PUBLIC_`),
-   then **redeploy**, since `NEXT_PUBLIC_` values are baked in at build time.
-   Production Web Billing needs a live Stripe account connected.
+   Fix: RevenueCat → Apps & Providers → Configurations → the web configuration
+   holds both keys. Put the production one in Vercel as **Config** (not Secret —
+   it's `NEXT_PUBLIC_`), then **redeploy**; `NEXT_PUBLIC_` values bake in at
+   build time. Production Web Billing needs a live Stripe account connected.
+   Keep the sandbox key in local `.env.local`.
 
-   Keep the sandbox key for local `.env.local` so test purchases stay off the
-   live account.
+1. **Upload the five videos** to Mux, then paste them into `lib/products.ts`:
+   `{ slug, title, playbackId, durationMinutes }`. This is the last content
+   blocker — everything else is wired and waiting.
 
-1. **Confirm `posture` is in an offering.** Whatever key is in use, the SDK only
-   sees products that sit in a *package inside an offering* — creating a product
-   doesn't put it in one. `/posture` logs a `[product]` console warning naming
-   every offering and product it can see, which is the fastest way to check.
+2. **Test the purchase end-to-end, on the sandbox key, as a non-admin.**
+   Admins bypass content gates by design, so buying as yourself proves the
+   checkout but not the paywall. Make a second Clerk user without
+   `role: admin`: buy, confirm the entitlement lands, `/posture` flips from the
+   pitch to the video list, and `/home` shows **Yours**. This same account is
+   the only way to verify the Classes/Live lock actually holds.
 
-2. **Upload the five videos** to Mux, then paste them into `lib/products.ts`:
-   `{ slug, title, playbackId, durationMinutes }`. This is the last blocker.
-3. **Verify the RevenueCat offering.** `/pricing` renders `offerings.current`,
-   so the Posture product must be in a package inside the offering marked
-   **current**, and that product must be attached to the `posture` entitlement.
-4. **Test the purchase end-to-end** — buy, receive the entitlement, land
-   somewhere sensible. Not verifiable from the dev side; needs a real run.
-   Quick pre-test: grant yourself `posture` in the RevenueCat dashboard and
-   confirm the `/home` badge flips Locked → Yours.
-5. **Write real copy** for the Posture tagline (currently placeholder) and
-   `/pricing` (currently a neutral heading).
-6. **Push** the outstanding commits.
+3. **Write real copy** for the Posture Reset tagline (currently placeholder) and
+   `/pricing` (currently a bare "Get access" heading).
 
----
+4. **Restore the homepage Pricing link** if wanted — it's still commented out
+   from when `/pricing` listed parked products. That's no longer true, so it can
+   come back, though a direct link to `/posture` may serve better while there's
+   one product.
 
 ## Flagged, not yet addressed
 
@@ -157,16 +174,6 @@ what already reached the browser. A UX gate, not a boundary.
 Currently harmless because `/classes` and `/live` are admin-locked. **Must be
 fixed before the membership launches** — port them to `getViewerAccess()` /
 `viewerCanAccess()`, the way the product pages already work.
-
-### `AFTER_SIGN_UP_URL` — two separate issues
-- Still saved as a **Secret** in Vercel. `NEXT_PUBLIC_` values ship in the
-  browser bundle, so "secret" is a promise Vercel can't keep; the practical
-  cost is you can't read the value back. Fix = delete and recreate as **Config**
-  (safe: these are read at build time only).
-- Still `/pricing`, which is a **design fork**: someone signing up to claim a
-  freebie should land on `/home`, but someone who hit sign-up mid-checkout needs
-  `/pricing`. Clerk has one global value, so this likely wants a per-flow
-  `forceRedirectUrl` (as `app/join/[code]/page.tsx` already does).
 
 ### Other `NEXT_PUBLIC_` vars saved as Secret
 Clerk publishable key, Supabase URL + publishable key, RevenueCat API key, Mux
@@ -195,8 +202,3 @@ product to the `posture` entitlement in RevenueCat — no deploy, reversible.
 membership + 30-day-challenge world. **Nothing imports `@move-mindful/core`.**
 Rewrite rather than delete — it's the natural home for a shared access model
 once the iOS app arrives.
-
-### Pre-existing lint failure
-`npm run lint` fails on `components/live/schedule-calendar.tsx:76`
-(`react-hooks/set-state-in-effect`). Predates this work, unrelated to it, but it
-means lint is red by default.
