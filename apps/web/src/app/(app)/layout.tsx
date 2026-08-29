@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { UserMenu } from "@/components/user-menu";
-import { isAdmin } from "@/lib/auth/admin";
+import { auth } from "@clerk/nextjs/server";
 import { MEMBER_HOME } from "@/lib/routes";
 
 /**
@@ -14,13 +14,19 @@ import { MEMBER_HOME } from "@/lib/routes";
  * reach their own account page.
  *
  * Entitlement gating is layered on by nested layouts — see (member)/layout.tsx.
+ *
+ * It also renders for signed-out visitors on the one public route inside the
+ * group: a product's sales page, which has to load for someone who has never
+ * signed in. Hence the signed-out branches below.
  */
 export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const admin = await isAdmin();
+  const { userId, sessionClaims } = await auth();
+  const signedIn = !!userId;
+  const admin = sessionClaims?.metadata?.role === "admin";
 
   return (
     <div className="flex flex-col flex-1">
@@ -28,7 +34,7 @@ export default async function AppLayout({
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3 sm:gap-6">
             <Link
-              href={MEMBER_HOME}
+              href={signedIn ? MEMBER_HOME : "/"}
               className="flex items-center gap-2 text-lg font-bold tracking-tight"
             >
               <Image src="/logo.png" alt="MoveMindful" width={32} height={32} />
@@ -49,7 +55,16 @@ export default async function AppLayout({
               </div>
             )}
           </div>
-          <UserMenu isAdmin={admin} />
+          {signedIn ? (
+            <UserMenu isAdmin={admin} />
+          ) : (
+            <Link
+              href="/sign-in"
+              className="text-sm text-zinc-600 transition hover:text-zinc-900"
+            >
+              Sign in
+            </Link>
+          )}
         </nav>
       </header>
       {/* flex column so a nested layout's full-height states (e.g. the

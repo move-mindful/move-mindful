@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { MEMBER_HOME } from "@/lib/routes";
+import { PRODUCTS } from "@/lib/products";
 
 const isPublicRoute = createRouteMatcher([
   "/",
@@ -10,6 +11,11 @@ const isPublicRoute = createRouteMatcher([
   // Hidden free-membership signup. The /join/[code]/activate route does its own
   // auth check and grant; the signup page itself must load while signed out.
   "/join(.*)",
+  // Product sales pages — the URLs you advertise, so they must load signed out.
+  // Only the landing page is public: the page renders its own locked state and
+  // never emits playback ids to an unentitled viewer. The /<product>/<video>
+  // player routes are deliberately NOT listed, so they still require sign-in.
+  ...PRODUCTS.map((p) => `/${p.slug}`),
 ]);
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
