@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getProduct, PRODUCTS } from "@/lib/products";
 import { getViewerAccess, viewerCanAccess } from "@/lib/auth/viewer";
+import { ProductPurchase } from "@/components/product-purchase";
+import { auth } from "@clerk/nextjs/server";
 
 export async function generateMetadata({
   params,
@@ -36,7 +38,7 @@ export default async function ProductPage({
   const product = getProduct((await params).product);
   if (!product) notFound();
 
-  const viewer = await getViewerAccess();
+  const [viewer, { userId }] = await Promise.all([getViewerAccess(), auth()]);
   const owned = viewerCanAccess(viewer, product.entitlement);
 
   return (
@@ -91,12 +93,11 @@ export default async function ProductPage({
           <p className="mt-2 text-sm text-zinc-500">
             A one-time purchase. Yours to keep, with no subscription.
           </p>
-          <Link
-            href="/pricing"
-            className="mt-5 inline-flex rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-zinc-700"
-          >
-            {viewer.signedIn ? "Buy now" : "Get started"}
-          </Link>
+          <ProductPurchase
+            userId={userId}
+            productSlug={product.slug}
+            revenueCatProductId={product.revenueCatProductId}
+          />
           {!viewer.signedIn && (
             <p className="mt-4 text-sm text-zinc-500">
               Already bought it?{" "}

@@ -40,15 +40,28 @@ export interface Product {
    * the membership product to this entitlement), never here.
    */
   entitlement: string;
+  /**
+   * RevenueCat *product* identifier (distinct from the entitlement above), used
+   * to find this product's package across the configured offerings so the sales
+   * page can show its real price and check out directly — rather than sending
+   * people to /pricing, which lists everything in the current offering.
+   *
+   * If it matches no package, the buy button falls back to linking to /pricing,
+   * so a wrong value degrades rather than breaks.
+   */
+  revenueCatProductId?: string;
   videos: ProductVideo[];
 }
 
 export const PRODUCTS: Product[] = [
   {
     slug: "posture",
-    title: "Posture",
+    title: "Posture Reset",
     tagline: "Five short sessions to undo desk posture and move with ease.",
     entitlement: "posture",
+    // Best guess — the RevenueCat *product* id, not the entitlement id. Confirm
+    // in the dashboard; a mismatch just falls back to the /pricing link.
+    revenueCatProductId: "posture",
     // TODO: paste the Mux playback ids once the videos are uploaded. Until then
     // the product page shows its locked/sales state and lists nothing.
     videos: [],
