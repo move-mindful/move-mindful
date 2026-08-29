@@ -36,10 +36,20 @@ See [README.md](./README.md) for project overview, current status, setup instruc
 
 ## Git / GitHub accounts
 
-- **Remote:** `https://github.com/move-mindful/move-mindful.git`
-- **Push with the `move-mindful` gh account, NOT `maxwellgustav`.** This repo is owned by the `move-mindful` account; `maxwellgustav` is **not** a collaborator and pushing under it fails with `403 Permission ... denied to maxwellgustav`.
-- The user keeps two GitHub accounts logged into the `gh` CLI (`move-mindful` and `maxwellgustav`) and switches the active one while working across projects. Since `gh auth setup-git` is configured, **HTTPS pushes use whichever account is active**, so the active account can be wrong after switching to another project.
-- **Before pushing, make sure the right account is active:** `gh auth status` to check, then `gh auth switch -u move-mindful` if needed. Switching the active account does not change the commit author (still `Maxwell Gustaitis <contact@movemindful.com>`).
+- **Remote:** `git@github-move-mindful:move-mindful/move-mindful.git` — an SSH host
+  alias defined in `~/.ssh/config`, pointing at github.com with a dedicated key
+  (`IdentityFile ~/.ssh/id_ed25519_github_move_mindful`).
+- **`git push` needs no account check.** The alias pins the key, so pushes always
+  authenticate as `move-mindful` (verify with `ssh -T git@github-move-mindful`)
+  regardless of which account the `gh` CLI has active. Just push.
+- **The `gh` CLI is a different story.** The user keeps two accounts logged in
+  (`move-mindful` and `maxwellgustav`) and switches the active one while working
+  across projects. `gh` commands — PRs, issues, API calls — use the *active*
+  account, and `maxwellgustav` is not a collaborator on this repo. So if a `gh`
+  command fails with `403 Permission ... denied to maxwellgustav`, that's why:
+  `gh auth switch -u move-mindful`. This does not apply to `git push`.
+- Neither affects the commit author, which is `Maxwell Gustaitis
+  <contact@movemindful.com>` either way.
 
 ## Key Principles
 
