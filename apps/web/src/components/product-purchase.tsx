@@ -46,17 +46,36 @@ export function ProductPurchase({
       try {
         const purchases = await configurePurchases(userId);
         const offerings = await purchases.getOfferings();
+
+        let match: Package | undefined;
         for (const offering of Object.values(offerings.all)) {
-          const match = offering.availablePackages.find(
+          match = offering.availablePackages.find(
             (p) => p.webBillingProduct.identifier === revenueCatProductId,
           );
-          if (match) {
-            if (!cancelled) setPkg(match);
-            break;
-          }
+          if (match) break;
         }
-      } catch {
+
+        if (!match) {
+          // The fallback is indistinguishable from working, so say what went
+          // wrong and what *was* found. Usually the product exists in
+          // RevenueCat but hasn't been added to a package in any offering —
+          // creating a product doesn't put it in one.
+          console.warn(
+            `[product] No RevenueCat package found for product id "${revenueCatProductId}". ` +
+              `Add it to a package in an offering. Currently available:`,
+            Object.entries(offerings.all).map(([id, o]) => ({
+              offering: id,
+              productIds: o.availablePackages.map(
+                (p) => p.webBillingProduct.identifier,
+              ),
+            })),
+          );
+        }
+
+        if (!cancelled) setPkg(match ?? null);
+      } catch (e) {
         // Leave pkg null — the /pricing fallback renders.
+        console.warn("[product] RevenueCat offerings lookup failed", e);
       } finally {
         if (!cancelled) setLoading(false);
       }

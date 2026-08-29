@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { DateTime } from "luxon";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ARIZONA_ZONE, LIVE_SCHEDULE, classColor } from "@/lib/live-schedule";
+
+// Never emits — the point is the differing snapshots, not subscribing to
+// anything. getServerSnapshot returns false and getSnapshot true, which is
+// React's sanctioned way to render something browser-only without setting state
+// in an effect (what react-hooks/set-state-in-effect flags).
+const subscribeNever = () => () => {};
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_LABELS = [
@@ -66,16 +72,29 @@ function buildOccurrences(year: number, month0: number): Map<number, DayClass[]>
 }
 
 export function ScheduleCalendar() {
-  const [mounted, setMounted] = useState(false);
-  const [view, setView] = useState({ year: 2000, month: 0 });
+  const mounted = useSyncExternalStore(
+    subscribeNever,
+    () => true,
+    () => false,
+  );
 
-  // Timezone + "current month" are only known in the browser, so resolve them
-  // after mount to avoid a server/client hydration mismatch.
-  useEffect(() => {
+  // Timezone and "what month is it" are only knowable in the browser, so the
+  // month shown is derived after hydration rather than stored. null means
+  // "current month"; only the prev/next buttons ever set it.
+  const [monthOverride, setMonthOverride] = useState<{
+    year: number;
+    month: number;
+  } | null>(null);
+
+  const currentMonth = useMemo(() => {
+    // The placeholder is never rendered — the skeleton below covers the
+    // unmounted pass — but it keeps the value shaped consistently.
+    if (!mounted) return { year: 2000, month: 0 };
     const now = new Date();
-    setView({ year: now.getFullYear(), month: now.getMonth() });
-    setMounted(true);
-  }, []);
+    return { year: now.getFullYear(), month: now.getMonth() };
+  }, [mounted]);
+
+  const view = monthOverride ?? currentMonth;
 
   const occurrences = useMemo(
     () =>
@@ -104,10 +123,8 @@ export function ScheduleCalendar() {
   while (cells.length % 7 !== 0) cells.push(null);
 
   function shiftMonth(delta: number) {
-    setView((v) => {
-      const next = new Date(v.year, v.month + delta, 1);
-      return { year: next.getFullYear(), month: next.getMonth() };
-    });
+    const next = new Date(view.year, view.month + delta, 1);
+    setMonthOverride({ year: next.getFullYear(), month: next.getMonth() });
   }
 
   const today = new Date();
