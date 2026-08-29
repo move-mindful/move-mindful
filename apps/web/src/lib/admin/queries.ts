@@ -130,6 +130,8 @@ export interface AdminClassDetail {
   publishedAt: string | null;
   /** Admin display date as YYYY-MM-DD. */
   classDate: string | null;
+  /** Entitlement required to watch; null means free to any signed-in account. */
+  requiredEntitlement: string | null;
   tagIds: string[];
   /** Manual collections this class currently belongs to (for the form picker). */
   collectionIds: string[];
@@ -157,6 +159,7 @@ export async function getAdminClass(id: string): Promise<AdminClassDetail | null
     sourceMuxAssetId: c.source_mux_asset_id ?? null,
     publishedAt: c.published_at,
     classDate: c.class_date ?? null,
+    requiredEntitlement: c.required_entitlement ?? null,
     tagIds: (ct ?? []).map((r) => r.tag_id),
     collectionIds: (cc ?? []).map((r) => r.collection_id),
   };

@@ -8,6 +8,7 @@ import { TrimControls } from "@/components/admin/trim-controls";
 import { MuxPlayer } from "@/components/mux-player";
 import type { ClassFormState } from "@/lib/admin/types";
 import type { TagPickerData, InstructorOption, CollectionOption } from "@/lib/admin/queries";
+import { ENTITLEMENT_OPTIONS, FREE_ACCESS_LABEL } from "@/lib/entitlements";
 
 const SINGLE_SELECT_GROUPS = ["discipline", "intensity"];
 
@@ -33,6 +34,12 @@ export interface ClassFormInitial {
   muxAssetId?: string;
   /** Admin display date as YYYY-MM-DD. Defaults to today on create/trim. */
   classDate?: string;
+  /**
+   * Entitlement required to watch, or null for free. Undefined on create/trim,
+   * where the field defaults to the membership to match the column default —
+   * new content is locked until it's deliberately opened up.
+   */
+  requiredEntitlement?: string | null;
   tagIds?: string[];
   /**
    * Manual collections this class belongs to. Provided on edit to pre-check the
@@ -166,6 +173,33 @@ export function ClassForm({
           required
           className={inputCls}
         />
+      </Labeled>
+
+      <Labeled label="Access" required>
+        <select
+          name="requiredEntitlement"
+          defaultValue={
+            initial.requiredEntitlement === null
+              ? ""
+              : (initial.requiredEntitlement ?? ENTITLEMENT_OPTIONS[0]?.id ?? "")
+          }
+          className={inputCls}
+        >
+          {/* Free is listed last so it can't be picked by accident — the
+              default sits on a paid tier, and opening content up is the
+              deliberate choice. */}
+          {ENTITLEMENT_OPTIONS.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.label}
+            </option>
+          ))}
+          <option value="">{FREE_ACCESS_LABEL}</option>
+        </select>
+        <p className="mt-1 text-xs text-zinc-500">
+          Who can watch this class. Set per class, not per collection — a class
+          can sit in several collections, so this follows the video everywhere
+          it appears.
+        </p>
       </Labeled>
 
       {!isTrim && (

@@ -85,6 +85,7 @@ export default async function EditClassPage({
             muxPlaybackId: cls.muxPlaybackId ?? "",
             muxAssetId: cls.muxAssetId ?? "",
             classDate: cls.classDate ?? undefined,
+            requiredEntitlement: cls.requiredEntitlement,
             tagIds: cls.tagIds,
             collectionIds: cls.collectionIds,
           }}

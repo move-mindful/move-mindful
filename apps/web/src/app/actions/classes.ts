@@ -1,6 +1,7 @@
 "use server";
 
 import { requireAdmin } from "@/lib/auth/admin";
+import { ENTITLEMENT_OPTIONS, MEMBERSHIP_ENTITLEMENT } from "@/lib/entitlements";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   isMuxAssetImportReady,
@@ -24,6 +25,17 @@ function parseClassDate(formData: FormData): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Which entitlement a class requires to watch. The empty option means free (any
+// signed-in account), stored as null. Anything else must be a known catalog id:
+// an identifier that matches no RevenueCat entitlement would make the class
+// permanently unwatchable with nothing in the UI to show why, so an unrecognized
+// value falls back to the membership — locked, not leaked.
+function parseRequiredEntitlement(formData: FormData): string | null {
+  const raw = ((formData.get("requiredEntitlement") as string) ?? "").trim();
+  if (raw === "") return null;
+  return ENTITLEMENT_OPTIONS.some((o) => o.id === raw) ? raw : MEMBERSHIP_ENTITLEMENT;
+}
+
 function parseFields(formData: FormData) {
   return {
     title: ((formData.get("title") as string) ?? "").trim(),
@@ -33,6 +45,7 @@ function parseFields(formData: FormData) {
     muxPlaybackId: ((formData.get("muxPlaybackId") as string) ?? "").trim(),
     muxAssetId: ((formData.get("muxAssetId") as string) ?? "").trim() || null,
     classDate: parseClassDate(formData),
+    requiredEntitlement: parseRequiredEntitlement(formData),
   };
 }
 
@@ -169,6 +182,7 @@ export async function createClass(
       mux_playback_id: f.muxPlaybackId,
       mux_asset_id: f.muxAssetId,
       class_date: f.classDate,
+      required_entitlement: f.requiredEntitlement,
       // published_at left null → draft
     })
     .select("id")
@@ -209,6 +223,7 @@ export async function updateClass(
       mux_playback_id: f.muxPlaybackId,
       mux_asset_id: f.muxAssetId,
       class_date: f.classDate,
+      required_entitlement: f.requiredEntitlement,
     })
     .eq("id", id);
 
@@ -257,6 +272,7 @@ export async function createTrimmedClass(
 
   const { tagIds } = parseTagSelections(formData);
   const classDate = parseClassDate(formData);
+  const requiredEntitlement = parseRequiredEntitlement(formData);
   // Duration is determined by the trim; round to whole minutes (min 1).
   const durationMinutes = Math.max(1, Math.round((endSeconds - startSeconds) / 60));
 
@@ -291,6 +307,7 @@ export async function createTrimmedClass(
       mux_asset_id: asset.id,
       source_mux_asset_id: sourceAssetId,
       class_date: classDate,
+      required_entitlement: requiredEntitlement,
       // published_at left null → draft
     })
     .select("id")
