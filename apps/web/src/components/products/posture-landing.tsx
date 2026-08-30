@@ -173,8 +173,8 @@ export function PostureLanding({
             <PurchaseError className="text-[15px] text-red-600" />
           </div>
           <HeroMedia
-            poster="/posture/hero.jpg"
-            alt="Kneeling tall on a bolster, spine upright"
+            poster="/posture/hero-poster.jpg"
+            alt="Standing tall on the mat, arms sweeping overhead"
             videoSrc={`https://stream.mux.com/${HERO_LOOP_PLAYBACK_ID}/720p.mp4`}
             imageSizes="(min-width: 1140px) 1052px, 100vw"
             className="mt-6 sm:mt-[30px]"

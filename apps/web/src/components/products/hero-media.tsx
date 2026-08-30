@@ -45,7 +45,9 @@ export function HeroMedia({
 
   return (
     <div
-      className={`relative h-[230px] w-full overflow-hidden rounded-[20px] bg-[#F2F0FE] sm:h-[460px] sm:rounded-[24px] ${className}`}
+      // 16:9, matching the footage — a wider band would crop the top and
+      // bottom off a standing figure.
+      className={`relative aspect-video w-full overflow-hidden rounded-[20px] bg-[#F2F0FE] sm:rounded-[24px] ${className}`}
     >
       <Image
         src={poster}
