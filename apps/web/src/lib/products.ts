@@ -66,9 +66,24 @@ export interface Product {
   videos: ProductVideo[];
 }
 
-/** Card artwork for a product, falling back to its first video's thumbnail. */
-export function getProductCardImage(product: Product): string | null {
+/**
+ * Card artwork for a product.
+ *
+ * Falls back to a thumbnail of the first video — but only for a viewer who can
+ * already watch it. A Mux thumbnail URL carries the playback id, and these
+ * assets use the public playback policy, so putting one in front of someone
+ * who hasn't bought the product hands them the video itself. That's the same
+ * reason the product page never sends playback ids to an unentitled browser.
+ *
+ * A paid product should therefore set `cardImage`. Without one, a non-owner's
+ * card renders artwork-free rather than leaking.
+ */
+export function getProductCardImage(
+  product: Product,
+  viewerCanWatch: boolean,
+): string | null {
   if (product.cardImage) return product.cardImage;
+  if (!viewerCanWatch) return null;
   const first = product.videos[0];
   if (!first) return null;
   return `https://image.mux.com/${first.playbackId}/thumbnail.webp?width=800&height=450&fit_mode=smartcrop`;

@@ -139,14 +139,16 @@ function ProductCard({
   price?: string;
   loadingPrice?: boolean;
 }) {
-  const image = getProductCardImage(product);
+  // `owned` doubles as "can watch": free products are owned by any signed-in
+  // account, which is exactly who may see their thumbnail.
+  const image = getProductCardImage(product, owned);
   const free = product.entitlement === null;
   const href = `/${product.slug}`;
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white transition hover:shadow-md">
       <Link href={href} className="relative block aspect-video bg-zinc-100">
-        {image && (
+        {image ? (
           <Image
             src={image}
             alt=""
@@ -155,6 +157,8 @@ function ProductCard({
             sizes="(min-width: 640px) 50vw, 100vw"
             className="object-cover transition group-hover:scale-[1.03]"
           />
+        ) : (
+          <span className="absolute inset-0 bg-linear-to-br from-zinc-100 to-zinc-200" />
         )}
         {free && (
           <span className="absolute top-3 left-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-zinc-700">
