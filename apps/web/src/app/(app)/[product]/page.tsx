@@ -62,12 +62,12 @@ export default async function ProductPage({
             />
           </div>
         ) : product.videos.length > 0 ? (
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 flex flex-wrap gap-4">
             {product.videos.map((video) => (
               <Link
                 key={video.slug}
                 href={`/${product.slug}/${video.slug}`}
-                className="group overflow-hidden rounded-xl border border-zinc-200 bg-white transition hover:shadow-md"
+                className="group w-64 shrink-0 overflow-hidden rounded-xl border border-zinc-200 bg-white transition hover:shadow-md"
               >
                 <div className="relative aspect-video bg-zinc-100">
                   <Image
@@ -84,9 +84,11 @@ export default async function ProductPage({
                   )}
                 </div>
                 <div className="p-3">
-                  <h2 className="font-medium leading-snug">{video.title}</h2>
+                  <h2 className="font-semibold leading-snug group-hover:text-zinc-600">
+                    {video.title}
+                  </h2>
                   {video.description && (
-                    <p className="mt-1 text-sm text-zinc-500">{video.description}</p>
+                    <p className="mt-1.5 text-sm text-zinc-500">{video.description}</p>
                   )}
                 </div>
               </Link>
