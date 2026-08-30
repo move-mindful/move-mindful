@@ -5,9 +5,20 @@ import type { Metadata } from "next";
 import { getProduct, PRODUCTS } from "@/lib/products";
 import { getViewerAccess, viewerCanAccess } from "@/lib/auth/viewer";
 import { ProductPurchase } from "@/components/product-purchase";
+import { PostureLanding } from "@/components/products/posture-landing";
 import { MuxPlayer } from "@/components/mux-player";
 import { VideoTheaterStage } from "@/components/video-theater-stage";
 import { auth } from "@clerk/nextjs/server";
+
+/**
+ * Products with a bespoke sales page, keyed by slug.
+ *
+ * Everything else falls through to the generic layout below, which is the right
+ * home for a product that doesn't warrant its own page — a new one works with no
+ * code changes, as products.ts promises. Only the *unowned* view is overridden:
+ * once someone buys, every product shows the same video library.
+ */
+const CUSTOM_LANDINGS = { posture: PostureLanding } as const;
 
 export async function generateMetadata({
   params,
@@ -42,6 +53,18 @@ export default async function ProductPage({
 
   const [viewer, { userId }] = await Promise.all([getViewerAccess(), auth()]);
   const owned = viewerCanAccess(viewer, product.entitlement);
+
+  const CustomLanding =
+    CUSTOM_LANDINGS[product.slug as keyof typeof CUSTOM_LANDINGS];
+  if (!owned && CustomLanding) {
+    return (
+      <CustomLanding
+        product={product}
+        userId={userId}
+        signedIn={viewer.signedIn}
+      />
+    );
+  }
 
   // A single-video product someone already owns is just... the video. Give it
   // the same full-bleed theater layout as the player pages rather than a sales

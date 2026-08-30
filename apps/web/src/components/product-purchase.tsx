@@ -6,8 +6,10 @@ import { useEffect, useState } from "react";
 import { configurePurchases } from "@/lib/revenuecat";
 import type { Package } from "@revenuecat/purchases-js";
 
-const buttonCls =
+const defaultButtonCls =
   "mt-5 inline-flex rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50";
+
+const defaultPriceCls = "mt-4 text-3xl font-bold";
 
 /**
  * Buy one specific product, from its own sales page.
@@ -20,15 +22,24 @@ const buttonCls =
  *
  * Degrades rather than breaks: if no package matches (wrong id, offering not
  * configured yet, network failure), it falls back to linking to /pricing.
+ *
+ * `buttonClassName`/`priceClassName` exist so a bespoke sales page can dress
+ * the control in its own brand without forking the purchase logic — the price
+ * still comes from RevenueCat either way, which is the point: it is never
+ * written into page copy.
  */
 export function ProductPurchase({
   userId,
   productSlug,
   revenueCatProductId,
+  buttonClassName = defaultButtonCls,
+  priceClassName = defaultPriceCls,
 }: {
   userId: string | null;
   productSlug: string;
   revenueCatProductId?: string;
+  buttonClassName?: string;
+  priceClassName?: string;
 }) {
   const router = useRouter();
   const [pkg, setPkg] = useState<Package | null>(null);
@@ -133,7 +144,7 @@ export function ProductPurchase({
 
   if (!pkg) {
     return (
-      <Link href="/pricing" className={buttonCls}>
+      <Link href="/pricing" className={buttonClassName}>
         {userId ? "Buy now" : "Get started"}
       </Link>
     );
@@ -141,10 +152,14 @@ export function ProductPurchase({
 
   return (
     <div>
-      <p className="mt-4 text-3xl font-bold">
+      <p className={priceClassName}>
         {pkg.webBillingProduct.currentPrice.formattedPrice}
       </p>
-      <button onClick={handleBuy} disabled={purchasing} className={buttonCls}>
+      <button
+        onClick={handleBuy}
+        disabled={purchasing}
+        className={buttonClassName}
+      >
         {purchasing ? "Processing…" : userId ? "Buy now" : "Get started"}
       </button>
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
