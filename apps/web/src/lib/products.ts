@@ -63,8 +63,9 @@ export interface Product {
 export const PRODUCTS: Product[] = [
   {
     slug: "posture",
-    title: "Posture Reset",
-    tagline: "Five short sessions to undo desk posture and move with ease.",
+    title: "Posture & Mobility Reset",
+    tagline:
+      "Five follow-along routines to help you feel less stiff, stand taller, and move with more freedom.",
     entitlement: "posture",
     // Confirmed in the dashboard. Same string as the entitlement above, but a
     // distinct object — the product is what's sold, the entitlement is what it
@@ -72,36 +73,49 @@ export const PRODUCTS: Product[] = [
     revenueCatProductId: "posture",
     // Order here is the order they appear on the product page. Durations are
     // the real asset lengths from Mux, rounded to the nearest minute.
-    // TODO: the titles below are placeholders — replace with the real session
-    // names. They're visible to buyers on the product page and player.
+    //
+    // Titles and descriptions are the approved sales copy — the sales page
+    // (components/products/posture-landing.tsx) renders this same list, so the
+    // lineup a buyer reads before purchase and the one they get after are the
+    // same data. Edit here, not there.
     videos: [
       {
-        slug: "session-1",
-        title: "Session 1",
+        slug: "day-1",
+        title: "Day 1: Posture Foundations",
+        description:
+          "Gentle hip and neck movements to release tension and improve mobility, then we'll work to activate and strengthen the muscles along the back of the body that support a more upright, balanced posture.",
         playbackId: "1WVQFr011ztCuHxQ01clTR7vId2eGiTrfo3DI01I801wYxE",
         durationMinutes: 12,
       },
       {
-        slug: "session-2",
-        title: "Session 2",
+        slug: "day-2",
+        title: "Day 2: Core & Hip Support",
+        description:
+          "Create space through the hips while strengthening the core and improving control around the pelvis, building a more stable foundation for better posture.",
         playbackId: "I01ddUdl1UA2q6LaUv2SclUzz01SAt01uiSsuODks00EIuI",
         durationMinutes: 12,
       },
       {
-        slug: "session-3",
-        title: "Session 3",
+        slug: "day-3",
+        title: "Day 3: Reversing Rounded Shoulders",
+        description:
+          "Open the chest and improve shoulder mobility with targeted movements that help counteract slouching and make a more upright posture feel natural.",
         playbackId: "W00fZc1Zqr02flodBXQeJ2ga3ZP1YErZxTJZOepht4iQU",
         durationMinutes: 11,
       },
       {
-        slug: "session-4",
-        title: "Session 4",
+        slug: "day-4",
+        title: "Day 4: Move Your Spine in all Directions",
+        description:
+          "Move your spine through flexion, extension, side bending, and rotation to improve mobility, ease stiffness, and help your entire back feel less restricted.",
         playbackId: "BkKVVEA02c4tzQ6ZYYbHNdvTkeorz00B8FQcpKin7C2F8",
         durationMinutes: 11,
       },
       {
-        slug: "session-5",
-        title: "Session 5",
+        slug: "day-5",
+        title: "Day 5: Full Body Freedom",
+        description:
+          "Bring everything together with dynamic movements that mobilize the shoulders, move the spine, open the hips, and help your entire body move with greater freedom and ease.",
         playbackId: "1ABOOmlA02G02bRlGzloyDGAKYf3pLSgt022ca01iNtEgvY",
         durationMinutes: 11,
       },
