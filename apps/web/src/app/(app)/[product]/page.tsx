@@ -6,6 +6,7 @@ import { getProduct, PRODUCTS } from "@/lib/products";
 import { getViewerAccess, viewerCanAccess } from "@/lib/auth/viewer";
 import { ProductPurchase } from "@/components/product-purchase";
 import { MuxPlayer } from "@/components/mux-player";
+import { VideoTheaterStage } from "@/components/video-theater-stage";
 import { auth } from "@clerk/nextjs/server";
 
 export async function generateMetadata({
@@ -42,6 +43,34 @@ export default async function ProductPage({
   const [viewer, { userId }] = await Promise.all([getViewerAccess(), auth()]);
   const owned = viewerCanAccess(viewer, product.entitlement);
 
+  // A single-video product someone already owns is just... the video. Give it
+  // the same full-bleed theater layout as the player pages rather than a sales
+  // header with a small embed underneath — there's nothing left to sell.
+  if (owned && product.videos.length === 1) {
+    const video = product.videos[0];
+    return (
+      <div>
+        <VideoTheaterStage>
+          <MuxPlayer playbackId={video.playbackId} title={video.title} />
+        </VideoTheaterStage>
+
+        <div className="mx-auto max-w-6xl px-6 sm:px-8 py-6">
+          {video.durationMinutes && (
+            <span className="text-sm text-zinc-400">
+              {video.durationMinutes} min
+            </span>
+          )}
+          <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
+            {product.title}
+          </h1>
+          <p className="mt-3 max-w-2xl leading-relaxed text-zinc-600">
+            {video.description ?? product.tagline}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-6xl px-6 sm:px-8 py-12">
       <header className="max-w-2xl">
@@ -52,16 +81,7 @@ export default async function ProductPage({
       </header>
 
       {owned ? (
-        product.videos.length === 1 ? (
-          // A one-card grid linking to a player is a pointless click, so a
-          // single-video product just plays here.
-          <div className="mt-8 overflow-hidden rounded-xl bg-black">
-            <MuxPlayer
-              playbackId={product.videos[0].playbackId}
-              title={product.videos[0].title}
-            />
-          </div>
-        ) : product.videos.length > 0 ? (
+        product.videos.length > 0 ? (
           <div className="mt-8 flex flex-wrap gap-4">
             {product.videos.map((video) => (
               <Link
