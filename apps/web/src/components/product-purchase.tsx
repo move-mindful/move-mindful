@@ -186,27 +186,41 @@ export function PurchaseProvider({
  * `buy()` waits on the lookup for us. The one exception is a settled lookup
  * that found nothing: then this is a plain link to /pricing, so the fallback
  * is a real navigation rather than a button that appears to do nothing.
+ *
+ * `showPrice` appends the real price to the label once RevenueCat answers
+ * ("Get the Reset — $29.99"). The label has to read properly without it, since
+ * it renders during the lookup and stays that way if the lookup finds nothing.
  */
 export function BuyButton({
   className = defaultButtonCls,
+  showPrice = false,
   children,
 }: {
   className?: string;
+  showPrice?: boolean;
   children?: React.ReactNode;
 }) {
   const { pkg, loading, purchasing, buy } = usePurchase();
 
+  const price = pkg?.webBillingProduct.currentPrice.formattedPrice;
+  const label = (
+    <>
+      {children ?? "Buy now"}
+      {showPrice && price && ` — ${price}`}
+    </>
+  );
+
   if (!loading && !pkg) {
     return (
       <Link href="/pricing" className={className}>
-        {children ?? "Buy now"}
+        {label}
       </Link>
     );
   }
 
   return (
     <button onClick={buy} disabled={purchasing} className={className}>
-      {purchasing ? "Processing…" : (children ?? "Buy now")}
+      {purchasing ? "Processing…" : label}
     </button>
   );
 }

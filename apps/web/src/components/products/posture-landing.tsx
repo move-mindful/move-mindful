@@ -154,7 +154,9 @@ export function PostureLanding({
             </p>
           </div>
           <div className="mt-1.5 flex flex-col items-center gap-3.5">
-            <BuyButton className={ctaCls}>Get the Reset</BuyButton>
+            <BuyButton className={ctaCls} showPrice>
+              Get the Reset
+            </BuyButton>
             <p className="text-[15px] text-[#8A8AA0]">
               One-time payment · Yours to keep · Only 12 minutes a day
             </p>
