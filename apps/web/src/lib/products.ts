@@ -70,9 +70,42 @@ export const PRODUCTS: Product[] = [
     // distinct object — the product is what's sold, the entitlement is what it
     // unlocks. They needn't match for other products.
     revenueCatProductId: "posture",
-    // TODO: paste the Mux playback ids once the videos are uploaded. Until then
-    // the product page shows its locked/sales state and lists nothing.
-    videos: [],
+    // Order here is the order they appear on the product page. Durations are
+    // the real asset lengths from Mux, rounded to the nearest minute.
+    // TODO: the titles below are placeholders — replace with the real session
+    // names. They're visible to buyers on the product page and player.
+    videos: [
+      {
+        slug: "session-1",
+        title: "Session 1",
+        playbackId: "1WVQFr011ztCuHxQ01clTR7vId2eGiTrfo3DI01I801wYxE",
+        durationMinutes: 12,
+      },
+      {
+        slug: "session-2",
+        title: "Session 2",
+        playbackId: "I01ddUdl1UA2q6LaUv2SclUzz01SAt01uiSsuODks00EIuI",
+        durationMinutes: 12,
+      },
+      {
+        slug: "session-3",
+        title: "Session 3",
+        playbackId: "W00fZc1Zqr02flodBXQeJ2ga3ZP1YErZxTJZOepht4iQU",
+        durationMinutes: 11,
+      },
+      {
+        slug: "session-4",
+        title: "Session 4",
+        playbackId: "BkKVVEA02c4tzQ6ZYYbHNdvTkeorz00B8FQcpKin7C2F8",
+        durationMinutes: 11,
+      },
+      {
+        slug: "session-5",
+        title: "Session 5",
+        playbackId: "1ABOOmlA02G02bRlGzloyDGAKYf3pLSgt022ca01iNtEgvY",
+        durationMinutes: 11,
+      },
+    ],
   },
 
   {
