@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { HeroMedia } from "@/components/products/hero-media";
 import { Outfit } from "next/font/google";
 import type { Product } from "@/lib/products";
 import {
@@ -109,6 +110,15 @@ const TESTIMONIALS = [
   },
 ];
 
+/**
+ * PLACEHOLDER hero loop — 16 seconds cut from Day 5 (50–66s, the arm sweep) so
+ * the treatment can be judged before the real thing is shot. It is its own Mux
+ * asset, not the class: publishing a class's playback id would publish the
+ * class. Replace this id when Ayla's purpose-shot clip is up, and delete the
+ * placeholder asset. See scripts/make-clip.mjs.
+ */
+const HERO_LOOP_PLAYBACK_ID = "GoelX02f4fhezFpJ00hhUpQaLjo9TjYHI3m6QKK02znOlc";
+
 const ctaCls =
   "inline-flex items-center justify-center rounded-full bg-linear-to-r from-[#7A5FEA] to-[#4CC7E0] px-10 py-4 text-lg font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60";
 
@@ -162,14 +172,12 @@ export function PostureLanding({
             </p>
             <PurchaseError className="text-[15px] text-red-600" />
           </div>
-          <Image
-            src="/posture/hero.jpg"
+          <HeroMedia
+            poster="/posture/hero.jpg"
             alt="Kneeling tall on a bolster, spine upright"
-            width={2400}
-            height={1043}
-            priority
-            sizes="(min-width: 1140px) 1052px, 100vw"
-            className="mt-6 h-[230px] w-full rounded-[20px] object-cover sm:mt-[30px] sm:h-[460px] sm:rounded-[24px]"
+            videoSrc={`https://stream.mux.com/${HERO_LOOP_PLAYBACK_ID}/720p.mp4`}
+            imageSizes="(min-width: 1140px) 1052px, 100vw"
+            className="mt-6 sm:mt-[30px]"
           />
         </section>
 
