@@ -57,7 +57,21 @@ export interface Product {
    * so a wrong value degrades rather than breaks.
    */
   revenueCatProductId?: string;
+  /**
+   * Artwork for the product's card on /home. Optional: without it the card
+   * falls back to a thumbnail of the first video, so a new product looks
+   * finished before anyone shoots anything for it.
+   */
+  cardImage?: string;
   videos: ProductVideo[];
+}
+
+/** Card artwork for a product, falling back to its first video's thumbnail. */
+export function getProductCardImage(product: Product): string | null {
+  if (product.cardImage) return product.cardImage;
+  const first = product.videos[0];
+  if (!first) return null;
+  return `https://image.mux.com/${first.playbackId}/thumbnail.webp?width=800&height=450&fit_mode=smartcrop`;
 }
 
 export const PRODUCTS: Product[] = [
@@ -71,6 +85,9 @@ export const PRODUCTS: Product[] = [
     // distinct object — the product is what's sold, the entitlement is what it
     // unlocks. They needn't match for other products.
     revenueCatProductId: "posture",
+    // The sales page's hero shot, rather than a frame of Day 1 — it reads as
+    // the product, which a still from one routine doesn't.
+    cardImage: "/posture/hero.jpg",
     // Order here is the order they appear on the product page. Durations are
     // the real asset lengths from Mux, rounded to the nearest minute.
     //
