@@ -35,6 +35,20 @@ export interface ProductVideo {
    * Optional: without one, that routine simply shows no preview control.
    */
   previewPlaybackId?: string;
+  /**
+   * Still shown before playback starts, and on this video's tile in the product
+   * page's lineup.
+   *
+   * Optional, and worth setting whenever the frame matters. Without one both
+   * fall back to a Mux thumbnail with no `time`, which is the video's opening
+   * frame — usually an empty mat, or someone walking into position. That is why
+   * a product whose /home card is a hand-picked frame looked like a different
+   * class once you clicked it.
+   *
+   * Point it at the same file the card uses where they should agree: one file
+   * in two places can't drift the way two timestamps can.
+   */
+  poster?: string;
   durationMinutes?: number;
 }
 
@@ -200,11 +214,32 @@ export const PRODUCTS: Product[] = [
         slug: "routine",
         title: "12 Minute Posture and Mobility Routine",
         playbackId: "s8h8mNGwoi02019exYwLUdHjJo6j0113SdY4BrWXQAN84A",
+        // The card's own artwork, so the still on /home and the one behind the
+        // play button are the same picture rather than two frames minutes apart.
+        poster: "/posture-routine/card.jpg",
         durationMinutes: 12,
       },
     ],
   },
 ];
+
+/**
+ * The still for one video: its own `poster` when it has one, else a Mux
+ * thumbnail.
+ *
+ * The fallback carries no `time`, so it is the opening frame — fine for a class
+ * that starts on the mat, wrong for one that doesn't. Set `poster` rather than
+ * adding a timestamp here.
+ *
+ * Only ever shown to a viewer who may watch the video: the Mux branch puts the
+ * playback id in a URL, and these assets are public-policy.
+ */
+export function getVideoPoster(video: ProductVideo): string {
+  return (
+    video.poster ??
+    `https://image.mux.com/${video.playbackId}/thumbnail.webp?width=512&height=288&fit_mode=smartcrop`
+  );
+}
 
 export function getProduct(slug: string): Product | undefined {
   return PRODUCTS.find((p) => p.slug === slug);

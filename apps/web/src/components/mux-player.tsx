@@ -11,6 +11,7 @@ const MuxPlayerComponent = dynamic(
 export function MuxPlayer({
   playbackId,
   title,
+  poster,
   streamType = "on-demand",
   fillVideo = false,
   liveOfflineOverlay = false,
@@ -20,6 +21,12 @@ export function MuxPlayer({
 }: {
   playbackId: string;
   title: string;
+  /**
+   * Still shown before playback. Without one the player asks Mux for the
+   * opening frame, which need not be the picture the rest of the site used to
+   * advertise this video — see `getVideoPoster`.
+   */
+  poster?: string;
   streamType?: "on-demand" | "live";
   fillVideo?: boolean;
   liveOfflineOverlay?: boolean;
@@ -41,6 +48,7 @@ export function MuxPlayer({
         streamType={streamType}
         accentColor="#18181b"
         metadata={{ video_title: title }}
+        poster={poster}
         style={{
           display: "block",
           aspectRatio: "16/9",
@@ -63,6 +71,7 @@ export function MuxPlayer({
         streamType={streamType}
         accentColor="#18181b"
         metadata={{ video_title: title }}
+        poster={poster}
         style={{
           display: "block",
           aspectRatio: "16/9",

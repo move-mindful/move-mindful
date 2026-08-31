@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getProduct, getProductVideo } from "@/lib/products";
+import { getProduct, getProductVideo, getVideoPoster } from "@/lib/products";
 import { getViewerAccess, viewerCanAccess } from "@/lib/auth/viewer";
 import { MuxPlayer } from "@/components/mux-player";
 import { VideoTheaterStage } from "@/components/video-theater-stage";
@@ -35,7 +35,11 @@ export default async function ProductVideoPage({
   return (
     <div>
       <VideoTheaterStage>
-        <MuxPlayer playbackId={video.playbackId} title={video.title} />
+        <MuxPlayer
+          playbackId={video.playbackId}
+          title={video.title}
+          poster={getVideoPoster(video)}
+        />
       </VideoTheaterStage>
 
       <div className="mx-auto max-w-6xl px-6 sm:px-8 py-8">

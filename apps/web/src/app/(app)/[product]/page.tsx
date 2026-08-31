@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getProduct, PRODUCTS } from "@/lib/products";
+import { getProduct, getVideoPoster, PRODUCTS } from "@/lib/products";
 import { getViewerAccess, viewerCanAccess } from "@/lib/auth/viewer";
 import { ProductPurchase } from "@/components/product-purchase";
 import { PostureLanding } from "@/components/products/posture-landing";
@@ -74,7 +74,11 @@ export default async function ProductPage({
     return (
       <div>
         <VideoTheaterStage>
-          <MuxPlayer playbackId={video.playbackId} title={video.title} />
+          <MuxPlayer
+            playbackId={video.playbackId}
+            title={video.title}
+            poster={getVideoPoster(video)}
+          />
         </VideoTheaterStage>
 
         <div className="mx-auto max-w-6xl px-6 sm:px-8 py-6">
@@ -114,10 +118,10 @@ export default async function ProductPage({
               >
                 <div className="relative aspect-video bg-zinc-100">
                   <Image
-                    src={`https://image.mux.com/${video.playbackId}/thumbnail.webp?width=512&height=288&fit_mode=smartcrop`}
+                    src={getVideoPoster(video)}
                     alt={video.title}
                     fill
-                    unoptimized
+                    unoptimized={getVideoPoster(video).startsWith("http")}
                     className="object-cover transition group-hover:scale-105"
                   />
                   {video.durationMinutes && (
