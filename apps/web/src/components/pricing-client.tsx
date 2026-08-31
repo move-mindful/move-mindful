@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { configurePurchases, MEMBERSHIP_ENTITLEMENT } from "@/lib/revenuecat";
-import type { Package } from "@revenuecat/purchases-js";
+import { MEMBER_HOME } from "@/lib/routes";
+import { ProductType, type Package } from "@revenuecat/purchases-js";
 
 export function PricingClient({ userId }: { userId: string | null }) {
   const router = useRouter();
@@ -54,9 +55,19 @@ export function PricingClient({ userId }: { userId: string | null }) {
       const { customerInfo } = await purchases.purchase({
         rcPackage: pkg,
       });
-      if (MEMBERSHIP_ENTITLEMENT in customerInfo.entitlements.active) {
-        router.push("/classes");
-      }
+      // Route on *any* completed purchase, not just the membership. This page
+      // renders whatever the current offering holds, which now includes
+      // one-time products — and checking only for the membership entitlement
+      // left a Posture Reset buyer sitting on the pricing page, payment taken,
+      // with no acknowledgement that anything had happened.
+      //
+      // /home is right for both: it lists everything the viewer owns, and it
+      // needs no entitlement to reach.
+      router.push(
+        MEMBERSHIP_ENTITLEMENT in customerInfo.entitlements.active
+          ? "/classes"
+          : MEMBER_HOME,
+      );
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Purchase failed";
       if (!message.includes("cancelled")) {
@@ -87,9 +98,13 @@ export function PricingClient({ userId }: { userId: string | null }) {
     <div>
       <div className="mt-10 grid gap-6 sm:grid-cols-2 max-w-2xl mx-auto">
         {packages.map((pkg) => {
-          const product = pkg.rcBillingProduct;
+          const product = pkg.webBillingProduct;
           const price = product.currentPrice;
-          const isMonthly = product.normalPeriodDuration !== undefined;
+          // Ask what the product *is*, rather than inferring from the period.
+          // `normalPeriodDuration` is `null` for non-subscriptions, and the
+          // obvious `!== undefined` test passes for null — which billed every
+          // one-time product on this page as "$29.99 /month · Subscribe".
+          const isSubscription = product.productType === ProductType.Subscription;
 
           return (
             <div
@@ -106,7 +121,7 @@ export function PricingClient({ userId }: { userId: string | null }) {
                 <span className="text-3xl font-bold">
                   {price.formattedPrice}
                 </span>
-                {isMonthly && (
+                {isSubscription && (
                   <span className="text-sm text-zinc-500">/month</span>
                 )}
               </div>
@@ -117,7 +132,7 @@ export function PricingClient({ userId }: { userId: string | null }) {
               >
                 {purchasing === pkg.identifier
                   ? "Processing..."
-                  : isMonthly
+                  : isSubscription
                     ? "Subscribe"
                     : "Buy Now"}
               </button>
