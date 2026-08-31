@@ -92,7 +92,13 @@ export function RoutinePreview({
           // rather than on its contents is a click on the backdrop.
           if (e.target === dialogRef.current) close();
         }}
-        className="w-[min(56rem,92vw)] rounded-2xl bg-black p-0 backdrop:bg-black/70 open:animate-none"
+        // m-auto because a modal dialog centres itself via the UA's
+        // `margin: auto`, which Tailwind's preflight zeroes.
+        className="m-auto rounded-2xl bg-black p-0 backdrop:bg-black/70"
+        // Width also capped by what a 16:9 player can be without the height
+        // running past the viewport — otherwise the video is taller than the
+        // screen on a landscape phone. 3.25rem is the title bar above it.
+        style={{ width: "min(56rem, 92vw, calc((90dvh - 3.25rem) * 16 / 9))" }}
       >
         <div className="flex items-center justify-between gap-4 px-4 py-3">
           <p className="text-sm font-semibold text-white">{title}</p>
