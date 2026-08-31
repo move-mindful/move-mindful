@@ -4,6 +4,8 @@ import { PRODUCTS } from "@/lib/products";
 import { MEMBERSHIP_ENTITLEMENT } from "@/lib/entitlements";
 import { getActiveEntitlements } from "@/lib/revenuecat-admin";
 import { subscribeToAudience, type AudienceTag } from "@/lib/mailchimp";
+import { syncContactTags } from "@/lib/manychat";
+import { isValidContactId } from "@/lib/manychat-contact";
 import { MEMBER_TAG, purchasedTag } from "@/lib/audience-tags";
 
 /**
@@ -129,6 +131,7 @@ export async function POST(request: Request) {
   let email: string | undefined;
   let firstName: string | null = null;
   let lastName: string | null = null;
+  let manyChatId: string | undefined;
   try {
     const user = await (await clerkClient()).users.getUser(appUserId);
     email =
@@ -136,6 +139,12 @@ export async function POST(request: Request) {
         ?.emailAddress ?? user.emailAddresses[0]?.emailAddress;
     firstName = user.firstName;
     lastName = user.lastName;
+    // Stored by the Clerk webhook for anyone who arrived from a ManyChat DM
+    // link. Free to read here — this user fetch was already happening for the
+    // email, so mirroring the ownership tags costs no extra round trip.
+    const stored = (user.privateMetadata as { mc?: unknown } | null)?.mc;
+    manyChatId =
+      typeof stored === "string" && isValidContactId(stored) ? stored : undefined;
   } catch (error) {
     // A deleted account, or an app user id that was never a Clerk id. Nothing
     // to reconcile and nothing a retry would fix.
@@ -175,6 +184,26 @@ export async function POST(request: Request) {
     // Ask for a retry. Safe because reconciling is idempotent — replaying this
     // event later produces the same result.
     return new Response("Mailchimp update failed", { status: 500 });
+  }
+
+  // Mirror ownership into ManyChat so a DM flow can branch on whether someone
+  // already bought. Only the `purchased:` tags travel: `member` has no
+  // counterpart in ManyChat's vocabulary, and free products carry no
+  // entitlement, so there is no purchase to record for them.
+  //
+  // Skipped for the majority of buyers, who never came from a DM and so have no
+  // contact id to tag.
+  if (manyChatId) {
+    const synced = await syncContactTags(
+      manyChatId,
+      tags.filter((tag) => tag.name !== MEMBER_TAG),
+    );
+    if (!synced) {
+      // Same reasoning as Mailchimp: ownership drives suppression, and a stale
+      // tag here means a DM sequence selling the 5 Day Reset to somebody who
+      // already owns it. Reconciling is idempotent, so a replay is safe.
+      return new Response("ManyChat update failed", { status: 500 });
+    }
   }
 
   return new Response("OK", { status: 200 });

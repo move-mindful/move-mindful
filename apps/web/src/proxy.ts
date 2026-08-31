@@ -2,6 +2,11 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { MEMBER_HOME } from "@/lib/routes";
 import { PRODUCTS } from "@/lib/products";
+import {
+  MC_COOKIE,
+  MC_COOKIE_MAX_AGE,
+  readContactId,
+} from "@/lib/manychat-contact";
 
 const isPublicRoute = createRouteMatcher([
   "/",
@@ -22,10 +27,6 @@ const isPublicRoute = createRouteMatcher([
   // rather than an auth error — a confusing way to lose events silently.
   "/api/webhooks/clerk",
   "/api/webhooks/revenuecat",
-  // A marketing URL for the free routine, separate from the product's own slug
-  // so the advertised address can change without touching the product. Public
-  // for the same reason the sales pages below are.
-  "/class1",
   // Product sales pages — the URLs you advertise, so they must load signed out.
   // Only the landing page is public: the page renders its own locked state and
   // never emits playback ids to an unentitled viewer. The /<product>/<video>
@@ -40,14 +41,39 @@ const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 const isLockedSection = createRouteMatcher(["/classes(.*)", "/live(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
-  if (isPublicRoute(req)) return;
+  // A ManyChat DM link lands on a public product page carrying
+  // `?mc=<contact id>`. Stash it in a first-party cookie the moment it arrives:
+  // the buy button rebuilds the sign-up URL from the product slug and drops the
+  // query string, and people wander around before they sign up, so the
+  // parameter is long gone by the time there is a Clerk user to attach it to.
+  const contactId = readContactId(req.nextUrl.searchParams);
+  const carry = <T extends NextResponse>(response: T): T => {
+    if (contactId) {
+      response.cookies.set(MC_COOKIE, contactId, {
+        maxAge: MC_COOKIE_MAX_AGE,
+        // Read server-side at sign-up, never by page scripts.
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+      });
+    }
+    return response;
+  };
+
+  // Public routes are where ManyChat links actually land, so this is the branch
+  // that matters — and it needs a response object to hang the cookie on rather
+  // than the bare early return it would otherwise be.
+  if (isPublicRoute(req)) {
+    return contactId ? carry(NextResponse.next()) : undefined;
+  }
 
   const { userId, sessionClaims } = await auth();
 
   if (!userId) {
     const signInUrl = new URL("/sign-in", req.url);
     signInUrl.searchParams.set("redirect_url", req.url);
-    return NextResponse.redirect(signInUrl);
+    return carry(NextResponse.redirect(signInUrl));
   }
 
   // Optimistic admin gate only. Real enforcement is server-side via requireAdmin()
@@ -56,14 +82,16 @@ export default clerkMiddleware(async (auth, req) => {
   const admin = sessionClaims?.metadata?.role === "admin";
 
   if (isAdminRoute(req) && !admin) {
-    return NextResponse.redirect(new URL(MEMBER_HOME, req.url));
+    return carry(NextResponse.redirect(new URL(MEMBER_HOME, req.url)));
   }
 
   // Same optimistic-only deal: requireSectionUnlocked() in each locked page is
   // the real boundary. This just avoids rendering the shell for members.
   if (isLockedSection(req) && !admin) {
-    return NextResponse.redirect(new URL(MEMBER_HOME, req.url));
+    return carry(NextResponse.redirect(new URL(MEMBER_HOME, req.url)));
   }
+
+  return contactId ? carry(NextResponse.next()) : undefined;
 });
 
 export const config = {
