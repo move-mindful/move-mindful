@@ -173,7 +173,11 @@ export const PRODUCTS: Product[] = [
   {
     slug: "posture-routine",
     title: "12 Minute Posture and Mobility Routine",
-    tagline: "12 Minute Posture and Mobility Routine",
+    // Not the title again: this also becomes the page subtitle, the meta
+    // description, and — since the one video carries no description of its
+    // own — the video's line on the product page.
+    tagline:
+      "A single follow-along routine to loosen up and stand a little taller.",
     // Free with any account — the top-of-funnel lead magnet.
     entitlement: null,
     // A frame from the routine itself (3:18), so the card shows the class
