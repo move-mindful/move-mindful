@@ -128,6 +128,9 @@ function Section({
   );
 }
 
+const badgeCls =
+  "absolute top-3 left-3 rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm";
+
 function ProductCard({
   product,
   owned,
@@ -160,11 +163,15 @@ function ProductCard({
         ) : (
           <span className="absolute inset-0 bg-linear-to-br from-zinc-100 to-zinc-200" />
         )}
-        {free && (
-          <span className="absolute top-3 left-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-zinc-700">
-            Free
+        {/* One badge, in this order: a free product is free whether or not
+            the viewer has it, and only a paid one can have been bought. */}
+        {free ? (
+          <span className={`${badgeCls} bg-white/95 text-zinc-700`}>Free</span>
+        ) : owned ? (
+          <span className={`${badgeCls} bg-emerald-600 text-white`}>
+            Purchased
           </span>
-        )}
+        ) : null}
       </Link>
 
       <div className="flex flex-1 flex-col p-6">
