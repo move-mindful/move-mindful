@@ -23,12 +23,24 @@ function subscriberHash(email: string): string {
   return createHash("md5").update(email.trim().toLowerCase()).digest("hex");
 }
 
+/**
+ * A tag to apply or remove.
+ *
+ * `active: false` removes it. That matters for anything reconciled rather than
+ * recorded — a refunded purchase has to be able to take its tag back, or the
+ * customer keeps receiving mail written for owners.
+ */
+export interface AudienceTag {
+  name: string;
+  active: boolean;
+}
+
 export interface SubscribeParams {
   email: string;
   firstName?: string | null;
   lastName?: string | null;
-  /** Where they came from, e.g. the product slug they signed up on. */
-  tags?: string[];
+  /** A bare string is shorthand for applying that tag. */
+  tags?: Array<string | AudienceTag>;
 }
 
 /**
@@ -40,7 +52,9 @@ export interface SubscribeParams {
  * people is how senders earn spam complaints and lose an audience.
  *
  * Returns false rather than throwing — a marketing-list failure should never
- * take down the signup flow that triggered it.
+ * take down the flow that triggered it. Callers that can usefully retry (a
+ * webhook, say) should treat false as "try again later"; callers that can't
+ * should ignore it and let the log carry the failure.
  */
 export async function subscribeToAudience({
   email,
@@ -92,7 +106,11 @@ export async function subscribeToAudience({
           method: "POST",
           headers,
           body: JSON.stringify({
-            tags: tags.map((name) => ({ name, status: "active" })),
+            tags: tags.map((tag) =>
+              typeof tag === "string"
+                ? { name: tag, status: "active" }
+                : { name: tag.name, status: tag.active ? "active" : "inactive" },
+            ),
           }),
         },
       );
@@ -101,6 +119,10 @@ export async function subscribeToAudience({
           `[mailchimp] tagging failed (${tagRes.status})`,
           await tagRes.text(),
         );
+        // The member exists but isn't labelled correctly, which for a
+        // reconciled tag is the whole point of the call. Report it as failed so
+        // a caller that can retry does.
+        return false;
       }
     }
 

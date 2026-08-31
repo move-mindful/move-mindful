@@ -1,5 +1,6 @@
 import { Webhook } from "svix";
 import { subscribeToAudience } from "@/lib/mailchimp";
+import { SIGNUP_TAG, sourceTag } from "@/lib/audience-tags";
 
 /**
  * Clerk webhook receiver — subscribes new users to the Mailchimp audience,
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
     email,
     firstName: data.first_name,
     lastName: data.last_name,
-    tags: ["signup", ...(source ? [`source:${source}`] : [])],
+    tags: [SIGNUP_TAG, ...(source ? [sourceTag(source)] : [])],
   });
 
   // Always 200 once verified: a Mailchimp failure is logged, not retried
