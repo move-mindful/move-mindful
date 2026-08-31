@@ -142,9 +142,30 @@ export async function POST(request: Request) {
     // Stored by the Clerk webhook for anyone who arrived from a ManyChat DM
     // link. Free to read here — this user fetch was already happening for the
     // email, so mirroring the ownership tags costs no extra round trip.
-    const stored = (user.privateMetadata as { mc?: unknown } | null)?.mc;
-    manyChatId =
-      typeof stored === "string" && isValidContactId(stored) ? stored : undefined;
+    const promoted = (user.privateMetadata as { mc?: unknown } | null)?.mc;
+
+    if (isValidContactId(promoted)) {
+      manyChatId = promoted;
+    } else {
+      // The promotion hasn't happened yet. `user.created` normally lands
+      // seconds after signup and a purchase takes minutes, so this is the
+      // narrow case where that receiver failed and Clerk is still backing off
+      // between retries — during which someone can perfectly well buy.
+      //
+      // Fall back to the client-written copy rather than skip. The exposure is
+      // that someone could point their own purchase tag at a stranger's
+      // contact, which costs that stranger a wrong DM; the alternative is
+      // silently losing the purchase tag for a real buyer, which leaves a flow
+      // selling them what they already own. The retry will promote it properly
+      // and later events read the durable copy.
+      const claimed = (user.unsafeMetadata as { mc?: unknown } | null)?.mc;
+      if (isValidContactId(claimed)) {
+        manyChatId = claimed;
+        console.warn(
+          `[rc-webhook] ${appUserId} has no promoted ManyChat id — falling back to unsafeMetadata`,
+        );
+      }
+    }
   } catch (error) {
     // A deleted account, or an app user id that was never a Clerk id. Nothing
     // to reconcile and nothing a retry would fix.

@@ -34,7 +34,7 @@ export const MC_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
  * run of digits is discarded rather than sanitised — there is no legitimate
  * contact id it would reject.
  */
-export function isValidContactId(value: string | undefined | null): value is string {
+export function isValidContactId(value: unknown): value is string {
   return typeof value === "string" && /^[0-9]{1,32}$/.test(value);
 }
 
