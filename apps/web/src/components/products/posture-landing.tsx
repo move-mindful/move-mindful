@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { HeroMedia } from "@/components/products/hero-media";
+import { RoutinePreview } from "@/components/products/routine-preview";
 import { Outfit } from "next/font/google";
 import type { Product } from "@/lib/products";
 import {
@@ -248,13 +249,11 @@ export function PostureLanding({
                     className="flex flex-col gap-3 rounded-[20px] border border-[#ECECF4] bg-white p-3 sm:grid sm:grid-cols-[220px_minmax(0,1fr)_110px] sm:items-center sm:gap-7 sm:p-[18px]"
                   >
                     {still && (
-                      <Image
-                        src={still.src}
+                      <RoutinePreview
+                        image={still.src}
                         alt={still.alt}
-                        width={1600}
-                        height={1067}
-                        sizes="(min-width: 640px) 220px, 100vw"
-                        className="h-[150px] w-full rounded-xl object-cover sm:h-[140px] sm:rounded-[14px]"
+                        title={video.title}
+                        previewPlaybackId={video.previewPlaybackId}
                       />
                     )}
                     <div className="flex flex-col gap-1.5 px-1.5 pb-1.5 sm:p-0">

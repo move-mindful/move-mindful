@@ -25,6 +25,16 @@ export interface ProductVideo {
   description?: string;
   /** Mux playback id. Public policy, so the id alone streams the video. */
   playbackId: string;
+  /**
+   * A short taster the sales page may play to anyone.
+   *
+   * Its own Mux asset, cut from the class with scripts/make-clip.mjs — never
+   * the class's own `playbackId` with a stop time. Public policy means the id
+   * *is* the video, so a page that ships the real id ships the whole class.
+   *
+   * Optional: without one, that routine simply shows no preview control.
+   */
+  previewPlaybackId?: string;
   durationMinutes?: number;
 }
 
@@ -117,6 +127,7 @@ export const PRODUCTS: Product[] = [
         description:
           "Gentle hip and neck movements to release tension and improve mobility, then we'll work to activate and strengthen the muscles along the back of the body that support a more upright, balanced posture.",
         playbackId: "1WVQFr011ztCuHxQ01clTR7vId2eGiTrfo3DI01I801wYxE",
+        previewPlaybackId: "RNYJunFdYCjH014h2X01DGOsvdmweTb9T8r02K9JcZpGxQ",
         durationMinutes: 12,
       },
       {
@@ -125,6 +136,7 @@ export const PRODUCTS: Product[] = [
         description:
           "Create space through the hips while strengthening the core and improving control around the pelvis, building a more stable foundation for better posture.",
         playbackId: "I01ddUdl1UA2q6LaUv2SclUzz01SAt01uiSsuODks00EIuI",
+        previewPlaybackId: "2j01701jZGo00CNBAhOsOSwxZWFAkPRg901AIRVBx2PmxAM",
         durationMinutes: 12,
       },
       {
@@ -133,6 +145,7 @@ export const PRODUCTS: Product[] = [
         description:
           "Open the chest and improve shoulder mobility with targeted movements that help counteract slouching and make a more upright posture feel natural.",
         playbackId: "W00fZc1Zqr02flodBXQeJ2ga3ZP1YErZxTJZOepht4iQU",
+        previewPlaybackId: "K02kChW6MQxG9lvb5ElUQIpGh02ABoIqRrv8cq8JKx02Zk",
         durationMinutes: 11,
       },
       {
@@ -141,6 +154,7 @@ export const PRODUCTS: Product[] = [
         description:
           "Move your spine through flexion, extension, side bending, and rotation to improve mobility, ease stiffness, and help your entire back feel less restricted.",
         playbackId: "BkKVVEA02c4tzQ6ZYYbHNdvTkeorz00B8FQcpKin7C2F8",
+        previewPlaybackId: "mzgeye32BXKA4mpCevye6c8MveG7qaSeAKGvawB5U00E",
         durationMinutes: 11,
       },
       {
@@ -149,6 +163,7 @@ export const PRODUCTS: Product[] = [
         description:
           "Bring everything together with dynamic movements that mobilize the shoulders, move the spine, open the hips, and help your entire body move with greater freedom and ease.",
         playbackId: "1ABOOmlA02G02bRlGzloyDGAKYf3pLSgt022ca01iNtEgvY",
+        previewPlaybackId: "zurqWIoGhWlo8qbiLOSLU6IARGhdnj7OTAAWFtkDJEE",
         durationMinutes: 11,
       },
     ],
