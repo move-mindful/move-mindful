@@ -122,13 +122,19 @@ const TESTIMONIALS = [
 ];
 
 /**
- * PLACEHOLDER hero loop — 16 seconds cut from Day 5 (50–66s, the arm sweep) so
- * the treatment can be judged before the real thing is shot. It is its own Mux
- * asset, not the class: publishing a class's playback id would publish the
- * class. Replace this id when Ayla's purpose-shot clip is up, and delete the
- * placeholder asset. See scripts/make-clip.mjs.
+ * The hero loop — 80 seconds, purpose-shot, silent by design (the audio track
+ * is stripped before upload, so a browser that ignores `muted` still has
+ * nothing to play).
+ *
+ * Its own Mux asset rather than any class's playback id: these assets are
+ * public-policy, so publishing a class's id would publish the class.
+ *
+ * Uploaded with a **720p static rendition** — the <video> below points at the
+ * MP4 directly, which only exists because the asset was created with
+ * `static_renditions`. Re-upload with `scripts/upload-video.mjs --mp4` if this
+ * is ever replaced; without it the URL 404s and the still silently stays put.
  */
-const HERO_LOOP_PLAYBACK_ID = "GoelX02f4fhezFpJ00hhUpQaLjo9TjYHI3m6QKK02znOlc";
+const HERO_LOOP_PLAYBACK_ID = "4bxf0121upWPVXp00tpWmuL6dpPMVhOYQ8Vu1XDdF01KC8";
 
 const ctaCls =
   "inline-flex items-center justify-center rounded-full bg-linear-to-r from-[#7A5FEA] to-[#4CC7E0] px-10 py-4 text-lg font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60";
@@ -185,7 +191,7 @@ export function PostureLanding({
           </div>
           <HeroMedia
             poster="/posture/hero-poster.jpg"
-            alt="Standing tall on the mat, arms sweeping overhead"
+            alt="Lying on the back with knees bent, arms sweeping open along the floor"
             videoSrc={`https://stream.mux.com/${HERO_LOOP_PLAYBACK_ID}/720p.mp4`}
             imageSizes="(min-width: 1140px) 1052px, 100vw"
             className="mt-6 sm:mt-[30px]"
