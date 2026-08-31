@@ -110,9 +110,10 @@ export const PRODUCTS: Product[] = [
     // distinct object — the product is what's sold, the entitlement is what it
     // unlocks. They needn't match for other products.
     revenueCatProductId: "posture",
-    // The sales page's hero shot, rather than a frame of Day 1 — it reads as
-    // the product, which a still from one routine doesn't.
-    cardImage: "/posture/hero.jpg",
+    // A frame from Day 2 (10:10). Its own file rather than a reference to the
+    // landing page's copy of the same shot, so the card and the page can change
+    // independently — same reason the free routine has one.
+    cardImage: "/posture/card.jpg",
     // Order here is the order they appear on the product page. Durations are
     // the real asset lengths from Mux, rounded to the nearest minute.
     //
