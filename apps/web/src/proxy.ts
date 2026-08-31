@@ -22,6 +22,10 @@ const isPublicRoute = createRouteMatcher([
   // rather than an auth error — a confusing way to lose events silently.
   "/api/webhooks/clerk",
   "/api/webhooks/revenuecat",
+  // A marketing URL for the free routine, separate from the product's own slug
+  // so the advertised address can change without touching the product. Public
+  // for the same reason the sales pages below are.
+  "/class1",
   // Product sales pages — the URLs you advertise, so they must load signed out.
   // Only the landing page is public: the page renders its own locked state and
   // never emits playback ids to an unentitled viewer. The /<product>/<video>
