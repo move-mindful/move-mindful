@@ -73,6 +73,16 @@ export interface Product {
    * finished before anyone shoots anything for it.
    */
   cardImage?: string;
+  /**
+   * Button label on this product's promo band on /home. Optional — defaults to
+   * a plain "Get it".
+   *
+   * Here rather than in the band component because it is sales copy, and the
+   * band renders whichever products the viewer doesn't own. A product whose
+   * landing page says "Get the Reset" should not say something else one click
+   * earlier.
+   */
+  ctaLabel?: string;
   videos: ProductVideo[];
 }
 
@@ -114,6 +124,8 @@ export const PRODUCTS: Product[] = [
     // landing page's copy of the same shot, so the card and the page can change
     // independently — same reason the free routine has one.
     cardImage: "/posture/card.jpg",
+    // Matches the landing page's own button (posture-landing.tsx).
+    ctaLabel: "Get the Reset",
     // Order here is the order they appear on the product page. Durations are
     // the real asset lengths from Mux, rounded to the nearest minute.
     //
