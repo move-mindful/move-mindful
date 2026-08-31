@@ -42,24 +42,34 @@ const outfit = Outfit({
   variable: "--font-outfit",
 });
 
-/** Stills for each day, in lineup order. */
+/**
+ * Stills for each day, in lineup order.
+ *
+ * Frames from the classes themselves (pulled at a chosen timestamp and saved
+ * locally — a Mux thumbnail URL would carry the playback id, and these assets
+ * are public-policy). So the picture on a card is the class behind its Preview
+ * button, not a stand-in from a different shoot.
+ */
 const DAY_IMAGES = [
   {
     src: "/posture/day-1.jpg",
-    alt: "Standing forward fold with hands at the wall",
+    alt: "Bridge pose: lying on the back with the hips lifted, arms resting alongside on the mat",
   },
   {
     src: "/posture/day-2.jpg",
-    alt: "Seated with a strap, opening through the chest",
+    alt: "Lying back over a bolster with both legs lifted, scissoring one leg towards the ceiling",
   },
-  { src: "/posture/day-3.jpg", alt: "Kneeling lunge with an overhead reach" },
+  {
+    src: "/posture/day-3.jpg",
+    alt: "Lying on the back with knees bent and both arms reaching overhead to the floor",
+  },
   {
     src: "/posture/day-4.jpg",
-    alt: "Kneeling tall on a bolster, spine upright",
+    alt: "Standing in a wide stance, folding sideways with one hand reaching down the leg",
   },
   {
     src: "/posture/day-5.jpg",
-    alt: "Reclined with the legs lifted over a bolster",
+    alt: "Standing side bend in a wide stance, one arm sweeping up and over the head",
   },
 ];
 
