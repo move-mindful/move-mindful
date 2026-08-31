@@ -338,7 +338,7 @@ export function PostureLanding({
             <div className="flex flex-col gap-5">
               <Image
                 src="/posture/method.jpg"
-                alt="Supported bridge with one leg extended"
+                alt="Lying with the hips supported on a folded blanket, hugging one knee in while the other leg extends long"
                 width={1600}
                 height={1067}
                 sizes="(min-width: 1024px) 526px, 100vw"
