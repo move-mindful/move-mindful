@@ -21,7 +21,8 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12 sm:px-8">
-      <h1 className="text-3xl font-bold tracking-tight">Home</h1>
+      {/* No page heading: the section headings below carry it, and "Home"
+          above them was a label for a page with one thing on it. */}
       <HomeProducts items={items} userId={userId} />
     </div>
   );

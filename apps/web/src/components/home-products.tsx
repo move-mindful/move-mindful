@@ -75,7 +75,7 @@ export function HomeProducts({
 
   if (items.length === 0) {
     return (
-      <p className="mt-3 text-zinc-500">
+      <p className="text-zinc-500">
         Your videos will appear here. Nothing to show just yet — check back
         soon.
       </p>
@@ -83,13 +83,23 @@ export function HomeProducts({
   }
 
   return (
-    <div className="mt-10 flex flex-col gap-12">
+    <div className="flex flex-col gap-12">
       {owned.length > 0 && (
-        <Section title="Your Products">
+        <Section title="Your Classes">
           {owned.map(({ product }) => (
             <ProductCard key={product.slug} product={product} owned />
           ))}
         </Section>
+      )}
+
+      {/* A hairline that fades out at both ends — enough to separate the two
+          shelves without drawing a hard line across the page. Only when there
+          is something on both sides of it. */}
+      {owned.length > 0 && available.length > 0 && (
+        <div
+          aria-hidden
+          className="h-px bg-linear-to-r from-transparent via-zinc-200 to-transparent"
+        />
       )}
 
       {available.length > 0 && (
@@ -122,8 +132,8 @@ function Section({
 }) {
   return (
     <section>
-      <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
-      <div className="mt-5 grid gap-6 sm:grid-cols-2">{children}</div>
+      <h2 className="text-3xl font-bold tracking-tight">{title}</h2>
+      <div className="mt-6 grid gap-6 sm:grid-cols-2">{children}</div>
     </section>
   );
 }
@@ -168,7 +178,7 @@ function ProductCard({
         {free ? (
           <span className={`${badgeCls} bg-white/95 text-zinc-700`}>Free</span>
         ) : owned ? (
-          <span className={`${badgeCls} bg-emerald-600 text-white`}>
+          <span className={`${badgeCls} bg-emerald-100 text-emerald-700`}>
             Purchased
           </span>
         ) : null}
