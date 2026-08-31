@@ -11,10 +11,17 @@ const isPublicRoute = createRouteMatcher([
   // Hidden free-membership signup. The /join/[code]/activate route does its own
   // auth check and grant; the signup page itself must load while signed out.
   "/join(.*)",
-  // Clerk's webhook receiver. Necessarily unauthenticated — the caller is
-  // Clerk, not a signed-in user — so the route verifies the Svix signature
-  // itself before trusting anything in the payload.
+  // Webhook receivers. Necessarily unauthenticated — the caller is another
+  // service, not a signed-in user — so each route authenticates its own caller
+  // before trusting anything in the payload: Clerk's verifies the Svix
+  // signature, RevenueCat's compares a shared secret (RevenueCat does not sign
+  // its payloads).
+  //
+  // Anything reached by a machine belongs on this list. Without it the proxy
+  // 307s the POST to /sign-in, which a sender reports as a delivery failure
+  // rather than an auth error — a confusing way to lose events silently.
   "/api/webhooks/clerk",
+  "/api/webhooks/revenuecat",
   // Product sales pages — the URLs you advertise, so they must load signed out.
   // Only the landing page is public: the page renders its own locked state and
   // never emits playback ids to an unentitled viewer. The /<product>/<video>
