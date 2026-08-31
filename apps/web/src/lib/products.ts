@@ -172,7 +172,7 @@ export const PRODUCTS: Product[] = [
   {
     slug: "posture-routine",
     title: "12 Minute Posture and Mobility Routine",
-    tagline: "Stand taller. Move with ease. Feel good in your body.",
+    tagline: "12 Minute Posture and Mobility Routine",
     // Free with any account — the top-of-funnel lead magnet.
     entitlement: null,
     // A frame from the routine itself (3:18), so the card shows the class
