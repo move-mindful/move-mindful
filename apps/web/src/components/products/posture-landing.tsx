@@ -122,7 +122,7 @@ const TESTIMONIALS = [
 ];
 
 /**
- * The hero loop — 80 seconds, purpose-shot, silent by design (the audio track
+ * The hero loop — 31 seconds, purpose-shot, silent by design (the audio track
  * is stripped before upload, so a browser that ignores `muted` still has
  * nothing to play).
  *
@@ -134,7 +134,7 @@ const TESTIMONIALS = [
  * `static_renditions`. Re-upload with `scripts/upload-video.mjs --mp4` if this
  * is ever replaced; without it the URL 404s and the still silently stays put.
  */
-const HERO_LOOP_PLAYBACK_ID = "4bxf0121upWPVXp00tpWmuL6dpPMVhOYQ8Vu1XDdF01KC8";
+const HERO_LOOP_PLAYBACK_ID = "eVD8zDG9qUBljEoxL37tVz1U4A6padQ2JkvziLXlP3A";
 
 const ctaCls =
   "inline-flex items-center justify-center rounded-full bg-linear-to-r from-[#7A5FEA] to-[#4CC7E0] px-10 py-4 text-lg font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60";
