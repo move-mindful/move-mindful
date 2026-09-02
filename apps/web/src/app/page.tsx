@@ -28,11 +28,15 @@ export default async function Home() {
           community.
         </p>
         <div className="flex gap-4">
+          {/* Points at the free class rather than a bare sign-up form: the
+              label promises a class, and /class1 is where that promise is
+              kept. It also earns the signup a `source:posture-routine` tag,
+              which /sign-up on its own does not — see lib/audience-tags.ts. */}
           <Link
-            href="/sign-up"
+            href="/class1"
             className="rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-colors hover:bg-zinc-700"
           >
-            Get Started
+            Try a Free Class
           </Link>
           <Link
             href="/sign-in"
