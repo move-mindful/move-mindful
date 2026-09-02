@@ -175,10 +175,6 @@ export function PostureLanding({
               Five follow-along 12-minute routines designed to help you feel
               less stiff, stand taller, and move with more freedom.
             </p>
-            <p>
-              Improve your mobility, build postural strength, and restore
-              movement to the places that feel tight and restricted.
-            </p>
           </div>
           <div className="mt-1.5 flex flex-col items-center gap-3.5">
             <BuyButton className={ctaCls} showPrice>
