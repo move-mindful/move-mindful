@@ -40,18 +40,37 @@ export default async function AppLayout({
               <Image src="/logo.png" alt="MoveMindful" width={32} height={32} />
               MoveMindful
             </Link>
-            {/* Classes and Live are on hold until the membership launches, so
-                members don't see them. Admins keep the links to preview the
-                sections — the pages themselves enforce this via
-                requireSectionUnlocked(). Drop the `admin &&` when releasing. */}
-            {admin && (
+            {/* Signed-out visitors are here for a sales page and have nowhere
+                to navigate to — /home needs an account. */}
+            {signedIn && (
               <div className="flex items-center gap-4 text-sm text-zinc-600">
-                <Link href="/classes" className="transition hover:text-zinc-900">
-                  Classes
+                <Link
+                  href={MEMBER_HOME}
+                  className="transition hover:text-zinc-900"
+                >
+                  Home
                 </Link>
-                <Link href="/live" className="transition hover:text-zinc-900">
-                  Live
-                </Link>
+                {/* Classes and Live are on hold until the membership launches,
+                    so members don't see them. Admins keep the links to preview
+                    the sections — the pages themselves enforce this via
+                    requireSectionUnlocked(). Drop the `admin &&` when
+                    releasing. */}
+                {admin && (
+                  <>
+                    <Link
+                      href="/classes"
+                      className="transition hover:text-zinc-900"
+                    >
+                      Classes
+                    </Link>
+                    <Link
+                      href="/live"
+                      className="transition hover:text-zinc-900"
+                    >
+                      Live
+                    </Link>
+                  </>
+                )}
               </div>
             )}
           </div>
