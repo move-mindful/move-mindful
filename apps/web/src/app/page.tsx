@@ -23,7 +23,11 @@ export default async function Home() {
         <h1 className="text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
           MoveMindful
         </h1>
-        <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+        {/* No `dark:` variant here: globals.css pins --background to white with
+            no prefers-color-scheme block, so the site has no dark theme. A
+            dark: colour would fire on a viewer's OS setting alone and put light
+            grey text on a white page. */}
+        <p className="max-w-md text-lg leading-8 text-zinc-600">
           Helping people transform their posture, strength, mobility and
           balance
         </p>
