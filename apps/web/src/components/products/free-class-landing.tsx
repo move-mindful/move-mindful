@@ -86,14 +86,9 @@ export function FreeClassLanding({
           A daily routine designed to help you feel less stiff and more open
           throughout your entire body.
         </p>
-        <div className="mt-1.5 flex flex-col items-center gap-3.5">
-          <Link href={cta} className={ctaCls}>
-            {ctaLabel}
-          </Link>
-          <p className="text-[15px] text-[#8A8AA0]">
-            Free when you create a MoveMindful account · No card required
-          </p>
-        </div>
+        <Link href={cta} className={`${ctaCls} mt-1.5`}>
+          {ctaLabel}
+        </Link>
         <HeroMedia
           poster="/posture-routine/hero-poster.jpg"
           alt="Seated cross-legged on a mat, bending to the side with a dowel held overhead"
