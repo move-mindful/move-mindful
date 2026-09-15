@@ -187,16 +187,16 @@ export function PostureLanding({
               posture, rounded shoulders, and a stiff upper back—until that
               hunched position begins to feel normal.
             </p>
-            <div className="flex flex-col gap-2">
-              <p>Eventually, you may notice:</p>
-              {/* Left-aligned inside the centred column — a centred bullet
-                  list leaves the bullets stranded at ragged offsets. */}
-              <ul className="list-disc space-y-1.5 self-center pl-[1.1em] text-left marker:text-[#6D5FE8]">
-                {YOU_MAY_NOTICE.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </div>
+            <h2 className="mt-6 text-[1.875rem] font-semibold leading-[1.14] tracking-[-0.028em] text-[#14142B] sm:text-[2.5rem]">
+              Eventually, you may notice:
+            </h2>
+            {/* Left-aligned inside the centred column — a centred bullet list
+                leaves the bullets stranded at ragged offsets. */}
+            <ul className="list-disc space-y-1.5 self-center pl-[1.1em] text-left marker:text-[#6D5FE8]">
+              {YOU_MAY_NOTICE.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
             <p>
               Simply pulling your shoulders back won’t address the entire
               pattern.
