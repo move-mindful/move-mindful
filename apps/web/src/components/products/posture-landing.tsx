@@ -73,16 +73,6 @@ const DAY_IMAGES = [
   },
 ];
 
-const YOU_MAY_NOTICE = [
-  "A more visible hump at the base of your neck",
-  "Your head drifting forward in photos",
-  "Rounded shoulders and a tight chest",
-  "A stiff or increasingly curved upper back",
-  "Difficulty standing tall without straining",
-  "Restricted shoulder or overhead movement",
-  "Neck and upper-back tension after sitting",
-];
-
 const WORK_ON = [
   {
     title: "Forward head posture and “tech neck”",
@@ -178,31 +168,12 @@ export function PostureLanding({
             Posture &amp; Mobility Reset
           </span>
           <h1 className="max-w-[15em] text-[2.4rem] font-semibold leading-[1.06] tracking-[-0.034em] text-pretty sm:text-[3.875rem]">
-            5 Routines to Undo the Posture Your Phone Is Training Your Body Into
+            5-Day Posture and Mobility Reset
           </h1>
           <div className="flex max-w-[32em] flex-col gap-4 text-lg leading-relaxed text-[#5B5B72] text-pretty sm:text-[1.3125rem]">
             <p>
-              Your phone is training your body into a posture you don’t want.
-              Every hour spent looking down at a screen reinforces forward head
-              posture, rounded shoulders, and a stiff upper back—until that
-              hunched position begins to feel normal.
-            </p>
-            <p>
-              Simply pulling your shoulders back won’t address the entire
-              pattern.
-            </p>
-            <p>
-              To create meaningful change, you need to restore movement where
-              your body has become stiff and strengthen the muscles responsible
-              for supporting a more upright position.
-            </p>
-            <h2 className="mt-6 text-[1.875rem] font-semibold leading-[1.14] tracking-[-0.028em] text-[#14142B] sm:text-[2.5rem]">
-              Twelve Minutes a Day Can Begin to Change the Pattern
-            </h2>
-            <p>
-              A targeted five-day system to restore mobility through your upper
-              back and shoulders—so you can stand taller, move more freely, and
-              stop feeling pulled forward.
+              Five follow-along 12-minute routines designed to help you feel
+              less stiff, stand taller, and move with more freedom.
             </p>
           </div>
           <div className="mt-1.5 flex flex-col items-center gap-3.5">
@@ -221,20 +192,6 @@ export function PostureLanding({
             imageSizes="(min-width: 1140px) 1052px, 100vw"
             className="mt-6 sm:mt-[30px]"
           />
-        </section>
-
-        {/* ---------------- YOU MAY NOTICE ---------------- */}
-        <section className="mx-auto flex max-w-[1140px] flex-col items-center gap-4 px-6 pt-12 text-center sm:px-11 sm:pt-16">
-          <h2 className="text-[1.875rem] font-semibold leading-[1.14] tracking-[-0.028em] sm:text-[2.5rem]">
-            Eventually, you may notice:
-          </h2>
-          {/* Left-aligned inside the centred column — a centred bullet list
-              leaves the bullets stranded at ragged offsets. */}
-          <ul className="list-disc space-y-1.5 pl-[1.1em] text-left text-lg leading-relaxed text-[#5B5B72] marker:text-[#6D5FE8] sm:text-[1.3125rem]">
-            {YOU_MAY_NOTICE.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
         </section>
 
         {/* ---------------- TIME BAND ---------------- */}
