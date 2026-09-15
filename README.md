@@ -118,6 +118,7 @@ move-mindful/
 │           ├── types.ts   # User, VideoClass, Tag, TagGroup, Collection, Challenge, …
 │           ├── access.ts  # hasAccess, isChallengeExpiringSoon, shouldShowUpsell
 │           └── index.ts   # Re-exports
+├── design/                # Design canvas source files (each folder's README links its online canvas)
 ├── supabase/migrations/   # SQL migrations (001 schema, 002 media org, 003 cleanup, 004 instructors, 005 collection auto-add + limit, 006 clip source tracking, 007 class date)
 ├── plan.md                # Full architecture, build order, security guidelines
 ├── phase-4-plan.md        # Phase 4 implementation plan (schema, routes, decisions)
