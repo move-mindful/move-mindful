@@ -187,16 +187,6 @@ export function PostureLanding({
               posture, rounded shoulders, and a stiff upper back—until that
               hunched position begins to feel normal.
             </p>
-            <h2 className="mt-6 text-[1.875rem] font-semibold leading-[1.14] tracking-[-0.028em] text-[#14142B] sm:text-[2.5rem]">
-              Eventually, you may notice:
-            </h2>
-            {/* Left-aligned inside the centred column — a centred bullet list
-                leaves the bullets stranded at ragged offsets. */}
-            <ul className="list-disc space-y-1.5 self-center pl-[1.1em] text-left marker:text-[#6D5FE8]">
-              {YOU_MAY_NOTICE.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
             <p>
               Simply pulling your shoulders back won’t address the entire
               pattern.
@@ -231,6 +221,20 @@ export function PostureLanding({
             imageSizes="(min-width: 1140px) 1052px, 100vw"
             className="mt-6 sm:mt-[30px]"
           />
+        </section>
+
+        {/* ---------------- YOU MAY NOTICE ---------------- */}
+        <section className="mx-auto flex max-w-[1140px] flex-col items-center gap-4 px-6 pt-12 text-center sm:px-11 sm:pt-16">
+          <h2 className="text-[1.875rem] font-semibold leading-[1.14] tracking-[-0.028em] sm:text-[2.5rem]">
+            Eventually, you may notice:
+          </h2>
+          {/* Left-aligned inside the centred column — a centred bullet list
+              leaves the bullets stranded at ragged offsets. */}
+          <ul className="list-disc space-y-1.5 pl-[1.1em] text-left text-lg leading-relaxed text-[#5B5B72] marker:text-[#6D5FE8] sm:text-[1.3125rem]">
+            {YOU_MAY_NOTICE.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
         </section>
 
         {/* ---------------- TIME BAND ---------------- */}
