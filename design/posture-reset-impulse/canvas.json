@@ -2,7 +2,8 @@
   "artboards": [
     { "file": "Main.dc.html", "title": "Version A · The Phone Did This", "x": 0, "y": 0, "w": 1440, "h": 12200, "expand": "fill" },
     { "file": "TwelveMinutes.dc.html", "title": "Version B · 12 Minutes a Day", "x": 1560, "y": 0, "w": 1440, "h": 9800, "expand": "fill" },
-    { "file": "BodyBack.dc.html", "title": "Version C · Get Your Body Back", "x": 3120, "y": 0, "w": 1440, "h": 11600, "expand": "fill" }
+    { "file": "BodyBack.dc.html", "title": "Version C · Get Your Body Back", "x": 3120, "y": 0, "w": 1440, "h": 11600, "expand": "fill" },
+    { "file": "TwelveMinutesCopy.dc.html", "title": "Version B copy · 12 Minutes a Day", "x": 4680, "y": 0, "w": 1440, "h": 9800, "expand": "fill" }
   ],
-  "launch": { "view": "canvas" }
+  "launch": { "view": "focused", "file": "TwelveMinutesCopy.dc.html" }
 }

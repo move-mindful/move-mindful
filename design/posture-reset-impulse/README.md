@@ -10,6 +10,7 @@ Source files for the design canvas of a new /posture sales page aimed at impulse
 | `Main.dc.html` | Version A: "The Phone Did This" (desktop, 1440px wide) |
 | `TwelveMinutes.dc.html` | Version B: "12 Minutes a Day" (desktop, 1440px wide) |
 | `BodyBack.dc.html` | Version C: "Get Your Body Back" (desktop, 1440px wide) |
+| `TwelveMinutesCopy.dc.html` | Copy of Version B, for hands-on edits in the canvas |
 | `canvas.json` | Artboard layout |
 | `images/` | Downsized copies of photos from `apps/web/public`, each under ~70 KB |
 
