@@ -207,7 +207,7 @@ export function PostureLanding({
               for supporting a more upright position.
             </p>
             <h2 className="mt-6 text-[1.875rem] font-semibold leading-[1.14] tracking-[-0.028em] text-[#14142B] sm:text-[2.5rem]">
-              Twelve Minutes a Day Can Begin Change the Pattern
+              Twelve Minutes a Day Can Begin to Change the Pattern
             </h2>
             <p>
               A targeted five-day system to restore mobility through your upper
