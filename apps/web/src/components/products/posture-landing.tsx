@@ -168,20 +168,20 @@ export function PostureLanding({
             Posture &amp; Mobility Reset
           </span>
           <h1 className="max-w-[15em] text-[2.4rem] font-semibold leading-[1.06] tracking-[-0.034em] text-pretty sm:text-[3.875rem]">
-            5-Day Posture and Mobility Reset
+            Posture and Mobility Reset
           </h1>
           <div className="flex max-w-[32em] flex-col gap-4 text-lg leading-relaxed text-[#5B5B72] text-pretty sm:text-[1.3125rem]">
             <p>
-              Five follow-along 12-minute routines designed to help you feel
-              less stiff, stand taller, and move with more freedom.
+              Five follow-along classes designed to help you feel less stiff,
+              stand taller, and move with more freedom.
             </p>
           </div>
           <div className="mt-1.5 flex flex-col items-center gap-3.5">
-            <BuyButton className={ctaCls} showPrice>
-              Get the Reset
+            <BuyButton className={ctaCls}>
+              YES! I&apos;M READY TO IMPROVE MY POSTURE &amp; MOBILITY
             </BuyButton>
             <p className="text-[15px] text-[#8A8AA0]">
-              One-time payment · Yours to keep · Only 12 minutes a day
+              One-time payment · Yours to keep · Takes only 12 minutes a day.
             </p>
             <PurchaseError className="text-[15px] text-red-600" />
           </div>
@@ -197,21 +197,50 @@ export function PostureLanding({
         {/* ---------------- TIME BAND ---------------- */}
         <section className="mx-auto grid max-w-[1140px] grid-cols-2 gap-3 px-6 pt-9 sm:gap-[18px] sm:px-11 sm:pt-14 lg:grid-cols-4">
           {[
-            ["12 min", "Each routine takes 12 minutes, start to finish."],
-            ["Press play", "Follow along. No equipment needed."],
-            [
-              "Start today",
-              "Nothing to schedule. Start with the first one right away.",
-            ],
-            ["One time", "Full access. No subscription. Yours to keep."],
-          ].map(([big, small]) => (
+            {
+              key: "duration",
+              big: "12 min",
+              small: "Each class takes 12 minutes, start to finish.",
+            },
+            {
+              key: "press-play",
+              big: "Press play",
+              small: "Follow along. No equipment needed.",
+            },
+            {
+              key: "start-today",
+              big: "Start today",
+              small: "Nothing to schedule. Start with the first one right away.",
+            },
+            {
+              key: "price",
+              // The canvas types "$27" into this card. It reads from RevenueCat
+              // instead, for the reason at the top of this file — a number
+              // written into the page outlives the price it describes, which is
+              // exactly how the canvas itself came to be advertising $29.99.
+              // `fallback` keeps the card from rendering headless if the
+              // lookup finds nothing.
+              big: (
+                <PurchasePrice
+                  className="text-[22px] font-semibold tracking-[-0.02em] sm:text-[30px]"
+                  skeletonClassName="h-[26px] w-20 animate-pulse rounded bg-[#ECECF4] sm:h-[38px]"
+                  fallback="One time"
+                />
+              ),
+              small: "Full access. No subscription. Yours to keep.",
+            },
+          ].map(({ key, big, small }) => (
             <div
-              key={big}
+              key={key}
               className={`${cardCls} flex flex-col gap-1 p-4 sm:gap-1.5 sm:p-6`}
             >
-              <span className="text-[22px] font-semibold tracking-[-0.02em] sm:text-[30px]">
-                {big}
-              </span>
+              {typeof big === "string" ? (
+                <span className="text-[22px] font-semibold tracking-[-0.02em] sm:text-[30px]">
+                  {big}
+                </span>
+              ) : (
+                big
+              )}
               <span className="text-[13px] leading-snug text-[#5B5B72] sm:text-[15px]">
                 {small}
               </span>
@@ -231,12 +260,12 @@ export function PostureLanding({
                 Long periods of sitting and screen time can leave your body
                 feeling stiff, achy, and restricted. This 5-Day Reset is
                 designed to counteract common sedentary patterns and help your
-                body move more freely. Each routine has a specific focus,
+                body move more freely. Each class has a specific focus,
                 progressing from targeted mobility and strength to coordinated
                 full-body movement.
               </p>
               <p className="text-[17px] font-medium leading-[1.68] sm:text-[19px]">
-                Each routine only takes 12 minutes.
+                Each class only takes 12 minutes.
               </p>
             </div>
           </div>
@@ -246,7 +275,7 @@ export function PostureLanding({
         <section className="w-full bg-[#F7F7FB]">
           <div className="mx-auto max-w-[1140px] px-6 py-12 sm:px-11 sm:py-[84px]">
             <div className="mb-9 flex flex-col gap-3.5 sm:mb-[46px] sm:items-center sm:text-center">
-              <h2 className={h2Cls}>Your 5-Day Posture &amp; Mobility Reset</h2>
+              <h2 className={h2Cls}>Your Posture &amp; Mobility Reset</h2>
               <p className="max-w-[34em] text-[17px] leading-relaxed text-[#5B5B72] sm:text-[19px]">
                 No equipment needed — just a folded blanket or towel.
               </p>
@@ -301,11 +330,13 @@ export function PostureLanding({
         <section className="mx-auto max-w-[1140px] px-6 py-12 sm:px-11 sm:py-[88px]">
           <div className="grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-16">
             <div className="flex flex-col gap-7">
-              <h2 className={h2Cls}>A routine you’ll actually stick with.</h2>
+              <h2 className={h2Cls}>
+                Mindful movement you’ll actually stick with.
+              </h2>
               <div className="flex flex-col gap-6">
                 <Benefit
                   title="Short enough to repeat"
-                  body="Each routine takes just 12 minutes, making it easier to fit movement into your day and return to it regularly."
+                  body="Each class takes just 12 minutes, making it easier to fit movement into your day and return to it regularly."
                   icon={
                     <>
                       <circle cx="12" cy="12" r="8.5" />
@@ -315,7 +346,7 @@ export function PostureLanding({
                 />
                 <Benefit
                   title="Just press play and follow along."
-                  body="No complicated plans or wondering what to do next. Each routine guides you through every movement from beginning to end."
+                  body="No complicated plans or wondering what to do next. Each class guides you through every movement from beginning to end."
                   icon={
                     <>
                       <path d="M4 5.5h11v13H4z" />
@@ -381,12 +412,10 @@ export function PostureLanding({
                   move through life with greater freedom and ease.
                 </p>
                 <p>
-                  Ayla is the creator of the Therapeutic Yoga Method and founder
-                  of Clarity of Heart Yoga Studio in Sedona, AZ. Her mission is
-                  to help people transform their posture, strength, mobility and
-                  balance. Her method makes it possible for people of all ages,
-                  abilities, and levels of fitness to safely discover their
-                  body’s full potential.
+                  Ayla is the founder of Move Mindful and the creator of the
+                  Therapeutic Yoga Method. She also owns a yoga studio in
+                  Sedona, Arizona. Her mission is to help people discover the
+                  healing potential of mindful, intelligent movement.
                 </p>
                 <p>
                   Ayla teaches adults ranging in age from 30 to 85 in her studio
@@ -394,7 +423,7 @@ export function PostureLanding({
                   for different bodies, abilities, and stages of life. She
                   created the Posture &amp; Mobility Reset by organizing the
                   most effective movements she teaches in the studio into five
-                  simple, follow-along routines you can practice from the
+                  simple, follow-along classes you can practice from the
                   comfort of your home.
                 </p>
               </div>
@@ -485,10 +514,10 @@ export function PostureLanding({
         >
           <div className="flex flex-col items-center gap-4 rounded-[24px] bg-linear-[120deg,#F4F1FE_0%,#EAF8FC_100%] px-6 py-10 text-center sm:px-10 sm:py-14">
             <h2 className="max-w-[14em] text-[2.125rem] font-semibold leading-[1.08] tracking-[-0.032em] text-pretty sm:text-[3.125rem]">
-              12 minutes is all it takes. Start today.
+              Your Posture and Mobility Can Start Improving Today.
             </h2>
             <p className="max-w-[32em] text-base leading-relaxed text-[#5B5B72] text-pretty sm:text-[19px]">
-              Five routines, yours to keep. Full access, no subscription.
+              Five classes, yours to keep. Full access, no subscription.
               <br />
               Start today and feel the difference.
             </p>
@@ -497,7 +526,9 @@ export function PostureLanding({
               className="mt-2 text-[2rem] font-semibold tracking-[-0.02em]"
               skeletonClassName="mt-2 h-9 w-28 animate-pulse rounded bg-white/60"
             />
-            <BuyButton className={ctaCls}>Get the Reset</BuyButton>
+            <BuyButton className={ctaCls}>
+              YES! I&apos;M READY TO GET STARTED
+            </BuyButton>
             <PurchaseError />
 
             {!signedIn && (

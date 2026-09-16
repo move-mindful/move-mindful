@@ -128,7 +128,7 @@ export const PRODUCTS: Product[] = [
     slug: "posture",
     title: "Posture & Mobility Reset",
     tagline:
-      "Five follow-along routines to help you feel less stiff, stand taller, and move with more freedom.",
+      "Five follow-along classes to help you feel less stiff, stand taller, and move with more freedom.",
     entitlement: "posture",
     // Deliberately *not* the entitlement id, though it once was. Web Billing
     // prices are immutable — a price change means a whole new product — so the
@@ -153,10 +153,15 @@ export const PRODUCTS: Product[] = [
     // (components/products/posture-landing.tsx) renders this same list, so the
     // lineup a buyer reads before purchase and the one they get after are the
     // same data. Edit here, not there.
+    //
+    // The slugs stay `day-N` while the titles read "Class N". They are the
+    // public URLs — /posture/day-1 is in buyers' history, in emails and in
+    // whatever links have been shared — so renaming them to match the copy
+    // would 404 every one of those to tidy a string nobody reads.
     videos: [
       {
         slug: "day-1",
-        title: "Day 1: Posture Foundations",
+        title: "Class 1: Posture Foundations",
         description:
           "Gentle hip and neck movements to release tension and improve mobility, then we'll work to activate and strengthen the muscles along the back of the body that support a more upright, balanced posture.",
         playbackId: "1WVQFr011ztCuHxQ01clTR7vId2eGiTrfo3DI01I801wYxE",
@@ -165,7 +170,7 @@ export const PRODUCTS: Product[] = [
       },
       {
         slug: "day-2",
-        title: "Day 2: Core & Hip Support",
+        title: "Class 2: Core & Hip Support",
         description:
           "Create space through the hips while strengthening the core and improving control around the pelvis, building a more stable foundation for better posture.",
         playbackId: "I01ddUdl1UA2q6LaUv2SclUzz01SAt01uiSsuODks00EIuI",
@@ -174,7 +179,7 @@ export const PRODUCTS: Product[] = [
       },
       {
         slug: "day-3",
-        title: "Day 3: Reversing Rounded Shoulders",
+        title: "Class 3: Reversing Rounded Shoulders",
         description:
           "Open the chest and improve shoulder mobility with targeted movements that help counteract slouching and make a more upright posture feel natural.",
         playbackId: "W00fZc1Zqr02flodBXQeJ2ga3ZP1YErZxTJZOepht4iQU",
@@ -183,7 +188,7 @@ export const PRODUCTS: Product[] = [
       },
       {
         slug: "day-4",
-        title: "Day 4: Move Your Spine in all Directions",
+        title: "Class 4: Move Your Spine in all Directions",
         description:
           "Move your spine through flexion, extension, side bending, and rotation to improve mobility, ease stiffness, and help your entire back feel less restricted.",
         playbackId: "BkKVVEA02c4tzQ6ZYYbHNdvTkeorz00B8FQcpKin7C2F8",
@@ -192,7 +197,7 @@ export const PRODUCTS: Product[] = [
       },
       {
         slug: "day-5",
-        title: "Day 5: Full Body Freedom",
+        title: "Class 5: Full Body Freedom",
         description:
           "Bring everything together with dynamic movements that mobilize the shoulders, move the spine, open the hips, and help your entire body move with greater freedom and ease.",
         playbackId: "1ABOOmlA02G02bRlGzloyDGAKYf3pLSgt022ca01iNtEgvY",

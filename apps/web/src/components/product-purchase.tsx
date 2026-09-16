@@ -318,14 +318,25 @@ export function BuyButton({
 export function PurchasePrice({
   className = defaultPriceCls,
   skeletonClassName = "mt-4 h-8 w-28 animate-pulse rounded bg-zinc-100",
+  fallback,
 }: {
   className?: string;
   skeletonClassName?: string;
+  /**
+   * Shown in the price's place when the lookup settles on nothing — a wrong
+   * product id, an offering not configured yet, a network failure.
+   *
+   * Only worth passing where the price is the whole point of the element it
+   * sits in: a card whose headline is the price renders as a blank box without
+   * it. Elsewhere the default of nothing is right, since the page reads fine
+   * with the price simply absent.
+   */
+  fallback?: React.ReactNode;
 }) {
   const { pkg, loading } = usePurchase();
 
   if (loading) return <div className={skeletonClassName} />;
-  if (!pkg) return null;
+  if (!pkg) return fallback ? <p className={className}>{fallback}</p> : null;
 
   return (
     <p className={className}>{formatPrice(pkg.webBillingProduct.currentPrice)}</p>
