@@ -529,9 +529,7 @@ export function PostureLanding({
               className="mt-2 text-[2rem] font-semibold tracking-[-0.02em]"
               skeletonClassName="mt-2 h-9 w-28 animate-pulse rounded bg-white/60"
             />
-            <BuyButton className={ctaCls}>
-              YES! I&apos;M READY TO GET STARTED
-            </BuyButton>
+            <BuyButton className={ctaCls}>YES I&apos;M READY TO START!</BuyButton>
             <PurchaseError />
 
             {!signedIn && (
