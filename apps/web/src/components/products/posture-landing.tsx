@@ -195,7 +195,7 @@ export function PostureLanding({
         </section>
 
         {/* ---------------- TIME BAND ---------------- */}
-        <section className="mx-auto grid max-w-[1140px] grid-cols-2 gap-3 px-6 pt-9 sm:gap-[18px] sm:px-11 sm:pt-14 lg:grid-cols-4">
+        <section className="mx-auto grid max-w-[1140px] grid-cols-2 gap-3 px-6 pt-9 pb-9 sm:gap-[18px] sm:px-11 sm:pt-14 sm:pb-14 lg:grid-cols-4">
           {[
             {
               key: "duration",
@@ -246,29 +246,6 @@ export function PostureLanding({
               </span>
             </div>
           ))}
-        </section>
-
-        {/* ---------------- RECOGNITION ---------------- */}
-        <section className="mx-auto max-w-[1140px] px-6 py-12 sm:px-11 sm:py-[88px]">
-          <div className="grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-16">
-            <h2 className={h2Cls}>
-              Modern life makes your body stiff. The right movement can help you
-              feel like yourself again.
-            </h2>
-            <div className="flex flex-col gap-5">
-              <p className="text-[17px] leading-[1.68] text-[#5B5B72] sm:text-[19px]">
-                Long periods of sitting and screen time can leave your body
-                feeling stiff, achy, and restricted. This 5-Day Reset is
-                designed to counteract common sedentary patterns and help your
-                body move more freely. Each class has a specific focus,
-                progressing from targeted mobility and strength to coordinated
-                full-body movement.
-              </p>
-              <p className="text-[17px] font-medium leading-[1.68] sm:text-[19px]">
-                Each class only takes 12 minutes.
-              </p>
-            </div>
-          </div>
         </section>
 
         {/* ---------------- THE FIVE DAYS ---------------- */}
@@ -322,6 +299,29 @@ export function PostureLanding({
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </section>
+
+        {/* ---------------- RECOGNITION ---------------- */}
+        <section className="mx-auto max-w-[1140px] px-6 py-12 sm:px-11 sm:py-[88px]">
+          <div className="grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-16">
+            <h2 className={h2Cls}>
+              Modern life makes your body stiff. The right movement can help you
+              feel like yourself again.
+            </h2>
+            <div className="flex flex-col gap-5">
+              <p className="text-[17px] leading-[1.68] text-[#5B5B72] sm:text-[19px]">
+                Long periods of sitting and screen time can leave your body
+                feeling stiff, achy, and restricted. This 5-Day Reset is
+                designed to counteract common sedentary patterns and help your
+                body move more freely. Each class has a specific focus,
+                progressing from targeted mobility and strength to coordinated
+                full-body movement.
+              </p>
+              <p className="text-[17px] font-medium leading-[1.68] sm:text-[19px]">
+                Each class only takes 12 minutes.
+              </p>
             </div>
           </div>
         </section>
