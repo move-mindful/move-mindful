@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import {
   createContext,
   useCallback,
@@ -71,6 +72,10 @@ export function PurchaseProvider({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  // Clerk knows the address they just signed up with, so RevenueCat shouldn't
+  // have to ask for it again. `isLoaded` matters to the resume path below.
+  const { user, isLoaded: clerkLoaded } = useUser();
+  const customerEmail = user?.primaryEmailAddress?.emailAddress;
   const [pkg, setPkg] = useState<Package | null>(null);
   // Derived, not set in the effect: with no product id there is nothing to look
   // up, so it starts settled and the fallback renders immediately.
@@ -176,7 +181,14 @@ export function PurchaseProvider({
       }
 
       const purchases = await configurePurchases(userId);
-      await purchases.purchase({ rcPackage: target });
+      await purchases.purchase({
+        rcPackage: target,
+        // Prefills the email field on RevenueCat's form. Left off entirely
+        // rather than sent empty when Clerk hasn't answered — without it
+        // RevenueCat asks the customer, which is the old behaviour and a fine
+        // place to end up.
+        ...(customerEmail ? { customerEmail } : {}),
+      });
       // The server decides what's unlocked, so re-render rather than guessing
       // here: the page flips to the video list on its own.
       router.refresh();
@@ -186,7 +198,7 @@ export function PurchaseProvider({
     } finally {
       setPurchasing(false);
     }
-  }, [userId, productSlug, pkg, router]);
+  }, [userId, productSlug, pkg, router, customerEmail]);
 
   /**
    * Open checkout automatically for someone returning from sign-up.
@@ -208,11 +220,17 @@ export function PurchaseProvider({
   const resumed = useRef(false);
   useEffect(() => {
     if (resumed.current || !userId) return;
+    // Wait for Clerk. This path runs a moment after a fresh sign-up, which is
+    // exactly when `useUser()` is most likely still loading — and firing a tick
+    // early would send no email in the one case where we are most certain of
+    // it. Waiting costs nothing: the effect re-runs when Clerk answers, and if
+    // it never does, the buy button still works.
+    if (!clerkLoaded) return;
 
     const params = new URLSearchParams(window.location.search);
     if (params.get(CHECKOUT_PARAM) !== "1") return;
-    // Before the await, so a re-render from the settling lookup can't run this
-    // twice and stack two checkout modals.
+    // Set before anything async is queued, so a re-render from the settling
+    // lookup can't run this twice and stack two checkout modals.
     resumed.current = true;
 
     // Strip the flag so cancelling and reloading doesn't reopen checkout, and
@@ -239,7 +257,7 @@ export function PurchaseProvider({
     // captured here awaits `lookup.current` itself, so starting with a stale
     // `pkg` costs nothing.
     queueMicrotask(buy);
-  }, [userId, buy]);
+  }, [userId, clerkLoaded, buy]);
 
   return (
     <PurchaseContext.Provider value={{ pkg, loading, purchasing, error, buy }}>
