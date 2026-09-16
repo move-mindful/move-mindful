@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { configurePurchases, MEMBERSHIP_ENTITLEMENT } from "@/lib/revenuecat";
 import { MEMBER_HOME } from "@/lib/routes";
+import { formatPrice } from "@/lib/price";
 import { ProductType, type Package } from "@revenuecat/purchases-js";
 
 export function PricingClient({ userId }: { userId: string | null }) {
@@ -118,9 +119,7 @@ export function PricingClient({ userId }: { userId: string | null }) {
                 </p>
               )}
               <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-3xl font-bold">
-                  {price.formattedPrice}
-                </span>
+                <span className="text-3xl font-bold">{formatPrice(price)}</span>
                 {isSubscription && (
                   <span className="text-sm text-zinc-500">/month</span>
                 )}

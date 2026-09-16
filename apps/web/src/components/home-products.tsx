@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { configurePurchases } from "@/lib/revenuecat";
+import { formatPrice } from "@/lib/price";
 import { getProductCardImage, type Product } from "@/lib/products";
 
 export interface HomeProduct {
@@ -62,7 +63,7 @@ export function HomeProducts({
         const found: Record<string, string> = {};
         for (const offering of Object.values(offerings.all)) {
           for (const pkg of offering.availablePackages) {
-            const price = pkg.webBillingProduct.currentPrice.formattedPrice;
+            const price = formatPrice(pkg.webBillingProduct.currentPrice);
             found[pkg.webBillingProduct.identifier] = price;
             found[pkg.identifier] = price;
           }

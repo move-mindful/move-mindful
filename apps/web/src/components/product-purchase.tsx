@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 import { configurePurchases } from "@/lib/revenuecat";
+import { formatPrice } from "@/lib/price";
 import type { Package } from "@revenuecat/purchases-js";
 
 const defaultButtonCls =
@@ -271,7 +272,8 @@ export function BuyButton({
 }) {
   const { pkg, loading, purchasing, buy } = usePurchase();
 
-  const price = pkg?.webBillingProduct.currentPrice.formattedPrice;
+  const currentPrice = pkg?.webBillingProduct.currentPrice;
+  const price = currentPrice && formatPrice(currentPrice);
   const label = (
     <>
       {children ?? "Buy now"}
@@ -308,9 +310,7 @@ export function PurchasePrice({
   if (!pkg) return null;
 
   return (
-    <p className={className}>
-      {pkg.webBillingProduct.currentPrice.formattedPrice}
-    </p>
+    <p className={className}>{formatPrice(pkg.webBillingProduct.currentPrice)}</p>
   );
 }
 
