@@ -18,6 +18,15 @@ const defaultButtonCls =
 
 const defaultPriceCls = "mt-4 text-3xl font-bold";
 
+/**
+ * Marks a return from sign-up that should go straight to checkout.
+ *
+ * Written into the sign-up `redirect_url` on the way out and read back off the
+ * URL on arrival, so someone who clicked buy before they had an account doesn't
+ * have to click the same button again once they do.
+ */
+const CHECKOUT_PARAM = "checkout";
+
 interface PurchaseState {
   pkg: Package | null;
   loading: boolean;
@@ -140,11 +149,18 @@ export function PurchaseProvider({
   const buy = useCallback(async () => {
     // A purchase needs a real RevenueCat App User ID, which is the Clerk id —
     // so signed-out shoppers create an account first and come straight back
-    // here rather than to the global AFTER_SIGN_UP_URL (/pricing). No need to
-    // wait on the lookup: sign-up is the next step either way.
+    // here rather than to the global AFTER_SIGN_UP_URL (/home). No need to wait
+    // on the lookup: sign-up is the next step either way.
+    //
+    // The checkout flag rides along so the return lands in the payment form
+    // they already asked for. Without it they arrive back on the sales page
+    // having clicked "buy", done paperwork, and apparently achieved nothing —
+    // which is a drop-off, not a step.
     if (!userId) {
       router.push(
-        `/sign-up?redirect_url=${encodeURIComponent(`/${productSlug}`)}`,
+        `/sign-up?redirect_url=${encodeURIComponent(
+          `/${productSlug}?${CHECKOUT_PARAM}=1`,
+        )}`,
       );
       return;
     }
@@ -170,6 +186,59 @@ export function PurchaseProvider({
       setPurchasing(false);
     }
   }, [userId, productSlug, pkg, router]);
+
+  /**
+   * Open checkout automatically for someone returning from sign-up.
+   *
+   * Reads `window.location.search` rather than `useSearchParams()`. The hook
+   * subscribes to param changes and `replaceState` below syncs with the Next
+   * router, so stripping the flag would re-render this provider and the whole
+   * landing page under it — a full sales page re-render to clear a value that
+   * nothing displays. It also keeps this component prerender-safe: on a
+   * statically rendered route the hook client-renders everything up to the
+   * nearest Suspense boundary, which here would be the entire page. This route
+   * is dynamic today, but only because the page calls `auth()`, and that is not
+   * a property this component should quietly depend on.
+   *
+   * Safe to fire without a click: `purchase()` mounts RevenueCat's form as an
+   * in-page modal rather than opening a window, so there is no popup blocker
+   * and no user-gesture requirement to satisfy.
+   */
+  const resumed = useRef(false);
+  useEffect(() => {
+    if (resumed.current || !userId) return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get(CHECKOUT_PARAM) !== "1") return;
+    // Before the await, so a re-render from the settling lookup can't run this
+    // twice and stack two checkout modals.
+    resumed.current = true;
+
+    // Strip the flag so cancelling and reloading doesn't reopen checkout, and
+    // so a copied URL is just the sales page. replaceState rather than
+    // router.replace: a soft navigation here would re-render this provider and
+    // throw away the offerings lookup that `buy()` is about to await.
+    params.delete(CHECKOUT_PARAM);
+    const query = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${query ? `?${query}` : ""}`,
+    );
+
+    // Kicked out of the effect body rather than called inside it: `buy()` sets
+    // its own loading state on entry, and doing that synchronously here would
+    // cascade a second render straight off this one. A microtask runs right
+    // after the commit, so nothing paints in between.
+    //
+    // Deliberately not a cancellable timer. This effect re-runs when `buy`
+    // changes identity — which it does the moment the offerings lookup settles
+    // — and a cleanup that cancelled the pending call would drop the purchase
+    // on the floor, because the re-run finds `resumed` already set. The `buy`
+    // captured here awaits `lookup.current` itself, so starting with a stale
+    // `pkg` costs nothing.
+    queueMicrotask(buy);
+  }, [userId, buy]);
 
   return (
     <PurchaseContext.Provider value={{ pkg, loading, purchasing, error, buy }}>
