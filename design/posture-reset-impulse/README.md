@@ -12,9 +12,10 @@ Source files for the design canvas of a new /posture sales page aimed at impulse
 | `BodyBack.dc.html` | Version C: "Get Your Body Back" |
 | `TwelveMinutesCopy.dc.html` | Working copy of Version B, edited by hand and reordered; carries numbered section labels |
 | `BigType.dc.html` | Version D: the B copy with tighter margins (1280px column, 28px gutters) and larger type |
+| `BoldColor.dc.html` | Version E: Version D reskinned in warm neutrals with a deep green offer strip, a near-black stat band, and a green closing panel |
 | `canvas.json` | Artboard layout |
 | `images/` | Downsized copies of photos from `apps/web/public`, each under ~70 KB |
 
 All artboards are desktop, 1440px wide. Edits saved in the online canvas live there, not in these files.
 
-Still to fill in, in each version: the `[$__]` value-stack amounts, the `[CONFIRM]` guarantee, and two testimonial slots.
+Still to fill in, in each version: the `[$__]` value-stack amounts, the `[CONFIRM]` guarantee, and two testimonial slots. The B copy and everything derived from it also carry a `Your text here` placeholder in the Introducing section.
