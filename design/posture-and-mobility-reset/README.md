@@ -52,6 +52,10 @@ Deliberate, in both directions:
 - **Hero CTA placement.** The boards put it between the copy and the hero
   media; live puts it *below* the loop. The video is what does the convincing,
   so the ask comes after someone has watched it.
+- **Hero eyebrow.** The boards open with a lilac pill reading "Posture &
+  Mobility Reset" above the headline. Live has no pill, and its `<h1>` reads
+  "Posture & Mobility Reset" rather than the boards' "Posture and Mobility
+  Reset" — so the line the pill duplicated is now the headline itself.
 - **Class slugs.** Titles read "Class N"; the URLs stay `/posture/day-N`,
   because those are public links already in circulation.
 - Day photos on the boards are stand-ins, not the real class frames.

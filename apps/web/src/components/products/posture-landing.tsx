@@ -164,11 +164,13 @@ export function PostureLanding({
       >
         {/* ---------------- HERO ---------------- */}
         <section className="mx-auto flex max-w-[1140px] flex-col items-center gap-6 px-6 pt-14 text-center sm:px-11 sm:pt-[74px]">
-          <span className="rounded-full bg-[#F2F0FE] px-4 py-1.5 text-[13px] font-semibold tracking-[0.04em] text-[#6D5FE8]">
-            Posture &amp; Mobility Reset
-          </span>
+          {/* No eyebrow pill. It said "Posture & Mobility Reset" directly
+              above an <h1> that now says the same thing — a label for the
+              headline it sits on top of. Dropping it lifts everything after
+              it by its own height plus the section gap, which is the point;
+              the remaining clearance below the site header is deliberate. */}
           <h1 className="max-w-[15em] text-[2.4rem] font-semibold leading-[1.06] tracking-[-0.034em] text-pretty sm:text-[3.875rem]">
-            Posture and Mobility Reset
+            Posture &amp; Mobility Reset
           </h1>
           <div className="flex max-w-[32em] flex-col gap-4 text-lg leading-relaxed text-[#5B5B72] text-pretty sm:text-[1.3125rem]">
             <p>
