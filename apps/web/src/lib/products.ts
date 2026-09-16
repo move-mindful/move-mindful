@@ -130,10 +130,16 @@ export const PRODUCTS: Product[] = [
     tagline:
       "Five follow-along routines to help you feel less stiff, stand taller, and move with more freedom.",
     entitlement: "posture",
-    // Confirmed in the dashboard. Same string as the entitlement above, but a
-    // distinct object — the product is what's sold, the entitlement is what it
-    // unlocks. They needn't match for other products.
-    revenueCatProductId: "posture",
+    // Deliberately *not* the entitlement id, though it once was. Web Billing
+    // prices are immutable — a price change means a whole new product — so the
+    // original `posture` product was superseded by `posture27`.
+    //
+    // The old product is still attached to the `posture` entitlement in the
+    // dashboard, and must stay that way. RevenueCat replays purchase history
+    // against the *current* product-to-entitlement map, so detaching it would
+    // silently revoke access for everyone who bought at the old price. What
+    // stops new sales is its removal from the offering, not the entitlement.
+    revenueCatProductId: "posture27",
     // A frame from Day 2 (10:10). Its own file rather than a reference to the
     // landing page's copy of the same shot, so the card and the page can change
     // independently — same reason the free routine has one.
