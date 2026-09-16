@@ -7,13 +7,14 @@ Source files for the design canvas of a new /posture sales page aimed at impulse
 
 | File | What it is |
 |---|---|
-| `Main.dc.html` | Version A: "The Phone Did This" (desktop, 1440px wide) |
-| `TwelveMinutes.dc.html` | Version B: "12 Minutes a Day" (desktop, 1440px wide) |
-| `BodyBack.dc.html` | Version C: "Get Your Body Back" (desktop, 1440px wide) |
-| `TwelveMinutesCopy.dc.html` | Copy of Version B, for hands-on edits in the canvas |
+| `Main.dc.html` | Version A: "The Phone Did This" |
+| `TwelveMinutes.dc.html` | Version B: "12 Minutes a Day" |
+| `BodyBack.dc.html` | Version C: "Get Your Body Back" |
+| `TwelveMinutesCopy.dc.html` | Working copy of Version B, edited by hand and reordered; carries numbered section labels |
+| `BigType.dc.html` | Version D: the B copy with tighter margins (1280px column, 28px gutters) and larger type |
 | `canvas.json` | Artboard layout |
 | `images/` | Downsized copies of photos from `apps/web/public`, each under ~70 KB |
 
-Edits saved in the online canvas live there, not in these files.
+All artboards are desktop, 1440px wide. Edits saved in the online canvas live there, not in these files.
 
 Still to fill in, in each version: the `[$__]` value-stack amounts, the `[CONFIRM]` guarantee, and two testimonial slots.

@@ -1,43 +1,10 @@
 {
   "artboards": [
-    {
-      "file": "Main.dc.html",
-      "x": 0,
-      "y": 0,
-      "w": 1440,
-      "h": 8000,
-      "title": "Version A · The Phone Did This",
-      "expand": "fill"
-    },
-    {
-      "file": "TwelveMinutes.dc.html",
-      "x": 1560,
-      "y": 0,
-      "w": 1440,
-      "h": 8000,
-      "title": "Version B · 12 Minutes a Day",
-      "expand": "fill"
-    },
-    {
-      "file": "BodyBack.dc.html",
-      "x": 3120,
-      "y": 0,
-      "w": 1440,
-      "h": 8000,
-      "title": "Version C · Get Your Body Back",
-      "expand": "fill"
-    },
-    {
-      "file": "TwelveMinutesCopy.dc.html",
-      "x": 4680,
-      "y": 0,
-      "w": 1579,
-      "h": 8000,
-      "title": "Version B copy · 12 Minutes a Day",
-      "expand": "fill"
-    }
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1440, "h": 8000, "title": "Version A · The Phone Did This", "expand": "fill" },
+    { "file": "TwelveMinutes.dc.html", "x": 1560, "y": 0, "w": 1440, "h": 8000, "title": "Version B · 12 Minutes a Day", "expand": "fill" },
+    { "file": "BodyBack.dc.html", "x": 3120, "y": 0, "w": 1440, "h": 8000, "title": "Version C · Get Your Body Back", "expand": "fill" },
+    { "file": "TwelveMinutesCopy.dc.html", "x": 4680, "y": 0, "w": 1579, "h": 8000, "title": "Version B copy · 12 Minutes a Day", "expand": "fill" },
+    { "file": "BigType.dc.html", "x": 6399, "y": 0, "w": 1440, "h": 8000, "title": "Version D · Tighter margins, bigger text", "expand": "fill" }
   ],
-  "launch": {
-    "view": "canvas"
-  }
+  "launch": { "view": "canvas" }
 }
