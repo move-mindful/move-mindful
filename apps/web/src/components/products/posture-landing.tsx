@@ -176,15 +176,6 @@ export function PostureLanding({
               stand taller, and move with more freedom.
             </p>
           </div>
-          <div className="mt-1.5 flex flex-col items-center gap-3.5">
-            <BuyButton className={ctaCls}>
-              YES! I&apos;M READY TO IMPROVE MY POSTURE &amp; MOBILITY
-            </BuyButton>
-            <p className="text-[15px] text-[#8A8AA0]">
-              One-time payment · Yours to keep · Takes only 12 minutes a day.
-            </p>
-            <PurchaseError className="text-[15px] text-red-600" />
-          </div>
           <HeroMedia
             poster="/posture/hero-poster.jpg"
             alt="Lying on the back with knees bent, arms sweeping open along the floor"
@@ -192,6 +183,18 @@ export function PostureLanding({
             imageSizes="(min-width: 1140px) 1052px, 100vw"
             className="mt-6 sm:mt-[30px]"
           />
+          {/* Below the loop, not above it — the canvas puts the call to action
+              straight after the copy, but the video is what does the
+              convincing, so the ask comes after someone has watched it. The
+              margin mirrors the loop's own top margin so it sits in even
+              space rather than hugging the frame. */}
+          <div className="mt-6 flex flex-col items-center gap-3.5 sm:mt-[30px]">
+            <BuyButton className={ctaCls}>YES I&apos;M READY TO START!</BuyButton>
+            <p className="text-[15px] text-[#8A8AA0]">
+              One-time payment · Yours to keep · Takes only 12 minutes a day.
+            </p>
+            <PurchaseError className="text-[15px] text-red-600" />
+          </div>
         </section>
 
         {/* ---------------- TIME BAND ---------------- */}

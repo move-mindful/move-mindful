@@ -44,6 +44,10 @@ Deliberate, in both directions:
   wins here by decision, not by accident.
 - **Second hero paragraph.** On the boards, not on the live page — dropped
   2026-09-02 and deliberately left off during the 09-16 rework.
+- **Hero CTA.** The boards put it between the copy and the hero media, and
+  word it "YES! I'M READY TO IMPROVE MY POSTURE & MOBILITY". Live puts it
+  *below* the loop and shortens it to "YES I'M READY TO START!" — the video is
+  what does the convincing, so the ask comes after someone has watched it.
 - **Class slugs.** Titles read "Class N"; the URLs stay `/posture/day-N`,
   because those are public links already in circulation.
 - Day photos on the boards are stand-ins, not the real class frames.
