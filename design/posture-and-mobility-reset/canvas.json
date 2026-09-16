@@ -1,0 +1,56 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "title": "Landing page — desktop",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 7200,
+      "expand": "fill"
+    },
+    {
+      "file": "Mobile.dc.html",
+      "title": "Landing page — mobile",
+      "x": 1560,
+      "y": 0,
+      "w": 390,
+      "h": 9200
+    },
+    {
+      "file": "MainCopy.dc.html",
+      "title": "Landing page — desktop (copy)",
+      "x": 2070,
+      "y": 0,
+      "w": 1440,
+      "h": 7200,
+      "expand": "fill"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "positioning",
+      "x": 0,
+      "y": -340,
+      "w": 620,
+      "text": "Copy is now yours, not mine — the desktop rewrite you saved in the GUI, ported across to mobile so the two artboards match section for section.\n\nWHAT I CHANGED, NOT THE COPY:\n• Removed an accidental drag offset that had shifted the whole desktop page 5px left / 32px up.\n• Cleared editor leftovers — an empty fixed-height paragraph, font/b/span wrappers, three headings that had come out near-black instead of the ink token.\n• Two typos."
+    },
+    {
+      "id": "placeholders",
+      "x": 680,
+      "y": -340,
+      "w": 560,
+      "text": "STILL UNRESOLVED:\n\n• 11 vs 12 minutes. Hero, band and CTA all say 12; routines 3, 4 and 5 say 11. Pick one story.\n• Equipment contradicts itself: the band says \"No equipment needed\", the routines intro says \"just a folded blanket or towel\".\n• The testimonial attribution line is gone from both artboards. The three quotes are real but they're about Ayla's classes, not this product. With faces attached they now read as being about the Reset.\n\nSETTLED: all five routines named and no longer marked provisional, medical disclaimer accepted as written (worth a qualified review before launch), difficulty-level placeholder dropped with the old FAQ.\n\nNothing on either artboard is marked orange any more — what you see is what ships."
+    },
+    {
+      "id": "photos",
+      "x": 1560,
+      "y": -340,
+      "w": 390,
+      "text": "Practice photos are single-practitioner shots from the blog and props pages — no group studio scenes.\n\nTESTIMONIAL HEADSHOTS are confirmed, not guessed. Each is parsed from its own carousel list-item on the source sites, so image and name sit in the same container. Amy Eck-Henry's photo matches across both sites; Sherry Dunne's file is named sherry.jpg.\n\nThe teacher portrait is still the one I could not confirm is Ayla. Check it before this goes live."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}
