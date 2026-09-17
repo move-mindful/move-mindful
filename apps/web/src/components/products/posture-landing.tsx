@@ -119,6 +119,18 @@ const TESTIMONIALS = [
     name: "Amy Eck-Henry",
     photo: "/posture/testimonial-amy.jpg",
   },
+  {
+    quote:
+      "I’m so grateful and excited to feel this healthy and strong. This is a practice that will support my well-being for years to come.",
+    name: "Lisa Schatz Glinsky",
+    photo: "/posture/testimonial-lisa.jpg",
+  },
+  {
+    quote:
+      "The changes are remarkable and these classes have truly been a life changer for me! Thank you for giving me the tools to stay flexible, mobile and most of all pain free.",
+    name: "Roni Cowell",
+    photo: "/posture/testimonial-roni.jpg",
+  },
 ];
 
 /**
@@ -191,9 +203,9 @@ export function PostureLanding({
               margin mirrors the loop's own top margin so it sits in even
               space rather than hugging the frame. */}
           <div className="mt-6 flex flex-col items-center gap-3.5 sm:mt-[30px]">
-            <BuyButton className={ctaCls}>YES I&apos;M READY TO START!</BuyButton>
+            <BuyButton className={ctaCls}>YES! I&apos;M READY TO START</BuyButton>
             <p className="text-[15px] text-[#8A8AA0]">
-              One-time payment · Yours to keep · Takes only 12 minutes a day.
+              One time payment. No subscription. Lifetime access.
             </p>
             <PurchaseError className="text-[15px] text-red-600" />
           </div>
@@ -305,6 +317,15 @@ export function PostureLanding({
                 );
               })}
             </div>
+
+            {/* Someone who has just read all five classes is as warm as they
+                get; the next thing they met was a section explaining why they
+                need it. Ask here instead. */}
+            <div className="mt-9 flex justify-center sm:mt-[46px]">
+              <BuyButton className={ctaCls}>
+                YES! I&apos;M READY TO START
+              </BuyButton>
+            </div>
           </div>
         </section>
 
@@ -317,10 +338,11 @@ export function PostureLanding({
             </h2>
             <p className="text-[17px] leading-[1.68] text-[#5B5B72] sm:text-[19px]">
               Long periods of sitting and screen time can leave your body
-              feeling stiff, achy, and restricted. This 5-Day Reset is designed
-              to counteract common sedentary patterns and help your body move
-              more freely. Each class has a specific focus, progressing from
-              targeted mobility and strength to coordinated full-body movement.
+              feeling stiff, achy, and restricted. This step by step program
+              is designed to counteract common sedentary patterns and help your
+              body move more freely. Each class has a specific focus,
+              progressing from targeted mobility and strength to coordinated
+              full-body movement.
             </p>
           </div>
         </section>
@@ -399,7 +421,7 @@ export function PostureLanding({
             />
             <div className="flex flex-col gap-5">
               <span className="text-[13px] font-semibold tracking-[0.1em] uppercase text-[#6D5FE8]">
-                Your teacher
+                Your instructor
               </span>
               <h2 className="text-[1.875rem] font-semibold leading-[1.14] tracking-[-0.028em] sm:text-[2.5rem]">
                 Ayla Sarnoff
@@ -525,7 +547,7 @@ export function PostureLanding({
               className="mt-2 text-[2rem] font-semibold tracking-[-0.02em]"
               skeletonClassName="mt-2 h-9 w-28 animate-pulse rounded bg-white/60"
             />
-            <BuyButton className={ctaCls}>YES I&apos;M READY TO START!</BuyButton>
+            <BuyButton className={ctaCls}>YES! I&apos;M READY TO START</BuyButton>
             <PurchaseError />
 
             {!signedIn && (
