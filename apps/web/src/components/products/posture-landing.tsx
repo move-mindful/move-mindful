@@ -414,8 +414,8 @@ export function PostureLanding({
             <Image
               src="/posture/ayla.jpg"
               alt="Ayla Sarnoff"
-              width={1080}
-              height={1350}
+              width={924}
+              height={1083}
               sizes="(min-width: 1024px) 380px, 100vw"
               className="h-[280px] w-full rounded-[20px] object-cover sm:h-[440px] sm:rounded-[24px]"
             />
