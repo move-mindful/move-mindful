@@ -185,8 +185,8 @@ export function FreeClassLanding({
           <Image
             src="/posture/ayla.jpg"
             alt="Ayla Sarnoff"
-            width={1092}
-            height={1365}
+            width={1080}
+            height={1350}
             sizes="(min-width: 1024px) 320px, 100vw"
             className="h-[280px] w-full rounded-[20px] object-cover sm:h-[420px] sm:rounded-[24px]"
           />
