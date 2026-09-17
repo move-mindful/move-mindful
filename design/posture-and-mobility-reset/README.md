@@ -28,13 +28,20 @@ page on 2026-09-16: "classes" rather than "routines" throughout, Class 1-5
 rather than Day 1-5, both calls to action in the buyer's own words, and the
 lineup moved above the Recognition section.
 
+It was resynced again on 2026-09-16 after a second round of live edits: no
+eyebrow pill, an ampersand in the headline, "YES I'M READY TO START!" on both
+buttons, Michelle's quote reworded, the loose "Each class only takes 12
+minutes." line cut, and Ayla's new portrait.
+
 `Main.dc.html` is the original board, kept as history. `Mobile.dc.html` still
-carries the **pre-rework copy** and is the one board now out of step with both
-its sibling and production.
+carries the **pre-rework copy** and is the one board out of step with both its
+sibling and production — it also still has the missing-floor padding under the
+quick-facts cards.
 
 ## Known drift from the live page
 
-Deliberate, in both directions:
+The copy board was resynced to production on 2026-09-16, so the differences
+below are the ones that remain on purpose — not a backlog.
 
 - **Price.** The copy board writes **$27** into the fourth quick-facts card.
   The live page reads it from RevenueCat, because a number typed into a page
@@ -44,23 +51,25 @@ Deliberate, in both directions:
   wins here by decision, not by accident.
 - **Second hero paragraph.** On the boards, not on the live page — dropped
   2026-09-02 and deliberately left off during the 09-16 rework.
-- **Calls to action.** The boards word them separately — "YES! I'M READY TO
-  IMPROVE MY POSTURE & MOBILITY" up top, "YES! I'M READY TO GET STARTED" at
-  the foot. Live says **"YES I'M READY TO START!"** in both places: one button,
-  one set of words, so a buyer who scrolls past the first and takes the second
-  is clicking the same thing rather than something subtly reworded.
-- **Hero CTA placement.** The boards put it between the copy and the hero
-  media; live puts it *below* the loop. The video is what does the convincing,
-  so the ask comes after someone has watched it.
-- **Hero eyebrow.** The boards open with a lilac pill reading "Posture &
-  Mobility Reset" above the headline. Live has no pill, and its `<h1>` reads
-  "Posture & Mobility Reset" rather than the boards' "Posture and Mobility
-  Reset" — so the line the pill duplicated is now the headline itself.
 - **Class slugs.** Titles read "Class N"; the URLs stay `/posture/day-N`,
   because those are public links already in circulation.
-- Day photos on the boards are stand-ins, not the real class frames.
+- **Section order.** Live matches the copy board: quick facts, the five
+  classes, then Recognition.
+- Day photos on the boards are stand-ins, not the real class frames. Ayla's
+  portrait is the real one, held here at canvas resolution (656px wide, ~58KB)
+  rather than the full-size file in `apps/web/public/posture/`.
 - The boards carry their own nav and footer; the live page uses neither.
 - The numbered section pills are an annotation device and are not content.
+
+Note that `Main.dc.html` keeps the pre-rework hero — eyebrow pill, "Posture and
+Mobility Reset" headline, the longer CTA labels. That is the point of it, so
+read drift against `MainCopy.dc.html`, never against the original board.
+
+**A correction worth keeping**, because the mistake is easy to repeat: the
+boards have always placed the hero call to action *below* the hero image, not
+between the copy and the frame. A text-only dump of an artboard makes it look
+otherwise, because an `<img>` contributes no text and vanishes from the
+extract. Check element order in the markup, not in a flattened transcript.
 
 ## Rebuilding the canvas
 
