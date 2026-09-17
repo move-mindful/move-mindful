@@ -109,7 +109,7 @@ const TESTIMONIALS = [
   },
   {
     quote:
-      "My back no longer aches, the change in movement has been amazing. I look forward to going to class every day.",
+      "My back no longer aches, the change in movement has been amazing. I look forward to taking class every day.",
     name: "Michelle Stoor",
     photo: "/posture/testimonial-michelle.jpg",
   },
@@ -315,19 +315,13 @@ export function PostureLanding({
               Modern life makes your body stiff. The right movement can help you
               feel like yourself again.
             </h2>
-            <div className="flex flex-col gap-5">
-              <p className="text-[17px] leading-[1.68] text-[#5B5B72] sm:text-[19px]">
-                Long periods of sitting and screen time can leave your body
-                feeling stiff, achy, and restricted. This 5-Day Reset is
-                designed to counteract common sedentary patterns and help your
-                body move more freely. Each class has a specific focus,
-                progressing from targeted mobility and strength to coordinated
-                full-body movement.
-              </p>
-              <p className="text-[17px] font-medium leading-[1.68] sm:text-[19px]">
-                Each class only takes 12 minutes.
-              </p>
-            </div>
+            <p className="text-[17px] leading-[1.68] text-[#5B5B72] sm:text-[19px]">
+              Long periods of sitting and screen time can leave your body
+              feeling stiff, achy, and restricted. This 5-Day Reset is designed
+              to counteract common sedentary patterns and help your body move
+              more freely. Each class has a specific focus, progressing from
+              targeted mobility and strength to coordinated full-body movement.
+            </p>
           </div>
         </section>
 
