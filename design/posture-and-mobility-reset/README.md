@@ -29,9 +29,15 @@ rather than Day 1-5, both calls to action in the buyer's own words, and the
 lineup moved above the Recognition section.
 
 It was resynced again on 2026-09-16 after a second round of live edits: no
-eyebrow pill, an ampersand in the headline, "YES I'M READY TO START!" on both
-buttons, Michelle's quote reworded, the loose "Each class only takes 12
-minutes." line cut, and Ayla's new portrait.
+eyebrow pill, an ampersand in the headline, Michelle's quote reworded, and the
+loose "Each class only takes 12 minutes." line cut.
+
+A third pass the same day added Lisa Schatz Glinsky and Roni Cowell to the
+testimonial grid, put a call to action at the foot of the class lineup, moved
+the hero subline to "One time payment. No subscription. Lifetime access.",
+swapped "This 5-Day Reset" for "This step by step program", relabelled the bio
+eyebrow "Your instructor", and settled all three buttons on **"YES! I'M READY
+TO START"**. Ayla's portrait is the studio shot.
 
 `Main.dc.html` is the original board, kept as history. `Mobile.dc.html` still
 carries the **pre-rework copy** and is the one board out of step with both its
