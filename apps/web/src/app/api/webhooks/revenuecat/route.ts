@@ -123,11 +123,10 @@ export async function POST(request: Request) {
     return new Response("Anonymous customer", { status: 200 });
   }
 
-  // Clerk is the source of truth for the email. RevenueCat may carry one in
-  // `subscriber_attributes.$email`, but only if setAttributes has run — which
-  // happens on gated content, not on a sales page. A first-time buyer who came
-  // straight from an ad has never hit a gate, so that attribute is routinely
-  // absent exactly when it matters.
+  // Clerk is the source of truth for the email. RevenueCat carries a copy in
+  // `subscriber_attributes.$email`, mirrored by the Clerk webhook, but a copy
+  // can be missing if that sync failed — and this user fetch is needed anyway
+  // for the ManyChat contact id below.
   let email: string | undefined;
   let firstName: string | null = null;
   let lastName: string | null = null;

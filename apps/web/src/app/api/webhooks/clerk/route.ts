@@ -1,6 +1,7 @@
 import { Webhook } from "svix";
 import { clerkClient } from "@clerk/nextjs/server";
 import { subscribeToAudience } from "@/lib/mailchimp";
+import { syncCustomerAttributes } from "@/lib/revenuecat-admin";
 import { syncContactTags } from "@/lib/manychat";
 import { isValidContactId } from "@/lib/manychat-contact";
 import { SIGNUP_TAG, sourceTag } from "@/lib/audience-tags";
@@ -8,14 +9,15 @@ import { SIGNUP_TAG, sourceTag } from "@/lib/audience-tags";
 /**
  * Clerk webhook receiver — subscribes new users to the Mailchimp audience,
  * tagged with where they signed up from, and joins them to their ManyChat
- * contact if they arrived from a DM link.
+ * contact if they arrived from a DM link. On signup and on every later edit it
+ * also mirrors the user's name and email onto their RevenueCat customer.
  *
  * Public by necessity (Clerk isn't a signed-in user), so the Svix signature is
  * the only thing standing between this and anyone who finds the URL. Without
  * verification, a stranger could POST arbitrary emails into the marketing list.
  */
 
-interface ClerkUserCreated {
+interface ClerkUserEvent {
   type: string;
   data: {
     id: string;
@@ -44,15 +46,15 @@ export async function POST(request: Request) {
     "svix-signature": request.headers.get("svix-signature") ?? "",
   };
 
-  let event: ClerkUserCreated;
+  let event: ClerkUserEvent;
   try {
-    event = new Webhook(secret).verify(body, headers) as ClerkUserCreated;
+    event = new Webhook(secret).verify(body, headers) as ClerkUserEvent;
   } catch (error) {
     console.error("[clerk-webhook] signature verification failed", error);
     return new Response("Invalid signature", { status: 400 });
   }
 
-  if (event.type !== "user.created") {
+  if (event.type !== "user.created" && event.type !== "user.updated") {
     // Acknowledge everything else so Clerk doesn't retry events we ignore.
     return new Response("Ignored", { status: 200 });
   }
@@ -61,6 +63,34 @@ export async function POST(request: Request) {
   const email =
     data.email_addresses?.find((e) => e.id === data.primary_email_address_id)
       ?.email_address ?? data.email_addresses?.[0]?.email_address;
+
+  // Keyed by the Clerk id, which is also the RevenueCat app user id, so the
+  // dashboard shows who a customer is from the moment they sign up — before
+  // they've bought anything or opened a single page that touches RevenueCat.
+  let attributesSynced = true;
+  try {
+    await syncCustomerAttributes(data.id, {
+      email,
+      firstName: data.first_name,
+      lastName: data.last_name,
+    });
+  } catch (error) {
+    attributesSynced = false;
+    console.error(
+      `[clerk-webhook] failed to sync RevenueCat attributes for ${data.id}`,
+      error,
+    );
+  }
+
+  if (event.type === "user.updated") {
+    // Nothing else here reacts to an edit, so a retry costs nothing and the
+    // write is idempotent. On signup, below, a failure is only logged: a
+    // missing name is cosmetic, and replaying the event would redo the
+    // Mailchimp and ManyChat work to fix it.
+    return attributesSynced
+      ? new Response("OK", { status: 200 })
+      : new Response("RevenueCat sync failed", { status: 500 });
+  }
 
   if (!email) {
     console.warn("[clerk-webhook] user.created with no email", data.id);

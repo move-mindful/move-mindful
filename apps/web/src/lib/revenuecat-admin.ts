@@ -88,7 +88,8 @@ export const getActiveEntitlements = cache(
  * The customer is keyed by the Clerk user id — the same value the client SDK
  * uses as the RevenueCat App User ID (see `configurePurchases`), so the grant is
  * immediately visible to the entitlement gate. The subscriber is created first
- * (the promotional endpoint does NOT create it — see below), then granted.
+ * (the promotional endpoint does NOT create it — see `ensureSubscriber`), then
+ * granted.
  *
  * Server-only: this relies on the secret REST key and must never run in the
  * browser. "lifetime" promotional entitlements never expire, but can still be
@@ -109,22 +110,10 @@ export async function grantLifetimeMembership(appUserId: string): Promise<void> 
     appUserId,
   )}`;
 
-  // The promotional-grant endpoint does NOT create the subscriber — it 404s
-  // ("subscriber not found") if RevenueCat has never seen this app user id. In
-  // the /join flow the grant runs server-side right after sign-up, before the
-  // client SDK has ever configured RevenueCat with the Clerk id, so the
-  // subscriber won't exist yet. GET /subscribers is get-or-create, so call it
-  // first to materialize the subscriber, then grant.
-  const ensureRes = await fetch(subscriberUrl, {
-    method: "GET",
-    headers: authHeaders,
-  });
-  if (!ensureRes.ok) {
-    const detail = await ensureRes.text();
-    throw new Error(
-      `RevenueCat subscriber lookup/create failed (${ensureRes.status}): ${detail}`,
-    );
-  }
+  // In the /join flow the grant runs server-side right after sign-up, before
+  // the client SDK has ever configured RevenueCat with the Clerk id, so the
+  // subscriber may not exist yet.
+  await ensureSubscriber(subscriberUrl, authHeaders);
 
   const grantUrl = `${subscriberUrl}/entitlements/${encodeURIComponent(
     MEMBERSHIP_ENTITLEMENT,
@@ -140,6 +129,93 @@ export async function grantLifetimeMembership(appUserId: string): Promise<void> 
     const detail = await res.text();
     throw new Error(
       `RevenueCat promotional grant failed (${res.status}): ${detail}`,
+    );
+  }
+}
+
+/**
+ * Mirror a Clerk user's name and email onto their RevenueCat customer, so the
+ * dashboard shows a person rather than a bare Clerk id.
+ *
+ * `$displayName` and `$email` are RevenueCat's reserved attributes. It has no
+ * reserved first or last name, so those go in as the custom `first_name` and
+ * `last_name` — custom attributes need no dashboard setup, RevenueCat creates
+ * them on first write.
+ *
+ * Every field is sent every time, a missing one as "" (which RevenueCat treats
+ * as a delete), so a name removed in Clerk is removed here too rather than left
+ * stale. Idempotent, so safe to retry and to replay.
+ */
+export async function syncCustomerAttributes(
+  appUserId: string,
+  user: {
+    email?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+  },
+): Promise<void> {
+  const apiKey = process.env.REVENUECAT_SECRET_API_KEY;
+  if (!apiKey) {
+    throw new Error("REVENUECAT_SECRET_API_KEY is not configured");
+  }
+
+  const authHeaders = {
+    Authorization: `Bearer ${apiKey}`,
+    "Content-Type": "application/json",
+  };
+
+  const subscriberUrl = `${REVENUECAT_API_BASE}/subscribers/${encodeURIComponent(
+    appUserId,
+  )}`;
+
+  // A brand new signup has no RevenueCat customer until something creates one.
+  await ensureSubscriber(subscriberUrl, authHeaders);
+
+  const firstName = user.firstName?.trim() ?? "";
+  const lastName = user.lastName?.trim() ?? "";
+  const values: Record<string, string> = {
+    $displayName: [firstName, lastName].filter(Boolean).join(" "),
+    $email: user.email?.trim() ?? "",
+    first_name: firstName,
+    last_name: lastName,
+  };
+
+  const res = await fetch(`${subscriberUrl}/attributes`, {
+    method: "POST",
+    headers: authHeaders,
+    body: JSON.stringify({
+      attributes: Object.fromEntries(
+        Object.entries(values).map(([key, value]) => [key, { value }]),
+      ),
+    }),
+  });
+
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(
+      `RevenueCat attribute update failed (${res.status}): ${detail}`,
+    );
+  }
+}
+
+/**
+ * Make sure RevenueCat has a customer for this app user id.
+ *
+ * Write endpoints can't be relied on to create one: the promotional grant 404s
+ * ("subscriber not found") for an id RevenueCat has never seen, and the docs
+ * don't say either way for attributes. GET /subscribers is get-or-create, so
+ * calling it first materializes the customer; for one that already exists
+ * it's a harmless read.
+ */
+async function ensureSubscriber(
+  subscriberUrl: string,
+  headers: Record<string, string>,
+): Promise<void> {
+  const res = await fetch(subscriberUrl, { method: "GET", headers });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(
+      `RevenueCat subscriber lookup/create failed (${res.status}): ${detail}`,
     );
   }
 }
