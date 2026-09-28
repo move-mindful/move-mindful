@@ -466,7 +466,8 @@ export function TutorialScreen({
     <div className={`absolute inset-x-0 bottom-0 isolate flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
       <BottomShade />
       <Collapse open={!hidden}>
-        <h1 className="mb-3 truncate text-[30px] font-semibold leading-[1.2] tracking-[-0.01em]">{name}</h1>
+        {/* The one title that may wrap: up to two lines, then an ellipsis. */}
+        <h1 className="mb-3 line-clamp-2 text-[30px] font-semibold leading-[1.1] tracking-[-0.01em]">{name}</h1>
       </Collapse>
       {/* Minimised: "Tutorial:" and the exercise above the pills, and a small
           Skip at the end of their row. */}
