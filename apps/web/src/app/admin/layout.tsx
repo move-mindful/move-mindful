@@ -4,12 +4,12 @@ import { requireAdmin } from "@/lib/auth/admin";
 import { UserMenu } from "@/components/user-menu";
 
 const navItems = [
-  { href: "/admin/classes", label: "Classes" },
-  { href: "/admin/instructors", label: "Instructors" },
-  { href: "/admin/tags", label: "Tags" },
-  { href: "/admin/collections", label: "Collections" },
-  { href: "/admin/workouts", label: "Workouts" },
   { href: "/admin/exercises", label: "Exercises" },
+  { href: "/admin/workouts", label: "Workouts" },
+  { href: "/admin/classes", label: "Classes" },
+  { href: "/admin/tags", label: "Tags" },
+  { href: "/admin/instructors", label: "Instructors" },
+  { href: "/admin/collections", label: "Collections" },
 ];
 
 export default async function AdminLayout({
