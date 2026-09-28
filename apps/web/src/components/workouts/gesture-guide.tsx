@@ -15,44 +15,51 @@ export function GestureGuide({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="absolute inset-0 z-30 flex flex-col" role="dialog" aria-modal="true" aria-label="How to use the player">
-      {/* The backdrop runs the full height, behind the panel's rounded corners too. */}
+      {/* The backdrop runs the full height, behind the panel's rounded corners
+          too; the labels sit in the space above the panel, where they show. */}
       {page === 0 ? (
         // The three tap zones, drawn where (and as wide as) they really are.
         <div className="absolute inset-0 flex" aria-hidden="true">
-          <Zone width={TAP_ZONES.back} tint="rgba(76,199,224,0.32)" divider>
-            <Tag>
-              <ChevronLeft size={16} />
-              Back
-            </Tag>
-          </Zone>
-          <Zone width={TAP_ZONES.pause} tint="rgba(255,255,255,0.14)" divider>
-            <Tag dark>
-              <Pause size={14} />
-              Pause
-            </Tag>
-          </Zone>
-          <Zone width={TAP_ZONES.next} tint="rgba(169,156,255,0.32)">
-            <Tag>
-              Next
-              <ChevronRight size={16} />
-            </Tag>
-          </Zone>
+          <Zone width={TAP_ZONES.back} tint="rgba(76,199,224,0.32)" divider />
+          <Zone width={TAP_ZONES.pause} tint="rgba(255,255,255,0.14)" divider />
+          <Zone width={TAP_ZONES.next} tint="rgba(169,156,255,0.32)" />
         </div>
       ) : (
         <div className="absolute inset-0 bg-[#080814]/60" aria-hidden="true" />
       )}
 
-      <div className="relative flex flex-1 flex-col items-center justify-center gap-4" aria-hidden="true">
-        {page === 1 && (
-          // Swipes: up and down, in the middle.
+      <div className="relative flex flex-1" aria-hidden="true">
+        {page === 0 ? (
           <>
+            <Label width={TAP_ZONES.back}>
+              <Tag>
+                <ChevronLeft size={16} />
+                Back
+              </Tag>
+            </Label>
+            <Label width={TAP_ZONES.pause}>
+              <Tag dark>
+                <Pause size={14} />
+                Pause
+              </Tag>
+            </Label>
+            <Label width={TAP_ZONES.next}>
+              <Tag>
+                Next
+                <ChevronRight size={16} />
+              </Tag>
+            </Label>
+          </>
+        ) : (
+          // Swipes: up and down, in the middle.
+          <div className="flex flex-1 flex-col items-center justify-center gap-4">
             <span className="flex size-14 items-center justify-center rounded-full bg-white/[0.16]">
               <ArrowUp size={26} />
             </span>
             <span className="flex size-14 items-center justify-center rounded-full bg-white/[0.16]">
               <ArrowDown size={26} />
             </span>
-          </>
+          </div>
         )}
       </div>
 
@@ -106,22 +113,19 @@ export function GestureGuide({ onDone }: { onDone: () => void }) {
   );
 }
 
-function Zone({
-  width,
-  tint,
-  divider = false,
-  children,
-}: {
-  width: number;
-  tint: string;
-  divider?: boolean;
-  children: ReactNode;
-}) {
+function Zone({ width, tint, divider = false }: { width: number; tint: string; divider?: boolean }) {
   return (
     <div
-      className={`flex items-center justify-center ${divider ? "border-r-2 border-dashed border-white/80" : ""}`}
+      className={divider ? "border-r-2 border-dashed border-white/80" : ""}
       style={{ background: tint, flex: `0 0 ${width * 100}%` }}
-    >
+    />
+  );
+}
+
+/** A zone's label, centred over its zone in the space above the panel. */
+function Label({ width, children }: { width: number; children: ReactNode }) {
+  return (
+    <div className="flex items-center justify-center" style={{ flex: `0 0 ${width * 100}%` }}>
       {children}
     </div>
   );
