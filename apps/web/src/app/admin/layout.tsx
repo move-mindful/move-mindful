@@ -8,6 +8,7 @@ const navItems = [
   { href: "/admin/instructors", label: "Instructors" },
   { href: "/admin/tags", label: "Tags" },
   { href: "/admin/collections", label: "Collections" },
+  { href: "/admin/exercises", label: "Exercises" },
 ];
 
 export default async function AdminLayout({
