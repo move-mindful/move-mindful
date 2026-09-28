@@ -430,7 +430,12 @@ export function WorkoutPlayer({
       screen = (
         <>
           <TopShade tall />
-          <TapZones onMiddle={pause} onHold={pause} />
+          <TapZones
+            onMiddle={pause}
+            onHold={pause}
+            onSwipeDown={() => setChromeHidden(true)}
+            onSwipeUp={() => setChromeHidden(false)}
+          />
           <WarmupScreen
             name={workout.warmup.name}
             seconds={clip.time}
@@ -439,6 +444,7 @@ export function WorkoutPlayer({
             onSkip={skip}
             muted={muted}
             onToggleSound={() => setSound(muted)}
+            hidden={chromeHidden}
           />
         </>
       );

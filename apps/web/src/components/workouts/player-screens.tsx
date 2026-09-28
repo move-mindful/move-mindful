@@ -598,12 +598,22 @@ export function BeginButton({
 }
 
 /** Skip tutorial, pill-sized, for the tutorial's minimised row: fills as it plays. */
-function MiniSkipButton({ progress, onBegin }: { progress: TutorialProgress; onBegin: () => void }) {
+function MiniSkipButton({
+  progress,
+  onBegin,
+  label = "Skip",
+  aria = "Skip tutorial and start the exercise",
+}: {
+  progress: Pick<TutorialProgress, "fraction" | "cycle">;
+  onBegin: () => void;
+  label?: string;
+  aria?: string;
+}) {
   return (
     <button
       type="button"
       onClick={onBegin}
-      aria-label="Skip tutorial and start the exercise"
+      aria-label={aria}
       className="relative flex h-[30px] shrink-0 items-center gap-1 overflow-hidden rounded-full border-[1.5px] border-white/55 bg-white/[0.08] pl-3 pr-2.5 text-sm font-semibold"
     >
       <span
@@ -611,7 +621,7 @@ function MiniSkipButton({ progress, onBegin }: { progress: TutorialProgress; onB
         className="absolute inset-y-0 left-0 bg-white/20"
         style={{ width: `${Math.min(100, progress.fraction * 100)}%`, transition: "width 250ms linear" }}
       />
-      <span className="relative">Skip</span>
+      <span className="relative">{label}</span>
       <span className="relative">
         <ArrowRight size={15} />
       </span>
@@ -762,6 +772,7 @@ export function WarmupScreen({
   onSkip,
   muted,
   onToggleSound,
+  hidden,
 }: {
   name: string;
   seconds: number;
@@ -770,33 +781,48 @@ export function WarmupScreen({
   onSkip: () => void;
   muted: boolean;
   onToggleSound: () => void;
+  /** Controls swiped away: just the label, the name and a small Skip. */
+  hidden: boolean;
 }) {
   return (
     <>
       <WarmupProgress seconds={seconds} duration={duration} />
-      <div className={`absolute inset-x-0 bottom-0 isolate flex flex-col gap-[18px] px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
+      <div className={`absolute inset-x-0 bottom-0 isolate flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
         <BottomShade />
         <div className="flex flex-col gap-2">
           <span className="flex h-[26px] items-center gap-1.5 self-start rounded-full bg-white/[0.16] pl-[9px] pr-[11px] text-xs font-bold uppercase tracking-[0.08em]">
             <Sun size={14} />
             Warm-up
           </span>
-          <h1 className="truncate text-[22px] font-semibold leading-tight">{name}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="min-w-0 flex-1 truncate text-[22px] font-semibold leading-tight">{name}</h1>
+            {/* Minimised: a small Skip beside the name, filling as it plays. */}
+            {hidden && (
+              <MiniSkipButton
+                progress={{ fraction: duration ? seconds / duration : 0, cycle: 0 }}
+                onBegin={onSkip}
+                label="Skip warm-up"
+                aria="Skip warm-up"
+              />
+            )}
+          </div>
         </div>
-        <div className="flex items-center justify-between gap-3">
-          <SoundButton muted={muted} onToggle={onToggleSound} />
-          <button
-            type="button"
-            onClick={onSkip}
-            className="flex h-[52px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full border border-white/[0.22] bg-white/[0.12] text-base font-semibold backdrop-blur-md"
-          >
-            Skip warm-up
-            <ArrowRight size={18} />
-          </button>
-          <RoundButton label="Pause" onClick={onPause}>
-            <Pause />
-          </RoundButton>
-        </div>
+        <Collapse open={!hidden}>
+          <div className="mt-[18px] flex items-center justify-between gap-3">
+            <SoundButton muted={muted} onToggle={onToggleSound} />
+            <button
+              type="button"
+              onClick={onSkip}
+              className="flex h-[52px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full border border-white/[0.22] bg-white/[0.12] text-base font-semibold backdrop-blur-md"
+            >
+              Skip warm-up
+              <ArrowRight size={18} />
+            </button>
+            <RoundButton label="Pause" onClick={onPause}>
+              <Pause />
+            </RoundButton>
+          </div>
+        </Collapse>
       </div>
     </>
   );
