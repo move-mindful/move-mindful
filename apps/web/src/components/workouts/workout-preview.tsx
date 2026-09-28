@@ -49,7 +49,10 @@ export function WorkoutPreview({
   );
 
   return (
-    <div className="min-h-dvh bg-[#14142B] text-white">
+    // The page is a step lighter than the player's ink (#14142B), which the
+    // pinned Begin bar keeps so it matches Safari's toolbar and reads as its
+    // own panel over the list.
+    <div className="min-h-dvh bg-[#1F1F3E] text-white">
       <div className="mx-auto max-w-[560px] pb-32 theater:max-w-none theater:pb-0">
         {/* The cover — on desktop, the whole left half, with the details over it. */}
         <div className="relative h-[330px] overflow-hidden theater:fixed theater:inset-y-0 theater:left-0 theater:h-auto theater:w-1/2">
@@ -68,14 +71,14 @@ export function WorkoutPreview({
             className="absolute inset-0 theater:hidden"
             style={{
               background:
-                "linear-gradient(180deg, rgba(20,20,43,0.4) 0%, rgba(20,20,43,0) 28%, rgba(20,20,43,0.25) 60%, #14142B 100%)",
+                "linear-gradient(180deg, rgba(31,31,62,0.4) 0%, rgba(31,31,62,0) 28%, rgba(31,31,62,0.25) 60%, #1F1F3E 100%)",
             }}
           />
           <div
             className="absolute inset-0 hidden theater:block"
             style={{
               background:
-                "linear-gradient(180deg, rgba(20,20,43,0.45) 0%, rgba(20,20,43,0) 16%, rgba(20,20,43,0.2) 34%, rgba(20,20,43,0.86) 56%, #14142B 72%), linear-gradient(90deg, rgba(20,20,43,0) 72%, #14142B 100%)",
+                "linear-gradient(180deg, rgba(31,31,62,0.45) 0%, rgba(31,31,62,0) 16%, rgba(31,31,62,0.2) 34%, rgba(31,31,62,0.86) 56%, #1F1F3E 72%), linear-gradient(90deg, rgba(31,31,62,0) 72%, #1F1F3E 100%)",
             }}
           />
           <Link
