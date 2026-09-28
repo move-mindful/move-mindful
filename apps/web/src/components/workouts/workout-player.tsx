@@ -561,7 +561,14 @@ export function WorkoutPlayer({
         );
         beside = (
           <>
-            <TheaterTutorialInfo name={name} chips={chips} levels={levels} progress={progress} onBegin={next} />
+            <TheaterTutorialInfo
+              name={name}
+              chips={chips}
+              levels={levels}
+              progress={progress}
+              auto={state.autoAdvance}
+              onBegin={next}
+            />
             <TheaterArrows onBack={back} onNext={next} nextLabel="Start the exercise" />
             <TheaterButtons buttons={sideButtons()} />
           </>
@@ -577,6 +584,7 @@ export function WorkoutPlayer({
               chips={chips}
               levels={levels}
               progress={progress}
+              auto={state.autoAdvance}
               pill={{
                 label: "Workout",
                 text: `${exerciseCount} ${exerciseCount === 1 ? "exercise" : "exercises"} · ${minutes} min`,
@@ -609,7 +617,14 @@ export function WorkoutPlayer({
         );
         beside = (
           <>
-            <TheaterSetInfo name={name} metric={metric} side={set.side} groupLine={groupLine} upNext={pill.text} />
+            <TheaterSetInfo
+              name={name}
+              metric={metric}
+              side={set.side}
+              auto={state.autoAdvance && set.measure === "reps"}
+              groupLine={groupLine}
+              upNext={pill.text}
+            />
             <TheaterArrows onBack={back} onNext={next} nextLabel="Next set" />
             <TheaterButtons buttons={sideButtons()} />
           </>
@@ -624,6 +639,7 @@ export function WorkoutPlayer({
               name={name}
               metric={metric}
               side={set.side}
+              auto={state.autoAdvance && set.measure === "reps"}
               groupLine={groupLine}
               pill={pill}
               hidden={chromeHidden}
@@ -693,8 +709,12 @@ export function WorkoutPlayer({
         autoAdvance={{
           on: state.autoAdvance,
           onChange: (on) => {
-            updatePrefs({ autoAdvance: on });
+            // Hands-free: a looping tutorial would wait for a tap, so turning
+            // auto-advance on moves Loop to Play once (Off stays off).
+            const once = on && state.mode === "loop";
+            updatePrefs(once ? { autoAdvance: on, tutorialMode: "once" } : { autoAdvance: on });
             act({ type: "autoAdvance", on });
+            if (once) act({ type: "mode", mode: "once" });
           },
         }}
         onGuide={theater ? null : () => act({ type: "sheet", sheet: "guide" })}

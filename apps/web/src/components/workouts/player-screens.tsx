@@ -393,6 +393,20 @@ function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
   );
 }
 
+/** Shown while auto-advance is on: "AUTO ›", beside the reps or a tutorial's name. */
+export function AutoPill({ large = false, className = "" }: { large?: boolean; className?: string }) {
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center gap-0.5 rounded-full bg-white/[0.2] align-middle font-bold uppercase tracking-[0.08em] ${
+        large ? "h-8 pl-3.5 pr-2.5 text-sm" : "h-7 pl-3 pr-2 text-[13px]"
+      } ${className}`}
+    >
+      Auto
+      <ChevronRight size={large ? 16 : 15} />
+    </span>
+  );
+}
+
 /**
  * A minimised view's one line: a label pill ("Up next", "Tutorial") and what
  * it names, trimmed to fit.
@@ -415,6 +429,7 @@ export function SetScreen({
   name,
   metric,
   side,
+  auto,
   groupLine,
   pill,
   hidden,
@@ -427,6 +442,8 @@ export function SetScreen({
   /** Reps to do, or the seconds left on a timed set. */
   metric: { kind: "reps"; amount: number } | { kind: "time"; seconds: number };
   side: "right" | "left" | null;
+  /** Auto-advance is counting this rep set down. */
+  auto: boolean;
   /** "Superset 1 · Round 2 of 3" inside a group. */
   groupLine: string | null;
   pill: { label: string; text: string };
@@ -464,6 +481,7 @@ export function SetScreen({
             {side.toUpperCase()}
           </span>
         )}
+        {auto && <AutoPill />}
       </div>
       {/* Controls swiped away: what's next, under the reps. */}
       <Collapse open={hidden}>
@@ -486,6 +504,7 @@ export function TutorialScreen({
   progress,
   pill,
   hidden,
+  auto,
   onBegin,
   onPause,
   onOverview,
@@ -500,6 +519,8 @@ export function TutorialScreen({
   pill: { label: string; text: string };
   /** Controls swiped away: just the sets and reps left over the video. */
   hidden: boolean;
+  /** Auto-advance is on (the pill beside the name). */
+  auto: boolean;
   onBegin: () => void;
   onPause: () => void;
   onOverview: () => void;
@@ -511,7 +532,10 @@ export function TutorialScreen({
       <BottomShade />
       <Collapse open={!hidden}>
         {/* The one title that may wrap: up to two lines, then an ellipsis. */}
-        <h1 className="mb-3 line-clamp-2 text-[30px] font-semibold leading-[1.1] tracking-[-0.01em]">{name}</h1>
+        <h1 className="mb-3 line-clamp-2 text-[30px] font-semibold leading-[1.1] tracking-[-0.01em]">
+          {name}
+          {auto && <AutoPill className="ml-2.5 -translate-y-0.5" />}
+        </h1>
       </Collapse>
       {/* Minimised: "Tutorial:" and the exercise above the pills, and a small
           Skip at the end of their row. */}

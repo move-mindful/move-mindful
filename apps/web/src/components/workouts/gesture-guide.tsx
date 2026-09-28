@@ -13,7 +13,7 @@ import {
   Timer,
   WatchTutorial,
 } from "./icons";
-import { TAP_ZONES } from "./player-screens";
+import { AutoPill, TAP_ZONES } from "./player-screens";
 
 /**
  * The first-run guide to the player, over the stage on phones: tapping (the
@@ -133,9 +133,12 @@ const PAGES: Page[] = [
         <div className="h-1 w-full overflow-hidden rounded-sm bg-white/30">
           <div className="h-1 w-3/5 rounded-sm bg-[#A99CFF]" />
         </div>
-        <span className="flex items-baseline gap-1.5">
-          <span className="text-[44px] font-semibold leading-none">10</span>
-          <span className="text-xl font-medium">reps</span>
+        <span className="flex items-center gap-3">
+          <span className="flex items-baseline gap-1.5">
+            <span className="text-[44px] font-semibold leading-none">10</span>
+            <span className="text-xl font-medium">reps</span>
+          </span>
+          <AutoPill />
         </span>
         <span className="flex w-full items-center justify-between rounded-2xl bg-white/[0.08] px-3.5 py-2.5 text-[15px] font-semibold">
           Auto-advance
@@ -156,6 +159,11 @@ const PAGES: Page[] = [
         icon: <ChevronRight size={20} />,
         title: "Rep sets move on by themselves",
         text: "After the time the reps usually take. Tap to move on sooner.",
+      },
+      {
+        icon: <WatchTutorial size={18} />,
+        title: "Tutorials play once",
+        text: "Turning it on switches tutorials from loop to play once.",
       },
     ],
   },
