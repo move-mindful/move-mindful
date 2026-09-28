@@ -257,17 +257,18 @@ export function TapZones({
   onPullEnd,
   nextLabel = "Next",
 }: {
-  onBack: () => void;
-  onNext: () => void;
+  /** Left and right taps; left out (the warm-up), those sides do nothing. */
+  onBack?: () => void;
+  onNext?: () => void;
   onMiddle: () => void;
   onHold: () => void;
-  onSwipeUp: () => void;
-  onSwipeDown: () => void;
+  onSwipeUp?: () => void;
+  onSwipeDown?: () => void;
   /** Dragging up pulls the overview (instead of a swipe up calling `onSwipeUp`). */
-  pullUp: boolean;
-  onPullMove: (distance: number) => void;
+  pullUp?: boolean;
+  onPullMove?: (distance: number) => void;
   /** `velocity` is upward, in px per ms. */
-  onPullEnd: (distance: number, velocity: number) => void;
+  onPullEnd?: (distance: number, velocity: number) => void;
   nextLabel?: string;
 }) {
   const press = useRef<{
@@ -325,19 +326,19 @@ export function TapZones({
           if (dt > 0) p.velocity = (p.last.y - e.clientY) / dt;
           p.last = { y: e.clientY, t: e.timeStamp };
           if (p.pulling) {
-            onPullMove(Math.max(0, -dy));
+            onPullMove?.(Math.max(0, -dy));
             return;
           }
           if (p.done) return;
           if (pullUp && dy < -10 && Math.abs(dy) > Math.abs(dx)) {
             p.pulling = true;
             window.clearTimeout(p.timer);
-            onPullMove(-dy);
+            onPullMove?.(-dy);
           } else if (Math.abs(dy) > 60 && Math.abs(dx) < 80) {
             p.done = true;
             window.clearTimeout(p.timer);
-            if (dy < 0) onSwipeUp();
-            else onSwipeDown();
+            if (dy < 0) onSwipeUp?.();
+            else onSwipeDown?.();
           } else if (Math.hypot(dx, dy) > 16) {
             window.clearTimeout(p.timer);
           }
@@ -347,25 +348,29 @@ export function TapZones({
           end();
           if (!p) return;
           if (p.pulling) {
-            onPullEnd(Math.max(0, p.y - e.clientY), p.velocity);
+            onPullEnd?.(Math.max(0, p.y - e.clientY), p.velocity);
             return;
           }
           if (p.done || Math.hypot(e.clientX - p.x, e.clientY - p.y) > 24) return;
-          [onBack, onMiddle, onNext][p.zone]();
+          [onBack, onMiddle, onNext][p.zone]?.();
         }}
         onPointerCancel={() => {
           const p = press.current;
           end();
-          if (p?.pulling) onPullEnd(0, 0);
+          if (p?.pulling) onPullEnd?.(0, 0);
         }}
       />
       {/* Back and next for keyboards and screen readers (Pause is a real button). */}
-      <button type="button" className="sr-only" onClick={onBack}>
-        Previous set
-      </button>
-      <button type="button" className="sr-only" onClick={onNext}>
-        {nextLabel}
-      </button>
+      {onBack && (
+        <button type="button" className="sr-only" onClick={onBack}>
+          Previous set
+        </button>
+      )}
+      {onNext && (
+        <button type="button" className="sr-only" onClick={onNext}>
+          {nextLabel}
+        </button>
+      )}
     </>
   );
 }
@@ -808,7 +813,7 @@ export function PausedScreen({
   onWatchTutorial: (() => void) | null;
   onSkipWarmup: (() => void) | null;
   onEnd: () => void;
-  onSettings: () => void;
+  onSettings: (() => void) | null;
   theater?: boolean;
 }) {
   const secondary =
@@ -873,10 +878,12 @@ export function PausedScreen({
           </button>
         </div>
       </div>
-      {/* Settings, top right under the progress bar. */}
-      <div className="absolute right-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] z-10">
-        <SettingsButton onClick={onSettings} />
-      </div>
+      {/* Settings, top right under the progress bar (not on the warm-up's). */}
+      {onSettings && (
+        <div className="absolute right-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] z-10">
+          <SettingsButton onClick={onSettings} />
+        </div>
+      )}
     </>
   );
 }

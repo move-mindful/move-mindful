@@ -406,7 +406,7 @@ export function WorkoutPlayer({
             onWatchTutorial={null}
             onSkipWarmup={skip}
             onEnd={() => act({ type: "sheet", sheet: "end" })}
-            onSettings={openSettings}
+            onSettings={null}
             theater={theater}
           />
         </>
@@ -416,6 +416,8 @@ export function WorkoutPlayer({
         <>
           <TopShade tall />
           <WarmupProgress seconds={clip.time} duration={duration} />
+          {/* Tap the middle (or hold) to pause; the sides do nothing on the warm-up. */}
+          <TapZones onMiddle={pause} onHold={pause} />
         </>
       );
       beside = (
@@ -428,6 +430,7 @@ export function WorkoutPlayer({
       screen = (
         <>
           <TopShade tall />
+          <TapZones onMiddle={pause} onHold={pause} />
           <WarmupScreen
             name={workout.warmup.name}
             seconds={clip.time}
