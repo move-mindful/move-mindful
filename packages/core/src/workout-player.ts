@@ -14,7 +14,8 @@ export type TutorialMode = "loop" | "once" | "off";
 
 export type PlayerPhase = "preview" | "warmup" | "workout" | "complete";
 
-export type PlayerSheet = "overview" | "settings" | "end" | null;
+/** What's open over the player. "guide" is the first-run gesture guide. */
+export type PlayerSheet = "overview" | "settings" | "end" | "guide" | null;
 
 export interface PlayerState {
   phase: PlayerPhase;
@@ -39,10 +40,13 @@ export interface PlayerState {
   activeSince: number | null;
   /** Bumped whenever a clip should start from the beginning (a new step, a restart). */
   take: number;
+  /** Show the gesture guide as the first exercise comes up (after any warm-up). */
+  guidePending: boolean;
 }
 
 export type PlayerAction =
-  | { type: "begin"; warmup: boolean; mode: TutorialMode; now: number }
+  /** `guide`: open the gesture guide when the first exercise comes up (a first-time member). */
+  | { type: "begin"; warmup: boolean; mode: TutorialMode; guide?: boolean; now: number }
   /** The warm-up finished or was skipped. */
   | { type: "endWarmup"; now: number }
   | { type: "next"; now: number }
@@ -79,6 +83,7 @@ export const initialPlayerState: PlayerState = {
   activeMs: 0,
   activeSince: null,
   take: 0,
+  guidePending: false,
 };
 
 /** Playing right now: not paused, no sheet over it, and past the preview. */
@@ -135,7 +140,8 @@ function settle(s: PlayerState, now: number): PlayerState {
  * tutorial (unless tutorials are off or it has none); going back never does.
  */
 function enter(ctx: PlayerContext, s: PlayerState, index: number, forward: boolean): PlayerState {
-  const base = { ...s, paused: false, sheet: null, take: s.take + 1 };
+  // The gesture guide, if it's waiting, opens over the first step (holding the clock).
+  const base = { ...s, paused: false, sheet: s.guidePending ? ("guide" as const) : null, guidePending: false, take: s.take + 1 };
   if (index >= ctx.steps.length) return { ...base, phase: "complete", timer: null };
   const step = ctx.steps[index];
   let stage: PlayerState["stage"] = "exercise";
@@ -171,7 +177,7 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
   const step = ctx.steps[s.step];
   switch (a.type) {
     case "begin": {
-      const started = { ...s, mode: a.mode, activeMs: 0, activeSince: null, seen: [] };
+      const started = { ...s, mode: a.mode, activeMs: 0, activeSince: null, seen: [], guidePending: !!a.guide };
       if (a.warmup) return { ...started, phase: "warmup", paused: false, sheet: null, timer: null, take: s.take + 1 };
       return enter(ctx, started, 0, true);
     }

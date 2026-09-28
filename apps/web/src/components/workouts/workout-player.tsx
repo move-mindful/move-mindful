@@ -58,6 +58,7 @@ import {
 } from "./theater";
 import { POOL_SIZE, PoolVideos, useVideoPool, type PoolClip, type ShownClip } from "./video-pool";
 import { WorkoutPreview } from "./workout-preview";
+import { GestureGuide } from "./gesture-guide";
 import { usePlayerPreferences } from "./preferences";
 import type { PlayerPreferences } from "@/lib/member/preferences";
 
@@ -321,7 +322,8 @@ export function WorkoutPlayer({
     setMuted(!prefs.instructorAudio);
     // Inside the tap, so every clip may play with sound later (see video-pool.tsx).
     pool.unlock();
-    act({ type: "begin", warmup, mode: prefs.tutorialMode });
+    // First time on a phone: the gesture guide opens as the first exercise comes up.
+    act({ type: "begin", warmup, mode: prefs.tutorialMode, guide: !theater && !prefs.seenGestureGuide });
   }
 
   const leave = () => router.push(backHref);
@@ -669,6 +671,7 @@ export function WorkoutPlayer({
           act({ type: "mode", mode });
         }}
         onSound={setSound}
+        onGuide={theater ? null : () => act({ type: "sheet", sheet: "guide" })}
         onClose={() => act({ type: "sheet", sheet: null })}
         variant={theater ? "side" : "bottom"}
         drawerOpen={theater ? undefined : state.sheet === "settings"}
@@ -723,6 +726,14 @@ export function WorkoutPlayer({
           {!theater && overview}
           {!theater && settings}
           {!theater && end}
+          {!theater && state.sheet === "guide" && (
+            <GestureGuide
+              onDone={() => {
+                updatePrefs({ seenGestureGuide: true });
+                act({ type: "sheet", sheet: null });
+              }}
+            />
+          )}
         </div>
         {theater && beside}
         {theater && overview}

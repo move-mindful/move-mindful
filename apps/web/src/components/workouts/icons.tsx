@@ -33,6 +33,18 @@ export const ArrowRight = ({ size = 20 }: P) => (
     <path d="m12 5 7 7-7 7" />
   </Stroke>
 );
+export const ArrowUp = ({ size = 20 }: P) => (
+  <Stroke size={size} width={2.2}>
+    <path d="M12 19V5" />
+    <path d="m5 12 7-7 7 7" />
+  </Stroke>
+);
+export const ArrowDown = ({ size = 20 }: P) => (
+  <Stroke size={size} width={2.2}>
+    <path d="M12 5v14" />
+    <path d="m19 12-7 7-7-7" />
+  </Stroke>
+);
 export const Close = ({ size = 20 }: P) => (
   <Stroke size={size} width={2.4}>
     <path d="M18 6 6 18" />

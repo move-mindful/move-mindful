@@ -155,3 +155,16 @@ test("restarting the workout shows the tutorials again", () => {
   s = run([{ type: "next", now: 6 }, { type: "restartSet", now: 7 }], s);
   assert.equal(s.stage, "exercise");
 });
+
+test("a first-time member's gesture guide opens as the first exercise comes up", () => {
+  let s = run([{ type: "begin", warmup: true, mode: "off", guide: true, now: 0 }]);
+  assert.equal(s.sheet, null, "not over the warm-up");
+  s = run([{ type: "endWarmup", now: 1000 }], s);
+  assert.equal(s.sheet, "guide");
+  s = run([{ type: "jump", step: 3, now: 2000 }], s); // the plank, 45 s — held while the guide is open
+  assert.equal(s.sheet, null, "moving on closes it");
+  s = run([{ type: "sheet", sheet: "guide", now: 3000 }, { type: "tick", now: 100_000 }], s);
+  assert.equal(s.step, 3, "the clock waits while it's open");
+  s = run([{ type: "sheet", sheet: null, now: 100_000 }, { type: "restartWorkout", now: 100_000 }], s);
+  assert.equal(s.sheet, null, "and it doesn't come back on a restart");
+});

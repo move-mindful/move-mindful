@@ -16,6 +16,7 @@ import { clock } from "@/lib/workouts/player";
 import {
   ArrowRight,
   Check,
+  ChevronRight,
   ChevronUp,
   Close,
   Dumbbell,
@@ -1323,6 +1324,7 @@ export function SettingsSheet({
   mix,
   onMode,
   onSound,
+  onGuide,
   onClose,
   variant = "bottom",
   drawerOpen,
@@ -1333,6 +1335,8 @@ export function SettingsSheet({
   mix: { on: boolean; onChange: (on: boolean) => void } | null;
   onMode: (mode: TutorialMode) => void;
   onSound: (on: boolean) => void;
+  /** Show the gesture guide again (phones only; null on desktop). */
+  onGuide: (() => void) | null;
   onClose: () => void;
   variant?: SheetVariant;
   /** Phones: always mounted as a drawer that slides open and shut — pass whether it's open. */
@@ -1403,6 +1407,24 @@ export function SettingsSheet({
             ))}
           </fieldset>
         </section>
+        {onGuide && (
+          <section aria-labelledby="settings-help" className="flex flex-col gap-3">
+            <h3 id="settings-help" className="text-base font-semibold">
+              Help
+            </h3>
+            <button
+              type="button"
+              onClick={onGuide}
+              className="flex items-center justify-between gap-4 rounded-2xl border-[1.5px] border-white/[0.12] bg-white/[0.04] px-4 py-3.5 text-left"
+            >
+              <span className="flex min-w-0 flex-col gap-[3px]">
+                <span className="text-[17px] font-semibold">How to use the player</span>
+                <span className="text-sm leading-snug text-white/75">The taps and swipes, again.</span>
+              </span>
+              <ChevronRight />
+            </button>
+          </section>
+        )}
       </div>
     </SheetFrame>
   );
