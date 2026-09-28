@@ -394,13 +394,14 @@ function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
 }
 
 /**
- * A minimised view's one line: a small grey label pill ("Up next",
- * "Tutorial") and what it names, trimmed to fit.
+ * A minimised view's one line: a label pill ("Up next", "Tutorial") and what
+ * it names, trimmed to fit.
  */
 function LabelLine({ label, text, className = "" }: { label: string; text: string; className?: string }) {
   return (
     <p className={`flex min-w-0 items-center gap-2 ${className}`}>
-      <span className="shrink-0 rounded-full bg-white/[0.16] px-2 py-[3px] text-[11px] font-semibold uppercase tracking-[0.08em]">
+      {/* As tall as the chips below it, a shade brighter and in bold capitals. */}
+      <span className="flex h-[30px] shrink-0 items-center rounded-full bg-white/[0.24] px-3 text-[13px] font-bold uppercase tracking-[0.08em]">
         {label}
       </span>
       <span className="min-w-0 truncate text-[15px] font-medium">{text}</span>
