@@ -1175,14 +1175,17 @@ export function Drawer({
   pull,
   onOpen,
   onClose,
+  alert = false,
   children,
 }: {
   label: string;
   open: boolean;
-  pull: SheetPull;
+  /** The overview's: following the finger up. The other drawers open from a button. */
+  pull?: SheetPull;
   /** A pull went far (or fast) enough: it's now open. */
-  onOpen: () => void;
+  onOpen?: () => void;
   onClose: () => void;
+  alert?: boolean;
   children: ReactNode;
 }) {
   const panelRef = useRef<HTMLElement>(null);
@@ -1200,7 +1203,7 @@ export function Drawer({
   useEffect(() => {
     const el = panelRef.current;
     const backdrop = backdropRef.current;
-    if (!el || !backdrop) return;
+    if (!el || !backdrop || !pull) return;
     return pull.attach({
       move: (distance) => {
         const h = el.offsetHeight;
@@ -1215,7 +1218,7 @@ export function Drawer({
         backdrop.style.transition = fade;
         el.style.transform = opening ? "translateY(0px)" : "translateY(100%)";
         backdrop.style.opacity = opening ? "1" : "0";
-        if (opening) handlers.current.onOpen();
+        if (opening) handlers.current.onOpen?.();
       },
     });
   }, [pull, slide, fade]);
@@ -1233,7 +1236,12 @@ export function Drawer({
     backdrop.style.transition = animate ? fade : "none";
     el.style.transform = open ? "translateY(0px)" : "translateY(100%)";
     backdrop.style.opacity = open ? "1" : "0";
-    if (open) el.querySelector<HTMLElement>("button")?.focus({ preventScroll: true });
+    // Focus the sheet's marked default (End workout's Cancel), else its first button.
+    if (open) {
+      (el.querySelector<HTMLElement>("[data-autofocus]") ?? el.querySelector<HTMLElement>("button"))?.focus({
+        preventScroll: true,
+      });
+    }
   }, [open, slide, fade]);
 
   return (
@@ -1248,7 +1256,7 @@ export function Drawer({
         />
         <section
           ref={panelRef}
-          role="dialog"
+          role={alert ? "alertdialog" : "dialog"}
           aria-modal={open}
           aria-label={label}
           aria-hidden={!open}
@@ -1311,6 +1319,37 @@ const MODES: Array<{ id: TutorialMode; title: string; desc: string }> = [
   { id: "off", title: "Off", desc: "Go straight to the exercise. Watch the tutorial anytime from the pause screen." },
 ];
 
+/**
+ * A button-opened sheet: on phones a drawer, always mounted and sliding open
+ * and shut like the overview (pass `drawerOpen`); on desktop a side panel or
+ * dialog, mounted while open, that just appears.
+ */
+function SheetFrame({
+  label,
+  onClose,
+  alert = false,
+  variant,
+  drawerOpen,
+  children,
+}: {
+  label: string;
+  onClose: () => void;
+  alert?: boolean;
+  variant: SheetVariant;
+  drawerOpen?: boolean;
+  children: ReactNode;
+}) {
+  return drawerOpen === undefined ? (
+    <Sheet label={label} onClose={onClose} alert={alert} variant={variant} slideIn={false}>
+      {children}
+    </Sheet>
+  ) : (
+    <Drawer label={label} open={drawerOpen} onClose={onClose} alert={alert}>
+      {children}
+    </Drawer>
+  );
+}
+
 export function SettingsSheet({
   mode,
   soundOn,
@@ -1319,6 +1358,7 @@ export function SettingsSheet({
   onSound,
   onClose,
   variant = "bottom",
+  drawerOpen,
 }: {
   mode: TutorialMode;
   soundOn: boolean;
@@ -1328,9 +1368,11 @@ export function SettingsSheet({
   onSound: (on: boolean) => void;
   onClose: () => void;
   variant?: SheetVariant;
+  /** Phones: always mounted as a drawer that slides open and shut — pass whether it's open. */
+  drawerOpen?: boolean;
 }) {
   return (
-    <Sheet label="Settings" onClose={onClose} variant={variant} slideIn={false}>
+    <SheetFrame label="Settings" onClose={onClose} variant={variant} drawerOpen={drawerOpen}>
       <div className={`flex items-center justify-between gap-3 ${variant === "side" ? "px-7" : "px-5"}`}>
         <h2 className="text-[22px] font-semibold tracking-[-0.01em]">Settings</h2>
         <SheetClose label="Close settings" />
@@ -1395,7 +1437,7 @@ export function SettingsSheet({
           </fieldset>
         </section>
       </div>
-    </Sheet>
+    </SheetFrame>
   );
 }
 
@@ -1405,6 +1447,7 @@ export function EndSheet({
   onEnd,
   onCancel,
   variant = "bottom",
+  drawerOpen,
 }: {
   setsDone: number;
   setsTotal: number;
@@ -1412,9 +1455,11 @@ export function EndSheet({
   /** Back to the pause screen. */
   onCancel: () => void;
   variant?: SheetVariant;
+  /** Phones: always mounted as a drawer that slides open and shut — pass whether it's open. */
+  drawerOpen?: boolean;
 }) {
   return (
-    <Sheet label="End workout?" onClose={onCancel} alert variant={variant} slideIn={false}>
+    <SheetFrame label="End workout?" onClose={onCancel} alert variant={variant} drawerOpen={drawerOpen}>
       <div className={`flex flex-col gap-[22px] ${variant === "dialog" ? "px-7" : "px-5"}`}>
         <div className="flex flex-col items-center gap-2 text-center">
           <h2 className="text-[26px] font-semibold tracking-[-0.01em]">End workout?</h2>
@@ -1430,11 +1475,11 @@ export function EndSheet({
           >
             End workout
           </button>
-          <DismissButton autoFocus className="h-12 text-base font-semibold text-white/80">
+          <DismissButton autoFocus data-autofocus className="h-12 text-base font-semibold text-white/80">
             Cancel
           </DismissButton>
         </div>
       </div>
-    </Sheet>
+    </SheetFrame>
   );
 }

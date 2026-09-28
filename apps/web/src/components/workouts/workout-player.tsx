@@ -657,8 +657,11 @@ export function WorkoutPlayer({
         drawer={theater ? undefined : { open: state.sheet === "overview", pull, onOpen: openOverview }}
       />
     ) : null;
-  const sheet =
-    state.sheet === "settings" ? (
+  // Settings and End workout: on phones, drawers kept mounted through the
+  // workout (like the overview) so they slide rather than pop; on desktop, a
+  // side panel and a dialog while open.
+  const settings =
+    active && (!theater || state.sheet === "settings") ? (
       <SettingsSheet
         mode={state.mode}
         soundOn={!muted}
@@ -670,14 +673,18 @@ export function WorkoutPlayer({
         onSound={setSound}
         onClose={() => act({ type: "sheet", sheet: null })}
         variant={theater ? "side" : "bottom"}
+        drawerOpen={theater ? undefined : state.sheet === "settings"}
       />
-    ) : state.sheet === "end" ? (
+    ) : null;
+  const end =
+    active && (!theater || state.sheet === "end") ? (
       <EndSheet
         setsDone={setsDone}
         setsTotal={setCount}
         onEnd={leave}
         onCancel={() => act({ type: "sheet", sheet: null })}
         variant={theater ? "dialog" : "bottom"}
+        drawerOpen={theater ? undefined : state.sheet === "end"}
       />
     ) : null;
 
@@ -716,11 +723,13 @@ export function WorkoutPlayer({
           />
           {screen}
           {!theater && overview}
-          {!theater && sheet}
+          {!theater && settings}
+          {!theater && end}
         </div>
         {theater && beside}
         {theater && overview}
-        {theater && sheet}
+        {theater && settings}
+        {theater && end}
       </div>
     </>
   );
