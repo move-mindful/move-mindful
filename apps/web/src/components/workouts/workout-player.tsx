@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useReducer, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
   aboutMinutes,
@@ -33,8 +33,19 @@ import {
   TopBar,
   TutorialScreen,
   TutorialSheet,
+  WarmupProgress,
   WarmupScreen,
 } from "./player-screens";
+import { List, Muted, Pause, Sound, Tutorial } from "./icons";
+import {
+  TheaterArrows,
+  TheaterButtons,
+  TheaterSetInfo,
+  TheaterTutorialInfo,
+  TheaterWarmupInfo,
+  useTheater,
+  type TheaterButton,
+} from "./theater";
 import { POOL_SIZE, PoolVideos, useVideoPool, type PoolClip, type ShownClip } from "./video-pool";
 import { WorkoutPreview } from "./workout-preview";
 
@@ -97,6 +108,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
 
   const [muted, setMuted] = useState(false);
   const [warmedUp, setWarmedUp] = useState(false);
+  const theater = useTheater();
 
   const pool = useVideoPool({
     onEnded: () => act({ type: "clipEnded" }),
@@ -301,11 +313,26 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
     </TopBar>
   );
 
+  // What goes in the video column, and — in the desktop theater layout — what
+  // sits beside it.
   let screen: ReactNode = null;
+  let beside: ReactNode = null;
   let blurred = false;
+
+  const sideButtons = (withTutorial: boolean): TheaterButton[] => [
+    ...(withTutorial
+      ? [{ label: "Tutorial", aria: "Tutorial settings", icon: <Tutorial />, onClick: openTutorialSheet }]
+      : []),
+    ...(state.phase === "workout"
+      ? [{ label: "Workout", aria: "Open workout overview", icon: <List />, onClick: openOverview }]
+      : []),
+    { label: "Sound", aria: muted ? "Turn sound on" : "Mute sound", icon: muted ? <Muted /> : <Sound />, onClick: toggleMute },
+    { label: "Pause", aria: "Pause", icon: <Pause />, onClick: pause },
+  ];
 
   if (state.phase === "warmup" && workout.warmup) {
     const duration = clip.duration || workout.warmup.clip.durationSeconds || 0;
+    const skip = () => act({ type: "endWarmup" });
     if (state.paused) {
       blurred = true;
       screen = (
@@ -318,9 +345,23 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
             onRestartSet={null}
             onRestartWorkout={null}
             onWatchTutorial={null}
-            onSkipWarmup={() => act({ type: "endWarmup" })}
+            onSkipWarmup={skip}
             onEnd={() => act({ type: "sheet", sheet: "end" })}
+            theater={theater}
           />
+        </>
+      );
+    } else if (theater) {
+      screen = (
+        <>
+          <Shade bottom={0} />
+          <WarmupProgress seconds={clip.time} duration={duration} />
+        </>
+      );
+      beside = (
+        <>
+          <TheaterWarmupInfo name={workout.warmup.name} onSkip={skip} />
+          <TheaterButtons buttons={sideButtons(false)} />
         </>
       );
     } else {
@@ -333,21 +374,17 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
             duration={duration}
             muted={muted}
             onPause={pause}
-            onSkip={() => act({ type: "endWarmup" })}
+            onSkip={skip}
             onMute={toggleMute}
           />
         </>
       );
     }
   } else if (state.phase === "workout" && step) {
-    const zones = (onNext: () => void, nextLabel: string) => (
-      <TapZones
-        onBack={() => act({ type: "back" })}
-        onNext={onNext}
-        onHold={pause}
-        onSwipeUp={openOverview}
-        nextLabel={nextLabel}
-      />
+    const back = () => act({ type: "back" });
+    const next = () => act({ type: "next" });
+    const zones = (nextLabel: string) => (
+      <TapZones onBack={back} onNext={next} onHold={pause} onSwipeUp={openOverview} nextLabel={nextLabel} />
     );
 
     if (state.paused) {
@@ -370,6 +407,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
             onWatchTutorial={canWatch ? () => act({ type: "watchTutorial" }) : null}
             onSkipWarmup={null}
             onEnd={() => act({ type: "sheet", sheet: "end" })}
+            theater={theater}
           />
         </>
       );
@@ -382,7 +420,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
         <>
           <Dim />
           {bar}
-          {zones(() => act({ type: "next" }), "Skip the rest")}
+          {zones("Skip the rest")}
           <RestScreen
             round={step.reason === "round"}
             secondsLeft={leftMs / 1000}
@@ -399,54 +437,105 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
                 : null
             }
             onPause={pause}
-            onContinue={() => act({ type: "next" })}
+            onContinue={next}
+            theater={theater}
           />
         </>
       );
     } else if (set && state.stage === "tutorial") {
       const amount = amountLabel(set.measure, set.amount, exercise?.sided);
-      const once = state.tutorialPlay === "once";
       const duration = clip.duration || exercise?.tutorial?.durationSeconds || 0;
-      screen = (
-        <>
-          <Shade bottom={460} />
-          {bar}
-          {zones(() => act({ type: "next" }), "Start the exercise")}
-          <TutorialScreen
-            name={exercise?.name ?? "Exercise"}
-            chips={[set.rounds > 1 ? `${set.rounds} ${set.groupLabel ? "rounds" : "sets"} · ${amount}` : amount]}
-            levels={exercise?.dumbbellLevels.length ? levelsLabel(exercise.dumbbellLevels) : null}
-            once={once ? { fraction: duration ? clip.time / duration : 0, secondsLeft: Math.max(0, duration - clip.time) } : null}
-            pill={{ label: "Workout", text: `${exerciseCount} ${exerciseCount === 1 ? "exercise" : "exercises"} · ${minutes} min` }}
-            muted={muted}
-            onBegin={() => act({ type: "next" })}
-            onPause={pause}
-            onOverview={openOverview}
-            onMute={toggleMute}
-            onTutorialSettings={openTutorialSheet}
-          />
-        </>
-      );
+      const name = exercise?.name ?? "Exercise";
+      const chips = [set.rounds > 1 ? `${set.rounds} ${set.groupLabel ? "rounds" : "sets"} · ${amount}` : amount];
+      const levels = exercise?.dumbbellLevels.length ? levelsLabel(exercise.dumbbellLevels) : null;
+      const once =
+        state.tutorialPlay === "once"
+          ? { fraction: duration ? clip.time / duration : 0, secondsLeft: Math.max(0, duration - clip.time) }
+          : null;
+      if (theater) {
+        screen = (
+          <>
+            <Shade bottom={0} />
+            {bar}
+            {zones("Start the exercise")}
+          </>
+        );
+        beside = (
+          <>
+            <TheaterTutorialInfo name={name} chips={chips} levels={levels} once={once} onBegin={next} />
+            <TheaterArrows onBack={back} onNext={next} nextLabel="Start the exercise" />
+            <TheaterButtons buttons={sideButtons(true)} />
+          </>
+        );
+      } else {
+        screen = (
+          <>
+            <Shade bottom={460} />
+            {bar}
+            {zones("Start the exercise")}
+            <TutorialScreen
+              name={name}
+              chips={chips}
+              levels={levels}
+              once={once}
+              pill={{
+                label: "Workout",
+                text: `${exerciseCount} ${exerciseCount === 1 ? "exercise" : "exercises"} · ${minutes} min`,
+              }}
+              muted={muted}
+              onBegin={next}
+              onPause={pause}
+              onOverview={openOverview}
+              onMute={toggleMute}
+              onTutorialSettings={openTutorialSheet}
+            />
+          </>
+        );
+      }
     } else if (set) {
-      screen = (
-        <>
-          <Shade bottom={set.groupLabel ? 380 : 350} />
-          {bar}
-          {zones(() => act({ type: "next" }), "Next set")}
-          <SetScreen
-            name={exercise?.name ?? "Exercise"}
-            metric={set.measure === "time" ? { kind: "time", seconds: Math.ceil(leftMs / 1000) } : { kind: "reps", amount: set.amount }}
-            side={set.side}
-            groupLine={set.groupLabel ? `${set.groupLabel} · Round ${set.round} of ${set.rounds}` : null}
-            pill={upNext()}
-            muted={muted}
-            onPause={pause}
-            onOverview={openOverview}
-            onMute={toggleMute}
-            onTutorialSettings={openTutorialSheet}
-          />
-        </>
-      );
+      const name = exercise?.name ?? "Exercise";
+      const metric =
+        set.measure === "time"
+          ? ({ kind: "time", seconds: Math.ceil(leftMs / 1000) } as const)
+          : ({ kind: "reps", amount: set.amount } as const);
+      const groupLine = set.groupLabel ? `${set.groupLabel} · Round ${set.round} of ${set.rounds}` : null;
+      const pill = upNext();
+      if (theater) {
+        screen = (
+          <>
+            <Shade bottom={0} />
+            {bar}
+            {zones("Next set")}
+          </>
+        );
+        beside = (
+          <>
+            <TheaterSetInfo name={name} metric={metric} side={set.side} groupLine={groupLine} upNext={pill.text} />
+            <TheaterArrows onBack={back} onNext={next} nextLabel="Next set" />
+            <TheaterButtons buttons={sideButtons(true)} />
+          </>
+        );
+      } else {
+        screen = (
+          <>
+            <Shade bottom={set.groupLabel ? 380 : 350} />
+            {bar}
+            {zones("Next set")}
+            <SetScreen
+              name={name}
+              metric={metric}
+              side={set.side}
+              groupLine={groupLine}
+              pill={pill}
+              muted={muted}
+              onPause={pause}
+              onOverview={openOverview}
+              onMute={toggleMute}
+              onTutorialSettings={openTutorialSheet}
+            />
+          </>
+        );
+      }
     }
   } else if (state.phase === "complete") {
     blurred = true;
@@ -461,6 +550,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
           sets={setCount}
           onDone={leave}
           onRestart={() => act({ type: "restartWorkout" })}
+          theater={theater}
         />
       </>
     );
@@ -482,6 +572,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
         position={{ step: state.step, complete: false, warmup: warmedUp ? "done" : "skipped" }}
         onJump={(i) => act({ type: "jump", step: i })}
         onClose={() => act({ type: "sheet", sheet: null })}
+        variant={theater ? "side" : "bottom"}
       />
     ) : state.sheet === "tutorial" ? (
       <TutorialSheet
@@ -501,9 +592,16 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
         }}
         onWatch={() => act({ type: "watchTutorial" })}
         onClose={() => act({ type: "sheet", sheet: null })}
+        variant={theater ? "side" : "bottom"}
       />
     ) : state.sheet === "end" ? (
-      <EndSheet setsDone={setsDone} setsTotal={setCount} onEnd={leave} onKeepGoing={() => act({ type: "resume" })} />
+      <EndSheet
+        setsDone={setsDone}
+        setsTotal={setCount}
+        onEnd={leave}
+        onKeepGoing={() => act({ type: "resume" })}
+        variant={theater ? "dialog" : "bottom"}
+      />
     ) : null;
 
   return (
@@ -519,24 +617,26 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
         />
       )}
       {/* The stage. During the preview it's invisible but mounted, so the
-          first clips load while the member reads. */}
+          first clips load while the member reads. `--col` is the video
+          column's width: the whole screen on a phone, 9:16 of its height on
+          anything wider. */}
       <div
         aria-hidden={state.phase === "preview"}
-        className={`fixed inset-0 flex justify-center bg-[#08080F] text-white ${
+        className={`fixed inset-0 flex select-none justify-center bg-[#08080F] text-white ${
           state.phase === "preview" ? "pointer-events-none -z-10 opacity-0" : "z-50"
         }`}
+        style={{ "--col": "min(100vw, 100dvh * 9 / 16)" } as CSSProperties}
       >
-        <div
-          className="relative h-full w-full select-none overflow-hidden bg-[#14142B]"
-          style={{ maxWidth: "calc(100dvh * 9 / 16)" }}
-        >
+        <div className="relative h-full w-(--col) overflow-hidden bg-[#14142B]">
           <PoolVideos
             pool={pool}
             className={`transition-[filter,transform] duration-300 ${blurred ? "scale-[1.06] blur-[4px] saturate-[0.8]" : ""}`}
           />
           {screen}
-          {sheet}
+          {!theater && sheet}
         </div>
+        {theater && beside}
+        {theater && sheet}
       </div>
     </>
   );

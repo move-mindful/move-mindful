@@ -104,6 +104,18 @@ export const Exit = ({ size = 20 }: P) => (
   </Stroke>
 );
 
+/** The workout overview (desktop). */
+export const List = ({ size }: P) => (
+  <Stroke size={size} width={2.2}>
+    <path d="M9 6h11" />
+    <path d="M9 12h11" />
+    <path d="M9 18h11" />
+    <path d="M4.5 6h.01" />
+    <path d="M4.5 12h.01" />
+    <path d="M4.5 18h.01" />
+  </Stroke>
+);
+
 /** Supersets and circuits. */
 export const Loop = ({ size = 15 }: P) => (
   <Stroke size={size} width={2.4}>

@@ -2,7 +2,7 @@
 
 import type { WorkoutStep } from "@move-mindful/core";
 import type { PlayerWorkout } from "@/lib/workouts/player";
-import { Sheet, SheetClose } from "./player-screens";
+import { Sheet, SheetClose, type SheetVariant } from "./player-screens";
 import { WorkoutRows, type RowsPosition } from "./workout-rows";
 
 /**
@@ -18,6 +18,7 @@ export function OverviewSheet({
   position,
   onJump,
   onClose,
+  variant = "bottom",
 }: {
   workout: PlayerWorkout;
   steps: WorkoutStep[];
@@ -26,13 +27,15 @@ export function OverviewSheet({
   position: RowsPosition;
   onJump: (step: number) => void;
   onClose: () => void;
+  variant?: SheetVariant;
 }) {
+  const side = variant === "side";
   return (
-    <Sheet label="Workout overview" onClose={onClose}>
-      <div className="flex flex-col gap-3.5 px-5">
+    <Sheet label="Workout overview" onClose={onClose} variant={variant}>
+      <div className={`flex flex-col gap-3.5 ${side ? "px-7" : "px-5"}`}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1">
-            <h2 className="text-2xl font-semibold tracking-[-0.01em]">{workout.title}</h2>
+            <h2 className={`${side ? "text-[26px]" : "text-2xl"} font-semibold tracking-[-0.01em]`}>{workout.title}</h2>
             <div className="text-sm text-white/70">{subtitle}</div>
           </div>
           <SheetClose label="Close overview and resume" onClick={onClose} />
@@ -47,7 +50,7 @@ export function OverviewSheet({
           </div>
         </div>
       </div>
-      <div className="min-h-0 overflow-y-auto overscroll-contain px-3">
+      <div className={`min-h-0 overflow-y-auto overscroll-contain ${side ? "px-4" : "px-3"}`}>
         <WorkoutRows workout={workout} steps={steps} position={position} onJump={onJump} />
       </div>
     </Sheet>

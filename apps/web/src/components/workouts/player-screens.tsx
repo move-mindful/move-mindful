@@ -118,9 +118,15 @@ function ControlsRow({
   );
 }
 
-function Chip({ children }: { children: ReactNode }) {
+export function Chip({ children, large = false }: { children: ReactNode; large?: boolean }) {
   return (
-    <span className="flex h-[30px] items-center gap-1.5 rounded-full bg-white/[0.14] px-3 text-sm font-medium">{children}</span>
+    <span
+      className={`flex items-center gap-1.5 rounded-full font-medium ${
+        large ? "h-8 bg-white/[0.12] px-3.5 text-[15px]" : "h-[30px] bg-white/[0.14] px-3 text-sm"
+      }`}
+    >
+      {children}
+    </span>
   );
 }
 
@@ -321,41 +327,65 @@ export function TutorialScreen({
           )}
         </div>
       </div>
-      {once ? (
-        <button
-          type="button"
-          onClick={onBegin}
-          aria-label={`Skip tutorial. The exercise starts on its own in ${Math.ceil(once.secondsLeft)} seconds`}
-          className="relative flex h-[58px] items-center justify-center gap-2.5 overflow-hidden rounded-full border-[1.5px] border-white/55 bg-white/[0.08] text-[17px] font-semibold"
-        >
-          <span
-            className="absolute inset-y-0 left-0 bg-white/20"
-            style={{ width: `${Math.min(100, once.fraction * 100)}%`, transition: "width 250ms linear" }}
-          />
-          <span className="relative">Skip tutorial</span>
-          <span className="relative">
-            <ArrowRight />
-          </span>
-          <span className="absolute inset-y-0 right-[22px] flex items-center text-[15px] font-medium tabular-nums text-white/80">
-            {clock(Math.ceil(once.secondsLeft))}
-          </span>
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={onBegin}
-          className="flex h-[58px] items-center justify-center gap-2.5 rounded-full bg-white text-[17px] font-semibold text-[#14142B]"
-        >
-          Begin
-          <ArrowRight />
-        </button>
-      )}
+      <BeginButton once={once} onBegin={onBegin} />
       <ControlsRow pill={pill} muted={muted} onPause={onPause} onOverview={onOverview} onMute={onMute} />
     </div>
   );
 }
 
-// ── Rest ──────────────────────────────────────────────
+
+/**
+ * Starts the exercise from its tutorial: "Begin", or — for a tutorial playing
+ * once — "Skip tutorial", filling up as it plays with the time left before it
+ * starts on its own.
+ */
+export function BeginButton({
+  once,
+  onBegin,
+  className = "",
+}: {
+  once: { fraction: number; secondsLeft: number } | null;
+  onBegin: () => void;
+  className?: string;
+}) {
+  return once ? (
+    <button
+      type="button"
+      onClick={onBegin}
+      aria-label={`Skip tutorial. The exercise starts on its own in ${Math.ceil(once.secondsLeft)} seconds`}
+      className={`relative flex h-[58px] items-center justify-center gap-2.5 overflow-hidden rounded-full border-[1.5px] border-white/55 bg-white/[0.08] text-[17px] font-semibold ${className}`}
+    >
+      <span
+        className="absolute inset-y-0 left-0 bg-white/20"
+        style={{ width: `${Math.min(100, once.fraction * 100)}%`, transition: "width 250ms linear" }}
+      />
+      <span className="relative">Skip tutorial</span>
+      <span className="relative">
+        <ArrowRight />
+      </span>
+      <span className="absolute inset-y-0 right-[22px] flex items-center text-[15px] font-medium tabular-nums text-white/80">
+        {clock(Math.ceil(once.secondsLeft))}
+      </span>
+    </button>
+  ) : (
+    <button
+      type="button"
+      onClick={onBegin}
+      className={`flex h-[58px] items-center justify-center gap-2.5 rounded-full bg-white text-[17px] font-semibold text-[#14142B] ${className}`}
+    >
+      Begin
+      <ArrowRight />
+    </button>
+  );
+}
+
+// ── Rest, pause and the summary ───────────────────────
+// On desktop ("theater") these centre everything in the video column instead
+// of pinning the buttons to the bottom.
+
+const centered = "absolute inset-0 flex flex-col items-center justify-center gap-9 overflow-y-auto py-[60px]";
+const bottomGroup = (theater: boolean) =>
+  theater ? "flex w-[380px] max-w-[calc(100%-40px)] flex-col" : `flex flex-col px-5 ${bottomPad}`;
 
 const RING = 2 * Math.PI * 116;
 
@@ -367,6 +397,7 @@ export function RestScreen({
   next,
   onPause,
   onContinue,
+  theater = false,
 }: {
   /** A group's rest between rounds, rather than an ordinary rest. */
   round: boolean;
@@ -376,11 +407,14 @@ export function RestScreen({
   next: { label: string; name: string; detail: string; thumbnail: string | null } | null;
   onPause: () => void;
   onContinue: () => void;
+  theater?: boolean;
 }) {
   const shown = Math.ceil(secondsLeft);
   return (
-    <div className="pointer-events-none [&_button]:pointer-events-auto absolute inset-0 flex flex-col">
-      <div className="flex flex-1 flex-col items-center justify-center gap-[18px] pt-12">
+    <div
+      className={`pointer-events-none [&_button]:pointer-events-auto ${theater ? centered : "absolute inset-0 flex flex-col"}`}
+    >
+      <div className={`flex flex-col items-center gap-[18px] ${theater ? "" : "flex-1 justify-center pt-12"}`}>
         <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.16em] text-[#A99CFF]">
           {round && <Loop size={16} />}
           {round ? "Round rest" : "Rest"}
@@ -412,7 +446,7 @@ export function RestScreen({
         </div>
         {roundLine && <div className="text-base text-white/80">{roundLine}</div>}
       </div>
-      <div className={`relative flex flex-col gap-4 px-5 ${bottomPad}`}>
+      <div className={`relative gap-4 ${bottomGroup(theater)}`}>
         {next && (
           <div className="flex items-center gap-3.5 rounded-[18px] bg-white/[0.08] py-2.5 pl-2.5 pr-4">
             <span className="h-[72px] w-14 shrink-0 overflow-hidden rounded-xl bg-white/10">
@@ -453,6 +487,31 @@ export function RestScreen({
 
 // ── Warm-up ───────────────────────────────────────────
 
+/** The warm-up's own progress bar: a plain video bar, not the story segments. */
+export function WarmupProgress({ seconds, duration }: { seconds: number; duration: number }) {
+  return (
+    <TopBar>
+      <div
+        role="progressbar"
+        aria-label="Warm-up progress"
+        aria-valuemin={0}
+        aria-valuemax={Math.round(duration)}
+        aria-valuenow={Math.round(seconds)}
+        className="h-1 overflow-hidden rounded-sm bg-white/30"
+      >
+        <div
+          className="h-1 rounded-sm bg-white"
+          style={{ width: `${duration ? Math.min(100, (seconds / duration) * 100) : 0}%`, transition: "width 250ms linear" }}
+        />
+      </div>
+      <div className="flex justify-between text-[13px] font-medium tabular-nums text-white/80">
+        <span>{clock(seconds)}</span>
+        <span>{clock(Math.max(0, duration - seconds))} left</span>
+      </div>
+    </TopBar>
+  );
+}
+
 export function WarmupScreen({
   name,
   seconds,
@@ -472,25 +531,7 @@ export function WarmupScreen({
 }) {
   return (
     <>
-      <TopBar>
-        <div
-          role="progressbar"
-          aria-label="Warm-up progress"
-          aria-valuemin={0}
-          aria-valuemax={Math.round(duration)}
-          aria-valuenow={Math.round(seconds)}
-          className="h-1 overflow-hidden rounded-sm bg-white/30"
-        >
-          <div
-            className="h-1 rounded-sm bg-white"
-            style={{ width: `${duration ? Math.min(100, (seconds / duration) * 100) : 0}%`, transition: "width 250ms linear" }}
-          />
-        </div>
-        <div className="flex justify-between text-[13px] font-medium tabular-nums text-white/80">
-          <span>{clock(seconds)}</span>
-          <span>{clock(Math.max(0, duration - seconds))} left</span>
-        </div>
-      </TopBar>
+      <WarmupProgress seconds={seconds} duration={duration} />
       <div className={`absolute inset-x-0 bottom-0 flex flex-col gap-[18px] px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
         <div className="flex flex-col gap-2">
           <span className="flex h-[26px] items-center gap-1.5 self-start rounded-full bg-white/[0.16] pl-[9px] pr-[11px] text-xs font-bold uppercase tracking-[0.08em]">
@@ -529,6 +570,7 @@ export function PausedScreen({
   onWatchTutorial,
   onSkipWarmup,
   onEnd,
+  theater = false,
 }: {
   subtitle: string;
   stats: { elapsed: string; setsDone: string; left: string } | null;
@@ -538,12 +580,13 @@ export function PausedScreen({
   onWatchTutorial: (() => void) | null;
   onSkipWarmup: (() => void) | null;
   onEnd: () => void;
+  theater?: boolean;
 }) {
   const secondary =
     "flex h-[54px] shrink-0 items-center justify-center gap-2.5 rounded-full bg-white/[0.12] text-base font-semibold";
   return (
-    <div className="absolute inset-0 flex flex-col overflow-y-auto">
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 pb-6 pt-16">
+    <div className={theater ? centered : "absolute inset-0 flex flex-col overflow-y-auto"}>
+      <div className={`flex flex-col items-center gap-4 ${theater ? "" : "flex-1 justify-center pb-6 pt-16"}`}>
         <button
           type="button"
           aria-label="Resume workout"
@@ -558,7 +601,7 @@ export function PausedScreen({
           <div className="text-base text-white/75">{subtitle}</div>
         </div>
       </div>
-      <div className={`flex flex-col gap-3.5 px-5 ${bottomPad}`}>
+      <div className={`gap-3.5 ${bottomGroup(theater)}`}>
         {stats && (
           <div className="grid grid-cols-3 gap-2 rounded-[18px] bg-white/[0.08] px-2 py-3.5">
             <Stat value={stats.elapsed} label="Elapsed" />
@@ -621,6 +664,7 @@ export function CompleteScreen({
   sets,
   onDone,
   onRestart,
+  theater = false,
 }: {
   title: string;
   time: string;
@@ -628,10 +672,11 @@ export function CompleteScreen({
   sets: number;
   onDone: () => void;
   onRestart: () => void;
+  theater?: boolean;
 }) {
   return (
-    <div className={`absolute inset-0 flex flex-col gap-6 overflow-y-auto px-5 pt-[72px] ${bottomPad}`}>
-      <div className="flex flex-1 flex-col items-center justify-center gap-7">
+    <div className={theater ? centered : `absolute inset-0 flex flex-col gap-6 overflow-y-auto px-5 pt-[72px] ${bottomPad}`}>
+      <div className={`flex flex-col items-center gap-7 ${theater ? "w-[380px] max-w-[calc(100%-40px)]" : "flex-1 justify-center"}`}>
         <div className="flex size-[104px] items-center justify-center rounded-full bg-[#A99CFF] text-[#14142B] shadow-[0_0_0_12px_rgba(169,156,255,0.2)]">
           <Check size={48} width={2.6} />
         </div>
@@ -645,7 +690,7 @@ export function CompleteScreen({
           <Stat big value={String(sets)} label={sets === 1 ? "Set" : "Sets"} />
         </div>
       </div>
-      <div className="flex flex-col gap-3">
+      <div className={`flex flex-col gap-3 ${theater ? "w-[380px] max-w-[calc(100%-40px)]" : ""}`}>
         <button
           type="button"
           onClick={onDone}
@@ -669,28 +714,45 @@ export function CompleteScreen({
 
 // ── Sheets ────────────────────────────────────────────
 
-/** A bottom sheet over the paused stage. Tapping the dimmed area closes it. */
+export type SheetVariant = "bottom" | "side" | "dialog";
+
+/**
+ * A sheet over the stage: from the bottom on phones; on desktop a panel down
+ * the right side, or a dialog in the middle. Tapping the dimmed area closes it.
+ */
 export function Sheet({
   label,
   onClose,
   children,
   alert = false,
+  variant = "bottom",
 }: {
   label: string;
   onClose: () => void;
   children: ReactNode;
   alert?: boolean;
+  variant?: SheetVariant;
 }) {
+  const panel = {
+    bottom: `max-h-[88%] w-full rounded-t-[28px] bg-[#1A1A34] pt-2.5 ${bottomPad}`,
+    side: "h-full w-[440px] max-w-full bg-[#17172F] py-7 shadow-[-24px_0_60px_rgba(0,0,0,0.45)]",
+    dialog: "max-h-[90%] w-[420px] max-w-[calc(100%-32px)] rounded-[28px] bg-[#1A1A34] pb-6 pt-8 shadow-[0_30px_80px_rgba(0,0,0,0.5)]",
+  }[variant];
+  const place = { bottom: "flex-col justify-end", side: "justify-end", dialog: "items-center justify-center" }[variant];
   return (
-    <div className="absolute inset-0 z-20 flex flex-col justify-end">
-      <div className="absolute inset-0 bg-[#080814]/60" onClick={onClose} aria-hidden="true" />
+    <div className={`absolute inset-0 z-20 flex ${place}`}>
+      <div
+        className={`absolute inset-0 ${variant === "bottom" ? "bg-[#080814]/60" : "bg-[#06060E]/55"}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
       <section
         role={alert ? "alertdialog" : "dialog"}
         aria-modal="true"
         aria-label={label}
-        className={`relative flex max-h-[88%] flex-col gap-4 rounded-t-[28px] bg-[#1A1A34] pt-2.5 ${bottomPad}`}
+        className={`relative flex flex-col gap-4 ${panel}`}
       >
-        <div className="h-[5px] w-10 shrink-0 self-center rounded-full bg-white/[0.28]" />
+        {variant === "bottom" && <div className="h-[5px] w-10 shrink-0 self-center rounded-full bg-white/[0.28]" />}
         {children}
       </section>
     </div>
@@ -723,6 +785,7 @@ export function TutorialSheet({
   onMode,
   onWatch,
   onClose,
+  variant = "bottom",
 }: {
   mode: TutorialMode;
   /** The exercise whose tutorial can be watched now, if it has one. */
@@ -730,10 +793,11 @@ export function TutorialSheet({
   onMode: (mode: TutorialMode) => void;
   onWatch: () => void;
   onClose: () => void;
+  variant?: SheetVariant;
 }) {
   return (
-    <Sheet label="Tutorial settings" onClose={onClose}>
-      <div className="flex min-h-0 flex-col gap-[18px] overflow-y-auto overscroll-contain px-5">
+    <Sheet label="Tutorial settings" onClose={onClose} variant={variant}>
+      <div className={`flex min-h-0 flex-col gap-[18px] overflow-y-auto overscroll-contain ${variant === "side" ? "px-7" : "px-5"}`}>
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-[22px] font-semibold tracking-[-0.01em]">Tutorials</h2>
           <SheetClose label="Close tutorial settings" onClick={onClose} />
@@ -797,15 +861,17 @@ export function EndSheet({
   setsTotal,
   onEnd,
   onKeepGoing,
+  variant = "bottom",
 }: {
   setsDone: number;
   setsTotal: number;
   onEnd: () => void;
   onKeepGoing: () => void;
+  variant?: SheetVariant;
 }) {
   return (
-    <Sheet label="End workout?" onClose={onKeepGoing} alert>
-      <div className="flex flex-col gap-[22px] px-5">
+    <Sheet label="End workout?" onClose={onKeepGoing} alert variant={variant}>
+      <div className={`flex flex-col gap-[22px] ${variant === "dialog" ? "px-7" : "px-5"}`}>
         <div className="flex flex-col items-center gap-2 text-center">
           <h2 className="text-[26px] font-semibold tracking-[-0.01em]">End workout?</h2>
           <p className="max-w-[300px] text-base leading-[1.45] text-white/75">
