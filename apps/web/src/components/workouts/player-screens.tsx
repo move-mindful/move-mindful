@@ -967,6 +967,7 @@ export function Sheet({
   children,
   alert = false,
   variant = "bottom",
+  slideIn = true,
   pull,
 }: {
   label: string;
@@ -974,6 +975,11 @@ export function Sheet({
   children: ReactNode;
   alert?: boolean;
   variant?: SheetVariant;
+  /**
+   * Slide in when it opens. Off for the sheets a button opens (tutorial
+   * settings, End workout), which just appear; they still slide out.
+   */
+  slideIn?: boolean;
   /** Set when the sheet opens under the finger (the overview's pull-up). */
   pull?: SheetPull;
 }) {
@@ -1036,7 +1042,7 @@ export function Sheet({
       },
     });
     if (detach) return detach;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!slideIn || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     el.style.willChange = "transform";
     el.style.transform = OFFSTAGE[variant];
     if (variant === "dialog") el.style.opacity = "0";
@@ -1055,7 +1061,7 @@ export function Sheet({
       cancelAnimationFrame(first);
       cancelAnimationFrame(second);
     };
-  }, [variant, pull, dismiss]);
+  }, [variant, slideIn, pull, dismiss]);
 
 
   return (
@@ -1127,7 +1133,7 @@ export function TutorialSheet({
   variant?: SheetVariant;
 }) {
   return (
-    <Sheet label="Tutorial settings" onClose={onClose} variant={variant}>
+    <Sheet label="Tutorial settings" onClose={onClose} variant={variant} slideIn={false}>
       <div
         data-sheet-scroll
         className={`flex min-h-0 flex-col gap-[18px] overflow-y-auto overscroll-contain ${variant === "side" ? "px-7" : "px-5"}`}
@@ -1205,7 +1211,7 @@ export function EndSheet({
   variant?: SheetVariant;
 }) {
   return (
-    <Sheet label="End workout?" onClose={onCancel} alert variant={variant}>
+    <Sheet label="End workout?" onClose={onCancel} alert variant={variant} slideIn={false}>
       <div className={`flex flex-col gap-[22px] ${variant === "dialog" ? "px-7" : "px-5"}`}>
         <div className="flex flex-col items-center gap-2 text-center">
           <h2 className="text-[26px] font-semibold tracking-[-0.01em]">End workout?</h2>
