@@ -224,20 +224,26 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
     ? Math.max(0, Math.min(timer.leftMs, timer.since === null ? timer.leftMs : timer.leftMs - (now - timer.since)))
     : 0;
 
-  // How far the warm-up, or a tutorial playing once, has got.
-  const clipTimed =
-    state.phase === "warmup" || (state.phase === "workout" && state.stage === "tutorial" && state.tutorialPlay === "once");
-  const [clipTime, setClipTime] = useState({ take: -1, time: 0, duration: 0 });
+  // How far the warm-up or a tutorial has got. `cycle` counts a looping
+  // tutorial's trips round, so its progress can restart without sliding back.
+  const clipTimed = state.phase === "warmup" || (state.phase === "workout" && state.stage === "tutorial");
+  const [clipTime, setClipTime] = useState({ take: -1, time: 0, duration: 0, cycle: 0 });
   useEffect(() => {
     if (!clipTimed) return;
     const take = state.take;
     const id = window.setInterval(() => {
       const v = pool.current();
-      if (v) setClipTime({ take, time: v.currentTime, duration: Number.isFinite(v.duration) ? v.duration : 0 });
+      if (!v) return;
+      setClipTime((prev) => ({
+        take,
+        time: v.currentTime,
+        duration: Number.isFinite(v.duration) ? v.duration : 0,
+        cycle: prev.take !== take ? 0 : v.currentTime < prev.time ? prev.cycle + 1 : prev.cycle,
+      }));
     }, 250);
     return () => window.clearInterval(id);
   }, [clipTimed, state.take, pool]);
-  const clip = clipTime.take === state.take ? clipTime : { time: 0, duration: 0 };
+  const clip = clipTime.take === state.take ? clipTime : { time: 0, duration: 0, cycle: 0 };
 
   // ── While working out ───────────────────────────────
 
@@ -500,10 +506,14 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
       const name = exercise?.name ?? "Exercise";
       const chips = [set.rounds > 1 ? `${set.rounds} ${set.groupLabel ? "rounds" : "sets"} · ${amount}` : amount];
       const levels = exercise?.dumbbellLevels.length ? levelsLabel(exercise.dumbbellLevels) : null;
-      const once =
-        state.tutorialPlay === "once"
-          ? { fraction: duration ? clip.time / duration : 0, secondsLeft: Math.max(0, duration - clip.time) }
-          : null;
+      // Looping or playing once, the button fills as the tutorial plays and counts
+      // down what's left of it; a looping one just starts over.
+      const progress = {
+        fraction: duration ? clip.time / duration : 0,
+        secondsLeft: Math.max(0, duration - clip.time),
+        cycle: clip.cycle,
+        loops: state.tutorialPlay === "loop",
+      };
       if (theater) {
         screen = (
           <>
@@ -514,7 +524,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
         );
         beside = (
           <>
-            <TheaterTutorialInfo name={name} chips={chips} levels={levels} once={once} onBegin={next} />
+            <TheaterTutorialInfo name={name} chips={chips} levels={levels} progress={progress} onBegin={next} />
             <TheaterArrows onBack={back} onNext={next} nextLabel="Start the exercise" />
             <TheaterButtons buttons={sideButtons()} />
           </>
@@ -529,7 +539,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
               name={name}
               chips={chips}
               levels={levels}
-              once={once}
+              progress={progress}
               pill={{
                 label: "Workout",
                 text: `${exerciseCount} ${exerciseCount === 1 ? "exercise" : "exercises"} · ${minutes} min`,

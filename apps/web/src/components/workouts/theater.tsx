@@ -3,7 +3,7 @@
 import { useSyncExternalStore, type ReactNode } from "react";
 import { clock } from "@/lib/workouts/player";
 import { ArrowRight, ChevronLeft, ChevronRight, Dumbbell, Loop, Sun } from "./icons";
-import { BeginButton, Chip } from "./player-screens";
+import { BeginButton, Chip, type TutorialProgress } from "./player-screens";
 
 // The player's desktop ("theater") layout, from the desktop frames of the
 // player design canvas: the 9:16 video in the middle, what's on to its left,
@@ -131,13 +131,13 @@ export function TheaterTutorialInfo({
   name,
   chips,
   levels,
-  once,
+  progress,
   onBegin,
 }: {
   name: string;
   chips: string[];
   levels: string | null;
-  once: { fraction: number; secondsLeft: number } | null;
+  progress: TutorialProgress;
   onBegin: () => void;
 }) {
   return (
@@ -156,7 +156,7 @@ export function TheaterTutorialInfo({
           </Chip>
         )}
       </div>
-      <BeginButton once={once} onBegin={onBegin} className={`mt-2.5 ${once ? "w-[300px]" : "w-60"}`} />
+      <BeginButton progress={progress} onBegin={onBegin} className="mt-2.5 w-[300px]" />
     </Info>
   );
 }

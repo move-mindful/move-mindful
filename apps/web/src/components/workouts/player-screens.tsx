@@ -390,7 +390,7 @@ export function TutorialScreen({
   name,
   chips,
   levels,
-  once,
+  progress,
   pill,
   hidden,
   onBegin,
@@ -401,8 +401,8 @@ export function TutorialScreen({
   name: string;
   chips: string[];
   levels: string | null;
-  /** Playing once: how far through it is, and the seconds left before the exercise starts. */
-  once: { fraction: number; secondsLeft: number } | null;
+  /** How far through the tutorial is, and the seconds left of it. */
+  progress: TutorialProgress;
   pill: { label: string; text: string };
   /** Controls swiped away: just the sets and reps left over the video. */
   hidden: boolean;
@@ -429,7 +429,7 @@ export function TutorialScreen({
       </div>
       <Collapse open={!hidden}>
         <div className="mt-[18px] flex flex-col gap-[18px]">
-          <BeginButton once={once} onBegin={onBegin} />
+          <BeginButton progress={progress} onBegin={onBegin} />
           <ControlsRow pill={pill} onPause={onPause} onOverview={onOverview} onSettings={onSettings} />
         </div>
       </Collapse>
@@ -437,47 +437,52 @@ export function TutorialScreen({
   );
 }
 
+export interface TutorialProgress {
+  fraction: number;
+  secondsLeft: number;
+  /** Trips round a looping tutorial — the fill restarts (rather than sliding back) when it changes. */
+  cycle: number;
+  /** Loops until tapped, rather than starting the exercise at the end. */
+  loops: boolean;
+}
+
 /**
- * Starts the exercise from its tutorial: "Begin", or — for a tutorial playing
- * once — "Skip tutorial", filling up as it plays with the time left before it
- * starts on its own.
+ * Starts the exercise from its tutorial: "Skip tutorial", filling up as the
+ * tutorial plays with the time left of it on the right. A tutorial playing once
+ * starts the exercise when that runs out; a looping one starts over.
  */
 export function BeginButton({
-  once,
+  progress,
   onBegin,
   className = "",
 }: {
-  once: { fraction: number; secondsLeft: number } | null;
+  progress: TutorialProgress;
   onBegin: () => void;
   className?: string;
 }) {
-  return once ? (
+  return (
     <button
       type="button"
       onClick={onBegin}
-      aria-label={`Skip tutorial. The exercise starts on its own in ${Math.ceil(once.secondsLeft)} seconds`}
+      aria-label={
+        progress.loops
+          ? "Skip tutorial and start the exercise"
+          : `Skip tutorial. The exercise starts on its own in ${Math.ceil(progress.secondsLeft)} seconds`
+      }
       className={`relative flex h-[58px] items-center justify-center gap-2.5 overflow-hidden rounded-full border-[1.5px] border-white/55 bg-white/[0.08] text-[17px] font-semibold ${className}`}
     >
       <span
+        key={progress.cycle}
         className="absolute inset-y-0 left-0 bg-white/20"
-        style={{ width: `${Math.min(100, once.fraction * 100)}%`, transition: "width 250ms linear" }}
+        style={{ width: `${Math.min(100, progress.fraction * 100)}%`, transition: "width 250ms linear" }}
       />
       <span className="relative">Skip tutorial</span>
       <span className="relative">
         <ArrowRight />
       </span>
       <span className="absolute inset-y-0 right-[22px] flex items-center text-[15px] font-medium tabular-nums text-white/80">
-        {clock(Math.ceil(once.secondsLeft))}
+        {clock(Math.ceil(progress.secondsLeft))}
       </span>
-    </button>
-  ) : (
-    <button
-      type="button"
-      onClick={onBegin}
-      className={`flex h-[58px] items-center justify-center gap-2.5 rounded-full bg-white text-[17px] font-semibold text-[#14142B] ${className}`}
-    >
-      Begin
-      <ArrowRight />
     </button>
   );
 }
