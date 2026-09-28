@@ -4,7 +4,10 @@ import {
   aboutMinutes,
   estimateWorkout,
   groupLabels,
+  secondsLeft,
+  workoutSteps,
   type EstimateExercise,
+  type SetStep,
   type WorkoutBlock,
   type WorkoutMove,
 } from "./workouts.ts";
@@ -110,4 +113,71 @@ test("groups are labelled Superset/Circuit, numbered per type", () => {
   });
   const blocks: WorkoutBlock[] = [g(2), { kind: "rest", seconds: 30 }, g(3), g(2), g(4)];
   assert.deepEqual(groupLabels(blocks), ["Superset 1", null, "Circuit 1", "Superset 2", "Circuit 2"]);
+});
+
+test("steps: sets, sides and rests in play order", () => {
+  const blocks: WorkoutBlock[] = [
+    { kind: "exercise", move: move("row", "reps", 12), sets: 2, restBetweenSets: 30 },
+    { kind: "rest", seconds: 60 },
+    {
+      kind: "group",
+      rounds: 2,
+      restBetweenExercises: 10,
+      restBetweenRounds: 45,
+      moves: [move("hold", "time", 20), { ...move("squat", "time", 30), firstSide: "left" }],
+    },
+  ];
+  const steps = workoutSteps(blocks, exercises);
+  const shape = steps.map((s) =>
+    s.kind === "rest" ? `rest ${s.reason} ${s.seconds}` : `${s.exerciseId} r${s.round} ${s.side ?? "-"} #${s.setIndex}`,
+  );
+  assert.deepEqual(shape, [
+    "row r1 - #0",
+    "rest set 30",
+    "row r2 - #1",
+    "rest block 60",
+    "hold r1 - #2",
+    "rest exercise 10",
+    "squat r1 left #3",
+    "squat r1 right #3",
+    "rest round 45",
+    "hold r2 - #4",
+    "rest exercise 10",
+    "squat r2 left #5",
+    "squat r2 right #5",
+  ]);
+  // The tutorial goes before an exercise's first appearance only.
+  const firsts = steps.filter((s) => s.kind === "set" && s.firstOfExercise).map((s) => (s as SetStep).exerciseId);
+  assert.deepEqual(firsts, ["row", "hold", "squat"]);
+  assert.equal((steps[6] as SetStep).groupLabel, "Superset 1");
+});
+
+test("step lengths add up to the estimate", () => {
+  const blocks: WorkoutBlock[] = [
+    { kind: "exercise", move: move("squat", "reps", 8), sets: 3, restBetweenSets: 20 },
+    { kind: "rest", seconds: 60 },
+    {
+      kind: "group",
+      rounds: 3,
+      restBetweenExercises: 15,
+      restBetweenRounds: 45,
+      moves: [move("row", "reps", 12), move("squat", "time", 30), move("unpaced", "reps", 10)],
+    },
+  ];
+  const steps = workoutSteps(blocks, exercises);
+  assert.equal(secondsLeft(steps, 0), estimateWorkout(blocks, exercises).totalSeconds);
+  assert.equal(secondsLeft(steps, steps.length), 0);
+});
+
+test("steps drop rests at the edges and merge back-to-back rests", () => {
+  const blocks: WorkoutBlock[] = [
+    { kind: "rest", seconds: 30 },
+    { kind: "exercise", move: move("hold", "time", 20), sets: 1, restBetweenSets: 0 },
+    { kind: "rest", seconds: 30 },
+    { kind: "rest", seconds: 15 },
+    { kind: "exercise", move: move("hold", "time", 20), sets: 2, restBetweenSets: 0 },
+    { kind: "rest", seconds: 60 },
+  ];
+  const kinds = workoutSteps(blocks, exercises).map((s) => (s.kind === "rest" ? `rest ${s.seconds}` : "set"));
+  assert.deepEqual(kinds, ["set", "rest 45", "set", "set"]);
 });

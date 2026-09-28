@@ -167,3 +167,140 @@ export function groupLabels(blocks: WorkoutBlock[]): (string | null)[] {
     return "Superset or circuit";
   });
 }
+
+// ── Playing a workout ─────────────────────────────────
+
+/**
+ * One screen of the player: a set of an exercise (one side of it, for a sided
+ * exercise) or a rest. The player walks the list in order.
+ */
+export type WorkoutStep = SetStep | RestStep;
+
+export interface SetStep {
+  kind: "set";
+  /** Index of the block it belongs to. */
+  block: number;
+  exerciseId: string;
+  measure: Measure;
+  /** Reps or seconds, for this side. */
+  amount: number;
+  /** The side, for an exercise done on each side; null otherwise. */
+  side: Side | null;
+  /** Set number (single exercise) or round (group), from 1. */
+  round: number;
+  /** Sets (single exercise) or rounds (group). */
+  rounds: number;
+  /** Position in its group; 0 for a single exercise. */
+  move: number;
+  /** "Superset 1" / "Circuit 1"; null for a single exercise. */
+  groupLabel: string | null;
+  /**
+   * Which set of the workout this is, from 0. Both sides of a sided set share
+   * it: it's what the progress bar and "sets done" count.
+   */
+  setIndex: number;
+  /** 0 for the first (or only) side, 1 for the second. */
+  part: number;
+  parts: 1 | 2;
+  /** The exercise's first appearance in the workout — where its tutorial plays. */
+  firstOfExercise: boolean;
+  /** Estimated length, including getting into position or switching sides. */
+  seconds: number;
+}
+
+export interface RestStep {
+  kind: "rest";
+  block: number;
+  /**
+   * What it sits between: a single exercise's sets ("set"), a group's
+   * exercises ("exercise") or rounds ("round"), or a rest block ("block").
+   */
+  reason: "set" | "exercise" | "round" | "block";
+  seconds: number;
+}
+
+export function otherSide(side: Side): Side {
+  return side === "right" ? "left" : "right";
+}
+
+/**
+ * The workout as the player walks it. Each step's `seconds` follows the same
+ * rules as `estimateWorkout`, so they add up to its total — except that rests
+ * with nothing to rest before (at the very start or end) are dropped, and
+ * back-to-back rests merge into one.
+ */
+export function workoutSteps(
+  blocks: WorkoutBlock[],
+  exercises: Record<string, EstimateExercise>,
+  options: Partial<EstimateOptions> = {},
+): WorkoutStep[] {
+  const opts = { ...DEFAULT_ESTIMATE_OPTIONS, ...options };
+  const labels = groupLabels(blocks);
+  const seen = new Set<string>();
+  const out: WorkoutStep[] = [];
+  let setIndex = 0;
+
+  const rest = (block: number, reason: RestStep["reason"], seconds: number) => {
+    if (seconds <= 0 || out.length === 0) return;
+    const prev = out[out.length - 1];
+    if (prev.kind === "rest") prev.seconds += seconds;
+    else out.push({ kind: "rest", block, reason, seconds });
+  };
+
+  const set = (block: number, move: WorkoutMove, round: number, rounds: number, index: number) => {
+    const exercise = exercises[move.exerciseId];
+    const sides: Array<Side | null> = exercise?.sided ? [move.firstSide, otherSide(move.firstSide)] : [null];
+    const perSide =
+      move.measure === "time" ? move.amount : move.amount * (exercise?.paceSeconds || opts.fallbackPaceSeconds);
+    sides.forEach((side, part) => {
+      out.push({
+        kind: "set",
+        block,
+        exerciseId: move.exerciseId,
+        measure: move.measure,
+        amount: move.amount,
+        side,
+        round,
+        rounds,
+        move: index,
+        groupLabel: labels[block],
+        setIndex,
+        part,
+        parts: sides.length as 1 | 2,
+        firstOfExercise: part === 0 && !seen.has(move.exerciseId),
+        seconds: perSide + (part === 0 ? opts.secondsPerSet : opts.secondsPerSideSwitch),
+      });
+    });
+    seen.add(move.exerciseId);
+    setIndex++;
+  };
+
+  blocks.forEach((b, i) => {
+    if (b.kind === "rest") {
+      rest(i, "block", b.seconds);
+    } else if (b.kind === "exercise") {
+      for (let s = 1; s <= b.sets; s++) {
+        if (s > 1) rest(i, "set", b.restBetweenSets);
+        set(i, b.move, s, b.sets, 0);
+      }
+    } else if (b.moves.length > 0) {
+      for (let r = 1; r <= b.rounds; r++) {
+        if (r > 1) rest(i, "round", b.restBetweenRounds);
+        b.moves.forEach((m, k) => {
+          if (k > 0) rest(i, "exercise", b.restBetweenExercises);
+          set(i, m, r, b.rounds, k);
+        });
+      }
+    }
+  });
+
+  while (out.length && out[out.length - 1].kind === "rest") out.pop();
+  return out;
+}
+
+/** Estimated seconds left from step `index` (inclusive) to the end. */
+export function secondsLeft(steps: WorkoutStep[], index: number): number {
+  let total = 0;
+  for (let i = Math.max(0, index); i < steps.length; i++) total += steps[i].seconds;
+  return total;
+}
