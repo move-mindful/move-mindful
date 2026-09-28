@@ -37,7 +37,7 @@ import {
   createSheetPull,
   WarmupScreen,
 } from "./player-screens";
-import { List, Muted, Pause, Settings, Sound } from "./icons";
+import { List, Pause, Settings } from "./icons";
 import {
   TheaterArrows,
   TheaterButtons,
@@ -76,6 +76,26 @@ function storeMode(mode: TutorialMode) {
     window.localStorage.setItem(MODE_KEY, mode);
   } catch {
     // Private mode or storage blocked: the setting lasts for this workout only.
+  }
+}
+
+// Whether tutorials and the warm-up play with sound (Settings), kept on this
+// device like the tutorial setting. Exercise loops are always silent.
+const SOUND_KEY = "movemindful.sound";
+
+function storedSoundOn(): boolean {
+  try {
+    return window.localStorage.getItem(SOUND_KEY) !== "off";
+  } catch {
+    return true;
+  }
+}
+
+function storeSoundOn(on: boolean) {
+  try {
+    window.localStorage.setItem(SOUND_KEY, on ? "on" : "off");
+  } catch {
+    // Storage blocked: the setting lasts for this workout only.
   }
 }
 
@@ -176,7 +196,10 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
   // The overview and settings stop the clock, but the video keeps
   // playing behind them — a pause mid-slide made the sheet stutter.
   const playing =
-    running || (state.phase === "workout" && !state.paused && (state.sheet === "overview" || state.sheet === "settings"));
+    running ||
+    ((state.phase === "workout" || state.phase === "warmup") &&
+      !state.paused &&
+      (state.sheet === "overview" || state.sheet === "settings"));
   useEffect(() => {
     pool.sync(upcoming, shown, { playing, muted, take: state.take });
   }, [pool, upcoming, shown, playing, muted, state.take]);
@@ -273,6 +296,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
   function begin(withWarmup: boolean) {
     const warmup = withWarmup && !!workout.warmup;
     setWarmedUp(warmup);
+    setMuted(!storedSoundOn());
     // Inside the tap, so every clip may play with sound later (see video-pool.tsx).
     pool.unlock();
     act({ type: "begin", warmup, mode: storedMode() });
@@ -280,7 +304,10 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
 
   const leave = () => router.push(backHref);
   const pause = () => act({ type: "pause" });
-  const toggleMute = () => setMuted((m) => !m);
+  const setSound = (on: boolean) => {
+    storeSoundOn(on);
+    setMuted(!on);
+  };
   const openOverview = () => act({ type: "sheet", sheet: "overview" });
   const openSettings = () => act({ type: "sheet", sheet: "settings" });
 
@@ -330,12 +357,11 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
   let beside: ReactNode = null;
   let blurred = false;
 
-  const sideButtons = (withSettings: boolean): TheaterButton[] => [
-    ...(withSettings ? [{ label: "Settings", aria: "Settings", icon: <Settings />, onClick: openSettings }] : []),
+  const sideButtons = (): TheaterButton[] => [
+    { label: "Settings", aria: "Settings", icon: <Settings />, onClick: openSettings },
     ...(state.phase === "workout"
       ? [{ label: "Workout", aria: "Open workout overview", icon: <List />, onClick: openOverview }]
       : []),
-    { label: "Sound", aria: muted ? "Turn sound on" : "Mute sound", icon: muted ? <Muted /> : <Sound />, onClick: toggleMute },
     { label: "Pause", aria: "Pause", icon: <Pause />, onClick: pause },
   ];
 
@@ -370,7 +396,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
       beside = (
         <>
           <TheaterWarmupInfo name={workout.warmup.name} onSkip={skip} />
-          <TheaterButtons buttons={sideButtons(false)} />
+          <TheaterButtons buttons={sideButtons()} />
         </>
       );
     } else {
@@ -381,10 +407,9 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
             name={workout.warmup.name}
             seconds={clip.time}
             duration={duration}
-            muted={muted}
             onPause={pause}
             onSkip={skip}
-            onMute={toggleMute}
+            onSettings={openSettings}
           />
         </>
       );
@@ -491,7 +516,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
           <>
             <TheaterTutorialInfo name={name} chips={chips} levels={levels} once={once} onBegin={next} />
             <TheaterArrows onBack={back} onNext={next} nextLabel="Start the exercise" />
-            <TheaterButtons buttons={sideButtons(true)} />
+            <TheaterButtons buttons={sideButtons()} />
           </>
         );
       } else {
@@ -509,12 +534,10 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
                 label: "Workout",
                 text: `${exerciseCount} ${exerciseCount === 1 ? "exercise" : "exercises"} · ${minutes} min`,
               }}
-              muted={muted}
               hidden={chromeHidden}
               onBegin={next}
               onPause={pause}
               onOverview={openOverview}
-              onMute={toggleMute}
               onSettings={openSettings}
             />
           </>
@@ -540,7 +563,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
           <>
             <TheaterSetInfo name={name} metric={metric} side={set.side} groupLine={groupLine} upNext={pill.text} />
             <TheaterArrows onBack={back} onNext={next} nextLabel="Next set" />
-            <TheaterButtons buttons={sideButtons(true)} />
+            <TheaterButtons buttons={sideButtons()} />
           </>
         );
       } else {
@@ -555,11 +578,9 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
               side={set.side}
               groupLine={groupLine}
               pill={pill}
-              muted={muted}
               hidden={chromeHidden}
               onPause={pause}
               onOverview={openOverview}
-              onMute={toggleMute}
               onSettings={openSettings}
             />
           </>
@@ -610,20 +631,12 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
     state.sheet === "settings" ? (
       <SettingsSheet
         mode={state.mode}
-        watch={
-          targetExercise?.tutorial
-            ? {
-                name: targetExercise.name,
-                duration: targetExercise.tutorial.durationSeconds,
-                thumbnail: targetExercise.thumbnail,
-              }
-            : null
-        }
+        soundOn={!muted}
         onMode={(mode) => {
           storeMode(mode);
           act({ type: "mode", mode });
         }}
-        onWatch={() => act({ type: "watchTutorial" })}
+        onSound={setSound}
         onClose={() => act({ type: "sheet", sheet: null })}
         variant={theater ? "side" : "bottom"}
       />

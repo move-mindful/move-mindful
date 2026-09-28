@@ -55,21 +55,6 @@ export const Play = ({ size = 40 }: P) => (
   </svg>
 );
 
-export const Sound = ({ size }: P) => (
-  <Stroke size={size}>
-    <path d="M11 4.7 6.3 8.5H3.5a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h2.8l4.7 3.8a.6.6 0 0 0 1-.5V5.2a.6.6 0 0 0-1-.5z" />
-    <path d="M15.5 8.5a5 5 0 0 1 0 7" />
-    <path d="M18.5 5.5a9 9 0 0 1 0 13" />
-  </Stroke>
-);
-export const Muted = ({ size }: P) => (
-  <Stroke size={size}>
-    <path d="M11 4.7 6.3 8.5H3.5a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h2.8l4.7 3.8a.6.6 0 0 0 1-.5V5.2a.6.6 0 0 0-1-.5z" />
-    <path d="m22 9-6 6" />
-    <path d="m16 9 6 6" />
-  </Stroke>
-);
-
 /** The player's settings (a gear): tutorials, for now. */
 export const Settings = ({ size }: P) => (
   <Stroke size={size}>

@@ -21,12 +21,10 @@ import {
   Dumbbell,
   Exit,
   Loop,
-  Muted,
   Pause,
   Play,
   RestartSet,
   RestartWorkout,
-  Sound,
   Sun,
   Settings,
   WatchTutorial,
@@ -84,27 +82,25 @@ function RoundButton({ label, onClick, children }: { label: string; onClick: () 
   );
 }
 
-export function MuteButton({ muted, onToggle }: { muted: boolean; onToggle: () => void }) {
+function SettingsButton({ onClick }: { onClick: () => void }) {
   return (
-    <RoundButton label={muted ? "Turn sound on" : "Mute sound"} onClick={onToggle}>
-      {muted ? <Muted /> : <Sound />}
+    <RoundButton label="Settings" onClick={onClick}>
+      <Settings />
     </RoundButton>
   );
 }
 
-/** Pause · Up next (opens the overview) · sound. */
+/** Pause · Up next (opens the overview) · Settings. */
 function ControlsRow({
   pill,
-  muted,
   onPause,
   onOverview,
-  onMute,
+  onSettings,
 }: {
   pill: { label: string; text: string };
-  muted: boolean;
   onPause: () => void;
   onOverview: () => void;
-  onMute: () => void;
+  onSettings: () => void;
 }) {
   return (
     <div className="flex items-center justify-between gap-3">
@@ -123,7 +119,7 @@ function ControlsRow({
           <span className="truncate text-[15px] font-medium">{pill.text}</span>
         </span>
       </button>
-      <MuteButton muted={muted} onToggle={onMute} />
+      <SettingsButton onClick={onSettings} />
     </div>
   );
 }
@@ -335,11 +331,9 @@ export function SetScreen({
   side,
   groupLine,
   pill,
-  muted,
   hidden,
   onPause,
   onOverview,
-  onMute,
   onSettings,
 }: {
   name: string;
@@ -349,13 +343,11 @@ export function SetScreen({
   /** "Superset 1 · Round 2 of 3" inside a group. */
   groupLine: string | null;
   pill: { label: string; text: string };
-  muted: boolean;
   /** Controls swiped away: just the reps (or time) left over the video. */
   hidden: boolean;
   onPause: () => void;
   onOverview: () => void;
-  onMute: () => void;
-  onSettings: (() => void) | null;
+  onSettings: () => void;
 }) {
   return (
     <div className={`absolute inset-x-0 bottom-0 flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
@@ -385,16 +377,9 @@ export function SetScreen({
         )}
       </div>
       <Collapse open={!hidden}>
-        <div className="mt-0.5 flex items-center justify-between gap-3">
-          <h1 className="min-w-0 text-xl font-semibold leading-tight">{name}</h1>
-          {onSettings && (
-            <RoundButton label="Settings" onClick={onSettings}>
-              <Settings />
-            </RoundButton>
-          )}
-        </div>
+        <h1 className="mt-1 text-xl font-semibold leading-tight">{name}</h1>
         <div className="mt-[18px]">
-          <ControlsRow pill={pill} muted={muted} onPause={onPause} onOverview={onOverview} onMute={onMute} />
+          <ControlsRow pill={pill} onPause={onPause} onOverview={onOverview} onSettings={onSettings} />
         </div>
       </Collapse>
     </div>
@@ -407,12 +392,10 @@ export function TutorialScreen({
   levels,
   once,
   pill,
-  muted,
   hidden,
   onBegin,
   onPause,
   onOverview,
-  onMute,
   onSettings,
 }: {
   name: string;
@@ -421,24 +404,17 @@ export function TutorialScreen({
   /** Playing once: how far through it is, and the seconds left before the exercise starts. */
   once: { fraction: number; secondsLeft: number } | null;
   pill: { label: string; text: string };
-  muted: boolean;
   /** Controls swiped away: just the sets and reps left over the video. */
   hidden: boolean;
   onBegin: () => void;
   onPause: () => void;
   onOverview: () => void;
-  onMute: () => void;
   onSettings: () => void;
 }) {
   return (
     <div className={`absolute inset-x-0 bottom-0 flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
       <Collapse open={!hidden}>
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h1 className="min-w-0 text-[30px] font-semibold leading-[1.1] tracking-[-0.01em]">{name}</h1>
-          <RoundButton label="Settings" onClick={onSettings}>
-            <Settings />
-          </RoundButton>
-        </div>
+        <h1 className="mb-3 text-[30px] font-semibold leading-[1.1] tracking-[-0.01em]">{name}</h1>
       </Collapse>
       <div className="flex flex-wrap gap-2">
         {chips.map((c) => (
@@ -454,7 +430,7 @@ export function TutorialScreen({
       <Collapse open={!hidden}>
         <div className="mt-[18px] flex flex-col gap-[18px]">
           <BeginButton once={once} onBegin={onBegin} />
-          <ControlsRow pill={pill} muted={muted} onPause={onPause} onOverview={onOverview} onMute={onMute} />
+          <ControlsRow pill={pill} onPause={onPause} onOverview={onOverview} onSettings={onSettings} />
         </div>
       </Collapse>
     </div>
@@ -645,18 +621,16 @@ export function WarmupScreen({
   name,
   seconds,
   duration,
-  muted,
   onPause,
   onSkip,
-  onMute,
+  onSettings,
 }: {
   name: string;
   seconds: number;
   duration: number;
-  muted: boolean;
   onPause: () => void;
   onSkip: () => void;
-  onMute: () => void;
+  onSettings: () => void;
 }) {
   return (
     <>
@@ -681,7 +655,7 @@ export function WarmupScreen({
             Skip warm-up
             <ArrowRight size={18} />
           </button>
-          <MuteButton muted={muted} onToggle={onMute} />
+          <SettingsButton onClick={onSettings} />
         </div>
       </div>
     </>
@@ -1151,6 +1125,26 @@ export function Drawer({
   );
 }
 
+/** An on/off switch in the style of the phone's own settings. */
+function Switch({ on, onChange, label }: { on: boolean; onChange: (on: boolean) => void; label: string }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      onClick={() => onChange(!on)}
+      className={`relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200 ${on ? "bg-[#A99CFF]" : "bg-white/20"}`}
+    >
+      <span
+        className={`absolute left-0.5 top-0.5 size-[27px] rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.3)] transition-transform duration-200 ${
+          on ? "translate-x-5" : ""
+        }`}
+      />
+    </button>
+  );
+}
+
 /** A button that closes the sheet it's in, sliding it away. */
 function DismissButton({ className, children, ...rest }: ComponentProps<"button">) {
   const dismiss = useContext(SheetDismiss);
@@ -1181,17 +1175,16 @@ const MODES: Array<{ id: TutorialMode; title: string; desc: string }> = [
 
 export function SettingsSheet({
   mode,
-  watch,
+  soundOn,
   onMode,
-  onWatch,
+  onSound,
   onClose,
   variant = "bottom",
 }: {
   mode: TutorialMode;
-  /** The exercise whose tutorial can be watched now, if it has one. */
-  watch: { name: string; duration: number | null; thumbnail: string | null } | null;
+  soundOn: boolean;
   onMode: (mode: TutorialMode) => void;
-  onWatch: () => void;
+  onSound: (on: boolean) => void;
   onClose: () => void;
   variant?: SheetVariant;
 }) {
@@ -1205,33 +1198,22 @@ export function SettingsSheet({
           <h2 className="text-[22px] font-semibold tracking-[-0.01em]">Settings</h2>
           <SheetClose label="Close settings" />
         </div>
+        <section aria-labelledby="settings-sound" className="flex flex-col gap-3">
+          <h3 id="settings-sound" className="text-base font-semibold">
+            Sound
+          </h3>
+          <div className="flex items-center justify-between gap-4 rounded-2xl border-[1.5px] border-white/[0.12] bg-white/[0.04] px-4 py-3.5">
+            <span className="flex min-w-0 flex-col gap-[3px]">
+              <span className="text-[17px] font-semibold">Instructor audio</span>
+              <span className="text-sm leading-snug text-white/75">Tutorials and the warm-up. Exercise clips are silent.</span>
+            </span>
+            <Switch on={soundOn} onChange={onSound} label="Instructor audio" />
+          </div>
+        </section>
         <section aria-labelledby="settings-tutorials" className="flex flex-col gap-3">
           <h3 id="settings-tutorials" className="text-base font-semibold">
             Tutorials
           </h3>
-          {watch && (
-            <button
-              type="button"
-              onClick={onWatch}
-              className="flex items-center gap-3.5 rounded-[18px] bg-white/[0.07] py-2.5 pl-2.5 pr-3.5 text-left"
-            >
-              <span className="h-[72px] w-[54px] shrink-0 overflow-hidden rounded-xl bg-white/10">
-                {watch.thumbnail && (
-                  // eslint-disable-next-line @next/next/no-img-element -- a tiny Mux still; nothing to optimize
-                  <img src={watch.thumbnail} alt="" className="size-full object-cover" />
-                )}
-              </span>
-              <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
-                <span className="text-[17px] font-semibold">Watch the {watch.name.toLowerCase()} tutorial</span>
-                <span className="text-sm text-white/70">
-                  {watch.duration ? `${clock(watch.duration)} · ` : ""}with audio
-                </span>
-              </span>
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#A99CFF] text-[#14142B]">
-                <Play size={18} />
-              </span>
-            </button>
-          )}
           <fieldset className="flex min-w-0 flex-col gap-2.5">
             <legend className="mb-2.5 text-xs font-semibold uppercase tracking-[0.1em] text-white/70">
               Before each new exercise
