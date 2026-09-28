@@ -50,6 +50,10 @@ export function WorkoutRows({
   };
   const stepOf = (block: number, round: number, move: number) =>
     steps.findIndex((s) => s.kind === "set" && s.block === block && s.round === round && s.move === move && s.part === 0);
+  // Rests with nothing to rest before (at the very start or end) don't play,
+  // so they aren't listed either — see workoutSteps.
+  const firstWork = workout.blocks.findIndex((b) => b.kind !== "rest");
+  const lastWork = workout.blocks.findLastIndex((b) => b.kind !== "rest");
   const partStatus = (index: number): Status =>
     position?.complete || (cur !== null && index < cur) ? "done" : index === cur ? "now" : "todo";
 
@@ -83,6 +87,7 @@ export function WorkoutRows({
 
       {workout.blocks.map((b, i) => {
         if (b.kind === "rest") {
+          if (i < firstWork || i > lastWork) return null;
           return (
             <div key={i} role="listitem" className="flex items-center gap-2 px-3.5 text-[13px] text-white/60">
               <Timer />

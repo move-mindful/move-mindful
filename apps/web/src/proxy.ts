@@ -31,6 +31,9 @@ const isPublicRoute = createRouteMatcher([
   // so the advertised address can change without touching the product. Public
   // for the same reason the sales pages below are.
   "/class1",
+  // A public sample of the workout player (see app/(player)/demo1/page.tsx).
+  // Workouts themselves stay behind the /workouts section lock.
+  "/demo1",
   // Product sales pages — the URLs you advertise, so they must load signed out.
   // Only the landing page is public: the page renders its own locked state and
   // never emits playback ids to an unentitled viewer. The /<product>/<video>
