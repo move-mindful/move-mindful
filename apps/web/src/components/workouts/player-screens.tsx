@@ -116,42 +116,54 @@ export function LoadingSpinner({ show }: { show: boolean }) {
 }
 
 /**
- * One line of text that, if it doesn't fit, slides along to show the rest —
- * pausing at each end, then back — at a steady reading speed. Text that fits
- * stays put. Reduced motion: it stays put and clips (see .marquee in
- * globals.css).
+ * One line of text that, if it doesn't fit, scrolls round like a ticker: it
+ * rests at the start, then slides left with a second copy following a gap
+ * behind, which lands exactly where the first began — so each loop restarts
+ * seamlessly. About 30px a second. Text that fits stays put. Reduced motion: it
+ * stays put and clips (see .marquee in globals.css).
  */
+const MARQUEE_GAP = 48;
+
 export function Marquee({ children }: { children: ReactNode }) {
   const outer = useRef<HTMLSpanElement>(null);
-  const inner = useRef<HTMLSpanElement>(null);
-  const [overflow, setOverflow] = useState(0);
+  const first = useRef<HTMLSpanElement>(null);
+  // The text's width when it's wider than the line, else 0.
+  const [width, setWidth] = useState(0);
 
   useEffect(() => {
     const o = outer.current;
-    const i = inner.current;
-    if (!o || !i) return;
-    const measure = () => setOverflow(Math.max(0, Math.ceil(i.scrollWidth - o.clientWidth)));
+    const f = first.current;
+    if (!o || !f) return;
+    const measure = () => {
+      const w = Math.ceil(f.getBoundingClientRect().width);
+      setWidth(w > o.clientWidth + 1 ? w : 0);
+    };
     const observer = new ResizeObserver(measure);
     observer.observe(o);
-    observer.observe(i);
+    observer.observe(f);
     return () => observer.disconnect();
   }, []);
 
-  // About 30px a second each way, plus the pauses at either end (the keyframes
-  // give each pause a fifth of the cycle).
-  const seconds = overflow ? Math.max(5, (overflow / 30) * 2 / 0.5) : 0;
+  // One loop: the rest (15% of it), then the slide of text + gap.
+  const distance = width + MARQUEE_GAP;
+  const seconds = width ? distance / 30 / 0.85 : 0;
   return (
     <span ref={outer} className="block overflow-hidden whitespace-nowrap">
       <span
-        ref={inner}
-        className={`inline-block ${overflow ? "marquee" : ""}`}
+        className={`inline-block ${width ? "marquee" : ""}`}
         style={
-          overflow
-            ? ({ "--marquee-shift": `-${overflow}px`, animationDuration: `${seconds}s` } as CSSProperties)
-            : undefined
+          width ? ({ "--marquee-shift": `-${distance}px`, animationDuration: `${seconds}s` } as CSSProperties) : undefined
         }
       >
-        {children}
+        {/* inline-block, so the ResizeObserver sees it (it ignores inline boxes). */}
+        <span ref={first} className="inline-block">
+          {children}
+        </span>
+        {width > 0 && (
+          <span aria-hidden="true" className="inline-block" style={{ paddingLeft: MARQUEE_GAP }}>
+            {children}
+          </span>
+        )}
       </span>
     </span>
   );

@@ -34,26 +34,22 @@ html:has([data-dark-page]) body {
   background: #14142b;
 }
 
-/* An exercise name too long for its line slides along to show the rest, then
-   back (Marquee in components/workouts/player-screens.tsx sets the distance and
-   duration). */
+/* An exercise name too long for its line scrolls round like a ticker: a rest,
+   then a slide of one copy's width (plus the gap) to where the next copy
+   starts (Marquee in components/workouts/player-screens.tsx sets the distance
+   and duration). */
 @keyframes marquee {
   0%,
-  20% {
+  15% {
     transform: translateX(0);
   }
-  45%,
-  70% {
-    transform: translateX(var(--marquee-shift));
-  }
-  95%,
   100% {
-    transform: translateX(0);
+    transform: translateX(var(--marquee-shift));
   }
 }
 .marquee {
   animation-name: marquee;
-  animation-timing-function: ease-in-out;
+  animation-timing-function: linear;
   animation-iteration-count: infinite;
 }
 @media (prefers-reduced-motion: reduce) {
