@@ -1473,27 +1473,34 @@ export function SettingsSheet({
             <legend className="mb-2.5 text-xs font-semibold uppercase tracking-[0.1em] text-white/70">
               Before each new exercise
             </legend>
-            {MODES.map((m) => (
-              <label
-                key={m.id}
-                className={`flex cursor-pointer items-start gap-3.5 rounded-2xl border-[1.5px] px-4 py-3.5 ${
-                  mode === m.id ? "border-[#A99CFF]/85 bg-[#A99CFF]/[0.14]" : "border-white/[0.12] bg-white/[0.04]"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="tutorial-mode"
-                  value={m.id}
-                  checked={mode === m.id}
-                  onChange={() => onMode(m.id)}
-                  className="mt-px size-5 shrink-0 accent-[#A99CFF]"
-                />
-                <span className="flex min-w-0 flex-col gap-[3px]">
-                  <span className="text-[17px] font-semibold">{m.title}</span>
-                  <span className="text-sm leading-snug text-white/75">{m.desc}</span>
-                </span>
-              </label>
-            ))}
+            {MODES.map((m) => {
+              // Loop waits for a tap, which auto-advance is meant to avoid.
+              const blocked = m.id === "loop" && autoAdvance.on;
+              return (
+                <label
+                  key={m.id}
+                  className={`flex items-start gap-3.5 rounded-2xl border-[1.5px] px-4 py-3.5 ${
+                    blocked ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+                  } ${mode === m.id ? "border-[#A99CFF]/85 bg-[#A99CFF]/[0.14]" : "border-white/[0.12] bg-white/[0.04]"}`}
+                >
+                  <input
+                    type="radio"
+                    name="tutorial-mode"
+                    value={m.id}
+                    checked={mode === m.id}
+                    disabled={blocked}
+                    onChange={() => !blocked && onMode(m.id)}
+                    className="mt-px size-5 shrink-0 accent-[#A99CFF]"
+                  />
+                  <span className="flex min-w-0 flex-col gap-[3px]">
+                    <span className="text-[17px] font-semibold">{m.title}</span>
+                    <span className="text-sm leading-snug text-white/75">
+                      {blocked ? "Turn off Auto-advance to use Loop." : m.desc}
+                    </span>
+                  </span>
+                </label>
+              );
+            })}
           </fieldset>
         </section>
         {onGuide && (
