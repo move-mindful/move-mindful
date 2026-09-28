@@ -12,6 +12,16 @@ import type { WorkoutStep } from "./workouts";
 /** What plays before each new exercise: its tutorial on repeat, once through, or nothing. */
 export type TutorialMode = "loop" | "once" | "off";
 
+/**
+ * The tutorial mode that goes with auto-advance: a looping tutorial waits for
+ * a tap, so hands-free it plays once instead ("once" and "off" stay as they
+ * are). Applied wherever the two meet — on Begin, when either changes, and to
+ * saved settings as they load — so Loop and auto-advance are never on together.
+ */
+export function fitTutorialMode(mode: TutorialMode, autoAdvance: boolean): TutorialMode {
+  return autoAdvance && mode === "loop" ? "once" : mode;
+}
+
 export type PlayerPhase = "preview" | "warmup" | "workout" | "complete";
 
 /** What's open over the player. "guide" is the first-run gesture guide. */
@@ -191,7 +201,7 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
     case "begin": {
       const started = {
         ...s,
-        mode: a.mode,
+        mode: fitTutorialMode(a.mode, !!a.autoAdvance),
         activeMs: 0,
         activeSince: null,
         seen: [],
@@ -229,21 +239,30 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
     case "sheet":
       return { ...s, sheet: a.sheet };
     case "autoAdvance": {
-      const next = { ...s, autoAdvance: a.on };
+      const mode = fitTutorialMode(s.mode, a.on);
+      const next = {
+        ...s,
+        autoAdvance: a.on,
+        mode,
+        // A looping tutorial on screen plays out once instead.
+        tutorialPlay: s.stage === "tutorial" && mode !== "off" ? mode : s.tutorialPlay,
+      };
       // A rep set on screen picks it up (a fresh countdown) or drops it.
       if (s.phase === "workout" && step?.kind === "set" && s.stage === "exercise" && step.measure === "reps") {
         return { ...next, timer: timerFor(step, "exercise", a.on) };
       }
       return next;
     }
-    case "mode":
+    case "mode": {
       // A tutorial on screen switches to the new setting too ("off" leaves it
       // up until Begin).
+      const mode = fitTutorialMode(a.mode, s.autoAdvance);
       return {
         ...s,
-        mode: a.mode,
-        tutorialPlay: s.stage === "tutorial" && a.mode !== "off" ? a.mode : s.tutorialPlay,
+        mode,
+        tutorialPlay: s.stage === "tutorial" && mode !== "off" ? mode : s.tutorialPlay,
       };
+    }
     case "restartSet": {
       const i = setStepFor(ctx.steps, s.step);
       return s.phase === "workout" && i !== null ? enter(ctx, s, i, false) : s;

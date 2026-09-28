@@ -15,6 +15,7 @@ import {
   aboutMinutes,
   activeTime,
   estimateWorkout,
+  fitTutorialMode,
   initialPlayerState,
   isRunning,
   playerReducer,
@@ -717,11 +718,10 @@ export function WorkoutPlayer({
           on: state.autoAdvance,
           onChange: (on) => {
             // Hands-free: a looping tutorial would wait for a tap, so turning
-            // auto-advance on moves Loop to Play once (Off stays off).
-            const once = on && state.mode === "loop";
-            updatePrefs(once ? { autoAdvance: on, tutorialMode: "once" } : { autoAdvance: on });
+            // auto-advance on moves Loop to Play once (Off stays off). The
+            // reducer does the same to the player.
+            updatePrefs({ autoAdvance: on, tutorialMode: fitTutorialMode(state.mode, on) });
             act({ type: "autoAdvance", on });
-            if (once) act({ type: "mode", mode: "once" });
           },
         }}
         onGuide={theater ? null : () => act({ type: "sheet", sheet: "guide" })}

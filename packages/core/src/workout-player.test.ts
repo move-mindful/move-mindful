@@ -205,6 +205,30 @@ test("without auto-advance a rep set waits for a tap; turning it on starts the c
   assert.equal(s.timer, null);
 });
 
+test("auto-advance and Loop tutorials are never on together", () => {
+  // Begun with both (settings saved before the rule): tutorials play once.
+  let s = run([{ type: "begin", warmup: false, mode: "loop", autoAdvance: true, now: 0 }]);
+  assert.equal(s.mode, "once");
+  assert.equal(s.stage, "tutorial");
+  assert.equal(s.tutorialPlay, "once");
+  // Choosing Loop while it's on keeps Play once; Off is fine.
+  s = run([{ type: "mode", mode: "loop", now: 1 }], s);
+  assert.equal(s.mode, "once");
+  s = run([{ type: "mode", mode: "off", now: 2 }], s);
+  assert.equal(s.mode, "off");
+  // Turning it on over a looping tutorial lets that tutorial play out once.
+  s = run([{ type: "begin", warmup: false, mode: "loop", now: 0 }]);
+  assert.equal(s.tutorialPlay, "loop");
+  s = run([{ type: "autoAdvance", on: true, now: 1 }], s);
+  assert.equal(s.mode, "once");
+  assert.equal(s.tutorialPlay, "once");
+  s = run([{ type: "clipEnded", now: 40_000 }], s);
+  assert.equal(s.stage, "exercise");
+  // Turning it off leaves Play once as it is.
+  s = run([{ type: "autoAdvance", on: false, now: 41_000 }], s);
+  assert.equal(s.mode, "once");
+});
+
 test("watching a tutorial again follows the tutorial setting", () => {
   // Play once: it plays through, then it's back to the exercise.
   let s = run([

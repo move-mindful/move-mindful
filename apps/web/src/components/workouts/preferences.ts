@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
+import { fitTutorialMode } from "@move-mindful/core";
 import { savePlayerPreferences } from "@/app/actions/preferences";
 import { DEFAULT_PLAYER_PREFERENCES, type PlayerPreferences } from "@/lib/member/preferences";
 
@@ -106,7 +107,11 @@ export function usePlayerPreferences({
 }): [PlayerPreferences, (changes: Partial<PlayerPreferences>) => void] {
   const device = useSyncExternalStore(subscribe, deviceSnapshot, () => NOTHING);
   const [saved, setSaved] = useState<Partial<PlayerPreferences>>(account ?? {});
-  const prefs: PlayerPreferences = { ...DEFAULT_PLAYER_PREFERENCES, ...device, ...saved };
+  const merged: PlayerPreferences = { ...DEFAULT_PLAYER_PREFERENCES, ...device, ...saved };
+  // Loop with auto-advance (saved before they were kept apart, or the account's
+  // Loop meeting this device's auto-advance) reads as Play once, and the next
+  // save stores it that way.
+  const prefs = { ...merged, tutorialMode: fitTutorialMode(merged.tutorialMode, merged.autoAdvance) };
 
   function update(changes: Partial<PlayerPreferences>) {
     writeDevice(changes);
