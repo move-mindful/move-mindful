@@ -1,15 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { aboutMinutes, type WorkoutStep } from "@move-mindful/core";
-import {
-  clock,
-  equipmentPills,
-  levelLabel,
-  type PlayerWorkout,
-} from "@/lib/workouts/player";
+import { equipmentPills, levelLabel, type PlayerWorkout } from "@/lib/workouts/player";
 import { ArrowRight, ChevronLeft, EQUIPMENT_ICONS } from "./icons";
+import { Switch } from "./player-screens";
 import { WorkoutRows } from "./workout-rows";
 
 /**
@@ -43,8 +40,10 @@ export function WorkoutPreview({
     null;
   const canStart = steps.length > 0;
 
+  // Whether Begin starts with the warm-up (the switch beside it).
+  const [warmup, setWarmup] = useState(true);
   const begin = (
-    <BeginButtons workout={workout} canStart={canStart} onBegin={onBegin} />
+    <BeginRow workout={workout} canStart={canStart} warmup={warmup} onWarmup={setWarmup} onBegin={onBegin} />
   );
 
   return (
@@ -98,7 +97,7 @@ export function WorkoutPreview({
           </div>
           <section className="flex flex-col gap-2.5 theater:gap-3.5">
             <h2 className="text-[13px] font-bold uppercase tracking-[0.12em] text-white/65">The workout</h2>
-            <WorkoutRows workout={workout} steps={steps} position={null} />
+            <WorkoutRows workout={workout} steps={steps} position={null} warmupOff={!warmup} />
           </section>
         </div>
       </div>
@@ -188,43 +187,43 @@ function Stat({ value, label }: { value: string; label: string }) {
   );
 }
 
-/** "Begin with warm-up" and "Skip warm-up and start" — or just "Begin". Stacked on phones, side by side on desktop. */
-function BeginButtons({
+/**
+ * Begin workout, with a Warm-up switch beside it (on by default) when the
+ * workout has one. Side by side on phones and on desktop.
+ */
+function BeginRow({
   workout,
   canStart,
+  warmup,
+  onWarmup,
   onBegin,
 }: {
   workout: PlayerWorkout;
   canStart: boolean;
+  warmup: boolean;
+  onWarmup: (on: boolean) => void;
   onBegin: (withWarmup: boolean) => void;
 }) {
-  const primary =
-    "flex h-[58px] items-center justify-center gap-2.5 rounded-full bg-white text-[17px] font-semibold text-[#14142B] theater:pl-[30px] theater:pr-[26px]";
   if (!canStart) {
     return <p className="py-4 text-center text-white/70 theater:text-left">This workout doesn&rsquo;t have any exercises yet.</p>;
   }
   return (
-    <div className="flex flex-col gap-2.5 theater:flex-row theater:flex-wrap theater:gap-3">
-      {workout.warmup ? (
-        <>
-          <button type="button" onClick={() => onBegin(true)} className={primary}>
-            Begin with warm-up
-            <span className="font-medium tabular-nums text-[#5B5B72]">{clock(workout.warmup.clip.durationSeconds ?? 0)}</span>
-            <ArrowRight />
-          </button>
-          <button
-            type="button"
-            onClick={() => onBegin(false)}
-            className="h-[54px] rounded-full bg-white/[0.12] text-base font-semibold theater:h-[58px] theater:bg-white/[0.14] theater:px-[26px]"
-          >
-            Skip warm-up and start
-          </button>
-        </>
-      ) : (
-        <button type="button" onClick={() => onBegin(false)} className={primary}>
-          Begin
-          <ArrowRight />
-        </button>
+    <div className="flex items-center gap-4">
+      <button
+        type="button"
+        onClick={() => onBegin(!!workout.warmup && warmup)}
+        className="flex h-[58px] min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-white px-4 text-[17px] font-semibold text-[#14142B] theater:max-w-[320px]"
+      >
+        Begin workout
+        <ArrowRight />
+      </button>
+      {workout.warmup && (
+        <div className="flex shrink-0 items-center gap-2.5">
+          <span className="text-[15px] font-semibold" aria-hidden="true">
+            Warm-up
+          </span>
+          <Switch on={warmup} onChange={onWarmup} label="Warm-up" />
+        </div>
       )}
     </div>
   );

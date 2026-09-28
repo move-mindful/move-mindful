@@ -1131,7 +1131,7 @@ export function Drawer({
 }
 
 /** An on/off switch in the style of the phone's own settings. */
-function Switch({ on, onChange, label }: { on: boolean; onChange: (on: boolean) => void; label: string }) {
+export function Switch({ on, onChange, label }: { on: boolean; onChange: (on: boolean) => void; label: string }) {
   return (
     <button
       type="button"

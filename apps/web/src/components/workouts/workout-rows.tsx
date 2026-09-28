@@ -28,11 +28,14 @@ export function WorkoutRows({
   steps,
   position,
   onJump,
+  warmupOff = false,
 }: {
   workout: PlayerWorkout;
   steps: WorkoutStep[];
   position: RowsPosition | null;
   onJump?: (step: number) => void;
+  /** On the preview: the member has switched the warm-up off. */
+  warmupOff?: boolean;
 }) {
   const labels = groupLabels(workout.blocks);
   const cur = position && !position.complete ? position.step : null;
@@ -71,7 +74,11 @@ export function WorkoutRows({
               />
             </div>
           ) : (
-            <div className="flex items-center gap-3 rounded-[14px] border border-dashed border-white/[0.22] bg-white/5 px-3 py-2.5">
+            <div
+              className={`flex items-center gap-3 rounded-[14px] border border-dashed border-white/[0.22] bg-white/5 px-3 py-2.5 transition-opacity duration-200 ${
+                warmupOff ? "opacity-40" : ""
+              }`}
+            >
               <Circle status="todo" icon="sun" />
               <RowText
                 name="Warm-up"
