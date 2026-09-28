@@ -178,7 +178,9 @@ Built in vertical slices, so each step leaves something usable and real footage 
   - [ ] Upload the real exercises; confirm the 1080p MP4s look right on a phone
 - [ ] **3. Workouts** — workouts and their blocks (single exercise with sets / rest / superset or circuit with rounds), the builder, and the time estimate in `packages/core` with tests so every platform computes the same number
   - [x] Estimate + group labels in `packages/core/src/workouts.ts` (tests: `npm test -w @move-mindful/core`); schema `010_workouts.sql` (blocks table + atomic `save_workout_sequence`); `/admin/workouts` list and builder; "used in N workouts" and the delete guard in the exercise library
-  - [ ] Apply `010_workouts.sql` in Supabase
+  - [x] Apply `010_workouts.sql` in Supabase
+  - [x] Rest between sets on single exercises; uploaded workout cover image (`011_workout_set_rest_and_cover.sql`)
+  - [ ] Apply `011_workout_set_rest_and_cover.sql` in Supabase
   - [ ] Build a real workout once exercises are uploaded
 - [ ] **4. Member player (web)** — preview → warm-up → player (reps, timed, sided, groups, rests, tutorial modes) → pause → end → complete. Mobile layout first, then the desktop theater layout
 - [ ] **5. Progress** — save progress / resume with % complete, completed-workout history
@@ -187,7 +189,7 @@ Built in vertical slices, so each step leaves something usable and real footage 
 Key product rules from design review:
 - An exercise has a tutorial (with audio) and a looping clip; sided exercises have separate right and left loops. "Reps in clip" gives the pace used for time estimates (blank = timed only)
 - Dumbbells are levels, never pounds: an exercise lists every level that works ("Light / Medium"); a workout's equipment shows one pill per level
-- A workout is a list of blocks: a single exercise (sets), a rest, or a group (rounds, rest between exercises, rest between rounds; exercises in a group do one set each). Two exercises = "Superset N", three or more = "Circuit N"
+- A workout is a list of blocks: a single exercise (sets, with rest between sets), a rest, or a group (rounds, rest between exercises, rest between rounds; exercises in a group do one set each). Two exercises = "Superset N", three or more = "Circuit N"
 - The warm-up is optional for members and plays once, start to finish; listed workout times exclude it
 - Editing an exercise changes it in every workout that uses it; a replaced clip stays live until the new one finishes processing. Archiving hides an exercise from the library and builder search while existing workouts keep working; delete only when nothing uses it
 - Ending a workout early asks to save progress or discard it; saved progress shows "Resume · N% complete" on the workout preview

@@ -35,7 +35,9 @@ function cleanBlocks(blocks: WorkoutBlock[], info: Map<string, ExerciseInfo>): W
       out.push({ kind: "rest", seconds: int(b.seconds, 1, 3600, 60) });
     } else if (b?.kind === "exercise") {
       const move = cleanMove(b.move, info);
-      if (move) out.push({ kind: "exercise", move, sets: int(b.sets, 1, 20, 1) });
+      if (move) {
+        out.push({ kind: "exercise", move, sets: int(b.sets, 1, 20, 1), restBetweenSets: int(b.restBetweenSets, 0, 600, 0) });
+      }
     } else if (b?.kind === "group") {
       out.push({
         kind: "group",
@@ -128,8 +130,63 @@ export async function setWorkoutPublished(id: string, publish: boolean): Promise
 
 export async function deleteWorkout(id: string): Promise<{ error?: string }> {
   await requireAdmin();
-  const { error } = await createAdminClient().from("workouts").delete().eq("id", id);
+  const supabase = createAdminClient();
+  const { data: existing } = await supabase.from("workouts").select("cover_image_url").eq("id", id).maybeSingle();
+  const { error } = await supabase.from("workouts").delete().eq("id", id);
   if (error) return { error: error.message };
+  await removeCoverFile(supabase, existing?.cover_image_url ?? null);
   revalidateWorkouts();
   return {};
+}
+
+// ── Cover image ───────────────────────────────────────
+// Stored in the public `workout-covers` bucket (011_workout_set_rest_and_cover.sql),
+// resized in the browser before upload.
+
+const COVER_BUCKET = "workout-covers";
+
+async function removeCoverFile(supabase: ReturnType<typeof createAdminClient>, url: string | null) {
+  if (!url) return;
+  const marker = `/${COVER_BUCKET}/`;
+  const at = url.indexOf(marker);
+  if (at !== -1) await supabase.storage.from(COVER_BUCKET).remove([url.slice(at + marker.length)]);
+}
+
+/** Upload a new cover (form fields `workoutId`, `cover`), replacing any old one. */
+export async function setWorkoutCover(formData: FormData): Promise<{ url?: string; error?: string }> {
+  await requireAdmin();
+  const supabase = createAdminClient();
+  const id = String(formData.get("workoutId") ?? "");
+  const file = formData.get("cover") as File | null;
+  if (!id || !file || file.size === 0) return { error: "Choose an image." };
+  if (!file.type.startsWith("image/")) return { error: "That file isn't an image." };
+
+  const { data: existing } = await supabase.from("workouts").select("cover_image_url").eq("id", id).maybeSingle();
+  if (!existing) return { error: "Save the workout first." };
+
+  const ext = file.type === "image/webp" ? "webp" : (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const path = `${id}/${crypto.randomUUID()}.${ext || "jpg"}`;
+  const { error: uploadError } = await supabase.storage
+    .from(COVER_BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: false });
+  if (uploadError) return { error: `Upload failed: ${uploadError.message}` };
+
+  const url = supabase.storage.from(COVER_BUCKET).getPublicUrl(path).data.publicUrl;
+  const { error } = await supabase.from("workouts").update({ cover_image_url: url }).eq("id", id);
+  if (error) {
+    await supabase.storage.from(COVER_BUCKET).remove([path]);
+    return { error: error.message };
+  }
+  await removeCoverFile(supabase, existing.cover_image_url);
+  revalidateWorkouts(id);
+  return { url };
+}
+
+export async function removeWorkoutCover(id: string): Promise<void> {
+  await requireAdmin();
+  const supabase = createAdminClient();
+  const { data: existing } = await supabase.from("workouts").select("cover_image_url").eq("id", id).maybeSingle();
+  await supabase.from("workouts").update({ cover_image_url: null }).eq("id", id);
+  await removeCoverFile(supabase, existing?.cover_image_url ?? null);
+  revalidateWorkouts(id);
 }

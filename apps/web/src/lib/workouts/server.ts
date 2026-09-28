@@ -20,6 +20,7 @@ interface BlockRow {
   kind: "exercise" | "rest" | "group";
   exercise_id: string | null;
   sets: number | null;
+  rest_between_sets: number | null;
   measure: string | null;
   amount: number | null;
   first_side: string | null;
@@ -36,6 +37,7 @@ interface WorkoutRow {
   level: WorkoutLevel | null;
   instructor_id: string | null;
   warmup_exercise_id: string | null;
+  cover_image_url?: string | null;
   published_at: string | null;
   updated_at: string;
 }
@@ -105,7 +107,7 @@ function toBlocks(rows: BlockRow[]): WorkoutBlock[] {
           moves: rows.filter((c) => c.parent_id === r.id).sort(byPosition).map(toMove),
         };
       }
-      return { kind: "exercise", move: toMove(r), sets: r.sets ?? 1 };
+      return { kind: "exercise", move: toMove(r), sets: r.sets ?? 1, restBetweenSets: r.rest_between_sets ?? 0 };
     });
 }
 
@@ -117,6 +119,7 @@ function toWorkout(w: WorkoutRow, rows: BlockRow[]): AdminWorkout {
     level: w.level,
     instructorId: w.instructor_id,
     warmupExerciseId: w.warmup_exercise_id,
+    coverImageUrl: w.cover_image_url ?? null,
     publishedAt: w.published_at,
     blocks: toBlocks(rows),
   };
@@ -157,6 +160,7 @@ export async function getWorkouts(): Promise<WorkoutListRow[]> {
       exerciseCount: exerciseIds.size,
       totalSeconds: estimateWorkout(blocks, estimates).totalSeconds,
       hasWarmup: !!w.warmup_exercise_id,
+      coverImageUrl: w.cover_image_url ?? null,
     };
   });
 }

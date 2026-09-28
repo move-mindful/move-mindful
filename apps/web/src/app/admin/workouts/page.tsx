@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { aboutMinutes } from "@move-mindful/core";
 import { getWorkouts } from "@/lib/workouts/server";
@@ -36,6 +37,9 @@ export default async function WorkoutsPage() {
         <div className="mt-8 divide-y divide-zinc-200 rounded-xl border border-zinc-200">
           {workouts.map((w) => (
             <Link key={w.id} href={`/admin/workouts/${w.id}`} className="flex items-center gap-4 p-4 transition hover:bg-zinc-50">
+              <div className="relative h-14 w-11 shrink-0 overflow-hidden rounded bg-zinc-100">
+                {w.coverImageUrl && <Image src={w.coverImageUrl} alt="" fill unoptimized className="object-cover" />}
+              </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="truncate font-medium">{w.title}</span>

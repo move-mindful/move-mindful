@@ -40,6 +40,7 @@ export interface AdminWorkout {
   level: WorkoutLevel | null;
   instructorId: string | null;
   warmupExerciseId: string | null;
+  coverImageUrl: string | null;
   publishedAt: string | null;
   blocks: WorkoutBlock[];
 }
@@ -65,6 +66,7 @@ export interface WorkoutListRow {
   exerciseCount: number;
   totalSeconds: number;
   hasWarmup: boolean;
+  coverImageUrl: string | null;
 }
 
 /** Why a workout can't be published yet (empty when it can). */

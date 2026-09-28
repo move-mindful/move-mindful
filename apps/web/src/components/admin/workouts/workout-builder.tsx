@@ -13,7 +13,7 @@ import {
   type WorkoutBlock,
   type WorkoutMove,
 } from "@move-mindful/core";
-import { deleteWorkout, saveWorkout, setWorkoutPublished } from "@/app/actions/workouts";
+import { deleteWorkout, removeWorkoutCover, saveWorkout, setWorkoutCover, setWorkoutPublished } from "@/app/actions/workouts";
 import { equipmentLabel, formatDuration, levelsLabel } from "@/lib/exercises/shared";
 import {
   LEVELS,
@@ -25,12 +25,13 @@ import {
 import { ClipPreview } from "@/components/admin/exercises/clip-preview";
 import { Flag, Section } from "@/components/admin/exercises/ui";
 import { DurationInput, ExerciseSearch, Segmented, Stepper, Thumb } from "@/components/admin/workouts/fields";
+import { CoverField, resizeCover } from "@/components/admin/workouts/cover-field";
 
 // The builder keeps a stable key on every block and move so React can track
 // rows as they're reordered; keys are stripped before saving.
 type KMove = WorkoutMove & { key: string };
 type KBlock =
-  | { key: string; kind: "exercise"; move: KMove; sets: number }
+  | { key: string; kind: "exercise"; move: KMove; sets: number; restBetweenSets: number }
   | { key: string; kind: "rest"; seconds: number }
   | { key: string; kind: "group"; rounds: number; restBetweenExercises: number; restBetweenRounds: number; moves: KMove[] };
 
@@ -48,7 +49,7 @@ function withKeys(blocks: WorkoutBlock[]): KBlock[] {
 function stripKeys(blocks: KBlock[]): WorkoutBlock[] {
   const move = ({ exerciseId, measure, amount, firstSide }: KMove): WorkoutMove => ({ exerciseId, measure, amount, firstSide });
   return blocks.map((b): WorkoutBlock => {
-    if (b.kind === "exercise") return { kind: "exercise", move: move(b.move), sets: b.sets };
+    if (b.kind === "exercise") return { kind: "exercise", move: move(b.move), sets: b.sets, restBetweenSets: b.restBetweenSets };
     if (b.kind === "group") {
       return { kind: "group", rounds: b.rounds, restBetweenExercises: b.restBetweenExercises, restBetweenRounds: b.restBetweenRounds, moves: b.moves.map(move) };
     }
@@ -88,6 +89,8 @@ export function WorkoutBuilder({
   const [blocks, setBlocks] = useState<KBlock[]>(() => withKeys(workout?.blocks ?? []));
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [busy, setBusy] = useState<null | "save" | "publish">(null);
+  const [coverUrl, setCoverUrl] = useState<string | null>(workout?.coverImageUrl ?? null);
+  const [coverBusy, setCoverBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const byId = new Map(catalog.map((c) => [c.id, c]));
@@ -162,6 +165,36 @@ export function WorkoutBuilder({
     setBusy(null);
   }
 
+  // A new workout is saved first, so the cover has somewhere to go.
+  async function onCover(file: File) {
+    setCoverBusy(true);
+    const id = workout?.id ?? (await save());
+    if (!id) {
+      setCoverBusy(false);
+      return;
+    }
+    const fd = new FormData();
+    fd.set("workoutId", id);
+    try {
+      fd.set("cover", await resizeCover(file), "cover.webp");
+    } catch {
+      fd.set("cover", file, file.name); // couldn't resize — upload the original
+    }
+    const res = await setWorkoutCover(fd);
+    setCoverBusy(false);
+    if (res.error) setError(res.error);
+    else setCoverUrl(res.url ?? null);
+    if (!workout) router.replace(`/admin/workouts/${id}`);
+  }
+
+  async function onRemoveCover() {
+    if (!workout) return;
+    setCoverBusy(true);
+    await removeWorkoutCover(workout.id);
+    setCoverUrl(null);
+    setCoverBusy(false);
+  }
+
   async function onDelete() {
     if (!workout || !window.confirm(`Delete “${workout.title}”? This can’t be undone.`)) return;
     const res = await deleteWorkout(workout.id);
@@ -224,6 +257,7 @@ export function WorkoutBuilder({
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-6">
           <Section title="Details">
+            <CoverField url={coverUrl} busy={coverBusy} onPick={onCover} onRemove={onRemoveCover} />
             <label className="block space-y-1.5">
               <span className="text-sm font-medium text-zinc-600">Description</span>
               <textarea
@@ -323,7 +357,12 @@ export function WorkoutBuilder({
                         exercise={byId.get(b.move.exerciseId)}
                         onPreview={() => setPreviewId(b.move.exerciseId)}
                         onChange={(change) => updateMove(b.key, b.move.key, change)}
-                        sets={{ value: b.sets, onChange: (sets) => update(b.key, (x) => ({ ...x, sets }) as KBlock) }}
+                        sets={{
+                          value: b.sets,
+                          onChange: (sets) => update(b.key, (x) => ({ ...x, sets }) as KBlock),
+                          rest: b.restBetweenSets,
+                          onRest: (restBetweenSets) => update(b.key, (x) => ({ ...x, restBetweenSets }) as KBlock),
+                        }}
                       />
                     ) : (
                       <div className="space-y-2">
@@ -396,7 +435,9 @@ export function WorkoutBuilder({
                 <ExerciseSearch
                   catalog={catalog}
                   placeholder="Add an exercise — type to search"
-                  onPick={(e) => setBlocks((prev) => [...prev, { key: newKey(), kind: "exercise", move: newMove(e), sets: 1 }])}
+                  onPick={(e) =>
+                    setBlocks((prev) => [...prev, { key: newKey(), kind: "exercise", move: newMove(e), sets: 1, restBetweenSets: 30 }])
+                  }
                 />
               </div>
               <button
@@ -573,7 +614,7 @@ function MoveFields({
   exercise: CatalogExercise | undefined;
   onPreview: () => void;
   onChange: (change: Partial<KMove>) => void;
-  sets?: { value: number; onChange: (value: number) => void };
+  sets?: { value: number; onChange: (value: number) => void; rest: number; onRest: (seconds: number) => void };
 }) {
   const sided = !!exercise?.sided;
   return (
@@ -593,6 +634,12 @@ function MoveFields({
         <span className="flex items-center gap-1.5 text-xs text-zinc-500">
           Sets
           <Stepper label="Sets" value={sets.value} onChange={sets.onChange} />
+        </span>
+      )}
+      {sets && sets.value > 1 && (
+        <span className="flex items-center gap-1.5 text-xs text-zinc-500">
+          Rest between sets
+          <DurationInput label="Rest between sets" seconds={sets.rest} onChange={sets.onRest} className="w-14" />
         </span>
       )}
       <Segmented<Measure>
