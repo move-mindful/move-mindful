@@ -82,8 +82,10 @@ type WithoutNow<T> = T extends unknown ? Omit<T, "now"> : never;
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-function shownOf(clip: PlayerClip | null | undefined, loop: boolean): ShownClip | null {
-  return clip ? { url: clip.url, poster: clip.poster, loop } : null;
+// Only tutorials and the warm-up are heard: an exercise's loop always plays
+// muted, even if its file has sound.
+function shownOf(clip: PlayerClip | null | undefined, loop: boolean, silent = false): ShownClip | null {
+  return clip ? { url: clip.url, poster: clip.poster, loop, silent } : null;
 }
 
 export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; backHref: string }) {
@@ -136,11 +138,11 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
     if (st.kind === "rest" || state.phase === "complete") {
       const i = setStepFor(steps, state.step);
       const s = i !== null ? steps[i] : null;
-      return s?.kind === "set" ? shownOf(loopFor(workout.exercises[s.exerciseId], s.side), true) : null;
+      return s?.kind === "set" ? shownOf(loopFor(workout.exercises[s.exerciseId], s.side), true, true) : null;
     }
     const e = workout.exercises[st.exerciseId];
     if (state.stage === "tutorial" && e?.tutorial) return shownOf(e.tutorial, state.tutorialPlay === "loop");
-    return shownOf(loopFor(e, st.side), true);
+    return shownOf(loopFor(e, st.side), true, true);
   }, [state.phase, state.step, state.stage, state.tutorialPlay, steps, workout]);
 
   // What's on screen, then what comes after it — kept loaded in the pool.

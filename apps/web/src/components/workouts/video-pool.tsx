@@ -24,6 +24,8 @@ export const POOL_SIZE = 4;
 
 export interface ShownClip extends PoolClip {
   loop: boolean;
+  /** Always plays muted, whatever the sound setting: an exercise's loop. */
+  silent: boolean;
 }
 
 export interface VideoPool {
@@ -130,7 +132,7 @@ export function useVideoPool({
 
         el.style.opacity = "1";
         el.loop = clip.loop;
-        el.muted = muted;
+        el.muted = muted || clip.silent;
         if (restart && el.currentTime > 0) el.currentTime = 0;
         if (playing) play(el);
         else if (!el.paused) el.pause();
