@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { TabBar } from "@/components/tab-bar";
 import { UserMenu } from "@/components/user-menu";
 import { auth } from "@clerk/nextjs/server";
 import { MEMBER_HOME } from "@/lib/routes";
@@ -41,9 +42,10 @@ export default async function AppLayout({
               MoveMindful
             </Link>
             {/* Signed-out visitors are here for a sales page and have nowhere
-                to navigate to — /home needs an account. */}
+                to navigate to — /home needs an account. On phones these
+                links are the tab bar along the bottom instead. */}
             {signedIn && (
-              <div className="flex items-center gap-4 text-sm text-zinc-600">
+              <div className="hidden items-center gap-4 text-sm text-zinc-600 md:flex">
                 <Link
                   href={MEMBER_HOME}
                   className="transition hover:text-zinc-900"
@@ -54,7 +56,7 @@ export default async function AppLayout({
                     so members don't see them. Admins keep the links to preview
                     the sections — the pages themselves enforce this via
                     requireSectionUnlocked(). Drop the `admin &&` when
-                    releasing. */}
+                    releasing (and the same check in TabBar). */}
                 {admin && (
                   <>
                     <Link
@@ -93,8 +95,11 @@ export default async function AppLayout({
         </nav>
       </header>
       {/* flex column so a nested layout's full-height states (e.g. the
-          entitlement gate's spinner) can stretch to fill the viewport. */}
-      <main className="flex flex-1 flex-col">{children}</main>
+          entitlement gate's spinner) can stretch to fill the viewport. On
+          phones, room at the bottom so the tab bar never covers the end of a
+          page. */}
+      <main className={`flex flex-1 flex-col ${signedIn ? "pb-24 md:pb-0" : ""}`}>{children}</main>
+      {signedIn && <TabBar admin={admin} />}
     </div>
   );
 }
