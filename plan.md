@@ -174,9 +174,12 @@ Built in vertical slices, so each step leaves something usable and real footage 
 - [x] **1. Playback test** — `/admin/lab/playback`: loop seams and next-clip handoff (MP4 static rendition vs HLS), preloading, sound after an automatic advance, full screen — on iPhone Safari and desktop. Result (Sep 2026): looping, preloaded clip changes and sound after an advance all worked on iPhone and desktop. Decision: exercise clips play as **MP4 static renditions** in plain `<video>` elements (a pool: current + next two preloaded); the player still "unlocks" sound on the upcoming clips during the Begin tap as a cheap safeguard for iOS. The lab page and its two test clips go once the real player exists
 - [ ] **2. Exercises** — Supabase tables (exercises: kind exercise / warm-up, sided, timed-only, dumbbell levels, equipment, archived; exercise videos: tutorial / loop / right loop / left loop with reps-in-clip; exercise tags), then the admin upload, library and edit screens (reusing the existing Mux direct upload). Then upload the real exercise library through them
   - [x] Schema (`009_exercises.sql`) and `/admin/exercises` library, upload and edit screens — clips are Mux direct uploads with 1080p + 720p MP4 static renditions, status synced from Mux on page load
-  - [ ] Apply `009_exercises.sql` in Supabase
+  - [x] Apply `009_exercises.sql` in Supabase
   - [ ] Upload the real exercises; confirm the 1080p MP4s look right on a phone
 - [ ] **3. Workouts** — workouts and their blocks (single exercise with sets / rest / superset or circuit with rounds), the builder, and the time estimate in `packages/core` with tests so every platform computes the same number
+  - [x] Estimate + group labels in `packages/core/src/workouts.ts` (tests: `npm test -w @move-mindful/core`); schema `010_workouts.sql` (blocks table + atomic `save_workout_sequence`); `/admin/workouts` list and builder; "used in N workouts" and the delete guard in the exercise library
+  - [ ] Apply `010_workouts.sql` in Supabase
+  - [ ] Build a real workout once exercises are uploaded
 - [ ] **4. Member player (web)** — preview → warm-up → player (reps, timed, sided, groups, rests, tutorial modes) → pause → end → complete. Mobile layout first, then the desktop theater layout
 - [ ] **5. Progress** — save progress / resume with % complete, completed-workout history
 - [ ] **6. Access and placement** — which entitlement unlocks workouts (membership, a standalone product, or both — undecided) and where they appear on `/home`. The iOS app reuses the `packages/core` logic in Phase 5

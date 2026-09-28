@@ -264,6 +264,14 @@ export function ExerciseForm({ exercise, tags: initialTags }: { exercise: AdminE
       </div>
 
       {error && <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+      {exercise && exercise.usedIn > 0 && (
+        <p className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700">
+          <span className="font-semibold text-zinc-900">
+            Used in {exercise.usedIn} workout{exercise.usedIn === 1 ? "" : "s"}.
+          </span>{" "}
+          Changes apply to all of them when you save.
+        </p>
+      )}
       {exercise?.archivedAt && (
         <p className="mt-4 rounded-lg bg-zinc-100 px-4 py-3 text-sm text-zinc-700">
           Archived — hidden from the library and the builder search. Workouts that already use it keep working.
@@ -470,11 +478,16 @@ export function ExerciseForm({ exercise, tags: initialTags }: { exercise: AdminE
                 </>
               )}
               <div className="flex items-center justify-between gap-3 border-t border-zinc-100 pt-3">
-                <span className="text-xs text-zinc-500">Deletes it and its videos for good.</span>
+                <span className="text-xs text-zinc-500">
+                  {exercise.usedIn > 0
+                    ? `It’s in ${exercise.usedIn} workout${exercise.usedIn === 1 ? "" : "s"}, so it can’t be deleted. Remove it from them first.`
+                    : "Deletes it and its videos for good."}
+                </span>
                 <button
                   type="button"
                   onClick={remove}
-                  className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
+                  disabled={exercise.usedIn > 0}
+                  className="shrink-0 rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Delete
                 </button>

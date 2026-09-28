@@ -1,0 +1,135 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import type { Side, WorkoutBlock, WorkoutMove } from "@move-mindful/core";
+import { requireAdmin } from "@/lib/auth/admin";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getCatalog, getWorkout } from "@/lib/workouts/server";
+import { LEVELS, publishProblems, type WorkoutInput } from "@/lib/workouts/shared";
+
+type ExerciseInfo = { kind: string; timed_only: boolean };
+
+function int(value: unknown, min: number, max: number, fallback: number): number {
+  const n = Math.round(Number(value));
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+}
+
+// Everything the builder sends is re-checked here: known exercises only, sane
+// numbers, and a timed-only exercise can't be counted in reps.
+function cleanMove(m: WorkoutMove, info: Map<string, ExerciseInfo>): WorkoutMove | null {
+  const ex = info.get(m?.exerciseId);
+  if (!ex || ex.kind !== "exercise") return null;
+  const measure = ex.timed_only || m.measure === "time" ? "time" : "reps";
+  return {
+    exerciseId: m.exerciseId,
+    measure,
+    amount: measure === "time" ? int(m.amount, 1, 3600, 30) : int(m.amount, 1, 999, 10),
+    firstSide: (m.firstSide === "left" ? "left" : "right") as Side,
+  };
+}
+
+function cleanBlocks(blocks: WorkoutBlock[], info: Map<string, ExerciseInfo>): WorkoutBlock[] {
+  const out: WorkoutBlock[] = [];
+  for (const b of blocks ?? []) {
+    if (b?.kind === "rest") {
+      out.push({ kind: "rest", seconds: int(b.seconds, 1, 3600, 60) });
+    } else if (b?.kind === "exercise") {
+      const move = cleanMove(b.move, info);
+      if (move) out.push({ kind: "exercise", move, sets: int(b.sets, 1, 20, 1) });
+    } else if (b?.kind === "group") {
+      out.push({
+        kind: "group",
+        rounds: int(b.rounds, 1, 20, 3),
+        restBetweenExercises: int(b.restBetweenExercises, 0, 600, 0),
+        restBetweenRounds: int(b.restBetweenRounds, 0, 600, 0),
+        moves: (b.moves ?? []).map((m) => cleanMove(m, info)).filter((m): m is WorkoutMove => !!m),
+      });
+    }
+  }
+  return out;
+}
+
+function revalidateWorkouts(id?: string) {
+  revalidatePath("/admin/workouts");
+  revalidatePath("/admin/exercises");
+  if (id) revalidatePath(`/admin/workouts/${id}`);
+}
+
+/** Create or update a workout: its details plus the whole sequence, saved atomically. */
+export async function saveWorkout(input: WorkoutInput): Promise<{ id?: string; error?: string }> {
+  await requireAdmin();
+  const supabase = createAdminClient();
+
+  const title = (input.title ?? "").trim().slice(0, 120);
+  if (!title) return { error: "Give the workout a title." };
+
+  const ids = new Set<string>();
+  for (const b of input.blocks ?? []) {
+    if (b?.kind === "exercise") ids.add(b.move?.exerciseId);
+    if (b?.kind === "group") (b.moves ?? []).forEach((m) => ids.add(m?.exerciseId));
+  }
+  if (input.warmupExerciseId) ids.add(input.warmupExerciseId);
+  const { data: rows } = ids.size
+    ? await supabase.from("exercises").select("id, kind, timed_only").in("id", [...ids].filter(Boolean))
+    : { data: [] };
+  const info = new Map<string, ExerciseInfo>((rows ?? []).map((r) => [r.id as string, r as ExerciseInfo]));
+  const warmup = input.warmupExerciseId && info.get(input.warmupExerciseId)?.kind === "warmup" ? input.warmupExerciseId : null;
+
+  const fields = {
+    title,
+    description: (input.description ?? "").trim().slice(0, 2000),
+    level: LEVELS.some((l) => l.id === input.level) ? input.level : null,
+    instructor_id: input.instructorId || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  let id = input.id;
+  if (id) {
+    const { error } = await supabase.from("workouts").update(fields).eq("id", id);
+    if (error) return { error: error.message };
+  } else {
+    const { data, error } = await supabase.from("workouts").insert(fields).select("id").single();
+    if (error || !data) return { error: error?.message ?? "Couldn't save the workout." };
+    id = data.id as string;
+  }
+
+  const { error } = await supabase.rpc("save_workout_sequence", {
+    p_workout_id: id,
+    p_warmup_exercise_id: warmup,
+    p_blocks: cleanBlocks(input.blocks, info),
+  });
+  if (error) return { id, error: `The sequence didn't save: ${error.message}` };
+
+  revalidateWorkouts(id);
+  return { id };
+}
+
+/** Publish (after checking it's complete) or move back to draft. */
+export async function setWorkoutPublished(id: string, publish: boolean): Promise<{ error?: string }> {
+  await requireAdmin();
+  if (publish) {
+    const [workout, catalog] = await Promise.all([getWorkout(id), getCatalog()]);
+    if (!workout) return { error: "This workout no longer exists." };
+    const problems = publishProblems(
+      workout.blocks,
+      new Map(catalog.map((c) => [c.id, c])),
+      workout.warmupExerciseId,
+    );
+    if (problems.length) return { error: problems.join(" ") };
+  }
+  const { error } = await createAdminClient()
+    .from("workouts")
+    .update({ published_at: publish ? new Date().toISOString() : null })
+    .eq("id", id);
+  if (error) return { error: error.message };
+  revalidateWorkouts(id);
+  return {};
+}
+
+export async function deleteWorkout(id: string): Promise<{ error?: string }> {
+  await requireAdmin();
+  const { error } = await createAdminClient().from("workouts").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidateWorkouts();
+  return {};
+}

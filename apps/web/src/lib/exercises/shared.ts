@@ -33,6 +33,8 @@ export interface AdminExercise {
   archivedAt: string | null;
   createdAt: string;
   videos: ExerciseVideo[];
+  /** How many workouts use it (in a block, or as their warm-up). */
+  usedIn: number;
 }
 
 /** What the exercise form sends to `saveExercise`. */

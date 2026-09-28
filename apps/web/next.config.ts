@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Shared TypeScript source (the workout model and estimate) compiled with the app.
+  transpilePackages: ["@move-mindful/core"],
   // Instructor avatar uploads go through a Server Action; raise the request body
   // limit above the 1MB default to cover the fallback (un-resized) upload path.
   experimental: {

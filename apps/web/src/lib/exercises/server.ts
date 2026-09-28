@@ -186,10 +186,27 @@ export async function syncPendingVideos(supabase: AdminClient, exerciseId?: stri
   await Promise.all(((data ?? []) as VideoRow[]).map((row) => syncOne(supabase, row)));
 }
 
+/** How many workouts use each exercise — in a block, or as their warm-up. */
+export async function getExerciseUsage(supabase: AdminClient): Promise<Map<string, number>> {
+  const [{ data: blocks }, { data: workouts }] = await Promise.all([
+    supabase.from("workout_blocks").select("workout_id, exercise_id").not("exercise_id", "is", null),
+    supabase.from("workouts").select("id, warmup_exercise_id").not("warmup_exercise_id", "is", null),
+  ]);
+  const byExercise = new Map<string, Set<string>>();
+  const add = (exerciseId: string, workoutId: string) => {
+    if (!byExercise.has(exerciseId)) byExercise.set(exerciseId, new Set());
+    byExercise.get(exerciseId)!.add(workoutId);
+  };
+  for (const b of blocks ?? []) add(b.exercise_id as string, b.workout_id as string);
+  for (const w of workouts ?? []) add(w.warmup_exercise_id as string, w.id as string);
+  return new Map([...byExercise].map(([id, set]) => [id, set.size]));
+}
+
 function assemble(
   exercises: ExerciseRow[],
   videos: VideoRow[],
   links: Array<{ exercise_id: string; tag_id: string }>,
+  usage: Map<string, number>,
 ): AdminExercise[] {
   return exercises.map((e) => ({
     id: e.id,
@@ -203,6 +220,7 @@ function assemble(
     archivedAt: e.archived_at,
     createdAt: e.created_at,
     videos: videos.filter((v) => v.exercise_id === e.id).map(toVideo),
+    usedIn: usage.get(e.id) ?? 0,
   }));
 }
 
@@ -210,28 +228,31 @@ function assemble(
 export async function getExercises(): Promise<AdminExercise[]> {
   const supabase = createAdminClient();
   await syncPendingVideos(supabase);
-  const [{ data: exercises }, { data: videos }, { data: links }] = await Promise.all([
+  const [{ data: exercises }, { data: videos }, { data: links }, usage] = await Promise.all([
     supabase.from("exercises").select("*").order("name"),
     supabase.from("exercise_videos").select("*"),
     supabase.from("exercise_tag_links").select("exercise_id, tag_id"),
+    getExerciseUsage(supabase),
   ]);
   return assemble(
     (exercises ?? []) as ExerciseRow[],
     (videos ?? []) as VideoRow[],
     links ?? [],
+    usage,
   );
 }
 
 export async function getExercise(id: string): Promise<AdminExercise | null> {
   const supabase = createAdminClient();
   await syncPendingVideos(supabase, id);
-  const [{ data: exercise }, { data: videos }, { data: links }] = await Promise.all([
+  const [{ data: exercise }, { data: videos }, { data: links }, usage] = await Promise.all([
     supabase.from("exercises").select("*").eq("id", id).maybeSingle(),
     supabase.from("exercise_videos").select("*").eq("exercise_id", id),
     supabase.from("exercise_tag_links").select("exercise_id, tag_id").eq("exercise_id", id),
+    getExerciseUsage(supabase),
   ]);
   if (!exercise) return null;
-  return assemble([exercise as ExerciseRow], (videos ?? []) as VideoRow[], links ?? [])[0];
+  return assemble([exercise as ExerciseRow], (videos ?? []) as VideoRow[], links ?? [], usage)[0];
 }
 
 /** All exercise tags in their display order, with how many exercises use each. */

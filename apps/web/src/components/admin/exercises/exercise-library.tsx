@@ -255,6 +255,20 @@ export function ExerciseLibrary({ exercises, tags }: { exercises: AdminExercise[
             </div>
             <ClipPreview key={selected.id} kind={selected.kind} sided={selected.sided} videos={selected.videos} />
             <PanelFacts exercise={selected} />
+            <div className="border-t border-zinc-100 pt-3">
+              <p className="text-sm font-semibold">
+                {selected.usedIn
+                  ? `${selected.archivedAt ? "Still in" : "Used in"} ${selected.usedIn} workout${selected.usedIn === 1 ? "" : "s"}`
+                  : "Not in any workouts yet"}
+              </p>
+              <p className="text-xs text-zinc-500">
+                {selected.usedIn
+                  ? selected.archivedAt
+                    ? "Members still see it there. Delete becomes available once no workouts use it."
+                    : "Changes apply to all of them."
+                  : "Changes won’t affect anything members see."}
+              </p>
+            </div>
             {selected.archivedAt ? (
               <div className="flex gap-2">
                 <button
@@ -267,12 +281,13 @@ export function ExerciseLibrary({ exercises, tags }: { exercises: AdminExercise[
                   Restore
                 </button>
                 <button
+                  disabled={selected.usedIn > 0}
                   onClick={async () => {
                     if (!window.confirm(`Delete “${selected.name}” and its videos? This can’t be undone.`)) return;
                     await deleteExercise(selected.id);
                     router.refresh();
                   }}
-                  className="h-10 flex-1 rounded-lg border border-red-200 text-sm font-medium text-red-600 hover:bg-red-50"
+                  className="h-10 flex-1 rounded-lg border border-red-200 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Delete
                 </button>
@@ -308,7 +323,8 @@ function PanelFacts({ exercise: e }: { exercise: AdminExercise }) {
   }
   facts.push(["Equipment", e.equipment.length ? e.equipment.map(equipmentLabel).join(", ") : "None"]);
   if (e.dumbbellLevels.length) facts.push(["Dumbbells", levelsLabel(e.dumbbellLevels)]);
-  const missing = rolesFor(e.kind, e.sided).filter((r) => !slotFor(e.videos, r).current);
+  // The tutorial is optional; the loops (or the warm-up video) aren't.
+  const missing = rolesFor(e.kind, e.sided).filter((r) => r !== "tutorial" && !slotFor(e.videos, r).current);
   return (
     <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
       {facts.map(([k, v]) => (
@@ -318,7 +334,7 @@ function PanelFacts({ exercise: e }: { exercise: AdminExercise }) {
         </div>
       ))}
       {missing.length > 0 && (
-        <p className="col-span-2 text-xs text-amber-700">Not ready for workouts until every clip is uploaded and processed.</p>
+        <p className="col-span-2 text-xs text-amber-700">Not ready for workouts until its clips are uploaded and processed.</p>
       )}
     </dl>
   );

@@ -8,6 +8,7 @@ import { requestOrigin } from "@/lib/mux/request-origin";
 import {
   EXERCISE_STATIC_RENDITIONS,
   deleteMuxVideo,
+  getExerciseUsage,
   syncPendingVideos,
 } from "@/lib/exercises/server";
 import {
@@ -248,12 +249,16 @@ export async function setExerciseArchived(id: string, archived: boolean): Promis
 }
 
 /**
- * Delete an exercise, its clips and their Mux assets.
- * TODO(Phase 4.5 step 3): refuse while any workout uses it — archive instead.
+ * Delete an exercise, its clips and their Mux assets — only when no workout
+ * uses it (archive it otherwise). The database enforces this too.
  */
 export async function deleteExercise(id: string): Promise<{ error?: string }> {
   await requireAdmin();
   const supabase = createAdminClient();
+  const usedIn = (await getExerciseUsage(supabase)).get(id) ?? 0;
+  if (usedIn > 0) {
+    return { error: `It's in ${usedIn} workout${usedIn === 1 ? "" : "s"}. Remove it from them first, or archive it.` };
+  }
   const { data: videos } = await supabase
     .from("exercise_videos")
     .select("mux_asset_id, mux_upload_id")
