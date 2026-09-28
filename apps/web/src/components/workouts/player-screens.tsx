@@ -393,6 +393,21 @@ function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
   );
 }
 
+/**
+ * A minimised view's one line: a small grey label pill ("Up next",
+ * "Tutorial") and what it names, trimmed to fit.
+ */
+function LabelLine({ label, text, className = "" }: { label: string; text: string; className?: string }) {
+  return (
+    <p className={`flex min-w-0 items-center gap-2 ${className}`}>
+      <span className="shrink-0 rounded-full bg-white/[0.16] px-2 py-[3px] text-[11px] font-semibold uppercase tracking-[0.08em]">
+        {label}
+      </span>
+      <span className="min-w-0 truncate text-[15px] font-medium">{text}</span>
+    </p>
+  );
+}
+
 // ── The exercise ──────────────────────────────────────
 
 export function SetScreen({
@@ -451,9 +466,7 @@ export function SetScreen({
       </div>
       {/* Controls swiped away: what's next, under the reps. */}
       <Collapse open={hidden}>
-        <p className="mt-1 truncate text-xl font-medium leading-tight">
-          <span className="font-semibold">{pill.label}:</span> {pill.text}
-        </p>
+        <LabelLine label={pill.label} text={pill.text} className="mt-2" />
       </Collapse>
       <Collapse open={!hidden}>
         <h1 className="mt-1 truncate text-xl font-semibold leading-tight">{name}</h1>
@@ -502,9 +515,7 @@ export function TutorialScreen({
       {/* Minimised: "Tutorial:" and the exercise above the pills, and a small
           Skip at the end of their row. */}
       <Collapse open={hidden}>
-        <p className="mb-2 truncate text-xl font-medium leading-tight">
-          <span className="font-semibold">Tutorial:</span> {name}
-        </p>
+        <LabelLine label="Tutorial" text={name} className="mb-2.5" />
       </Collapse>
       <div className={`flex gap-2 ${hidden ? "flex-nowrap items-center" : "flex-wrap"}`}>
         {chips.map((c) => (
