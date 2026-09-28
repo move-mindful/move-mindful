@@ -479,6 +479,15 @@ export function SetScreen({
           </span>
         )}
       </div>
+      {/* Controls swiped away: what's next, under the reps. */}
+      <Collapse open={hidden}>
+        <p className="mt-1 flex min-w-0 items-baseline gap-1.5 text-xl leading-tight">
+          <span className="shrink-0 font-medium text-white/70">{pill.label}:</span>
+          <span className="min-w-0 flex-1 font-semibold">
+            <Marquee>{pill.text}</Marquee>
+          </span>
+        </p>
+      </Collapse>
       <Collapse open={!hidden}>
         <h1 className="mt-1 text-xl font-semibold leading-tight">
           <Marquee>{name}</Marquee>
