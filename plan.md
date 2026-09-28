@@ -190,7 +190,7 @@ Built in vertical slices, so each step leaves something usable and real footage 
   - Not built yet: tutorial captions and coaching cues (the design shows them; exercises have no caption/cue data yet); "Save progress" in End workout (step 5)
 - [ ] **5. Progress** — save progress / resume with % complete, completed-workout history
   - [x] Player settings (tutorial mode, instructor audio, warm-up) saved to the member's account — `012_member_preferences.sql` (a `member_preferences` row per Clerk user, settings as JSON by area)
-  - [ ] Apply `012_member_preferences.sql` in Supabase
+  - [x] Apply `012_member_preferences.sql` in Supabase
   - [ ] A workout sessions table (started, finished, sets done, time, where to resume) for Save progress / Resume, completion history and "time since last workout"
 - [ ] **6. Access and placement** — which entitlement unlocks workouts (membership, a standalone product, or both — undecided) and where they appear on `/home`. The iOS app reuses the `packages/core` logic in Phase 5
 
