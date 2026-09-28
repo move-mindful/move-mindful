@@ -13,7 +13,7 @@ import {
   Timer,
   WatchTutorial,
 } from "./icons";
-import { AutoPill, TAP_ZONES } from "./player-screens";
+import { TAP_ZONES } from "./player-screens";
 
 /**
  * The first-run guide to the player, over the stage on phones: tapping (the
@@ -133,12 +133,9 @@ const PAGES: Page[] = [
         <div className="h-1 w-full overflow-hidden rounded-sm bg-white/30">
           <div className="h-1 w-3/5 rounded-sm bg-[#A99CFF]" />
         </div>
-        <span className="flex items-center gap-3">
-          <span className="flex items-baseline gap-1.5">
-            <span className="text-[44px] font-semibold leading-none">10</span>
-            <span className="text-xl font-medium">reps</span>
-          </span>
-          <AutoPill />
+        <span className="flex items-baseline gap-1.5">
+          <span className="text-[44px] font-semibold leading-none">10</span>
+          <span className="text-xl font-medium">reps</span>
         </span>
         <span className="flex w-full items-center justify-between rounded-2xl bg-white/[0.08] px-3.5 py-2.5 text-[15px] font-semibold">
           Auto-advance
@@ -177,8 +174,10 @@ export function GestureGuide({ onDone }: { onDone: () => void }) {
   return (
     <div className="absolute inset-0 z-30 flex flex-col" role="dialog" aria-modal="true" aria-label="How to use the player">
       {/* The backdrop runs the full height, behind the panel's rounded corners
-          too; the pictures sit in the space above the panel, where they show. */}
-      {page === 0 ? <TapZonesBackdrop /> : <div className="absolute inset-0 bg-[#080814]/60" aria-hidden="true" />}
+          too; the pictures sit in the space above the panel, where they show.
+          Page 1 tints the video to show the tap zones; the rest are on solid
+          ink, so nothing on the screen behind shows through. */}
+      {page === 0 ? <TapZonesBackdrop /> : <div className="absolute inset-0 bg-[#14142B]" aria-hidden="true" />}
 
       <div className="relative flex flex-1 items-center justify-center" aria-hidden="true">
         {current.picture}

@@ -3,7 +3,7 @@
 import { useSyncExternalStore, type ReactNode } from "react";
 import { clock } from "@/lib/workouts/player";
 import { ArrowRight, ChevronLeft, ChevronRight, Dumbbell, Loop, Sun } from "./icons";
-import { AutoPill, BeginButton, Chip, type TutorialProgress } from "./player-screens";
+import { BeginButton, Chip, type TutorialProgress } from "./player-screens";
 
 // The player's desktop ("theater") layout, from the desktop frames of the
 // player design canvas: the 9:16 video in the middle, what's on to its left,
@@ -87,14 +87,12 @@ export function TheaterSetInfo({
   name,
   metric,
   side,
-  auto,
   groupLine,
   upNext,
 }: {
   name: string;
   metric: { kind: "reps"; amount: number } | { kind: "time"; seconds: number };
   side: "right" | "left" | null;
-  auto: boolean;
   groupLine: string | null;
   upNext: string;
 }) {
@@ -122,7 +120,6 @@ export function TheaterSetInfo({
             {side.toUpperCase()}
           </span>
         )}
-        {auto && <AutoPill large />}
       </div>
       <h1 className="text-[28px] font-semibold leading-tight">{name}</h1>
       <div className="mt-3 text-[15px] text-white/65">Up next · {upNext}</div>
@@ -135,21 +132,18 @@ export function TheaterTutorialInfo({
   chips,
   levels,
   progress,
-  auto,
   onBegin,
 }: {
   name: string;
   chips: string[];
   levels: string | null;
   progress: TutorialProgress;
-  auto: boolean;
   onBegin: () => void;
 }) {
   return (
     <Info gap={14}>
       <h1 className="text-[44px] font-semibold leading-[1.05] tracking-[-0.015em]">
         {name}
-        {auto && <AutoPill large className="ml-3 -translate-y-1.5" />}
       </h1>
       <div className="flex flex-wrap justify-end gap-2">
         {chips.map((c) => (

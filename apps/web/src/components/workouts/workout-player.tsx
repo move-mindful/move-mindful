@@ -566,7 +566,6 @@ export function WorkoutPlayer({
               chips={chips}
               levels={levels}
               progress={progress}
-              auto={state.autoAdvance}
               onBegin={next}
             />
             <TheaterArrows onBack={back} onNext={next} nextLabel="Start the exercise" />
@@ -584,7 +583,6 @@ export function WorkoutPlayer({
               chips={chips}
               levels={levels}
               progress={progress}
-              auto={state.autoAdvance}
               pill={{
                 label: "Workout",
                 text: `${exerciseCount} ${exerciseCount === 1 ? "exercise" : "exercises"} · ${minutes} min`,
@@ -621,7 +619,6 @@ export function WorkoutPlayer({
               name={name}
               metric={metric}
               side={set.side}
-              auto={state.autoAdvance && set.measure === "reps"}
               groupLine={groupLine}
               upNext={pill.text}
             />
@@ -639,7 +636,6 @@ export function WorkoutPlayer({
               name={name}
               metric={metric}
               side={set.side}
-              auto={state.autoAdvance && set.measure === "reps"}
               groupLine={groupLine}
               pill={pill}
               hidden={chromeHidden}
