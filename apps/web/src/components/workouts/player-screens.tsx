@@ -423,8 +423,8 @@ export function SetScreen({
       </div>
       {/* Controls swiped away: what's next, under the reps. */}
       <Collapse open={hidden}>
-        <p className="mt-1 truncate text-xl font-medium leading-tight text-white/70">
-          {pill.label}: {pill.text}
+        <p className="mt-1 truncate text-xl font-medium leading-tight">
+          <span className="font-semibold">{pill.label}:</span> {pill.text}
         </p>
       </Collapse>
       <Collapse open={!hidden}>
@@ -472,7 +472,9 @@ export function TutorialScreen({
       {/* Minimised: "Tutorial:" and the exercise above the pills, and a small
           Skip at the end of their row. */}
       <Collapse open={hidden}>
-        <p className="mb-2 truncate text-xl font-medium leading-tight text-white/70">Tutorial: {name}</p>
+        <p className="mb-2 truncate text-xl font-medium leading-tight">
+          <span className="font-semibold">Tutorial:</span> {name}
+        </p>
       </Collapse>
       <div className={`flex gap-2 ${hidden ? "flex-nowrap items-center" : "flex-wrap"}`}>
         {chips.map((c) => (
