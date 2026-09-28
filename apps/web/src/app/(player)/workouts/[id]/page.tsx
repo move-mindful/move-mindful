@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { requireSectionUnlocked } from "@/lib/auth/locked-sections";
-import { getViewerAccess } from "@/lib/auth/viewer";
+import { isAdmin } from "@/lib/auth/admin";
 import { getPlayerWorkout } from "@/lib/workouts/member";
 import { getPlayerPreferences } from "@/lib/member/preferences-server";
 import { getSavedProgress } from "@/lib/member/sessions-server";
@@ -17,8 +17,7 @@ type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const viewer = await getViewerAccess();
-  const workout = await getPlayerWorkout(id, viewer.isAdmin);
+  const workout = await getPlayerWorkout(id, await isAdmin());
   return { title: workout ? `${workout.title} · MoveMindful` : "Workout · MoveMindful" };
 }
 
@@ -33,9 +32,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function WorkoutPage({ params }: Props) {
   await requireSectionUnlocked();
   const { id } = await params;
-  const [viewer, { userId }] = await Promise.all([getViewerAccess(), auth()]);
+  const [admin, { userId }] = await Promise.all([isAdmin(), auth()]);
   const [workout, preferences, progress] = await Promise.all([
-    getPlayerWorkout(id, viewer.isAdmin),
+    getPlayerWorkout(id, admin),
     userId ? getPlayerPreferences(userId) : null,
     userId ? getSavedProgress(userId, id) : null,
   ]);

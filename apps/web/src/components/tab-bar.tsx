@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { CircleUserRound, Clapperboard, Dumbbell, House, Radio, type LucideIcon } from "lucide-react";
 import { MEMBER_HOME } from "@/lib/routes";
@@ -45,22 +45,37 @@ export function TabBar({ admin }: { admin: boolean }) {
       >
         {tabs.map((t) => {
           const on = current(t);
-          const Icon = t.icon;
           return (
             <Link
               key={t.href}
               href={t.href}
               aria-current={on ? "page" : undefined}
-              className={`flex w-[72px] min-w-0 shrink flex-col items-center gap-0.5 rounded-full py-1.5 text-[10.5px] font-medium transition-colors ${
-                on ? "bg-black/[0.07] text-zinc-900" : "text-zinc-500 active:bg-black/[0.04]"
-              }`}
+              className="flex w-[72px] min-w-0 shrink"
             >
-              <Icon size={22} strokeWidth={on ? 2.3 : 1.9} aria-hidden="true" />
-              {t.label}
+              <TabFace tab={t} on={on} />
             </Link>
           );
         })}
       </nav>
     </div>
+  );
+}
+
+/** A tab's icon and label — lit when it's the current page, or the moment it's tapped. */
+function TabFace({ tab, on }: { tab: Tab; on: boolean }) {
+  // Inside the Link: true while its navigation is under way, so a tap shows at
+  // once even when the page takes a moment (a slow connection, say).
+  const { pending } = useLinkStatus();
+  const lit = on || pending;
+  const Icon = tab.icon;
+  return (
+    <span
+      className={`flex w-full flex-col items-center gap-0.5 rounded-full py-1.5 text-[10.5px] font-medium transition-colors ${
+        lit ? "bg-black/[0.07] text-zinc-900" : "text-zinc-500 active:bg-black/[0.04]"
+      }`}
+    >
+      <Icon size={22} strokeWidth={lit ? 2.3 : 1.9} aria-hidden="true" />
+      {tab.label}
+    </span>
   );
 }

@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
-import { getViewerAccess } from "@/lib/auth/viewer";
+import { isAdmin } from "@/lib/auth/admin";
 import { getPlayerWorkout } from "@/lib/workouts/member";
 import { getPlayerPreferences } from "@/lib/member/preferences-server";
 import { getSavedProgress } from "@/lib/member/sessions-server";
@@ -30,9 +30,9 @@ export const viewport: Viewport = {
 };
 
 export default async function DemoWorkoutPage() {
-  const [viewer, { userId }] = await Promise.all([getViewerAccess(), auth()]);
+  const [admin, { userId }] = await Promise.all([isAdmin(), auth()]);
   const [workout, preferences, progress] = await Promise.all([
-    getPlayerWorkout(DEMO_WORKOUT_ID, viewer.isAdmin),
+    getPlayerWorkout(DEMO_WORKOUT_ID, admin),
     // Signed-out visitors keep their settings on the device only, and their
     // progress isn't saved.
     userId ? getPlayerPreferences(userId) : null,

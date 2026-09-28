@@ -17,10 +17,10 @@ interface RevenueCatEntitlement {
 /**
  * The entitlement identifiers this customer currently holds.
  *
- * Read server-side so gated content can be filtered *before* it renders. The
- * client-side gate in `EntitlementGate` can only hide what the server already
- * sent — playback ids included — so it's a UX gate, not an access boundary.
- * This is the access boundary.
+ * Read server-side so gated content can be filtered *before* it renders — a
+ * client-side check could only hide what the server already sent, playback ids
+ * included. This is the access boundary (the (member) layout and each gated
+ * page check it).
  *
  * `cache()` dedupes within a single render pass: a page that resolves a browse
  * list and then a specific class makes one RevenueCat call, not two.

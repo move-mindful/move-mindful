@@ -2,8 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { requireSectionUnlocked } from "@/lib/auth/locked-sections";
-import { getViewerAccess } from "@/lib/auth/viewer";
-import { getWorkoutStatuses } from "@/lib/member/sessions-server";
+import { isAdmin } from "@/lib/auth/admin";
+import { getSessionSummaries, workoutStatuses } from "@/lib/member/sessions-server";
 import { getWorkoutCards } from "@/lib/workouts/member";
 import { levelLabel } from "@/lib/workouts/player";
 import { DoneLabel } from "@/components/workouts/done-label";
@@ -16,9 +16,12 @@ import { DoneLabel } from "@/components/workouts/done-label";
  */
 export default async function WorkoutsPage() {
   await requireSectionUnlocked();
-  const [viewer, { userId }] = await Promise.all([getViewerAccess(), auth()]);
-  const workouts = await getWorkoutCards(viewer.isAdmin);
-  const statuses = userId ? await getWorkoutStatuses(userId, workouts) : null;
+  const [admin, { userId }] = await Promise.all([isAdmin(), auth()]);
+  const [workouts, sessions] = await Promise.all([
+    getWorkoutCards(admin),
+    userId ? getSessionSummaries(userId) : null,
+  ]);
+  const statuses = sessions ? workoutStatuses(workouts, sessions) : null;
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-10 sm:px-8">

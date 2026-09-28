@@ -42,8 +42,10 @@ What's in place:
   - **Two-tier route groups** — `(app)` is the signed-in shell (header + user menu),
     requiring an account but **no** entitlement, so free signups and one-time-product
     buyers can reach `/home`, `/account` and `/help`. `(app)/(member)` nests inside it and
-    adds the `EntitlementGate` for the membership-only routes (`/classes`, `/live`),
-    inheriting the header rather than duplicating it.
+    adds a server-side membership check (RevenueCat, via `getViewerAccess`) for the
+    membership-only routes (`/classes`, `/live`), inheriting the header rather than
+    duplicating it. Every page in both groups (and the `(player)` group and `/admin`) has a
+    `loading.tsx` placeholder, so taps switch pages at once and Next.js can prefetch them.
   - **Custom user menu** — Profile and Manage Subscription entries.
   - **Phone tab bar** — below tablet width the header keeps just the logo and user menu, and the section links move to a floating, frosted iOS-style tab bar along the bottom (`components/tab-bar.tsx`): Home and Account for everyone signed in, plus Classes, Live and Workouts for admins while those sections are locked.
   - **Customer names in RevenueCat** — the Clerk webhook mirrors each user's name and email onto their RevenueCat customer on `user.created` and `user.updated`: `$displayName` and `$email` (RevenueCat's reserved attributes) plus custom `first_name` and `last_name`. Server-side, so a buyer is named in the dashboard from signup rather than only after visiting gated content. The Clerk endpoint must be subscribed to both events. `scripts/backfill-revenuecat-names.mjs` does the same for existing users — a dry run by default, `--apply` to write; set `CLERK_SECRET_KEY` to the live key for the one command to target production, since `.env.local` holds the development one.

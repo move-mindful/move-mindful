@@ -120,19 +120,14 @@ export const getPlayerWorkout = cache(
 /** Published workouts (plus drafts for admins), newest first. */
 export async function getWorkoutCards(includeDrafts: boolean): Promise<WorkoutCard[]> {
   const supabase = createAdminClient();
-  let query = supabase.from("workouts").select("*").order("created_at", { ascending: false });
+  // Each workout with its blocks, in one query.
+  let query = supabase.from("workouts").select("*, workout_blocks(*)").order("created_at", { ascending: false });
   if (!includeDrafts) query = query.not("published_at", "is", null);
   const { data } = await query;
-  const workoutRows = (data ?? []) as WorkoutRow[];
+  const workoutRows = (data ?? []) as Array<WorkoutRow & { workout_blocks: BlockRow[] | null }>;
   if (!workoutRows.length) return [];
 
-  const { data: blockRows } = await supabase
-    .from("workout_blocks")
-    .select("*")
-    .in("workout_id", workoutRows.map((w) => w.id));
-  const workouts = workoutRows.map((w) =>
-    toWorkout(w, ((blockRows ?? []) as BlockRow[]).filter((r) => r.workout_id === w.id)),
-  );
+  const workouts = workoutRows.map(({ workout_blocks, ...w }) => toWorkout(w, workout_blocks ?? []));
 
   const ids = new Set<string>();
   workouts.forEach((w) => exerciseIds(w.blocks).forEach((id) => ids.add(id)));
