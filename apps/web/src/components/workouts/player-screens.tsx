@@ -137,10 +137,10 @@ function SettingsButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-/** App audio on or off — the same setting as in Settings, a tap away. */
+/** Instructor audio on or off — the same setting as in Settings, a tap away. */
 function SoundButton({ muted, onToggle }: { muted: boolean; onToggle: () => void }) {
   return (
-    <RoundButton label={muted ? "Turn app audio on" : "Turn app audio off"} onClick={onToggle}>
+    <RoundButton label={muted ? "Turn instructor audio on" : "Turn instructor audio off"} onClick={onToggle}>
       {muted ? <Muted /> : <Sound />}
     </RoundButton>
   );
@@ -873,10 +873,8 @@ export function PausedScreen({
           </button>
         </div>
       </div>
-      {/* Settings under the progress bar: top right on phones, top left on desktop. */}
-      <div
-        className={`absolute top-[calc(max(20px,env(safe-area-inset-top))+18px)] z-10 ${theater ? "left-4" : "right-4"}`}
-      >
+      {/* Settings, top right under the progress bar. */}
+      <div className="absolute right-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] z-10">
         <SettingsButton onClick={onSettings} />
       </div>
     </>
@@ -1386,10 +1384,10 @@ export function SettingsSheet({
           </h3>
           <div className="flex items-center justify-between gap-4 rounded-2xl border-[1.5px] border-white/[0.12] bg-white/[0.04] px-4 py-3.5">
             <span className="flex min-w-0 flex-col gap-[3px]">
-              <span className="text-[17px] font-semibold">App audio</span>
-              <span className="text-sm leading-snug text-white/75">Turn app audio on or off.</span>
+              <span className="text-[17px] font-semibold">Instructor audio</span>
+              <span className="text-sm leading-snug text-white/75">Turn instructor audio on or off.</span>
             </span>
-            <Switch on={soundOn} onChange={onSound} label="App audio" />
+            <Switch on={soundOn} onChange={onSound} label="Instructor audio" />
           </div>
           {mix && (
             <div className="flex items-center justify-between gap-4 rounded-2xl border-[1.5px] border-white/[0.12] bg-white/[0.04] px-4 py-3.5">
