@@ -215,7 +215,9 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
       return s.phase === "workout" && i !== null ? enter(ctx, s, i, false) : s;
     }
     case "restartWorkout":
-      return enter(ctx, { ...s, activeMs: 0, activeSince: null }, 0, false);
+      // A fresh start: tutorials come up again before each exercise (per the
+      // member's setting), and the clock starts over.
+      return enter(ctx, { ...s, activeMs: 0, activeSince: null, seen: [] }, 0, true);
     case "watchTutorial": {
       const i = setStepFor(ctx.steps, s.step);
       if (s.phase !== "workout" || i === null) return s;

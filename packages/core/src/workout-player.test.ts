@@ -137,3 +137,21 @@ test("changing the tutorial setting applies to the tutorial on screen", () => {
   s = run([{ type: "clipEnded", now: 40_000 }], s);
   assert.equal(s.stage, "exercise");
 });
+
+test("restarting the workout shows the tutorials again", () => {
+  let s = run([
+    { type: "begin", warmup: false, mode: "loop", now: 0 },
+    { type: "next", now: 1 }, // past the row's tutorial
+    { type: "jump", step: 4, now: 2 }, // the lunge's tutorial
+    { type: "next", now: 3 },
+    { type: "restartWorkout", now: 4 },
+  ]);
+  assert.equal(s.step, 0);
+  assert.equal(s.stage, "tutorial");
+  assert.deepEqual(s.seen, ["row"]);
+  s = run([{ type: "jump", step: 4, now: 5 }], s);
+  assert.equal(s.stage, "tutorial", "the lunge's too");
+  // Restarting a set doesn't.
+  s = run([{ type: "next", now: 6 }, { type: "restartSet", now: 7 }], s);
+  assert.equal(s.stage, "exercise");
+});
