@@ -52,6 +52,7 @@ What's in place:
 - Shared `tsconfig.base.json` for consistent TypeScript settings across packages
 
 What's not yet built:
+- Exercise-by-exercise workouts (Phase 4.5 in [plan.md](./plan.md)) — designed; in progress. First step is an unlinked, admin-only playback test at `/admin/lab/playback` (loop seams, next-clip handoff, sound after an automatic advance — MP4 vs HLS), to be deleted once the real player exists
 - 30-day challenge expiry tracking and upsell flow
 - iOS app (Expo + React Native)
 - Push notifications
