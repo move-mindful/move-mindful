@@ -1170,7 +1170,7 @@ export function SheetClose({ label }: { label: string }) {
 const MODES: Array<{ id: TutorialMode; title: string; desc: string }> = [
   { id: "loop", title: "Loop", desc: "The tutorial repeats until you tap to start." },
   { id: "once", title: "Play once", desc: "Plays through once, then the exercise starts on its own." },
-  { id: "off", title: "Off", desc: "Go straight to the exercise. Tutorials stay one tap away." },
+  { id: "off", title: "Off", desc: "Go straight to the exercise. Watch the tutorial anytime from the pause screen." },
 ];
 
 export function SettingsSheet({
