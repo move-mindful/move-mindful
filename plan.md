@@ -180,9 +180,14 @@ Built in vertical slices, so each step leaves something usable and real footage 
   - [x] Estimate + group labels in `packages/core/src/workouts.ts` (tests: `npm test -w @move-mindful/core`); schema `010_workouts.sql` (blocks table + atomic `save_workout_sequence`); `/admin/workouts` list and builder; "used in N workouts" and the delete guard in the exercise library
   - [x] Apply `010_workouts.sql` in Supabase
   - [x] Rest between sets on single exercises; uploaded workout cover image (`011_workout_set_rest_and_cover.sql`)
-  - [ ] Apply `011_workout_set_rest_and_cover.sql` in Supabase
-  - [ ] Build a real workout once exercises are uploaded
+  - [x] Apply `011_workout_set_rest_and_cover.sql` in Supabase
+  - [x] Build a real workout once exercises are uploaded ("Demo Workout")
 - [ ] **4. Member player (web)** — preview → warm-up → player (reps, timed, sided, groups, rests, tutorial modes) → pause → end → complete. Mobile layout first, then the desktop theater layout
+  - [x] Player steps (`workoutSteps`) and state machine (`playerReducer`) in `packages/core`, with tests
+  - [x] `/workouts/[id]` preview + player, mobile layout, and the desktop theater layout; a `/workouts` list — admin-only (section lock) until step 6
+  - [x] `/demo1` — a public, unindexed sample playing the "Demo Workout" (only while it's published)
+  - [ ] Test on iPhone Safari and desktop with real footage; then remove the playback lab and its two test clips
+  - Not built yet: tutorial captions and coaching cues (the design shows them; exercises have no caption/cue data yet); "Save progress" in End workout (step 5)
 - [ ] **5. Progress** — save progress / resume with % complete, completed-workout history
 - [ ] **6. Access and placement** — which entitlement unlocks workouts (membership, a standalone product, or both — undecided) and where they appear on `/home`. The iOS app reuses the `packages/core` logic in Phase 5
 
