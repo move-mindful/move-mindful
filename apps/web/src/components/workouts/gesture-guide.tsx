@@ -177,10 +177,10 @@ export function GestureGuide({ onDone }: { onDone: () => void }) {
     <div className="absolute inset-0 z-30 flex flex-col" role="dialog" aria-modal="true" aria-label="How to use the player">
       {/* The backdrop runs the full height, behind the panel's rounded corners
           too; the pictures sit in the space above the panel, where they show.
-          Every page sits on the same darkened, blurred studio photo, so
-          nothing on the screen behind shows through; page 1 tints the tap
-          zones over it. */}
-      <PhotoBackdrop />
+          Every page sits on the same blurred studio photo, so nothing on the
+          screen behind shows through: darker on page 1, under the tinted tap
+          zones, and lighter after, so more of the room shows. */}
+      <PhotoBackdrop soft={page > 0} />
       {page === 0 && <TapZonesBackdrop />}
 
       <div className="relative flex flex-1 items-center justify-center" aria-hidden="true">
@@ -221,8 +221,11 @@ export function GestureGuide({ onDone }: { onDone: () => void }) {
   );
 }
 
-/** A studio photo, darkened and blurred — the guide's background. */
-function PhotoBackdrop() {
+/**
+ * A studio photo, darkened and blurred — the guide's background. `soft`
+ * (pages 2–5) blurs and darkens it less.
+ */
+function PhotoBackdrop({ soft }: { soft: boolean }) {
   return (
     <div className="absolute inset-0 overflow-hidden bg-[#14142B]" aria-hidden="true">
       <Image
@@ -230,9 +233,13 @@ function PhotoBackdrop() {
         alt=""
         fill
         sizes="100vw"
-        className="scale-110 object-cover blur-lg brightness-[0.45]"
+        className={`scale-110 object-cover transition-[filter] duration-300 ${
+          soft ? "blur-[6px] brightness-[0.62]" : "blur-lg brightness-[0.45]"
+        }`}
       />
-      <div className="absolute inset-0 bg-[#14142B]/35" />
+      <div
+        className={`absolute inset-0 bg-[#14142B] transition-opacity duration-300 ${soft ? "opacity-20" : "opacity-35"}`}
+      />
     </div>
   );
 }
