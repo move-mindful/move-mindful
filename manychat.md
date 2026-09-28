@@ -3,7 +3,14 @@
 Pushing signup and purchase state from the site into ManyChat, so a flow can
 branch on whether someone already has an account or already bought.
 
-Nothing here is built yet — this is the verified groundwork. Everything marked
+**Status (Sep 2026): the site side is built** — `lib/manychat.ts` (add/remove
+tags), `lib/manychat-contact.ts` and `proxy.ts` (the `mc` cookie), the Clerk
+webhook (promotes the contact id, tags `signup`) and the RevenueCat webhook
+(reconciles `purchased:<slug>`). What's left is on the ManyChat side and the
+end-to-end test in [Paytest.md](./Paytest.md) — see the
+[build checklist](#build-checklist).
+
+The notes below are the groundwork it was built on. Everything marked
 **Verified** was checked against the live API or ManyChat's own docs on
 2026-08-31; everything marked **Assumed** still needs confirming.
 
@@ -51,9 +58,10 @@ string-matching on `message`:
 Rate limits are 10 requests/second on the write endpoints below, 100/s on
 `findBySystemField`. Far above anything this integration will generate.
 
-> ⚠️ **The key currently in use was pasted into a chat transcript and must be
-> regenerated.** It grants write access to the whole audience — tagging,
-> messaging, and account-wide tag deletion.
+> ⚠️ **The key used while exploring was pasted into a chat transcript** — if it
+> hasn't been regenerated since, do it (and update `MANYCHAT_API_TOKEN` in
+> Vercel at the same time). It grants write access to the whole audience —
+> tagging, messaging, and account-wide tag deletion.
 
 ---
 
@@ -106,9 +114,10 @@ confirmed available on this account.
 
 The chain:
 
-1. **ManyChat link carries the contact ID.** The button URL becomes
-   `https://www.movemindful.com/posture-routine?mc={{contact_id}}` — ManyChat
-   substitutes each person's own ID as it sends.
+1. **ManyChat link carries the contact ID.** The button URL becomes, for
+   example, `https://www.movemindful.com/class1?mc={{contact_id}}` (the free
+   routine) or `https://www.movemindful.com/posture?mc={{contact_id}}` —
+   ManyChat substitutes each person's own ID as it sends.
 2. **Site stores it in a first-party cookie** on landing (~30 days). A cookie
    rather than a query param because `buy()` drops the query string when it
    redirects to sign-up, and people wander around before signing up.
@@ -140,7 +149,7 @@ so there's one vocabulary across both systems rather than two dialects.
 | Tag | Set when | Removed when |
 |---|---|---|
 | `signup` | They create a Clerk account | never |
-| `purchased:posture` | They own the 5-Day Reset | refund or revocation |
+| `purchased:posture` | They own the Posture & Mobility Reset | refund or revocation |
 | `purchased:<slug>` | Any future paid product | refund or revocation |
 
 Free products never produce a `purchased:` tag — there's no purchase. For the
@@ -170,7 +179,7 @@ Condition: has tag `signup`?
   └─ NO  → never created an account. Re-send, or ask what got in the way.
 ```
 
-### B — Paid offer (5-Day Reset)
+### B — Paid offer (Posture & Mobility Reset)
 
 Two levels, because "didn't buy" splits into two very different people.
 
@@ -213,28 +222,38 @@ purchase before signup, as flow B does.
 - **Whether `addTagByName` auto-creates** an unknown tag, or errors. Sidestepped
   by pre-creating the tags.
 - **Whether removing a tag that isn't applied** errors or is a no-op. Matters
-  for the refund path, which shouldn't need to check first.
+  for the refund path, which shouldn't need to check first. The code treats a
+  400 from `removeTagByName` as "already absent" and logs it; a refund during
+  the [Paytest.md](./Paytest.md) run settles which it is.
 
 ---
 
 ## Build checklist
 
-- [ ] Regenerate the API key; store as `MANYCHAT_API_TOKEN` (Vercel, secret,
-      production only — never `NEXT_PUBLIC_`)
-- [ ] Pre-create `signup` and `purchased:posture` tags in ManyChat
-- [ ] Add `?mc={{contact_id}}` to the button URL in each flow
-- [ ] `lib/manychat.ts` — mirrors `lib/mailchimp.ts`; add/remove by name,
-      logs and returns false rather than throwing
-- [ ] Cookie capture on landing, carried into `unsafeMetadata` at sign-up
-- [ ] Clerk webhook: copy to `privateMetadata`, add `signup` tag
-- [ ] RevenueCat webhook: add/remove `purchased:<slug>` alongside the existing
-      Mailchimp reconcile
-- [ ] Build the two flow shapes above
+Site (built):
 
-The cookie in steps 5–6 is the same mechanism `campaign:<ref>` attribution
-needs. Doing both at once costs very little more than doing either alone — and
-campaign attribution is the one thing on the funnel map that can't be
-backfilled, so it's worth carrying along.
+- [x] `lib/manychat.ts` — mirrors `lib/mailchimp.ts`; add/remove by name,
+      logs and returns false rather than throwing
+- [x] Cookie capture on landing (`proxy.ts`), carried into `unsafeMetadata` at
+      sign-up
+- [x] Clerk webhook: copy to `privateMetadata`, add `signup` tag
+- [x] RevenueCat webhook: add/remove `purchased:<slug>` alongside the existing
+      Mailchimp reconcile
+
+ManyChat side and verification (confirm each):
+
+- [ ] Regenerate the API key if it hasn't been; store as `MANYCHAT_API_TOKEN`
+      (Vercel, secret, production only — never `NEXT_PUBLIC_`)
+- [x] Pre-create `signup` and `purchased:posture` tags in ManyChat (they exist —
+      Paytest.md has you clear them off your own contact first)
+- [ ] Add `?mc={{contact_id}}` to the button URL in each flow (Paytest.md
+      checkpoint 1 confirms it)
+- [ ] Build the two flow shapes above
+- [ ] Run [Paytest.md](./Paytest.md) end to end, including the refund
+
+Not built: `campaign:<ref>` attribution. It would ride the same cookie
+mechanism, and it's the one thing on the funnel map that can't be backfilled —
+worth adding before campaigns start driving traffic.
 
 ---
 

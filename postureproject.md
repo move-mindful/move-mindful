@@ -1,8 +1,12 @@
 # Posture Project
 
 Working notes for the pivot to one-off product sales. Companion to
-[plan.md](./plan.md) (the original architecture) and [README.md](./README.md)
-(current state of the whole app).
+[plan.md](./plan.md) (the architecture and build order — this work is its
+"Phase 4b") and [README.md](./README.md) (current state of the whole app).
+
+**Status (Sep 2026):** Posture & Mobility Reset is live and on sale at
+`/posture`, with the free routine at `/class1`. What's left is in
+[To do](#to-do--to-launch-posture) below.
 
 ---
 
@@ -24,16 +28,20 @@ one RevenueCat entitlement per sellable thing rather than a single paywall.
 - Hidden from the member nav; admins keep the links to preview.
 - `/classes`, `/classes/[id]`, `/live` gated by `requireSectionUnlocked()`
   (`lib/auth/locked-sections.ts`) — server-side, so nothing renders for
-  non-admins — plus an optimistic redirect in `proxy.ts`.
-- To release: delete the three `requireSectionUnlocked()` calls and the
-  `admin &&` in `app/(app)/layout.tsx`.
+  non-admins — plus an optimistic redirect in `proxy.ts`. The workouts
+  (`/workouts`, `/workouts/[id]`) are locked the same way until their access
+  is decided.
+- To release a section: delete its `requireSectionUnlocked()` call(s) and its
+  entry in `isLockedSection` (`proxy.ts`), and show its link to everyone — the
+  `admin &&` in `app/(app)/layout.tsx` (header) and the `admin` check in
+  `components/tab-bar.tsx` (phone tab bar).
 
 ### Route restructure
 Split the one entitlement-gated group into two, nested so the header isn't duplicated:
 
 ```
 (app)/            ← signed-in, NO entitlement: home, account, help, /[product]
-  (member)/       ← adds EntitlementGate (membership): classes, live
+  (member)/       ← adds the membership check (server-side): classes, live
 ```
 
 Previously `/account` and `/help` sat behind the membership gate, which would
@@ -149,9 +157,9 @@ To test for free, put the **sandbox** key (`rcb_sb_…`, from RevenueCat → App
 Providers → Configurations → the web configuration) in `.env.local` and test
 against `npm run dev:web`. Leave Vercel on the production key.
 
-1. **Upload the five videos** to Mux, then paste them into `lib/products.ts`:
-   `{ slug, title, playbackId, durationMinutes }`. This is the last content
-   blocker — everything else is wired and waiting.
+1. ~~**Upload the five videos** to Mux, then paste them into `lib/products.ts`.~~
+   **Done** — all five classes are in `lib/products.ts`, and the landing page
+   shipped from the design canvas's copy board on 2026-09-16.
 
 2. **Test the purchase end-to-end, on the sandbox key, as a non-admin.**
    Admins bypass content gates by design, so buying as yourself proves the
@@ -160,9 +168,8 @@ against `npm run dev:web`. Leave Vercel on the production key.
    pitch to the video list, and `/home` shows **Yours**. This same account is
    the only way to verify the Classes/Live lock actually holds.
 
-3. **Write real copy** for the Posture Reset tagline (currently placeholder) and
-   `/pricing` (currently a bare "Get access" heading). Context is being gathered
-   from a ChatGPT history export and two Squarespace sites.
+3. **Write real copy for `/pricing`** — still a bare "Get access" heading. (The
+   Posture Reset tagline is done.)
 
 4. **Exit-intent popup** on `/posture` offering the free routine — on hold.
    When built, note that classic exit intent needs a cursor leaving the
@@ -193,14 +200,11 @@ product pages do. **Decision: acceptable at launch.** The real fix is Mux
 **signed playback** (signed policy + short-lived JWTs minted server-side) —
 revisit when the revenue justifies it, or if sharing shows up.
 
-### The membership gate is still client-side
-`EntitlementGate` is a client component wrapping server-rendered children, so
-Next streams those children — playback ids included — and the gate only hides
-what already reached the browser. A UX gate, not a boundary.
-
-Currently harmless because `/classes` and `/live` are admin-locked. **Must be
-fixed before the membership launches** — port them to `getViewerAccess()` /
-`viewerCanAccess()`, the way the product pages already work.
+### The membership gate — resolved (Sep 2026)
+The `(member)` layout used a client-side `EntitlementGate`, which could only
+hide what the server had already streamed (playback ids included). It now
+checks `getViewerAccess()` / `viewerCanAccess()` on the server before
+rendering, the way the product pages do, and the client gate is gone.
 
 ### Other `NEXT_PUBLIC_` vars saved as Secret
 Clerk publishable key, Supabase URL + publishable key, RevenueCat API key, Mux
@@ -224,8 +228,9 @@ partner promo, revocable). Then it earns an entitlement.
 Undecided, and deliberately not a code question. If yes, attach the membership
 product to the `posture` entitlement in RevenueCat — no deploy, reversible.
 
-### `packages/core` is stale
+### `packages/core`'s access model is stale
 `UserAccess`, `hasAccess()`, `shouldShowUpsell()`, `Challenge` all model the old
-membership + 30-day-challenge world. **Nothing imports `@move-mindful/core`.**
+membership + 30-day-challenge world, and nothing imports them. (The web app
+does import `@move-mindful/core` now — for the workout model, not these.)
 Rewrite rather than delete — it's the natural home for a shared access model
 once the iOS app arrives.
