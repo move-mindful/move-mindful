@@ -5,14 +5,10 @@ export const ACCENT = "#A99CFF";
 /** How the current segment is filled: a set in progress, or its tutorial (striped). */
 export type SegmentFill = { kind: "set" | "tutorial"; fraction: number };
 
-interface Part {
-  step: number;
-}
-
 /**
- * The story-style bar across the top of the player: one segment per set,
- * split in two for a sided set's sides, grouped by round and by block (the
- * gaps widen at each level). Rests aren't segments.
+ * The story-style bar across the top of the player: one segment per set, all
+ * evenly spaced like Instagram's; a sided set's segment is split in two for
+ * its sides. Rests aren't segments.
  *
  * `current` is the step on screen: segments before it are white, its own is
  * filled per `fill`, and `complete` fills them all.
@@ -28,43 +24,23 @@ export function ProgressBar({
   fill: SegmentFill | null;
   complete?: boolean;
 }) {
-  // block → round → move → parts
-  const blocks: Part[][][][] = [];
-  const index = new Map<string, Part[]>();
+  // One entry per set, holding the step index of each of its sides.
+  const sets: number[][] = [];
   steps.forEach((s, i) => {
-    if (s.kind !== "set") return;
-    const key = `${s.block}:${s.round}:${s.move}`;
-    let parts = index.get(key);
-    if (!parts) {
-      parts = [];
-      index.set(key, parts);
-      const block = (blocks[s.block] ??= []);
-      const round = (block[s.round - 1] ??= []);
-      round.push(parts);
-    }
-    parts.push({ step: i });
+    if (s.kind === "set") (sets[s.setIndex] ??= []).push(i);
   });
-  const count = (parts: Part[][]) => parts.reduce((n, p) => n + p.length, 0);
 
   return (
-    <div className="flex h-1 gap-2.5" role="presentation">
-      {blocks.filter(Boolean).map((rounds, b) => (
-        <div key={b} className="flex min-w-0 gap-[5px]" style={{ flex: `${rounds.reduce((n, r) => n + count(r), 0)} 1 0px` }}>
-          {rounds.map((moves, r) => (
-            <div key={r} className="flex min-w-0 gap-0.5" style={{ flex: `${count(moves)} 1 0px` }}>
-              {moves.map((parts, m) => (
-                <div key={m} className="flex min-w-0 gap-px" style={{ flex: `${parts.length} 1 0px` }}>
-                  {parts.map((p, j) => (
-                    <Segment
-                      key={p.step}
-                      state={complete || (current !== null && p.step < current) ? "done" : p.step === current ? "now" : "todo"}
-                      fill={fill}
-                      radius={parts.length === 1 ? "2px" : j === 0 ? "2px 0 0 2px" : "0 2px 2px 0"}
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
+    <div className="flex h-1 gap-1" role="presentation">
+      {sets.map((parts, k) => (
+        <div key={k} className="flex min-w-0 gap-[1.5px]" style={{ flex: `${parts.length} 1 0px` }}>
+          {parts.map((step, j) => (
+            <Segment
+              key={step}
+              state={complete || (current !== null && step < current) ? "done" : step === current ? "now" : "todo"}
+              fill={fill}
+              radius={parts.length === 1 ? "2px" : j === 0 ? "2px 0 0 2px" : "0 2px 2px 0"}
+            />
           ))}
         </div>
       ))}
