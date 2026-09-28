@@ -6,6 +6,14 @@
 
 import type { SetStep, WorkoutStep } from "./workouts";
 
+/**
+ * How long saved progress can be resumed, from its last save. After that
+ * Resume goes away and the workout starts fresh: a week off means warming up
+ * and starting again, not jumping in cold halfway through. The session is
+ * kept, just not offered.
+ */
+export const RESUME_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
 export interface WorkoutProgress {
   /** Sets finished before this point (both sides of a sided set count as one). */
   setsDone: number;

@@ -1,12 +1,19 @@
 import "server-only";
 
+import { RESUME_WINDOW_MS } from "@move-mindful/core";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { SavedProgress, WorkoutStatus } from "@/lib/member/sessions";
 
 // Reads of a member's workout sessions. `userId` must come from the Clerk
 // session. Saving is the server action in app/actions/workout-sessions.ts.
 
-/** The member's saved spot in a workout, if they have one (the player checks it still fits). */
+/** Progress saved before this can't be resumed any more (see RESUME_WINDOW_MS). */
+const resumeCutoff = () => new Date(Date.now() - RESUME_WINDOW_MS).toISOString();
+
+/**
+ * The member's saved spot in a workout, if they have one from the last week
+ * (the player checks it still fits the workout).
+ */
 export async function getSavedProgress(userId: string, workoutId: string): Promise<SavedProgress | null> {
   const { data } = await createAdminClient()
     .from("workout_sessions")
@@ -14,6 +21,7 @@ export async function getSavedProgress(userId: string, workoutId: string): Promi
     .eq("clerk_user_id", userId)
     .eq("workout_id", workoutId)
     .eq("status", "in_progress")
+    .gte("updated_at", resumeCutoff())
     .maybeSingle();
   if (!data) return null;
   return {
@@ -26,9 +34,10 @@ export async function getSavedProgress(userId: string, workoutId: string): Promi
 }
 
 /**
- * What each workout card says: "Resume · N%" for progress that still fits the
- * workout (its sequence key matches and it's past the first set), otherwise
- * "Done · when" if they've finished it, otherwise nothing.
+ * What each workout card says: "Resume · N%" for progress that can still be
+ * resumed (saved in the last week, its sequence key matches the workout and
+ * it's past the first set), otherwise "Done · when" if they've finished it,
+ * otherwise nothing.
  */
 export async function getWorkoutStatuses(
   userId: string,
@@ -44,6 +53,7 @@ export async function getWorkoutStatuses(
       .select("workout_id, resume_step, percent_complete, sequence_key")
       .eq("clerk_user_id", userId)
       .eq("status", "in_progress")
+      .gte("updated_at", resumeCutoff())
       .in("workout_id", ids),
     supabase
       .from("workout_sessions")
