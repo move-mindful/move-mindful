@@ -1,67 +1,97 @@
 # Move Mindful
 
-A video fitness platform with on-demand classes, livestreaming, push notifications, and community features. Web and iOS are co-equal platforms — the web is the storefront (where purchases happen), the iOS app is the logged-in experience.
+A video fitness platform: on-demand classes, exercise-by-exercise workouts, livestreaming, and — later — push notifications and community features. Web and iOS are co-equal platforms: the web is the storefront (where purchases happen), the iOS app will be the logged-in experience.
 
 ## Current Status
 
-**Phase 4 complete — admin CMS (Mux sync, tags, collections) and a curated, collection-based member browse, on top of Mux video, RevenueCat payments, and entitlement gating.** (See the full build order with checkmarks in [plan.md](./plan.md).)
+**Live at [www.movemindful.com](https://www.movemindful.com).** Phases 1–4 are done: the web foundation, Mux video, RevenueCat payments with entitlement gating, and the admin CMS with a curated, collection-based browse. **Phase 4.5 — exercise-by-exercise workouts — is mostly built**: the exercise library, the workout builder, the member player and saved progress. What's left there is deciding which purchase unlocks workouts and where they sit on `/home`. The full build order, with checkmarks, is in [plan.md](./plan.md).
 
-> **Product status — the class library and live stream are paused.** What's for sale is a
-> one-time-purchase product with lifetime access, `Posture & Mobility Reset` (`/posture`,
-> five videos), alongside a free lead magnet (`/posture-routine`); the on-demand
-> library and live classes will return later under the recurring membership. So `/classes`
-> and `/live` are hidden from the member nav and locked to admins (`requireSectionUnlocked()`
-> in `lib/auth/locked-sections.ts`) — built and previewable, but not reachable by members.
-> Signed-in users land on `/home` instead (`MEMBER_HOME` in `lib/routes.ts`).
+> **Product status — the class library, live stream and workouts aren't open to members yet.**
+> What's for sale is a one-time purchase with lifetime access, `Posture & Mobility Reset`
+> (`/posture`, five classes), alongside a free lead magnet, the `12 Minute Posture and
+> Mobility Routine` (advertised at `/class1`). The on-demand library and live classes return
+> later under the recurring membership; how workouts will be sold is undecided. Until then
+> `/classes`, `/live` and `/workouts` are locked to admins (`requireSectionUnlocked()` in
+> `lib/auth/locked-sections.ts`, plus an optimistic redirect in `proxy.ts`) — built and
+> previewable, but not reachable by members. Signed-in users land on `/home` instead
+> (`MEMBER_HOME` in `lib/routes.ts`). The pivot is written up in [postureproject.md](./postureproject.md).
 
-What's in place:
+## What's in place
 
-- Turborepo monorepo with npm workspaces
-- `packages/core` — shared TypeScript types (`User`, `VideoClass`, `Tag`, `TagGroup`, `Collection`, `Challenge`, `UserAccess`, etc.) and access-control helpers (`hasAccess()`, `isChallengeExpiringSoon()`, `shouldShowUpsell()`), plus the exercise-workout sequence model and its time estimate (`estimateWorkout()`, `groupLabels()`), the steps a player walks (`workoutSteps()`) and the player's state machine (`playerReducer()` in `workout-player.ts`) — all tested with Node's built-in runner, and ready for the iOS app to reuse. Consumed as source by web and mobile (no separate build step; the web app lists it in `transpilePackages`)
-- `apps/web` — Next.js 16 app with Tailwind CSS v4
-  - **Clerk authentication** — sign-in/sign-up, `ClerkProvider`, route protection via `proxy.ts`. Admin gating via `publicMetadata.role` (a session-token claim) checked optimistically in the proxy and authoritatively server-side with `requireAdmin()`.
-  - **Mux video** — class catalog and individual class pages with `@mux/mux-player-react` (adaptive streaming, AirPlay), thumbnails from Mux. Full-width video theater stage on the class detail page (viewport-height-capped, black background).
-  - **RevenueCat + Stripe payments** — public pricing page (offerings/prices render for logged-out visitors via an anonymous RevenueCat config; sign-up is only required at the point of purchase, after which Clerk's `AFTER_SIGN_UP_URL` returns them to `/pricing` to check out), Web Billing purchase flow, "Move Mindful Pro" entitlement gating member routes.
-  - **One-time products** (`/[product]`, `/[product]/[video]`) — short video series sold outright, defined in `lib/products.ts`: a slug, a RevenueCat entitlement + product id, and a list of Mux playback ids. Adding a product is an entry in that list — the sales page, the player routes, the `/home` card and the access check all read from it, and `proxy.ts` derives the public-route list from it so each sales page loads signed out. `entitlement: null` marks a product free to anyone with an account (used for the `12 Minute Posture Routine` lead magnet). The entitlement check runs server-side, so playback ids are never sent to a browser that isn't entitled to them. Buyers get a video library; a single-video product they own renders straight into the theater layout.
-  - **Bespoke sales pages** — a product can override the generic unowned view with its own long-form landing page via `CUSTOM_LANDINGS` in `(app)/[product]/page.tsx`; everything else falls through to the default layout, so a new product still needs no code changes. `Posture & Mobility Reset` (`/posture`) is the first: hero, the five days, teacher bio, testimonials, and a medical disclaimer, in its own typeface and palette (`components/products/posture-landing.tsx`, images in `public/posture/`). It never quotes a price — figures come from RevenueCat through `ProductPurchase` — and it renders the lineup from `lib/products.ts` rather than restating it, so the sales copy and the delivered videos can't drift apart.
-  - **Marketing URLs** — a product's advertised address can differ from its slug. `/class1` (`(app)/class1/page.tsx`) is the sales page for the free 12-minute routine, while the product itself stays at `/posture-routine`; the route names the slug in one constant and renders `components/products/free-class-landing.tsx`. Deliberate separation: the slug drives the player routes, the `/home` card, the proxy's derived public-route list and the live `source:<slug>` Mailchimp tag, so pinning the ad URL to it would mean a rename breaks links and splits signup attribution. Signed-in visitors are redirected to the class — the product is free to anyone with an account, so there is nothing to sell them. Add the URL to `proxy.ts` or the proxy 307s it to `/sign-in`.
-  - **Free-membership signup** — a hidden, unlisted page (`/join/[code]`, gated by the `JOIN_SECRET_SLUG` env var) where a user signs up via Clerk and is granted a **lifetime "Move Mindful Pro" promotional entitlement** server-side through RevenueCat's REST API (`REVENUECAT_SECRET_API_KEY`), then lands on `/home`. Reuses the existing entitlement gate unchanged. Protected by URL obscurity only — anyone with the link can self-enroll.
-  - **Mailchimp audience sync** — two webhook receivers keep the marketing audience in step with who someone is. Clerk's (`/api/webhooks/clerk`, Svix-signature verified) adds new users on `user.created` with `signup` and, when they signed up from a product's page, `source:<slug>` — a stronger signal than it looks, since the only thing that sends a signed-out visitor to sign-up is a buy button. RevenueCat's (`/api/webhooks/revenuecat`, shared-secret via `REVENUECAT_WEBHOOK_AUTH`) **reconciles rather than records**: on any event it asks RevenueCat what the customer holds now and sets every `purchased:<slug>` tag (plus `member`) to match, so refunds, expiries, transfers and dashboard revocations all work without enumerating event types, and retries or replays converge instead of corrupting. Emails come from Clerk, the source of truth, rather than RevenueCat's `$email` copy. The full tag vocabulary lives in `lib/audience-tags.ts`. Both receivers must be listed in `proxy.ts` — anything a machine calls is otherwise redirected to `/sign-in`, which a sender reports as a delivery failure rather than an auth error.
-  - **ManyChat tag sync** — the same two receivers mirror `signup` and `purchased:<slug>` into ManyChat (`MANYCHAT_API_TOKEN`), so a DM flow can branch on whether someone already has an account or already bought. Deliberately the same tag vocabulary as Mailchimp rather than a second dialect. ManyChat identifies people by contact id and the site by Clerk user, so the two are joined by carrying an identifier across: a ManyChat link appends `?mc={{contact_id}}`, `proxy.ts` stashes it in a 30-day first-party cookie (the buy button rebuilds the sign-up URL from the slug and drops the query string), sign-up puts it in `unsafeMetadata` — the only channel Clerk's `<SignUp>` offers — and `user.created` promotes it to `privateMetadata`, since the client-writable copy shouldn't be the durable one. Matching on email was rejected: Instagram supplies none, so it would mean asking in the DM and hoping it matches Clerk. Unlike the Mailchimp calls beside them, both receivers ask for a retry when ManyChat fails — a missed newsletter tag costs a newsletter, a missed `signup` tag makes a flow believe a customer never signed up. `lib/manychat.ts` hardcodes both endpoint paths and takes none from a caller: `/fb/page/removeTagByName` is one segment from the subscriber form and deletes the tag account-wide. See `manychat.md` for the flow design and what's still unverified.
-  - **Admin CMS** (`/admin`, admin-only) — **classes**: Upload page (batch direct-upload many video files straight to Mux via signed upload URLs + `@mux/upchunk`, with per-file progress and a small concurrency cap; uploaded assets surface in Import once Mux finishes encoding), Import page (list Mux assets → import or **Trim & import** to clip dead air into a new Mux asset, or delete unwanted assets straight from the list; live recordings stay visible but import/trim/delete wait until Mux finalizes the recording duration), create/edit (full video player on the edit page for review), request a temporary Mux master MP4 download for offline editing, publish/unpublish, delete from overview rows or the edit page (with optional Mux asset deletion), one-click "delete raw recording" on trimmed clips once the clip is ready, assign an instructor, set an admin display date (defaults to today on import/add, shown on cards + the play page), choose which collections the class belongs to right from the create/edit/trim form (the auto-add collection comes pre-selected and can be unchecked per class); class title edits sync back to the Mux asset's `meta.title` so videos are searchable in the Mux dashboard; **instructors**: teachers with an uploaded profile photo (client-side square-cropped, stored in Supabase Storage), one assigned per class; **tags**: tag groups + tags (create/rename/delete, cascade-safe); **collections**: manual (hand-picked + drag-to-reorder member order, via `@dnd-kit`) and smart (tag-rule membership, auto-resolved, with the same drag-to-reorder ordering and "sort by date" layered on top as an overlay — newly-tagged classes appear at the top automatically), publish, drag-to-reorder row ordering, a per-collection display limit, and an "auto-add new classes to the top" toggle (manual) that pre-selects the collection in the class form so new classes land on it by default (uncheckable per class). **workouts** (Phase 4.5, `/admin/workouts`): the builder — an optional warm-up, a cover image (resized in the browser, stored in the public `workout-covers` bucket), then single exercises (sets, rest between sets, reps or time, first side for sided exercises), rests, and supersets/circuits (rounds, rest between exercises and between rounds; auto-labelled Superset N / Circuit N), with a live time estimate from each clip's pace, a clip preview, and publish checks (every exercise needs its clips ready); the sequence saves atomically through the `save_workout_sequence` database function; **exercises** (Phase 4.5, `/admin/exercises`): the library of short vertical clips workouts are built from — upload an exercise (tutorial + loop, or right and left loops when it's done on each side, with reps-in-clip for the pace) or a warm-up (one video), each clip a Mux direct upload with 1080p/720p MP4 static renditions; clip status is synced from Mux on page load (no webhooks), a replaced clip stays live until its replacement is ready, archive/restore/delete, equipment and dumbbell levels, and admin-only exercise tags (flat list, separate from class tags) with a manage-tags panel. All writes go through server actions using the Supabase service-role key (`server-only`).
-  - **Member browse** (`/classes`) — curated **collection carousels** (manual + smart, ordered, each capped at its display limit); class card/detail metadata derived from tags (Discipline label · Intensity badge · Focus/Vibe chips) plus the admin class date (on cards and the play page), with the instructor's avatar + name (single-initial fallback) on cards and the class page. Curation-only: a class appears only if it's in a published collection.
-  - **Workout player** (Phase 4.5, `/workouts` and `/workouts/[id]`, admin-only for now like Classes and Live — which entitlement unlocks workouts is still undecided) — a workout's preview (cover, time, what you'll need with one pill per dumbbell level, the whole sequence), then the optional warm-up and the workout story-style: a segmented progress bar, tutorials before each new exercise (loop / play once / off), instructor audio, "Keep my music playing" and auto-advance (rep sets move on after their estimated time) (mixes with other apps' audio via the Audio Session API — Safari and Firefox; hidden where unsupported, e.g. Chrome on Android) in Settings, and the preview's Warm-up switch — all saved to the member's account (`member_preferences`, via `lib/member/preferences*.ts` and `app/actions/preferences.ts`) with a copy on the device, which is all signed-out `/demo1` visitors get, rep and timed sets, sides, supersets and circuits, rests with a countdown ring, tap left/right to move, hold to pause, swipe up for the overview, the pause screen, End workout and the summary, plus a first-run guide to the taps and swipes on phones (replayable from Settings). Phones get the full-screen layout; wide landscape screens the desktop "theater" layout (the `theater` Tailwind variant in `globals.css`). Clips play as MP4 static renditions from a fixed pool of four `<video>` elements (`components/workouts/video-pool.tsx`) unlocked for sound on the Begin tap; the screen is kept awake and the workout pauses when the tab is hidden. Lives in the `(player)` route group (no site header). Member reads use the service-role client after the gate (`lib/workouts/member.ts`). **`/demo1`** is a public, unindexed sample that plays one pinned workout while it's published. **Progress** (step 5): signed in (on `/demo1` too), each workout is a session in `workout_sessions`, saved as it goes — created on Begin, updated at every new set, completed at the end — so the preview offers **Resume · N% complete** (from the start of the set they were on, skipping the warm-up and tutorials already shown) and **Start over**, even after the page was closed — for 7 days from the last save (`RESUME_WINDOW_MS` in `packages/core`), after which it starts fresh; End workout offers Save progress / Discard progress. A saved spot is dropped if the workout's sequence is edited underneath it (`sequenceKey` in `packages/core`). The `/workouts` cards show "Resume · N%" with a bar on the cover, or "Done · 3 days ago". Server side: `lib/member/sessions*.ts` and `app/actions/workout-sessions.ts`.
-  - **Live** (`/live`) — a persistent full-width Mux live stream (`streamType="live"`, playback ID via `NEXT_PUBLIC_MUX_LIVESTREAM_PLAYBACK_ID`) that polls a protected `/api/live/status` route for Mux's active-stream state, starts muted playback automatically when the configured stream becomes live, shows a viewer-local "next class" countdown banner (Luxon), and renders a hardcoded recurring weekly schedule as a month calendar (class times defined in Arizona time, converted to the viewer's local timezone, prev/next month nav).
-  - **Home** (`/home`) — the signed-in root (distinct from `/`, the public marketing page).
-    Every entry point lands here: the homepage redirect, the `/join` grant, the PWA
-    `start_url`, and Clerk's `AFTER_SIGN_IN_URL`. Lists every product with an owned/locked
-    badge, linking through to the video library or the sales page. The class library joins
-    it when the membership returns.
-  - **Account Settings** (`/account`) — plan status and profile.
-  - **Help** (`/help`) — contact page (email link).
-  - **Two-tier route groups** — `(app)` is the signed-in shell (header + user menu),
-    requiring an account but **no** entitlement, so free signups and one-time-product
-    buyers can reach `/home`, `/account` and `/help`. `(app)/(member)` nests inside it and
-    adds a server-side membership check (RevenueCat, via `getViewerAccess`) for the
-    membership-only routes (`/classes`, `/live`), inheriting the header rather than
-    duplicating it. Every page in both groups (and the `(player)` group and `/admin`) has a
-    `loading.tsx` placeholder, so taps switch pages at once and Next.js can prefetch them.
-  - **Custom user menu** — Profile and Manage Subscription entries.
-  - **Phone tab bar** — below tablet width the header keeps just the logo and user menu, and the section links move to a floating, frosted iOS-style tab bar along the bottom (`components/tab-bar.tsx`): Home and Account for everyone signed in, plus Classes, Live and Workouts for admins while those sections are locked.
-  - **Customer names in RevenueCat** — the Clerk webhook mirrors each user's name and email onto their RevenueCat customer on `user.created` and `user.updated`: `$displayName` and `$email` (RevenueCat's reserved attributes) plus custom `first_name` and `last_name`. Server-side, so a buyer is named in the dashboard from signup rather than only after visiting gated content. The Clerk endpoint must be subscribed to both events. `scripts/backfill-revenuecat-names.mjs` does the same for existing users — a dry run by default, `--apply` to write; set `CLERK_SECRET_KEY` to the live key for the one command to target production, since `.env.local` holds the development one.
-  - **Account deletion cleanup** — on `user.deleted`, the Clerk webhook removes the member's rows from the database (`workout_sessions`, `member_preferences`, `user_profiles`) via `lib/member/delete-server.ts`; a failure answers 500 so Clerk retries. The Clerk endpoint must be subscribed to `user.deleted` too. Third-party copies (Mailchimp, ManyChat, RevenueCat) and any active subscription are not touched.
-  - **Installable web app (PWA)** — a web manifest (`src/app/manifest.ts`) plus `appleWebApp` metadata make the site installable to the iOS/Android home screen as a standalone app. `display: "standalone"` launches it chrome-less to `MEMBER_HOME`, and `scope: "/"` keeps same-origin navigation inside the standalone window (so taps on nav links don't open in an iOS in-app browser overlay). The proxy matcher already leaves `/manifest.webmanifest` public.
-  - **Supabase database** — `user_profiles`, `classes`, `instructors`, `tags`, `tag_groups`, `class_tags`, `collections`, `collection_classes`, `collection_rule_tags`, `exercises`, `exercise_videos`, `exercise_tags`, `exercise_tag_links`, `workouts`, `workout_blocks`, `member_preferences`, `workout_sessions`, all with RLS (read-only for members; admin writes via service-role). Instructor avatars live in a public `instructor-avatars` Storage bucket; workout covers in a public `workout-covers` bucket.
-  - **Deployed to Vercel** — live at `www.movemindful.com`. Auto-deploys on push to `main`.
-- `apps/mobile` — Expo 56 / React Native app (starter screen, no integrations yet)
-- Shared `tsconfig.base.json` for consistent TypeScript settings across packages
+### Monorepo
 
-What's not yet built:
-- Exercise-by-exercise workouts (Phase 4.5 in [plan.md](./plan.md)) — in progress: the exercise library, workout builder and member player are built; saving progress / resume, completed-workout history, and which entitlement unlocks workouts (and where they sit on `/home`) are next. An unlinked, admin-only playback test still lives at `/admin/lab/playback` and can go now that the player exists
-- 30-day challenge expiry tracking and upsell flow
+- Turborepo with npm workspaces and a shared `tsconfig.base.json`.
+- **`packages/core`** — shared TypeScript, consumed as source (no build step; the web app lists it in `transpilePackages`), ready for the iOS app to reuse:
+  - `workouts.ts` — the workout sequence model, its time estimate (`estimateWorkout()`), group labels (`groupLabels()`) and the steps a player walks (`workoutSteps()`)
+  - `workout-player.ts` — the player's state machine (`playerReducer()`), including tutorial modes and auto-advance (`fitTutorialMode()`)
+  - `workout-progress.ts` — saved progress: `workoutProgress()`, `sequenceKey()`, `resumeFrom()` and the 7-day `RESUME_WINDOW_MS`
+  - Unit tests for all three, on Node's built-in runner (see [Test](#test))
+  - `types.ts` / `access.ts` — the original membership + 30-day-challenge types and helpers (`hasAccess()`, `shouldShowUpsell()`, …). **Unused**: the live access model is one RevenueCat entitlement per product, read server-side in the web app. See [Known tech debt](#known-tech-debt--dormant-code).
+- **`apps/mobile`** — an Expo 56 / React Native starter screen; no integrations yet.
+
+### Web app (`apps/web` — Next.js 16, Tailwind CSS v4)
+
+**Accounts, access and payments**
+
+- **Clerk authentication** — sign-in/sign-up, `ClerkProvider`, route protection in `proxy.ts`. Admins carry `publicMetadata.role = "admin"` as a session-token claim, checked optimistically in the proxy and authoritatively on the server (`requireAdmin()` / `isAdmin()` in `lib/auth/admin.ts`).
+- **RevenueCat + Stripe payments** — Web Billing checkout. The public `/pricing` page renders offerings for logged-out visitors through an anonymous RevenueCat config; sign-up is only required at the point of purchase, and `?redirect_url=` brings the buyer back to finish checking out. It lists only what's actually on sale.
+- **Server-side entitlement reads** — `getViewerAccess()` / `viewerCanAccess()` (`lib/auth/viewer.ts`) read the viewer's live entitlements from RevenueCat's REST API (`getActiveEntitlements()` in `lib/revenuecat-admin.ts`). They fail closed, are cached per request, and skip RevenueCat entirely for admins. Pages that only need "is this an admin?" call `isAdmin()` instead, which reads the session and costs nothing.
+- **One-time products** (`/[product]`, `/[product]/[video]`) — short video series sold outright, defined in `lib/products.ts`: a slug, a RevenueCat entitlement + product id, and a list of Mux playback ids. Adding a product is an entry in that list — the sales page, the player routes, the `/home` card and the access check all read from it, and `proxy.ts` derives the public-route list from it so each sales page loads signed out. `entitlement: null` marks a product free to anyone with an account (the `12 Minute Posture and Mobility Routine` lead magnet). The entitlement check runs server-side, so playback ids are never sent to a browser that isn't entitled to them. Buyers get a video library; a single-video product they own renders straight into the theater layout.
+- **Bespoke sales pages** — a product can override the generic unowned view with its own long-form landing page via `CUSTOM_LANDINGS` in `(app)/[product]/page.tsx`; everything else falls through to the default layout, so a new product still needs no code changes. `Posture & Mobility Reset` (`/posture`) is the first: hero, the five classes, teacher bio, testimonials and a medical disclaimer, in its own typeface and palette (`components/products/posture-landing.tsx`, images in `public/posture/`, design canvas in [`design/posture-and-mobility-reset`](./design/posture-and-mobility-reset/README.md)). It never quotes a price — figures come from RevenueCat through `ProductPurchase` — and it renders the lineup from `lib/products.ts` rather than restating it, so the sales copy and the delivered videos can't drift apart.
+- **Marketing URLs** — a product's advertised address can differ from its slug. `/class1` (`(app)/class1/page.tsx`) is the sales page for the free routine, while the product itself stays at `/posture-routine`; the route names the slug in one constant and renders `components/products/free-class-landing.tsx`. Deliberate separation: the slug drives the player routes, the `/home` card, the proxy's derived public-route list and the `source:<slug>` Mailchimp tag, so pinning the ad URL to it would mean a rename breaks links and splits signup attribution. Signed-in visitors are redirected to the class — it's free to anyone with an account, so there's nothing to sell them. Add any new marketing URL to `proxy.ts`, or the proxy 307s it to `/sign-in`.
+- **Free-membership signup** — a hidden, unlisted page (`/join/[code]`, gated by the `JOIN_SECRET_SLUG` env var) where a user signs up via Clerk and is granted a **lifetime "Move Mindful Pro" promotional entitlement** server-side through RevenueCat's REST API (`REVENUECAT_SECRET_API_KEY`), then lands on `/home`. Protected by URL obscurity only — anyone with the link can self-enroll.
+
+**Marketing integrations and account lifecycle**
+
+- **Mailchimp audience sync** — two webhook receivers keep the marketing audience in step with who someone is. Clerk's (`/api/webhooks/clerk`, Svix-signature verified) adds new users on `user.created` with `signup` and, when they signed up from a product's page, `source:<slug>` — a stronger signal than it looks, since the only thing that sends a signed-out visitor to sign-up is a buy button. RevenueCat's (`/api/webhooks/revenuecat`, shared secret via `REVENUECAT_WEBHOOK_AUTH`) **reconciles rather than records**: on any event it asks RevenueCat what the customer holds now and sets every `purchased:<slug>` tag (plus `member`) to match, so refunds, expiries, transfers and dashboard revocations all work without enumerating event types, and retries or replays converge instead of corrupting. Emails come from Clerk, the source of truth, rather than RevenueCat's `$email` copy. The full tag vocabulary lives in `lib/audience-tags.ts`. Both receivers must be listed in `proxy.ts` — anything a machine calls is otherwise redirected to `/sign-in`, which a sender reports as a delivery failure rather than an auth error.
+- **ManyChat tag sync** — the same two receivers mirror `signup` and `purchased:<slug>` into ManyChat (`MANYCHAT_API_TOKEN`), so a DM flow can branch on whether someone already has an account or already bought. Deliberately the same tag vocabulary as Mailchimp rather than a second dialect. ManyChat identifies people by contact id and the site by Clerk user, so the two are joined by carrying an identifier across: a ManyChat link appends `?mc={{contact_id}}`, `proxy.ts` stashes it in a 30-day first-party cookie (the buy button rebuilds the sign-up URL from the slug and drops the query string), sign-up puts it in `unsafeMetadata` — the only channel Clerk's `<SignUp>` offers — and `user.created` promotes it to `privateMetadata`, since the client-writable copy shouldn't be the durable one. Matching on email was rejected: Instagram supplies none. Unlike the Mailchimp calls beside them, both receivers ask for a retry when ManyChat fails — a missed newsletter tag costs a newsletter, a missed `signup` tag makes a flow believe a customer never signed up. `lib/manychat.ts` hardcodes both endpoint paths and takes none from a caller: `/fb/page/removeTagByName` is one segment from the subscriber form and deletes the tag account-wide. See [manychat.md](./manychat.md) for the flow design, and [Paytest.md](./Paytest.md) for the end-to-end test that's still to run.
+- **Customer names in RevenueCat** — the Clerk webhook mirrors each user's name and email onto their RevenueCat customer on `user.created` and `user.updated`: `$displayName` and `$email` (RevenueCat's reserved attributes) plus custom `first_name` and `last_name`, so a buyer is named in the dashboard from signup. `scripts/backfill-revenuecat-names.mjs` does the same for existing users — a dry run by default, `--apply` to write; set `CLERK_SECRET_KEY` to the live key for the one command to target production, since `.env.local` holds the development one.
+- **Account deletion cleanup** — on `user.deleted`, the Clerk webhook removes the member's rows from the database (`workout_sessions`, `member_preferences`, `user_profiles`) via `lib/member/delete-server.ts`; a failure answers 500 so Clerk retries. Third-party copies (Mailchimp, ManyChat, RevenueCat) and any active subscription are not touched — deleting an account does **not** cancel billing.
+- **Clerk webhook events** — the endpoint must be subscribed to `user.created`, `user.updated` and `user.deleted` in the Clerk dashboard.
+
+**Member experience**
+
+- **Home** (`/home`) — the signed-in root (distinct from `/`, the public marketing page). Every entry point lands here: the homepage redirect, the `/join` grant, the PWA `start_url`, and Clerk's `AFTER_SIGN_IN_URL`. Lists every product with an owned/locked badge, linking through to the video library or the sales page. The class library joins it when the membership returns.
+- **Member browse** (`/classes`) — curated **collection carousels** (manual + smart, ordered, each capped at its display limit); class card/detail metadata derived from tags (Discipline label · Intensity badge · Focus/Vibe chips) plus the admin class date, with the instructor's avatar + name (single-initial fallback). Curation-only: a class appears only if it's in a published collection. Class pages (`/classes/[id]`) use `@mux/mux-player-react` (adaptive streaming, AirPlay) on a full-width theater stage.
+- **Live** (`/live`) — a persistent full-width Mux live stream (`streamType="live"`, playback id via `NEXT_PUBLIC_MUX_LIVESTREAM_PLAYBACK_ID`) that polls a protected `/api/live/status` route for Mux's active-stream state, starts muted playback automatically when the stream goes live, shows a viewer-local "next class" countdown (Luxon), and renders a hardcoded recurring weekly schedule as a month calendar (class times defined in Arizona time, shown in the viewer's timezone).
+- **Workouts** (Phase 4.5):
+  - **Where** — `/workouts` lists them; each card shows "Resume · N%" (with a bar along the cover) or "Done · 3 days ago". `/workouts/[id]` is the preview and the player, in the `(player)` route group (full screen, no site header). **`/demo1`** is a public, unindexed sample that plays one pinned workout while it's published.
+  - **Preview** — cover, time, "You'll need" (one pill per dumbbell level) and the whole sequence, with **Begin workout** and a Warm-up switch — or, with saved progress, **Resume · N% complete** and **Start over**.
+  - **Player** — the optional warm-up, then the workout story-style: a segmented progress bar, a tutorial before each new exercise (Loop / Play once / Off), rep and timed sets, sides, supersets and circuits, rests with a countdown ring, a pause screen, End workout and a summary.
+  - **Controls** — on phones: tap the left or right side to go back or on, the middle to pause (or hold); swipe up for the workout overview; swipe down to minimize the controls, up to bring them back. A first-run guide explains them (replayable from Settings). Wide landscape screens get the desktop "theater" layout (the `theater` Tailwind variant in `globals.css`) with on-screen buttons, plus Space and the arrow keys.
+  - **Settings** — tutorial mode, instructor audio, **Keep my music playing** (mixes with other apps' audio via the Audio Session API — Safari and Firefox; hidden where unsupported) and **auto-advance** (rep sets move on after their estimated time; Loop tutorials become Play once while it's on). Saved to the member's account (`member_preferences`, via `lib/member/preferences*.ts` and `app/actions/preferences.ts`) with a copy on the device — which is all a signed-out `/demo1` visitor gets.
+  - **Progress** — signed in (on `/demo1` too), each workout is a session in `workout_sessions`, saved as it goes: created on Begin, updated at every new set, completed at the end. So Resume survives a closed page — for 7 days from the last save (`RESUME_WINDOW_MS`), after which the workout starts fresh. Resume picks up at the start of the set they were on, skipping the warm-up and tutorials already shown. End workout offers Save progress / Discard progress. A saved spot is dropped if the workout's sequence is edited underneath it (`sequenceKey`). Server side: `lib/member/sessions*.ts` and `app/actions/workout-sessions.ts`.
+  - **Playback** — clips play as MP4 static renditions from a fixed pool of four `<video>` elements (`components/workouts/video-pool.tsx`), unlocked for sound on the Begin tap; exercise loops always play muted; a spinner shows while a clip buffers; the screen stays awake and the workout pauses when the tab is hidden. Member reads use the service-role client after the gate (`lib/workouts/member.ts`).
+- **Account Settings** (`/account`) — plan status and profile; profile edits and password changes open Clerk's account window.
+- **Help** (`/help`) — contact page (email link).
+- **Navigation** — the header carries the logo, the section links (from tablet width up) and the user menu: profile photo and email, **Admin** for admins, Account Settings, Help and Sign out. On phones the section links move to a floating, frosted iOS-style **tab bar** along the bottom (`components/tab-bar.tsx`): Home and Account for everyone signed in, plus Classes, Live and Workouts for admins while those sections are locked.
+- **Loading states** — every page in the `(app)`, `(player)` and `/admin` groups has a `loading.tsx` placeholder. The pages render per request (they depend on who's signed in), and without one Next.js can neither prefetch them nor move on until the server finishes — taps would look ignored.
+- **Two-tier route groups** — `(app)` is the signed-in shell (header, user menu, tab bar), requiring an account but **no** entitlement, so free signups and one-time-product buyers can reach `/home`, `/account` and `/help`. `(app)/(member)` nests inside it and adds a server-side membership check for the membership-only routes (`/classes`, `/live`), inheriting the header rather than duplicating it.
+- **Installable web app (PWA)** — a web manifest (`src/app/manifest.ts`) plus `appleWebApp` metadata make the site installable to the iOS/Android home screen as a standalone app. `display: "standalone"` launches it chrome-less to `MEMBER_HOME`, and `scope: "/"` keeps same-origin navigation inside the standalone window. The proxy matcher already leaves `/manifest.webmanifest` public.
+
+**Admin CMS** (`/admin`, admin-only — opens on Exercises)
+
+- **Exercises** (`/admin/exercises`) — the library of short vertical clips workouts are built from. Upload an exercise (tutorial + loop, or right and left loops when it's done on each side, with reps-in-clip for the pace) or a warm-up (one video); each clip is a Mux direct upload with 1080p/720p MP4 static renditions. Clip status is synced from Mux on page load (no webhooks), and a replaced clip stays live until its replacement is ready. Archive/restore, and delete once no workout uses it ("used in N workouts"). Equipment, dumbbell levels, and admin-only exercise tags (a flat list, separate from class tags) with a manage-tags panel.
+- **Workouts** (`/admin/workouts`) — the builder: an optional warm-up, a cover image (resized in the browser, stored in the public `workout-covers` bucket), then single exercises (sets, rest between sets, reps or time, first side for sided exercises), rests, and supersets/circuits (rounds, rest between exercises and between rounds; auto-labelled Superset N / Circuit N). A live time estimate from each clip's pace, a clip preview, and publish checks (every exercise needs its clips ready). The sequence saves atomically through the `save_workout_sequence` database function.
+- **Classes** (`/admin/classes`) — **Upload** (batch direct-upload to Mux via signed upload URLs + `@mux/upchunk`, with per-file progress and a small concurrency cap; assets surface in Import once Mux finishes encoding); **Import** (list Mux assets → import, or **Trim & import** to clip dead air into a new Mux asset, or delete unwanted assets; live recordings stay visible but wait until Mux finalizes them); create/edit with a full player for review; a temporary Mux master MP4 download for offline editing; publish/unpublish; delete (with optional Mux asset deletion); one-click "delete raw recording" on trimmed clips once the clip is ready; instructor; an admin display date; an **Access** picker (which entitlement a class requires — `required_entitlement`, migration 008); and the collections a class belongs to, right from the form. Title edits sync back to the Mux asset's `meta.title`, so videos are searchable in the Mux dashboard.
+- **Instructors** — teachers with an uploaded profile photo (square-cropped in the browser, stored in the public `instructor-avatars` bucket), one per class.
+- **Tags** — tag groups + tags (create/rename/delete, cascade-safe).
+- **Collections** — manual (hand-picked, drag-to-reorder via `@dnd-kit`) and smart (tag-rule membership, with the same drag ordering and "sort by date" layered on top, so newly tagged classes appear at the top automatically); publish, drag-to-reorder rows, a per-collection display limit, and an "auto-add new classes to the top" toggle (manual) that pre-selects the collection in the class form.
+- All writes go through server actions using the Supabase service-role key (`server-only`), and each action checks admin itself — a server action is reachable by direct POST, so the page gate alone isn't enough.
+
+**Data and hosting**
+
+- **Supabase** — `user_profiles`, `classes`, `instructors`, `tags`, `tag_groups`, `class_tags`, `collections`, `collection_classes`, `collection_rule_tags`, `exercises`, `exercise_videos`, `exercise_tags`, `exercise_tag_links`, `workouts`, `workout_blocks`, `member_preferences`, `workout_sessions` — all with RLS on. The browser never writes: admin writes and member-owned data go through the server with the service-role key, taking the member from their Clerk session. The member-owned tables (`member_preferences`, `workout_sessions`) have no policies at all, so the browser can't read them either. Storage buckets: `instructor-avatars` and `workout-covers` (both public).
+- **Vercel** — live at `www.movemindful.com`, auto-deploying on push to `main`. Functions run in `iad1` (Washington, D.C.), next to the Supabase database (`us-east-1`, N. Virginia). Currently on the Hobby plan — see [plan.md](./plan.md#hosting--infrastructure) for the upgrades due before launch.
+
+## What's not yet built
+
+- **Workouts** (Phase 4.5): which entitlement unlocks them and where they sit on `/home`; showing completion history and "time since last workout" (already recorded); tutorial captions and coaching cues; removing the playback lab (`/admin/lab/playback`) and its two test clips.
+- **Posture launch loose ends** ([postureproject.md](./postureproject.md)): real copy for `/pricing`; the end-to-end sign-up → purchase → tags test ([Paytest.md](./Paytest.md)).
+- 30-day challenge expiry tracking and upsell flow (the original plan; nothing currently for sale uses it)
 - iOS app (Expo + React Native)
 - Push notifications
-- Group chat and livestreaming (deferred to later phases per plan)
+- Group chat, and recording livestreams into the library (later phases per plan)
 
 ## Known tech debt / dormant code
 
@@ -73,15 +103,22 @@ Tracked here so it doesn't get lost. None of these affect current functionality 
 |---|---|---|
 | `instructor_name` | Transitional | Superseded by `instructor_id` + the `instructors` join (migration `004`). Still read as a fallback (`inst?.name ?? instructor_name`) but **no longer written**. Drop in a future migration once confident nothing depends on it. |
 | `category`, `difficulty` | Deprecated | Replaced by the unified tags model in Phase 4. **No code references remain.** `supabase/migrations/003_drop_legacy_class_columns.sql` drops them — apply it in Supabase if it hasn't been run yet. |
-| `thumbnail_url` | Dormant | Never read. Thumbnails are generated from the Mux playback ID (`image.mux.com/<id>/thumbnail.webp`). The `VideoClass.thumbnailUrl` field in `packages/core` is likewise unused by the web app. |
+| `thumbnail_url` | Dormant | Never read. Thumbnails are generated from the Mux playback id (`image.mux.com/<id>/thumbnail.webp`). The `VideoClass.thumbnailUrl` field in `packages/core` is likewise unused. |
 
-**Dormant code:**
+**Dormant code and data:**
 
-- **Admin dashboard** — `/admin` redirects to `/admin/classes`; the original dashboard UI is parked (unrendered) in `apps/web/src/components/admin/admin-dashboard.tsx`, kept in case the `/admin` slot is repurposed. Re-route it from `apps/web/src/app/admin/page.tsx` to bring it back.
+- **Admin dashboard** — `/admin` redirects to `/admin/exercises`; the original dashboard UI is parked (unrendered) in `apps/web/src/components/admin/admin-dashboard.tsx`, kept in case the `/admin` slot is repurposed. Re-route it from `apps/web/src/app/admin/page.tsx` to bring it back.
+- **`packages/core` access model** — `types.ts` and `access.ts` (`UserAccess`, `Challenge`, `hasAccess()`, `shouldShowUpsell()`, …) model the old membership + 30-day-challenge world and nothing imports them. Rewrite rather than delete: it's the natural home for a shared access model once the iOS app arrives.
+- **`user_profiles`** (migration `001`) — never read or written by the app; only the account-deletion cleanup touches it.
+- **Playback lab** — `/admin/lab/playback` and its two Mux test clips; unlinked, and can go now that the workout player exists.
+
+**Security trade-offs accepted for now:**
+
+- **Mux videos are public.** Assets use `playback_policies: ["public"]`, so anyone holding a playback id can stream it. Mitigated by never sending ids to a browser that isn't entitled to them; the real fix is Mux signed playback. See [postureproject.md](./postureproject.md#mux-videos-are-public--accepted-for-now).
 
 **Performance / cost trade-offs:**
 
-- **Per-load Mux status fetch on the Classes overview** — the admin Classes list (`getAdminClasses`) fetches Mux encode-status for every trimmed clip that still has a `source_mux_asset_id` (to gate each row's "Delete raw" button), on every page load. Normally 0–few calls — they clear as raws are deleted — but it scales with the number of un-cleaned clips. If that grows, cache the status or move readiness to a Mux webhook that writes a `clip_ready`/status column instead of polling per render.
+- **Per-load Mux status fetch on the Classes overview** — the admin Classes list (`getAdminClasses`) fetches Mux encode-status for every trimmed clip that still has a `source_mux_asset_id` (to gate each row's "Delete raw" button), on every page load. Normally 0–few calls — they clear as raws are deleted — but it scales with the number of un-cleaned clips. If that grows, cache the status or move readiness to a Mux webhook that writes a status column instead of polling per render. The exercise library syncs pending clips from Mux the same way.
 
 ## Tech Stack
 
@@ -95,45 +132,57 @@ Tracked here so it doesn't get lost. None of these affect current functionality 
 | Payments | RevenueCat (Stripe on web) |
 | Video | Mux |
 | Database | Supabase (Postgres) |
-| Push Notifications | Expo Notifications |
+| Marketing | Mailchimp, ManyChat |
+| Push Notifications | Expo Notifications (planned) |
 
 ## Project Structure
 
 ```
 move-mindful/
 ├── apps/
-│   ├── web/               # Next.js 16 + Tailwind CSS v4
-│   │   ├── src/proxy.ts   # Clerk middleware (route + optimistic admin gating)
-│   │   ├── src/lib/       # supabase (anon + service-role), mux, auth, admin queries, collections
-│   │   ├── src/components/# Mux player, user menu, entitlement gate, carousel, products/*, admin/*
-│   │   └── src/app/       # App Router
-│   │       ├── page.tsx        # Public landing (redirects signed-in → /home)
-│   │       ├── pricing/        # Pricing page (RevenueCat offerings + purchase)
-│   │       ├── sign-in/        # Clerk <SignIn />
-│   │       ├── sign-up/        # Clerk <SignUp />
-│   │       ├── join/[code]/    # Hidden free-membership signup (env-gated, lifetime grant)
-│   │       ├── actions/        # Server actions (classes, tags, collections)
-│   │       ├── admin/          # Admin CMS: classes (upload, import, trim, edit), tags, collections, workouts, exercises
-│   │       ├── workouts/       # Member workout player: preview, screens, video pool, desktop theater layout
-│   │       ├── (app)/          # Signed-in shell (no entitlement): home, account, help
-│   │       ├── (app)/[product]/# One-time products: public sales page + gated player
-│   │       └── (app)/(member)/ # Membership-gated: classes (carousels), classes/[id], live
-│   └── mobile/            # Expo 56 / React Native
-│       └── App.tsx        # Entry point
+│   ├── web/                    # Next.js 16 + Tailwind CSS v4
+│   │   ├── .env.example        # Every environment variable, with notes
+│   │   ├── scripts/            # One-off maintenance: RevenueCat name backfill, Mux upload/clip/delete helpers
+│   │   └── src/
+│   │       ├── proxy.ts        # Clerk middleware: public routes, optimistic admin/section redirects, ManyChat cookie
+│   │       ├── lib/            # supabase/, mux/, auth/ (admin, viewer access, section locks), admin/, exercises/,
+│   │       │                   # workouts/, member/ (preferences, sessions, account deletion), products, entitlements,
+│   │       │                   # revenuecat(-admin), mailchimp, manychat, audience-tags, routes
+│   │       ├── components/     # user menu, tab bar, Mux player, carousels, products/*, admin/*, workouts/* (the player), live/*
+│   │       └── app/            # App Router
+│   │           ├── page.tsx         # Public landing (redirects signed-in → /home)
+│   │           ├── pricing/         # Pricing page (RevenueCat offerings + purchase)
+│   │           ├── sign-in/, sign-up/  # Clerk <SignIn /> / <SignUp />
+│   │           ├── join/[code]/     # Hidden free-membership signup (env-gated, lifetime grant)
+│   │           ├── api/             # webhooks/clerk, webhooks/revenuecat, live/status
+│   │           ├── actions/         # Server actions: classes, uploads, tags, collections, instructors,
+│   │           │                    # exercises, workouts, preferences, workout-sessions
+│   │           ├── admin/           # Admin CMS: exercises, workouts, classes, instructors, tags, collections
+│   │           ├── (app)/           # Signed-in shell (no entitlement): home, account, help, workouts list, class1
+│   │           ├── (app)/[product]/ # One-time products: public sales page + gated player
+│   │           ├── (app)/(member)/  # Membership-gated: classes, classes/[id], live
+│   │           └── (player)/        # Full screen, no header: workouts/[id], demo1
+│   └── mobile/                 # Expo 56 / React Native (starter screen)
 ├── packages/
-│   └── core/              # Shared TypeScript
-│       └── src/
-│           ├── types.ts   # User, VideoClass, Tag, TagGroup, Collection, Challenge, …
-│           ├── access.ts  # hasAccess, isChallengeExpiringSoon, shouldShowUpsell
-│           └── index.ts   # Re-exports
-├── design/                # Design canvas source files (each folder's README links its online canvas)
-├── supabase/migrations/   # SQL migrations (001 schema, 002 media org, 003 cleanup, 004 instructors, 005 collection auto-add + limit, 006 clip source tracking, 007 class date, 008 class access, 009 exercises, 010 workouts, 011 set rest + workout cover, 012 member preferences, 013 workout sessions)
-├── plan.md                # Full architecture, build order, security guidelines
-├── phase-4-plan.md        # Phase 4 implementation plan (schema, routes, decisions)
-├── turbo.json             # Turborepo task config
-├── tsconfig.base.json     # Shared TypeScript compiler options
-└── package.json           # Root workspace config
+│   └── core/src/               # Shared TypeScript (see "Monorepo" above)
+│       ├── workouts.ts, workout-player.ts, workout-progress.ts   # + *.test.ts
+│       ├── types.ts, access.ts # Original access model (unused)
+│       └── index.ts            # Re-exports
+├── supabase/migrations/        # Numbered SQL, applied by hand in the Supabase SQL Editor (001 → 013)
+├── design/                     # Design canvas mirrors; each folder's README links its online canvas
+├── plan.md                     # Architecture, build order, hosting, security guidelines
+├── postureproject.md           # The pivot to one-time products: decisions, launch to-dos, flagged risks
+├── manychat.md                 # ManyChat integration: API notes, tag vocabulary, flow design
+├── Paytest.md                  # Manual end-to-end test: ManyChat link → sign-up → purchase → tags
+├── phase-4-plan.md             # Historical: the approved Phase 4 implementation plan
+├── TODO.md                     # Running marketing/product to-do list
+├── AGENTS.md / CLAUDE.md       # Instructions for AI coding agents working in this repo
+├── turbo.json                  # Turborepo task config
+├── tsconfig.base.json          # Shared TypeScript compiler options
+└── package.json                # Root workspace config
 ```
+
+Migrations: 001 schema · 002 media organization · 003 drop legacy class columns · 004 instructors · 005 collection auto-add + limit · 006 clip source tracking · 007 class date · 008 class access · 009 exercises · 010 workouts · 011 set rest + workout cover · 012 member preferences · 013 workout sessions.
 
 ## Getting Started
 
@@ -150,13 +199,22 @@ npm install
 
 ### Environment variables
 
-The web app needs Clerk, Supabase, RevenueCat, Mux and Mailchimp keys, plus `REVENUECAT_WEBHOOK_AUTH` (a random shared secret, set identically in RevenueCat's webhook Authorization field) and `MANYCHAT_API_TOKEN` (ManyChat Settings → API; regenerating it disables every connected method, so rotate both sides together). Copy the template and fill in your values:
+The web app needs Clerk, Supabase, RevenueCat, Mux, Mailchimp and ManyChat keys, plus a few shared secrets. `apps/web/.env.example` lists every variable with a note on where it comes from. Copy it and fill in your values:
 
 ```bash
 cp apps/web/.env.example apps/web/.env.local
 ```
 
-Get the `pk_test_…` and `sk_test_…` keys from the [Clerk dashboard](https://dashboard.clerk.com). `.env.local` is gitignored; never commit real keys.
+`.env.local` is gitignored; never commit real keys, and never give a secret a `NEXT_PUBLIC_` prefix (those are sent to the browser).
+
+> **Purchases are real in every environment.** Vercel and the default `.env.local` both hold RevenueCat's
+> production Web Billing key, so a test purchase — even on localhost — is a live Stripe charge. For free test
+> purchases, put the **sandbox** key (`rcb_sb_…`, from RevenueCat → Apps & Providers → the web configuration) in
+> `.env.local` and test against `npm run dev:web`. Leave Vercel on the production key.
+
+### Database
+
+Migrations are numbered SQL files in `supabase/migrations/`. Apply each one, in order, in the Supabase SQL Editor — there's no migration runner. New code should cope with its migration not having been applied yet (reads come back empty rather than crashing).
 
 ### Development
 
@@ -164,7 +222,7 @@ Get the `pk_test_…` and `sk_test_…` keys from the [Clerk dashboard](https://
 # Run everything (web + mobile + core)
 npm run dev
 
-# Run just the web app
+# Run just the web app (http://localhost:3000)
 npm run dev:web
 
 # Run just the mobile app
@@ -181,27 +239,26 @@ npm run build
 npm run build:web
 ```
 
-### Lint
+### Lint and typecheck
 
 ```bash
 npm run lint
+npx tsc --noEmit -p apps/web
 ```
 
 ### Test
 
-The shared workout model — estimate, player steps and the player's state machine — has unit tests (Node's built-in test runner, no extra dependencies):
+The shared workout model — estimate, player steps, the player's state machine and saved progress — has unit tests (Node's built-in test runner, no extra dependencies):
 
 ```bash
 npm test -w @move-mindful/core
 ```
 
-## Architecture & Planning
+## Docs
 
-See [plan.md](./plan.md) for:
-
-- Full tech stack rationale
-- Business model (30-day challenge → membership upsell)
-- Purchasing & platform strategy
-- 8-phase build order
-- Hosting & cost breakdown
-- Security guidelines and checklist
+- [plan.md](./plan.md) — tech stack rationale, business model, purchasing strategy, the build order (Phases 1–8, plus 4.5), hosting and costs, security guidelines
+- [postureproject.md](./postureproject.md) — the pivot to one-time products: what was decided, what's left to launch, what's flagged
+- [manychat.md](./manychat.md) — the ManyChat integration and DM flow design; [Paytest.md](./Paytest.md) — its end-to-end test
+- [design/](./design/) — mirrors of the design canvases, each with a README linking the live canvas
+- [phase-4-plan.md](./phase-4-plan.md) — historical record of the Phase 4 (admin CMS) plan
+- [AGENTS.md](./AGENTS.md) — working rules for AI coding agents (also loaded via `CLAUDE.md`)
