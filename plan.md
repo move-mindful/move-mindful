@@ -2,7 +2,9 @@
 
 ## Overview
 
-A video fitness platform offering on-demand classes, live streaming, group chat, and push notifications. Web and iOS are co-equal platforms. All purchases happen on the web; the iOS app is the logged-in experience.
+A video fitness platform offering on-demand classes, exercise-by-exercise workouts, live streaming, group chat, and push notifications. Web and iOS are co-equal platforms. All purchases happen on the web; the iOS app is the logged-in experience.
+
+**Where things stand (Sep 2026):** the web app is live at `www.movemindful.com`. What's for sale is a one-time product, `Posture & Mobility Reset`, plus a free lead-magnet routine; the class library, live stream and workouts are built but locked to admins until the membership (and a decision on how workouts are sold) arrives. See [README.md](./README.md) for the current state and [postureproject.md](./postureproject.md) for the pivot.
 
 ---
 
@@ -38,7 +40,14 @@ A video fitness platform offering on-demand classes, live streaming, group chat,
 
 ## Business Model
 
-### 30-Day Challenge (Entry Product)
+### What's on sale now (Sep 2026)
+- **One-time products** — short video series sold outright with lifetime access, one RevenueCat entitlement each. The first is `Posture & Mobility Reset` (`/posture`, five classes, entitlement `posture`). Defined in `apps/web/src/lib/products.ts`.
+- **Free lead magnet** — the `12 Minute Posture and Mobility Routine`, free with any account (no entitlement), advertised at `/class1`. Signups feed Mailchimp and ManyChat.
+- **Paused** — the recurring membership (`Move Mindful Pro`: class library + live) and the 30-day challenge below. Whether the membership will include the one-time products is undecided (a RevenueCat dashboard change either way, not code).
+
+The sections below are the original plan and still describe where the membership is headed.
+
+### 30-Day Challenge (Entry Product — original plan, not currently for sale)
 - One-time purchase managed through RevenueCat (Stripe on web)
 - Time-limited access (30 days from purchase)
 - Goal: low-commitment entry point to acquire users
@@ -79,14 +88,17 @@ A video fitness platform offering on-demand classes, live streaming, group chat,
 - Marketing (social media, email, search) still drives users to the website to purchase
 
 ### Access Control Logic
+One RevenueCat entitlement per sellable thing — `Move Mindful Pro` for the membership, `posture` for the Posture Reset, and so on — so products and the membership stay independent. The web app checks them **on the server, before rendering**, so gated content (Mux playback ids included) never reaches a browser that isn't entitled to it:
+
 ```typescript
-// RevenueCat handles this via "entitlements" — you define access levels
-// in the RevenueCat dashboard and check them with one API call
-const customerInfo = await Purchases.getCustomerInfo()
-const hasAccess = customerInfo.entitlements.active['premium'] !== undefined
-// 'premium' entitlement is granted by EITHER the challenge purchase OR the membership
-// RevenueCat tracks expiry, renewal, and cross-platform status automatically
+// apps/web — lib/auth/viewer.ts + lib/revenuecat-admin.ts
+const viewer = await getViewerAccess()          // Clerk session + RevenueCat REST (cached per request)
+if (!viewerCanAccess(viewer, product.entitlement)) redirect(salesPage)
+// Admins pass every check (to preview); an entitlement with no expiry is lifetime;
+// a RevenueCat outage denies access rather than granting it.
 ```
+
+The iOS app will check the same entitlements with `react-native-purchases`, identified by the same Clerk user id.
 
 ---
 
@@ -102,6 +114,7 @@ const hasAccess = customerInfo.entitlements.active['premium'] !== undefined
 ### 1b. Exercise-by-exercise workouts
 - Workouts assembled from short vertical exercise clips (tutorial + looping clip per exercise), played full screen with a story-style progress bar
 - Admin builder for single exercises, rests, supersets and circuits, with an estimated time; exercise library with upload, edit, archive and tags
+- Member player with tap and swipe controls, tutorial modes, auto-advance, settings saved to the account, and saved progress (Resume · N%)
 - See Phase 4.5 in the build order below
 
 ### 2. Push Notifications
@@ -147,7 +160,7 @@ const hasAccess = customerInfo.entitlements.active['premium'] !== undefined
 - [x] Entitlements and access gating ("Move Mindful Pro" entitlement)
 - [x] Pricing page with real offerings from RevenueCat
 - [x] Subscription dashboard (plan status, renewal date, manage link)
-- [x] Custom user menu (profile photo, manage subscription, profile, sign out)
+- [x] Custom user menu (profile photo; Admin for admins, Account Settings, Help, Sign out) and an account page with plan status
 - [x] Clerk user info synced to RevenueCat (name, email)
 - [ ] 30-day challenge expiry tracking (future)
 - [ ] Upsell flow from challenge (day 25+ prompts, day 30 lock — future)
@@ -157,13 +170,28 @@ const hasAccess = customerInfo.entitlements.active['premium'] !== undefined
 - [x] Class management (Sync from Mux import, create, edit, publish/unpublish, delete + optional Mux asset deletion)
 - [x] Tags & tag groups (unified taxonomy — "category" folded into tags; create/edit/delete)
 - [x] Collections/playlists (manual hand-picked + smart tag-rule)
-- [x] Manual ordering within collections (up/down) + collection row ordering
+- [x] Drag-to-reorder within collections (`@dnd-kit`) + collection row ordering
 - [x] Auto-populate collections based on tags (smart collections)
 - [x] Member-facing browse UI (curated collection carousels; curation-only by design)
-- [ ] Mux livestream recording import (deferred to Phase 7)
-- [ ] In-browser Mux direct upload (deferred; admins upload in the Mux dashboard, then Sync)
+- [x] In-browser Mux direct upload — batch Upload page (`@mux/upchunk`), originally deferred
+- [x] Live recordings importable from the Import page once Mux finalizes them; **Trim & import** to cut dead air into a new asset, then delete the raw recording
+- [x] Instructors with profile photos (`004`), per-collection display limit + "auto-add new classes" (`005`), clip source tracking (`006`), an admin display date (`007`), per-class access — which entitlement a class requires (`008`)
+- [ ] Automatic livestream recording into the library (Phase 7)
 
-See [phase-4-plan.md](./phase-4-plan.md) for the full implementation plan, schema, and decisions.
+See [phase-4-plan.md](./phase-4-plan.md) for the full implementation plan, schema, and decisions (historical — some were superseded since).
+
+### Phase 4b — One-time products and the funnel (the "Posture" pivot)
+Not in the original plan: the library and live were paused to sell one-off products first. Details, decisions and the remaining launch list are in [postureproject.md](./postureproject.md).
+
+- [x] Route groups: `(app)` (signed in, no entitlement: `/home`, `/account`, `/help`, products) and `(app)/(member)` (membership: `/classes`, `/live`); library and live locked to admins
+- [x] One entitlement per product; server-side entitlement reads (`getViewerAccess()`); the membership check for `/classes` and `/live` runs on the server too
+- [x] Products defined in `lib/products.ts`; public sales page + gated player per product; `Posture & Mobility Reset` with its own landing page (`/posture`)
+- [x] Free lead magnet (`/posture-routine`, advertised at `/class1`)
+- [x] Hidden free-membership signup (`/join/[code]`)
+- [x] Clerk → Mailchimp (`signup`, `source:<slug>`) and RevenueCat → Mailchimp (`purchased:<slug>`, reconciled on every event)
+- [x] ManyChat tag sync, with the contact id carried through sign-up by a cookie ([manychat.md](./manychat.md))
+- [ ] End-to-end test of link → sign-up → purchase → tags ([Paytest.md](./Paytest.md))
+- [ ] Real copy for `/pricing`
 
 ### Phase 4.5 — Exercise-by-exercise workouts
 A new class format: short vertical (9:16) exercise clips, assembled into workouts in an admin builder and played back story-style (segmented progress bar, tap left/right to move between sets). Designed in two claude.ai design canvases (private to the owner): the [member player](https://claude.ai/artifact/QP3yY6AQbaYUJcx3qqU478) and the [admin builder, upload screen and exercise library](https://claude.ai/artifact/MuarX7i3BhFxZ5gyvDM977).
@@ -186,8 +214,10 @@ Built in vertical slices, so each step leaves something usable and real footage 
   - [x] Player steps (`workoutSteps`) and state machine (`playerReducer`) in `packages/core`, with tests
   - [x] `/workouts/[id]` preview + player, mobile layout, and the desktop theater layout; a `/workouts` list — admin-only (section lock) until step 6
   - [x] `/demo1` — a public, unindexed sample playing the "Demo Workout" (only while it's published)
-  - [ ] Test on iPhone Safari and desktop with real footage; then remove the playback lab and its two test clips
-  - Not built yet: tutorial captions and coaching cues (the design shows them; exercises have no caption/cue data yet)
+  - [x] Test on iPhone Safari and desktop with real footage (the "Demo Workout"), with many rounds of phone-driven refinements: three tap zones (back / pause / next), swipe to minimize and to open the overview, drawers that follow the finger, a loading spinner, a first-run guide to the controls
+  - [x] Settings, saved to the account: tutorial mode (Loop / Play once / Off), instructor audio, "Keep my music playing" (Audio Session API — Safari and Firefox; Android deferred), auto-advance (Loop can't be combined with it)
+  - [ ] Remove the playback lab (`/admin/lab/playback`) and its two test clips
+  - Not built yet: tutorial captions (Mux auto-generated subtitles were looked at; on hold) and coaching cues (the design shows them; exercises have no caption/cue data yet)
 - [ ] **5. Progress** — save progress / resume with % complete, completed-workout history
   - [x] Player settings (tutorial mode, instructor audio, warm-up) saved to the member's account — `012_member_preferences.sql` (a `member_preferences` row per Clerk user, settings as JSON by area)
   - [x] Apply `012_member_preferences.sql` in Supabase
@@ -203,6 +233,12 @@ Key product rules from design review:
 - The warm-up is optional for members and plays once, start to finish; listed workout times exclude it
 - Editing an exercise changes it in every workout that uses it; a replaced clip stays live until the new one finishes processing. Archiving hides an exercise from the library and builder search while existing workouts keep working; delete only when nothing uses it
 - Ending a workout early asks to save progress or discard it; saved progress shows "Resume · N% complete" on the workout preview
+
+### Across phases (Sep 2026)
+- [x] Phone navigation: a floating iOS-style tab bar replaces the header links below tablet width
+- [x] Loading states (`loading.tsx`) for every signed-in, player and admin page, so taps respond at once and Next.js can prefetch; pages that only need the admin role no longer call RevenueCat
+- [x] Account deletion cleanup: Clerk's `user.deleted` webhook removes the member's rows (`lib/member/delete-server.ts`)
+- [ ] Deleting an account doesn't cancel a paid subscription or remove Mailchimp/ManyChat/RevenueCat copies — decide how to handle before promoting self-service deletion (and before the iOS app, which Apple requires to offer it)
 
 ### Phase 5 — iOS app
 - [ ] Expo + React Native app
@@ -227,7 +263,7 @@ Key product rules from design review:
 
 ## Early Implementation Notes
 
-- `@move-mindful/core` is currently consumed as a source-only internal package (`src/index.ts`). This is fine for the monorepo, but verify imports from both Next.js and Expo as soon as shared helpers/types are first used in the apps.
+- `@move-mindful/core` is consumed as a source-only internal package (`src/index.ts`); the web app compiles it through `transpilePackages` and imports the workout model from it. Verify the same imports from Expo when the iOS app starts. Its original access helpers (`types.ts`, `access.ts`) model the old challenge world and are unused — rewrite them into the shared access model then.
 - Shared domain models may use `Date` for in-memory logic, but API and database payloads should use explicit wire/DTO types with ISO date strings before Supabase and API routes are introduced.
 
 ---
@@ -236,10 +272,10 @@ Key product rules from design review:
 
 | What                  | Where it lives       | Status | Cost                                      |
 |-----------------------|----------------------|--------|-------------------------------------------|
-| Website + API routes  | Vercel               | ✅ Live at `www.movemindful.com` | Free (hobby) → $20/mo (pro) |
+| Website + API routes  | Vercel               | ✅ Live at `www.movemindful.com` (functions in `iad1`) | Free (hobby) → $20/mo (pro) |
 | Domain                | GoDaddy              | ✅ `movemindful.com` → Vercel   | ~$15/year                    |
 | Auth                  | Clerk                | ✅ Production keys configured    | Free → $25/mo (pro)         |
-| Database + storage    | Supabase             | ✅ Tables + RLS live            | Free → $25/mo (pro)         |
+| Database + storage    | Supabase             | ✅ Tables + RLS live (`us-east-1`) | Free → $25/mo (pro)      |
 | Video files + CDN     | Mux                  | ✅ Player + catalog live        | Pay-per-use                  |
 | Payments/Subs         | RevenueCat + Stripe  | ✅ Web Billing live             | RevenueCat free → $25/mo; Stripe 2.9% + 30¢ |
 | iOS app distribution  | Apple App Store      | ⬜ Not yet set up               | $99/year                     |
@@ -253,7 +289,12 @@ Key product rules from design review:
 | Growth | 500–1,000 | $5,000–10,000/mo | ~$400–700/mo | ~90–93% |
 | Scale | 5,000+ | $50,000+/mo | ~$2,500–3,500/mo | ~93–95% |
 
-**Note:** At launch, every service in the stack has a free tier. The only fixed cost is the Apple Developer Program ($99/year) when you're ready to publish the iOS app. Costs scale proportionally with revenue — you don't hit meaningful bills until you're making money.
+**Note:** Every service in the stack has a free tier, and costs scale with revenue. Two upgrades are due **before launch** regardless of traffic:
+
+- **Vercel Pro ($20/mo)** — the Hobby plan is restricted to non-commercial, personal use (Vercel's fair-use guidelines), and a store taking payments isn't that. Pro also adds a day of runtime logs (vs an hour), spend management and email support. It won't noticeably change speed: Fluid compute's cold-start reductions are already on for this project.
+- **Supabase Pro ($25/mo)** — the free plan has **no backups** (Pro keeps daily backups for 7 days) and pauses a project after a week without activity. Everything built in the admin CMS lives there.
+
+The Apple Developer Program ($99/year) follows when the iOS app is ready to publish.
 
 ---
 
@@ -310,21 +351,40 @@ Every protected API route needs Clerk's middleware. If a new route is created wi
 
 Never put API keys, Supabase service keys, or Stripe secret keys in client-side code. In Next.js, environment variables prefixed with `NEXT_PUBLIC_` are visible in the browser — secret keys must never use that prefix. Keep them in `.env` server-side only.
 
-**4. Stripe webhook verification**
+**4. Webhook verification**
 
-Always verify that incoming Stripe webhooks actually came from Stripe using `stripe.webhooks.constructEvent()`. Without this, someone could fake a payment notification and get free access.
+A webhook route is public by necessity, so it must prove who sent each request before trusting it — otherwise someone could fake a signup or a purchase. The app's two receivers:
+
+- **Clerk** (`/api/webhooks/clerk`) — verifies the Svix signature (`CLERK_WEBHOOK_SIGNING_SECRET`).
+- **RevenueCat** (`/api/webhooks/revenuecat`) — RevenueCat doesn't sign payloads, so it compares a long shared secret sent in the Authorization header (`REVENUECAT_WEBHOOK_AUTH`).
+- **Stripe**, if its webhooks are ever consumed directly — `stripe.webhooks.constructEvent()`.
+
+Each receiver must also be listed as public in `proxy.ts`.
 
 **5. Supabase Row Level Security (RLS)**
 
-Enable RLS on every table and write policies that tie rows to Clerk user IDs. Without RLS, anyone with the Supabase public key could query the database directly from the browser.
+Enable RLS on every table. Without it, anyone with the Supabase publishable key could query the database from the browser. The app uses two patterns:
+
+- **Catalog tables** (classes, tags, collections, …) — read policies where members need them; writes only through admin server actions with the service-role key.
+- **Member-owned tables** (`member_preferences`, `workout_sessions`) — RLS on with **no policies**, so the browser can't touch them at all; the server reads and writes them with the service-role key, taking the member from the Clerk session.
+
+**6. Server actions are public endpoints**
+
+A server action can be called by a direct POST, bypassing the page that shows it. Every action checks auth itself — `requireAdmin()` for admin actions, `auth()` for member actions — and validates its input as untrusted.
+
+**7. Account deletion**
+
+When a member deletes their account, their data goes with it: any new table keyed by a Clerk user id must be added to `deleteMemberData()` (`lib/member/delete-server.ts`).
 
 ### Security Checklist (for every new feature / AI-generated code)
 
 - [ ] User ID is derived from Clerk session, not from URL or request body
 - [ ] Clerk auth middleware is applied to the API route
 - [ ] No secret keys in `NEXT_PUBLIC_` env vars or client-side code
-- [ ] Stripe webhooks are verified with `constructEvent()`
-- [ ] Supabase RLS policies exist for any new tables
+- [ ] Every webhook verifies its sender (Svix signature, shared secret, or `constructEvent()`) and is listed in `proxy.ts`
+- [ ] RLS is enabled on any new table (member-owned: no policies, server-only)
+- [ ] Every new server action checks auth itself
+- [ ] New member-keyed tables are cleared by `deleteMemberData()`
 - [ ] Ask: "What happens if a logged-in user changes the ID in this request to someone else's?"
 
 ---
@@ -333,6 +393,7 @@ Enable RLS on every table and write policies that tie rows to Clerk user IDs. Wi
 
 - **Apple IAP via RevenueCat** — RevenueCat already supports Apple IAP; flip it on if App Store discovery becomes a meaningful acquisition channel and in-app purchase conversion justifies the Apple commission
 - **Chromecast support** — requires Google Cast SDK integration, not automatic like AirPlay
+- **Mux signed playback** — every asset is public today, so a playback id streams to anyone who has it. Signed policies with short-lived tokens minted server-side would close that; worth it once sharing shows up or revenue justifies the work (see [postureproject.md](./postureproject.md))
 - **Android app** — React Native / Expo supports Android out of the box; add when there's demand
 - **Free trial, no credit card (undecided)** — a possible top-of-funnel option: let users try Move Mindful free for a fixed window (e.g. 7–14 days) without entering a card. Recommended mechanism if pursued: a RevenueCat **promotional entitlement** (a grant, *not* a standard subscription free trial, which would require a card) granted server-side at Clerk signup (`user.created` webhook → RevenueCat REST API, secret key). Keeps RevenueCat as the single source of truth — the existing entitlement gate works unchanged on web + mobile, and conversion to paid is the same "Move Mindful Pro" entitlement (no migration). Trade-off: no-card trials are easily abused via new accounts. Not yet decided whether to build this.
 - **Apple external purchase link (app-to-web)** — as of the 2025 *Epic v. Apple* contempt ruling, US apps can link out to external web checkout with **no Apple commission and no scare screen** (this replaced Apple's early-2024 regime of ~27% + a scare screen). RevenueCat's app-to-web flow implements this against Web Billing — see "iOS App = Experience" above. Still **US-only** and **under appeal** at the Ninth Circuit; monitor the legal status and keep a no-link fallback for other storefronts. If the ruling is reversed, fall back to the reader-app (no-link) model — the underlying checkout doesn't change
