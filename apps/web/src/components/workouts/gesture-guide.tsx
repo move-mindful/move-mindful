@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Image from "next/image";
+import guideBackground from "./guide-background.webp";
 import {
   ArrowDown,
   ArrowUp,
@@ -175,9 +177,11 @@ export function GestureGuide({ onDone }: { onDone: () => void }) {
     <div className="absolute inset-0 z-30 flex flex-col" role="dialog" aria-modal="true" aria-label="How to use the player">
       {/* The backdrop runs the full height, behind the panel's rounded corners
           too; the pictures sit in the space above the panel, where they show.
-          Page 1 tints the video to show the tap zones; the rest are on solid
-          ink, so nothing on the screen behind shows through. */}
-      {page === 0 ? <TapZonesBackdrop /> : <div className="absolute inset-0 bg-[#14142B]" aria-hidden="true" />}
+          Every page sits on the same darkened, blurred studio photo, so
+          nothing on the screen behind shows through; page 1 tints the tap
+          zones over it. */}
+      <PhotoBackdrop />
+      {page === 0 && <TapZonesBackdrop />}
 
       <div className="relative flex flex-1 items-center justify-center" aria-hidden="true">
         {current.picture}
@@ -213,6 +217,22 @@ export function GestureGuide({ onDone }: { onDone: () => void }) {
           </button>
         </div>
       </section>
+    </div>
+  );
+}
+
+/** A studio photo, darkened and blurred — the guide's background. */
+function PhotoBackdrop() {
+  return (
+    <div className="absolute inset-0 overflow-hidden bg-[#14142B]" aria-hidden="true">
+      <Image
+        src={guideBackground}
+        alt=""
+        fill
+        sizes="100vw"
+        className="scale-110 object-cover blur-lg brightness-[0.45]"
+      />
+      <div className="absolute inset-0 bg-[#14142B]/35" />
     </div>
   );
 }
