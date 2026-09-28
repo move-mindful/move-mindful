@@ -232,8 +232,15 @@ export function createSheetPull() {
 export type SheetPull = ReturnType<typeof createSheetPull>;
 
 /**
- * Gestures over the video, in three zones: tap the left third to go back, the
- * middle to pause, the right third to move on. Press and hold anywhere also
+ * How the video splits into tap zones, left to right, as fractions of its
+ * width: back, pause, next. Pause gets the wide middle so it's hard to miss.
+ * The gesture guide draws its zones from these too.
+ */
+export const TAP_ZONES = { back: 0.28, pause: 0.44, next: 0.28 } as const;
+
+/**
+ * Gestures over the video, in three zones (TAP_ZONES): tap the left to go
+ * back, the wide middle to pause, the right to move on. Press and hold anywhere also
  * pauses. Swipe down hides the controls; swipe up shows them again — or, with
  * `pullUp`, drags the overview up under the finger. Buttons sit above this
  * layer, so they never count as a tap here.
@@ -292,11 +299,11 @@ export function TapZones({
           // overview's backdrop) appears under it.
           e.currentTarget.setPointerCapture?.(e.pointerId);
           const box = e.currentTarget.getBoundingClientRect();
-          const third = (e.clientX - box.left) / (box.width / 3);
+          const across = (e.clientX - box.left) / box.width;
           const p = {
             x: e.clientX,
             y: e.clientY,
-            zone: (third < 1 ? 0 : third < 2 ? 1 : 2) as 0 | 1 | 2,
+            zone: (across < TAP_ZONES.back ? 0 : across < 1 - TAP_ZONES.next ? 1 : 2) as 0 | 1 | 2,
             done: false,
             pulling: false,
             last: { y: e.clientY, t: e.timeStamp },

@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Pause } from "./icons";
+import { TAP_ZONES } from "./player-screens";
 
 /**
  * The first-run guide to the player's gestures, over the stage on phones: two
@@ -14,22 +15,23 @@ export function GestureGuide({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="absolute inset-0 z-30 flex flex-col" role="dialog" aria-modal="true" aria-label="How to use the player">
+      {/* The backdrop runs the full height, behind the panel's rounded corners too. */}
       {page === 0 ? (
-        // The three tap zones, drawn where they are.
-        <div className="relative flex flex-1" aria-hidden="true">
-          <Zone tint="rgba(76,199,224,0.32)" divider>
+        // The three tap zones, drawn where (and as wide as) they really are.
+        <div className="absolute inset-0 flex" aria-hidden="true">
+          <Zone width={TAP_ZONES.back} tint="rgba(76,199,224,0.32)" divider>
             <Tag>
               <ChevronLeft size={16} />
               Back
             </Tag>
           </Zone>
-          <Zone tint="rgba(255,255,255,0.14)" divider>
+          <Zone width={TAP_ZONES.pause} tint="rgba(255,255,255,0.14)" divider>
             <Tag dark>
               <Pause size={14} />
               Pause
             </Tag>
           </Zone>
-          <Zone tint="rgba(169,156,255,0.32)">
+          <Zone width={TAP_ZONES.next} tint="rgba(169,156,255,0.32)">
             <Tag>
               Next
               <ChevronRight size={16} />
@@ -37,47 +39,59 @@ export function GestureGuide({ onDone }: { onDone: () => void }) {
           </Zone>
         </div>
       ) : (
-        // Swipes: up and down, in the middle.
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-[#080814]/60" aria-hidden="true">
-          <span className="flex size-14 items-center justify-center rounded-full bg-white/[0.16]">
-            <ArrowUp size={26} />
-          </span>
-          <span className="flex size-14 items-center justify-center rounded-full bg-white/[0.16]">
-            <ArrowDown size={26} />
-          </span>
-        </div>
+        <div className="absolute inset-0 bg-[#080814]/60" aria-hidden="true" />
       )}
 
-      <section className="flex flex-col gap-4 rounded-t-[28px] bg-[#1A1A34] px-5 pb-[max(28px,calc(env(safe-area-inset-bottom)+12px))] pt-6">
+      <div className="relative flex flex-1 flex-col items-center justify-center gap-4" aria-hidden="true">
+        {page === 1 && (
+          // Swipes: up and down, in the middle.
+          <>
+            <span className="flex size-14 items-center justify-center rounded-full bg-white/[0.16]">
+              <ArrowUp size={26} />
+            </span>
+            <span className="flex size-14 items-center justify-center rounded-full bg-white/[0.16]">
+              <ArrowDown size={26} />
+            </span>
+          </>
+        )}
+      </div>
+
+      <section className="relative flex flex-col gap-4 rounded-t-[28px] bg-[#1A1A34] px-5 pb-[max(28px,calc(env(safe-area-inset-bottom)+12px))] pt-6">
         <div className="flex flex-col gap-1">
           <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/60">How it works · {page + 1} of 2</span>
           <h2 className="text-[22px] font-semibold tracking-[-0.01em]">{page === 0 ? "Tap to move around" : "Swipe for more"}</h2>
         </div>
         {page === 0 ? (
           <div className="flex flex-col gap-3.5">
-            <Row icon={<ChevronLeft size={20} />} tint="bg-[#4CC7E0]/25 text-[#8BE3F2]" title="Tap the left side" text="Go back." />
+            <Row
+              icon={<ChevronLeft size={20} />}
+              tint="bg-[#4CC7E0]/25 text-[#8BE3F2]"
+              title="Tap the left side"
+              text="Go back to previous exercise."
+            />
             <Row icon={<Pause size={18} />} tint="bg-white/[0.14]" title="Tap the middle" text="Pause. Press play to resume." />
-            <Row icon={<ChevronRight size={20} />} tint="bg-[#A99CFF]/25 text-[#C9C0FF]" title="Tap the right side" text="Move on." />
+            <Row
+              icon={<ChevronRight size={20} />}
+              tint="bg-[#A99CFF]/25 text-[#C9C0FF]"
+              title="Tap the right side"
+              text="Move to next exercise."
+            />
           </div>
         ) : (
           <div className="flex flex-col gap-3.5">
-            <Row icon={<ArrowUp size={18} />} tint="bg-white/[0.14]" title="Swipe up" text="See the whole workout." />
-            <Row icon={<ArrowDown size={18} />} tint="bg-white/[0.14]" title="Swipe down" text="Close it again." />
-            <Row
-              icon={<ArrowDown size={18} />}
-              tint="bg-white/[0.14]"
-              title="Swipe down again"
-              text="Hide the controls so only the reps show."
-            />
-            <Row icon={<ArrowUp size={18} />} tint="bg-white/[0.14]" title="Swipe up" text="Bring the controls back." />
+            <Row icon={<ArrowUp size={18} />} tint="bg-white/[0.14]" title="Swipe up" text="See workout overview." />
+            <Row icon={<ArrowDown size={18} />} tint="bg-white/[0.14]" title="Swipe down" text="Minimize player controls." />
+            <Row icon={<ArrowUp size={18} />} tint="bg-white/[0.14]" title="Swipe up" text="Expand player controls." />
           </div>
         )}
         <div className="mt-1 flex items-center gap-3">
-          {page === 0 && (
-            <button type="button" onClick={onDone} className="h-[54px] px-4 text-base font-semibold text-white/75">
-              Skip
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => (page === 0 ? onDone() : setPage(0))}
+            className="h-[54px] px-4 text-base font-semibold text-white/75"
+          >
+            {page === 0 ? "Skip" : "Back"}
+          </button>
           <button
             type="button"
             autoFocus
@@ -92,11 +106,21 @@ export function GestureGuide({ onDone }: { onDone: () => void }) {
   );
 }
 
-function Zone({ tint, divider = false, children }: { tint: string; divider?: boolean; children: ReactNode }) {
+function Zone({
+  width,
+  tint,
+  divider = false,
+  children,
+}: {
+  width: number;
+  tint: string;
+  divider?: boolean;
+  children: ReactNode;
+}) {
   return (
     <div
-      className={`flex flex-1 items-center justify-center ${divider ? "border-r-2 border-dashed border-white/80" : ""}`}
-      style={{ background: tint }}
+      className={`flex items-center justify-center ${divider ? "border-r-2 border-dashed border-white/80" : ""}`}
+      style={{ background: tint, flex: `0 0 ${width * 100}%` }}
     >
       {children}
     </div>
