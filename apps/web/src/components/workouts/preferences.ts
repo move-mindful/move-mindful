@@ -17,6 +17,7 @@ import { DEFAULT_PLAYER_PREFERENCES, type PlayerPreferences } from "@/lib/member
 const KEYS = {
   tutorialMode: "movemindful.tutorialMode",
   instructorAudio: "movemindful.sound",
+  mixAudio: "movemindful.mixAudio",
   warmup: "movemindful.warmup",
 } as const;
 
@@ -39,6 +40,8 @@ function readDevice(): Partial<PlayerPreferences> {
   if (mode === "loop" || mode === "once" || mode === "off") out.tutorialMode = mode;
   const audio = readItem(KEYS.instructorAudio);
   if (audio === "on" || audio === "off") out.instructorAudio = audio === "on";
+  const mix = readItem(KEYS.mixAudio);
+  if (mix === "on" || mix === "off") out.mixAudio = mix === "on";
   const warmup = readItem(KEYS.warmup);
   if (warmup === "on" || warmup === "off") out.warmup = warmup === "on";
   return { ...out, ...memory };
@@ -51,6 +54,7 @@ function writeDevice(changes: Partial<PlayerPreferences>) {
     if (changes.instructorAudio !== undefined) {
       window.localStorage.setItem(KEYS.instructorAudio, changes.instructorAudio ? "on" : "off");
     }
+    if (changes.mixAudio !== undefined) window.localStorage.setItem(KEYS.mixAudio, changes.mixAudio ? "on" : "off");
     if (changes.warmup !== undefined) window.localStorage.setItem(KEYS.warmup, changes.warmup ? "on" : "off");
   } catch {
     // Blocked: `memory` keeps it for now.

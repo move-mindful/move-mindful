@@ -11,6 +11,11 @@ export interface PlayerPreferences {
   tutorialMode: TutorialMode;
   /** Tutorials and the warm-up with sound (exercise loops are always silent). */
   instructorAudio: boolean;
+  /**
+   * Play instructor audio over music from other apps instead of pausing it.
+   * Only where the browser can (navigator.audioSession: Safari, Firefox).
+   */
+  mixAudio: boolean;
   /** Begin workouts with their warm-up. */
   warmup: boolean;
 }
@@ -18,6 +23,7 @@ export interface PlayerPreferences {
 export const DEFAULT_PLAYER_PREFERENCES: PlayerPreferences = {
   tutorialMode: "loop",
   instructorAudio: true,
+  mixAudio: false,
   warmup: true,
 };
 
@@ -28,6 +34,7 @@ export function cleanPlayerPreferences(raw: unknown): Partial<PlayerPreferences>
   const r = raw as Record<string, unknown>;
   if (r.tutorialMode === "loop" || r.tutorialMode === "once" || r.tutorialMode === "off") out.tutorialMode = r.tutorialMode;
   if (typeof r.instructorAudio === "boolean") out.instructorAudio = r.instructorAudio;
+  if (typeof r.mixAudio === "boolean") out.mixAudio = r.mixAudio;
   if (typeof r.warmup === "boolean") out.warmup = r.warmup;
   return out;
 }

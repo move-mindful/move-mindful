@@ -1,6 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useReducer, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   aboutMinutes,
@@ -62,6 +71,20 @@ import type { PlayerPreferences } from "@/lib/member/preferences";
 
 type WithoutNow<T> = T extends unknown ? Omit<T, "now"> : never;
 
+// The Audio Session API (Safari 16.4+, Firefox) lets a page ask to mix its
+// sound with other apps' instead of pausing them — what "Keep my music
+// playing" uses. Chrome doesn't have it yet, so there the setting is hidden.
+type AudioSessionNavigator = Navigator & { audioSession?: { type: string } };
+const noSubscribe = () => () => {};
+
+function useCanMixAudio(): boolean {
+  return useSyncExternalStore(
+    noSubscribe,
+    () => !!(navigator as AudioSessionNavigator).audioSession,
+    () => false,
+  );
+}
+
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 // Only tutorials and the warm-up are heard: an exercise's loop always plays
@@ -102,6 +125,28 @@ export function WorkoutPlayer({
   const act = useCallback((a: WithoutNow<PlayerAction>) => dispatch({ ...a, now: performance.now() } as PlayerAction), []);
 
   const [prefs, updatePrefs] = usePlayerPreferences({ account: preferences, signedIn });
+  const canMix = useCanMixAudio();
+
+  // "Keep my music playing": an "ambient" session mixes with other apps'
+  // audio (iOS then lets the Silent switch mute it); "auto" is the default,
+  // where instructor audio pauses them. Set before anything plays, and put back
+  // on the way out.
+  useEffect(() => {
+    const session = (navigator as AudioSessionNavigator).audioSession;
+    if (!session) return;
+    try {
+      session.type = prefs.mixAudio ? "ambient" : "auto";
+    } catch {
+      // An older implementation that rejects the value: leave it be.
+    }
+    return () => {
+      try {
+        session.type = "auto";
+      } catch {
+        // As above.
+      }
+    };
+  }, [prefs.mixAudio]);
   const [muted, setMuted] = useState(false);
   const [warmedUp, setWarmedUp] = useState(false);
   const theater = useTheater();
@@ -617,6 +662,7 @@ export function WorkoutPlayer({
       <SettingsSheet
         mode={state.mode}
         soundOn={!muted}
+        mix={canMix ? { on: prefs.mixAudio, onChange: (on) => updatePrefs({ mixAudio: on }) } : null}
         onMode={(mode) => {
           updatePrefs({ tutorialMode: mode });
           act({ type: "mode", mode });

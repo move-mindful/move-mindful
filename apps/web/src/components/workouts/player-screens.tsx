@@ -1228,6 +1228,7 @@ const MODES: Array<{ id: TutorialMode; title: string; desc: string }> = [
 export function SettingsSheet({
   mode,
   soundOn,
+  mix,
   onMode,
   onSound,
   onClose,
@@ -1235,6 +1236,8 @@ export function SettingsSheet({
 }: {
   mode: TutorialMode;
   soundOn: boolean;
+  /** "Keep my music playing" — null where the browser can't (the switch is hidden). */
+  mix: { on: boolean; onChange: (on: boolean) => void } | null;
   onMode: (mode: TutorialMode) => void;
   onSound: (on: boolean) => void;
   onClose: () => void;
@@ -1261,6 +1264,18 @@ export function SettingsSheet({
             </span>
             <Switch on={soundOn} onChange={onSound} label="Instructor audio" />
           </div>
+          {mix && (
+            <div className="flex items-center justify-between gap-4 rounded-2xl border-[1.5px] border-white/[0.12] bg-white/[0.04] px-4 py-3.5">
+              <span className="flex min-w-0 flex-col gap-[3px]">
+                <span className="text-[17px] font-semibold">Keep my music playing</span>
+                <span className="text-sm leading-snug text-white/75">
+                  Play the instructor over music from other apps instead of pausing it. On iPhone, Silent mode mutes the
+                  instructor.
+                </span>
+              </span>
+              <Switch on={mix.on} onChange={mix.onChange} label="Keep my music playing" />
+            </div>
+          )}
         </section>
         <section aria-labelledby="settings-tutorials" className="flex flex-col gap-3">
           <h3 id="settings-tutorials" className="text-base font-semibold">
