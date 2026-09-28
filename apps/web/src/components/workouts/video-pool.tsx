@@ -46,20 +46,23 @@ export interface VideoPool {
 export function useVideoPool({
   onEnded,
   onSoundBlocked,
+  onBuffering,
 }: {
   /** The clip on screen reached its end (only clips that don't loop do). */
   onEnded: () => void;
   /** A clip couldn't start with sound, so it was started muted instead. */
   onSoundBlocked: () => void;
+  /** The clip on screen should be playing but is waiting for data (true), or is playing again (false). */
+  onBuffering: (waiting: boolean) => void;
 }): VideoPool {
   const els = useRef<Array<HTMLVideoElement | null>>([]);
   const shown = useRef<HTMLVideoElement | null>(null);
   const lastTake = useRef<number | null>(null);
   // Elements mid-unlock: pausing one before its play() settles would undo it.
   const unlocking = useRef(new Set<HTMLVideoElement>());
-  const handlers = useRef({ onEnded, onSoundBlocked });
+  const handlers = useRef({ onEnded, onSoundBlocked, onBuffering });
   useEffect(() => {
-    handlers.current = { onEnded, onSoundBlocked };
+    handlers.current = { onEnded, onSoundBlocked, onBuffering };
   });
 
   return useMemo<VideoPool>(() => {
@@ -93,7 +96,13 @@ export function useVideoPool({
     return {
       refs: Array.from({ length: POOL_SIZE }, (_, i) => (el: HTMLVideoElement | null) => {
         els.current[i] = el;
-        if (el) el.onended = () => el === shown.current && handlers.current.onEnded();
+        if (!el) return;
+        const onScreen = () => el === shown.current;
+        el.onended = () => onScreen() && handlers.current.onEnded();
+        // Loading: waiting for data mid-play, until frames flow again (or it fails).
+        el.onwaiting = () => onScreen() && !el.paused && handlers.current.onBuffering(true);
+        el.onplaying = () => onScreen() && handlers.current.onBuffering(false);
+        el.onerror = () => onScreen() && handlers.current.onBuffering(false);
       }),
 
       sync(upcoming, clip, { playing, muted, take }) {
@@ -128,7 +137,10 @@ export function useVideoPool({
           if (v === shown.current && v.currentTime > 0) v.currentTime = 0;
         }
         shown.current = el;
-        if (!el || !clip) return;
+        if (!el || !clip) {
+          handlers.current.onBuffering(false);
+          return;
+        }
 
         el.style.opacity = "1";
         el.loop = clip.loop;
@@ -136,6 +148,8 @@ export function useVideoPool({
         if (restart && el.currentTime > 0) el.currentTime = 0;
         if (playing) play(el);
         else if (!el.paused) el.pause();
+        // Not enough loaded to play yet: loading until its "playing" event.
+        handlers.current.onBuffering(playing && el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA);
       },
 
       unlock() {

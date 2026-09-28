@@ -87,6 +87,32 @@ function BottomShade() {
   );
 }
 
+/**
+ * Shown over the video while the clip on screen is still loading. It only
+ * fades in after a third of a second, so a quick load doesn't flash it, and
+ * goes the moment the video plays.
+ */
+export function LoadingSpinner({ show }: { show: boolean }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className={`pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${
+        show ? "opacity-100 delay-300" : "opacity-0 delay-0"
+      }`}
+    >
+      {show && (
+        <>
+          <span className="flex size-16 items-center justify-center rounded-full bg-[#0E0E20]/45 backdrop-blur-sm">
+            <span className="size-9 animate-spin rounded-full border-[3px] border-white/25 border-t-white" />
+          </span>
+          <span className="sr-only">Loading</span>
+        </>
+      )}
+    </div>
+  );
+}
+
 /** The dim layer behind rests, pause and the summary. */
 export function Dim({ strength = 0.66 }: { strength?: number }) {
   return <div className="pointer-events-none absolute inset-0" style={{ background: `rgba(10,10,26,${strength})` }} />;

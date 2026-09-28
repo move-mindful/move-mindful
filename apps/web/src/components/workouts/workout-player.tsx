@@ -28,6 +28,7 @@ import {
   RestScreen,
   SetScreen,
   TopShade,
+  LoadingSpinner,
   TapZones,
   TopBar,
   TutorialScreen,
@@ -109,9 +110,11 @@ export function WorkoutPlayer({
   // The overview being dragged up by the finger (phones) — see createSheetPull.
   const [pull] = useState(createSheetPull);
 
+  const [buffering, setBuffering] = useState(false);
   const pool = useVideoPool({
     onEnded: () => act({ type: "clipEnded" }),
     onSoundBlocked: () => setMuted(true),
+    onBuffering: setBuffering,
   });
 
   const running = isRunning(state);
@@ -661,6 +664,9 @@ export function WorkoutPlayer({
           <PoolVideos
             pool={pool}
             className={`transition-[filter,transform] duration-300 ${blurred ? "scale-[1.06] blur-[4px] saturate-[0.8]" : ""}`}
+          />
+          <LoadingSpinner
+            show={buffering && running && (state.phase === "warmup" || (state.phase === "workout" && step?.kind === "set"))}
           />
           {screen}
           {!theater && overview}
