@@ -770,6 +770,7 @@ export function PausedScreen({
   onWatchTutorial,
   onSkipWarmup,
   onEnd,
+  onSettings,
   theater = false,
 }: {
   subtitle: string;
@@ -780,69 +781,76 @@ export function PausedScreen({
   onWatchTutorial: (() => void) | null;
   onSkipWarmup: (() => void) | null;
   onEnd: () => void;
+  onSettings: () => void;
   theater?: boolean;
 }) {
   const secondary =
     "flex h-[54px] shrink-0 items-center justify-center gap-2.5 rounded-full bg-white/[0.12] text-base font-semibold";
   return (
-    <div className={theater ? centered : "absolute inset-0 flex flex-col overflow-y-auto"}>
-      <div className={`flex flex-col items-center gap-5 ${theater ? "" : "flex-1 justify-end pb-8 pt-16"}`}>
-        <div className="flex flex-col items-center gap-1 text-center">
-          <h1 className="text-[30px] font-semibold tracking-[-0.01em]">Paused</h1>
-          <div className="text-base text-white/75">{subtitle}</div>
-        </div>
-        <button
-          type="button"
-          aria-label="Resume workout"
-          onClick={onResume}
-          autoFocus
-          className="flex size-[104px] items-center justify-center rounded-full bg-white text-[#14142B] shadow-[0_12px_36px_rgba(0,0,0,0.35)]"
-        >
-          <Play />
-        </button>
-      </div>
-      <div className={`gap-3.5 ${bottomGroup(theater)}`}>
-        {stats && (
-          <div className="grid grid-cols-3 gap-2 rounded-[18px] bg-white/[0.08] px-2 py-3.5">
-            <Stat value={stats.elapsed} label="Elapsed" />
-            <Stat value={stats.setsDone} label="Sets done" />
-            <Stat value={stats.left} label="Left" />
+    <>
+      <div className={theater ? centered : "absolute inset-0 flex flex-col overflow-y-auto"}>
+        <div className={`flex flex-col items-center gap-5 ${theater ? "" : "flex-1 justify-end pb-8 pt-16"}`}>
+          <div className="flex flex-col items-center gap-1 text-center">
+            <h1 className="text-[30px] font-semibold tracking-[-0.01em]">Paused</h1>
+            <div className="text-base text-white/75">{subtitle}</div>
           </div>
-        )}
-        {onRestartSet && (
-          <button type="button" onClick={onRestartSet} className={secondary}>
-            <RestartSet />
-            Restart this set
+          <button
+            type="button"
+            aria-label="Resume workout"
+            onClick={onResume}
+            autoFocus
+            className="flex size-[104px] items-center justify-center rounded-full bg-white text-[#14142B] shadow-[0_12px_36px_rgba(0,0,0,0.35)]"
+          >
+            <Play />
           </button>
-        )}
-        {onRestartWorkout && (
-          <button type="button" onClick={onRestartWorkout} className={secondary}>
-            <RestartWorkout />
-            Restart workout
+        </div>
+        <div className={`gap-3.5 ${bottomGroup(theater)}`}>
+          {stats && (
+            <div className="grid grid-cols-3 gap-2 rounded-[18px] bg-white/[0.08] px-2 py-3.5">
+              <Stat value={stats.elapsed} label="Elapsed" />
+              <Stat value={stats.setsDone} label="Sets done" />
+              <Stat value={stats.left} label="Left" />
+            </div>
+          )}
+          {onRestartSet && (
+            <button type="button" onClick={onRestartSet} className={secondary}>
+              <RestartSet />
+              Restart this set
+            </button>
+          )}
+          {onRestartWorkout && (
+            <button type="button" onClick={onRestartWorkout} className={secondary}>
+              <RestartWorkout />
+              Restart workout
+            </button>
+          )}
+          {onWatchTutorial && (
+            <button type="button" onClick={onWatchTutorial} className={secondary}>
+              <WatchTutorial />
+              Watch the tutorial
+            </button>
+          )}
+          {onSkipWarmup && (
+            <button type="button" onClick={onSkipWarmup} className={secondary}>
+              Skip warm-up
+              <ArrowRight size={18} />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onEnd}
+            className="flex h-12 shrink-0 items-center justify-center gap-2 text-base font-semibold text-[#FF9E9E]"
+          >
+            <Exit />
+            End workout
           </button>
-        )}
-        {onWatchTutorial && (
-          <button type="button" onClick={onWatchTutorial} className={secondary}>
-            <WatchTutorial />
-            Watch the tutorial
-          </button>
-        )}
-        {onSkipWarmup && (
-          <button type="button" onClick={onSkipWarmup} className={secondary}>
-            Skip warm-up
-            <ArrowRight size={18} />
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={onEnd}
-          className="flex h-12 shrink-0 items-center justify-center gap-2 text-base font-semibold text-[#FF9E9E]"
-        >
-          <Exit />
-          End workout
-        </button>
+        </div>
       </div>
-    </div>
+      {/* Settings, top left under the progress bar. */}
+      <div className="absolute left-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] z-10">
+        <SettingsButton onClick={onSettings} />
+      </div>
+    </>
   );
 }
 
