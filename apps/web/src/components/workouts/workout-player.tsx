@@ -406,10 +406,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
         onSwipeDown={() => setChromeHidden(true)}
         pullUp={!chromeHidden && !theater}
         onPullMove={(distance) => {
-          if (!pull.active) {
-            pull.start();
-            openOverview();
-          }
+          if (!pull.active) pull.start();
           pull.move(distance);
         }}
         onPullEnd={(distance, velocity) => {
@@ -592,8 +589,10 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
 
   const leftNow = secondsLeft(steps, state.step);
   const equipment = equipmentText(workout);
-  const sheet =
-    state.sheet === "overview" && state.phase === "workout" ? (
+  // The overview: on phones a drawer that stays mounted all workout (parked
+  // below the screen, see Drawer); on desktop a side panel while open.
+  const overview =
+    state.phase === "workout" && (!theater || state.sheet === "overview") ? (
       <OverviewSheet
         workout={workout}
         steps={steps}
@@ -606,10 +605,11 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
         position={{ step: state.step, complete: false, warmup: warmedUp ? "done" : "skipped" }}
         onJump={(i) => act({ type: "jump", step: i })}
         onClose={() => act({ type: "sheet", sheet: null })}
-        variant={theater ? "side" : "bottom"}
-        pull={theater ? undefined : pull}
+        drawer={theater ? undefined : { open: state.sheet === "overview", pull, onOpen: openOverview }}
       />
-    ) : state.sheet === "tutorial" ? (
+    ) : null;
+  const sheet =
+    state.sheet === "tutorial" ? (
       <TutorialSheet
         mode={state.mode}
         watch={
@@ -668,9 +668,11 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
             className={`transition-[filter,transform] duration-300 ${blurred ? "scale-[1.06] blur-[4px] saturate-[0.8]" : ""}`}
           />
           {screen}
+          {!theater && overview}
           {!theater && sheet}
         </div>
         {theater && beside}
+        {theater && overview}
         {theater && sheet}
       </div>
     </>

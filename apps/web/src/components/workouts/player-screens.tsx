@@ -143,16 +143,13 @@ export function Chip({ children, large = false }: { children: ReactNode; large?:
 // ── Tap zones ─────────────────────────────────────────
 
 /**
- * An overview being pulled up by the finger, passed from the tap zones (via
- * the player) to the sheet. The sheet only mounts after the pull has started,
- * so it catches up with the distance so far — and a quick flick can end before
- * it mounts at all, in which case the outcome waits for it.
+ * The overview being pulled up by the finger: the tap zones report the drag
+ * (via the player) and the overview drawer, which is always mounted, follows
+ * it. Nothing in React changes until the finger lifts.
  */
 export function createSheetPull() {
   type Follower = { move: (distance: number) => void; end: (distance: number, velocity: number) => void };
   let active = false;
-  let distance = 0;
-  let pending: { distance: number; velocity: number } | null = null;
   let follower: Follower | null = null;
   return {
     get active() {
@@ -160,30 +157,17 @@ export function createSheetPull() {
     },
     start() {
       active = true;
-      distance = 0;
-      pending = null;
     },
-    move(d: number) {
-      distance = d;
-      follower?.move(d);
+    move(distance: number) {
+      follower?.move(distance);
     },
-    end(d: number, velocity: number) {
+    end(distance: number, velocity: number) {
       active = false;
-      if (follower) follower.end(d, velocity);
-      else pending = { distance: d, velocity };
+      follower?.end(distance, velocity);
     },
-    /** For the sheet: follow the pull, if there is one. Returns a detach function, or null. */
-    follow(f: Follower): (() => void) | null {
-      if (pending) {
-        const done = pending;
-        pending = null;
-        f.move(done.distance);
-        const frame = requestAnimationFrame(() => f.end(done.distance, done.velocity));
-        return () => cancelAnimationFrame(frame);
-      }
-      if (!active) return null;
+    /** For the drawer: follow pulls from now on. Returns a detach function. */
+    attach(f: Follower) {
       follower = f;
-      f.move(distance);
       return () => {
         if (follower === f) follower = null;
       };
@@ -250,6 +234,9 @@ export function TapZones({
         onContextMenu={(e) => e.preventDefault()}
         onPointerDown={(e) => {
           end();
+          // Keep getting this finger's moves even once something (the
+          // overview's backdrop) appears under it.
+          e.currentTarget.setPointerCapture?.(e.pointerId);
           const box = e.currentTarget.getBoundingClientRect();
           const third = (e.clientX - box.left) / (box.width / 3);
           const p = {
@@ -968,7 +955,6 @@ export function Sheet({
   alert = false,
   variant = "bottom",
   slideIn = true,
-  pull,
 }: {
   label: string;
   onClose: () => void;
@@ -980,8 +966,6 @@ export function Sheet({
    * settings, End workout), which just appear; they still slide out.
    */
   slideIn?: boolean;
-  /** Set when the sheet opens under the finger (the overview's pull-up). */
-  pull?: SheetPull;
 }) {
   const panel = {
     bottom: `max-h-[88%] w-full rounded-t-[28px] bg-[#1A1A34] pt-2.5 ${bottomPad}`,
@@ -1015,33 +999,11 @@ export function Sheet({
     window.setTimeout(() => close.current(), 220);
   }, [variant]);
 
-  // Slide in: start off-screen, let that frame paint, then transition in. Or,
-  // when it's being pulled up, sit under the finger and settle on release.
+  // Slide in: start off-screen, let that frame paint, then transition in.
   useLayoutEffect(() => {
     const el = panelRef.current;
     const backdrop = backdropRef.current;
     if (!el || !backdrop) return;
-    const detach = pull?.follow({
-      move: (distance) => {
-        const h = el.offsetHeight;
-        el.style.willChange = "transform";
-        el.style.transition = "none";
-        backdrop.style.transition = "none";
-        el.style.transform = `translateY(${Math.max(0, h - distance)}px)`;
-        backdrop.style.opacity = String(Math.min(1, distance / h));
-      },
-      end: (distance, velocity) => {
-        if (distance > 80 || velocity > 0.4) {
-          el.style.transition = "transform 320ms cubic-bezier(0.32, 0.72, 0, 1)";
-          el.style.transform = "";
-          backdrop.style.transition = "opacity 250ms ease-out";
-          backdrop.style.opacity = "";
-        } else {
-          dismiss();
-        }
-      },
-    });
-    if (detach) return detach;
     if (!slideIn || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     el.style.willChange = "transform";
     el.style.transform = OFFSTAGE[variant];
@@ -1061,7 +1023,7 @@ export function Sheet({
       cancelAnimationFrame(first);
       cancelAnimationFrame(second);
     };
-  }, [variant, slideIn, pull, dismiss]);
+  }, [variant, slideIn, dismiss]);
 
 
   return (
@@ -1081,6 +1043,107 @@ export function Sheet({
           className={`relative flex flex-col gap-4 ${panel}`}
         >
           {variant === "bottom" && <div className="h-[5px] w-10 shrink-0 self-center rounded-full bg-white/[0.28]" />}
+          {children}
+        </section>
+      </div>
+    </SheetDismiss.Provider>
+  );
+}
+
+/**
+ * The overview on phones: a bottom sheet that's always in the page, parked
+ * just below the screen. Opening it — pulled up by the finger, or from the Up
+ * next button — only slides it; nothing is built or re-rendered mid-gesture,
+ * which is what made it stutter when it mounted on the swipe. Closes with a
+ * swipe down, the ✕ or a tap on the dimmed area, sliding back down.
+ */
+export function Drawer({
+  label,
+  open,
+  pull,
+  onOpen,
+  onClose,
+  children,
+}: {
+  label: string;
+  open: boolean;
+  pull: SheetPull;
+  /** A pull went far (or fast) enough: it's now open. */
+  onOpen: () => void;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  const panelRef = useRef<HTMLElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const handlers = useRef({ onOpen, onClose });
+  useEffect(() => {
+    handlers.current = { onOpen, onClose };
+  });
+  useSwipeToClose(panelRef, backdropRef, onClose, open);
+
+  const slide = "transform 320ms cubic-bezier(0.32, 0.72, 0, 1)";
+  const fade = "opacity 250ms ease-out";
+
+  // Follow the finger while it pulls, then settle open or back down.
+  useEffect(() => {
+    const el = panelRef.current;
+    const backdrop = backdropRef.current;
+    if (!el || !backdrop) return;
+    return pull.attach({
+      move: (distance) => {
+        const h = el.offsetHeight;
+        el.style.transition = "none";
+        backdrop.style.transition = "none";
+        el.style.transform = `translateY(${Math.max(0, h - distance)}px)`;
+        backdrop.style.opacity = String(Math.min(1, distance / h));
+      },
+      end: (distance, velocity) => {
+        const opening = distance > 80 || velocity > 0.4;
+        el.style.transition = slide;
+        backdrop.style.transition = fade;
+        el.style.transform = opening ? "translateY(0px)" : "translateY(100%)";
+        backdrop.style.opacity = opening ? "1" : "0";
+        if (opening) handlers.current.onOpen();
+      },
+    });
+  }, [pull, slide, fade]);
+
+  // Opened or closed from outside (a button, a jump, Escape): slide there. The
+  // first run just parks it, before anything is painted.
+  const placed = useRef(false);
+  useLayoutEffect(() => {
+    const el = panelRef.current;
+    const backdrop = backdropRef.current;
+    if (!el || !backdrop) return;
+    const animate = placed.current && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    placed.current = true;
+    el.style.transition = animate ? slide : "none";
+    backdrop.style.transition = animate ? fade : "none";
+    el.style.transform = open ? "translateY(0px)" : "translateY(100%)";
+    backdrop.style.opacity = open ? "1" : "0";
+    if (open) el.querySelector<HTMLElement>("button")?.focus({ preventScroll: true });
+  }, [open, slide, fade]);
+
+  return (
+    <SheetDismiss.Provider value={onClose}>
+      <div className={`absolute inset-0 z-20 flex flex-col justify-end ${open ? "" : "pointer-events-none"}`} inert={!open}>
+        <div
+          ref={backdropRef}
+          className="absolute inset-0 bg-[#080814]/60 will-change-[opacity]"
+          style={{ opacity: 0 }}
+          onClick={onClose}
+          aria-hidden="true"
+        />
+        <section
+          ref={panelRef}
+          role="dialog"
+          aria-modal={open}
+          aria-label={label}
+          aria-hidden={!open}
+          className={`relative flex max-h-[88%] w-full flex-col gap-4 rounded-t-[28px] bg-[#1A1A34] pt-2.5 will-change-transform ${bottomPad}`}
+          style={{ transform: "translateY(100%)" }}
+        >
+          <div className="h-[5px] w-10 shrink-0 self-center rounded-full bg-white/[0.28]" />
           {children}
         </section>
       </div>
