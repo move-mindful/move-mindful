@@ -5,12 +5,15 @@ import { syncCustomerAttributes } from "@/lib/revenuecat-admin";
 import { syncContactTags } from "@/lib/manychat";
 import { isValidContactId } from "@/lib/manychat-contact";
 import { SIGNUP_TAG, sourceTag } from "@/lib/audience-tags";
+import { deleteMemberData } from "@/lib/member/delete-server";
 
 /**
  * Clerk webhook receiver — subscribes new users to the Mailchimp audience,
  * tagged with where they signed up from, and joins them to their ManyChat
  * contact if they arrived from a DM link. On signup and on every later edit it
- * also mirrors the user's name and email onto their RevenueCat customer.
+ * also mirrors the user's name and email onto their RevenueCat customer. When
+ * an account is deleted, it removes the member's data from the database
+ * (settings, workout sessions, profile).
  *
  * Public by necessity (Clerk isn't a signed-in user), so the Svix signature is
  * the only thing standing between this and anyone who finds the URL. Without
@@ -52,6 +55,14 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("[clerk-webhook] signature verification failed", error);
     return new Response("Invalid signature", { status: 400 });
+  }
+
+  if (event.type === "user.deleted") {
+    // A failure answers 500 so Clerk retries; deleting again is harmless.
+    if (!event.data.id) return new Response("No user id", { status: 200 });
+    return (await deleteMemberData(event.data.id))
+      ? new Response("OK", { status: 200 })
+      : new Response("Delete failed", { status: 500 });
   }
 
   if (event.type !== "user.created" && event.type !== "user.updated") {
