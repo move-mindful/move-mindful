@@ -84,9 +84,17 @@ export function WorkoutRows({
                 name="Warm-up"
                 detail={`${clock(workout.warmup.clip.durationSeconds ?? 0)} · ${workout.warmup.name}`}
               />
-              <span className="flex h-[22px] shrink-0 items-center rounded-full bg-white/[0.12] px-2 text-[11px] font-bold uppercase tracking-[0.06em]">
-                Optional
-              </span>
+              {/* Follows the Warm-up switch beside Begin workout. */}
+              {warmupOff ? (
+                <span className="flex h-[22px] shrink-0 items-center rounded-full bg-white/[0.12] px-2 text-[11px] font-bold uppercase tracking-[0.06em]">
+                  Skipped
+                </span>
+              ) : (
+                <span className="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-[#34D399] text-[#14142B]">
+                  <Check size={13} width={3} />
+                  <span className="sr-only">Included</span>
+                </span>
+              )}
             </div>
           )}
         </div>
