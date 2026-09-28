@@ -50,7 +50,7 @@ export default async function AppLayout({
                 >
                   Home
                 </Link>
-                {/* Classes and Live are on hold until the membership launches,
+                {/* Classes, Live and Workouts are on hold until the membership launches,
                     so members don't see them. Admins keep the links to preview
                     the sections — the pages themselves enforce this via
                     requireSectionUnlocked(). Drop the `admin &&` when
@@ -68,6 +68,12 @@ export default async function AppLayout({
                       className="transition hover:text-zinc-900"
                     >
                       Live
+                    </Link>
+                    <Link
+                      href="/workouts"
+                      className="transition hover:text-zinc-900"
+                    >
+                      Workouts
                     </Link>
                   </>
                 )}

@@ -12,7 +12,7 @@ import { getExercises } from "@/lib/exercises/server";
 import { paceSeconds, rolesFor, slotFor, type AdminExercise, type VideoRole } from "@/lib/exercises/shared";
 import type { AdminWorkout, CatalogExercise, WorkoutLevel, WorkoutListRow } from "@/lib/workouts/shared";
 
-interface BlockRow {
+export interface BlockRow {
   id: string;
   workout_id: string;
   parent_id: string | null;
@@ -30,7 +30,7 @@ interface BlockRow {
   rest_between_rounds: number | null;
 }
 
-interface WorkoutRow {
+export interface WorkoutRow {
   id: string;
   title: string;
   description: string | null;
@@ -111,7 +111,7 @@ function toBlocks(rows: BlockRow[]): WorkoutBlock[] {
     });
 }
 
-function toWorkout(w: WorkoutRow, rows: BlockRow[]): AdminWorkout {
+export function toWorkout(w: WorkoutRow, rows: BlockRow[]): AdminWorkout {
   return {
     id: w.id,
     title: w.title,

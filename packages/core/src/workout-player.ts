@@ -49,8 +49,8 @@ export type PlayerAction =
   | { type: "back"; now: number }
   /** Check the countdown; moves on once it has run out. */
   | { type: "tick"; now: number }
-  /** A tutorial playing once reached its end. */
-  | { type: "tutorialEnded"; now: number }
+  /** The clip on screen reached its end: the warm-up, or a tutorial playing once. */
+  | { type: "clipEnded"; now: number }
   | { type: "pause"; now: number }
   | { type: "resume"; now: number }
   | { type: "sheet"; sheet: PlayerSheet; now: number }
@@ -193,7 +193,8 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
       if (!isRunning(s) || s.phase !== "workout" || !s.timer) return s;
       return timerLeft(s, a.now)! <= 0 ? enter(ctx, s, s.step + 1, true) : s;
     }
-    case "tutorialEnded":
+    case "clipEnded":
+      if (s.phase === "warmup") return enter(ctx, s, 0, true);
       return s.phase === "workout" && s.stage === "tutorial" && s.tutorialPlay === "once" ? startExercise(ctx, s) : s;
     case "pause":
       return s.phase === "warmup" || s.phase === "workout" ? { ...s, paused: true } : s;
@@ -202,7 +203,13 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
     case "sheet":
       return { ...s, sheet: a.sheet };
     case "mode":
-      return { ...s, mode: a.mode };
+      // A tutorial on screen switches to the new setting too ("off" leaves it
+      // up until Begin).
+      return {
+        ...s,
+        mode: a.mode,
+        tutorialPlay: s.stage === "tutorial" && a.mode !== "off" ? a.mode : s.tutorialPlay,
+      };
     case "restartSet": {
       const i = setStepFor(ctx.steps, s.step);
       return s.phase === "workout" && i !== null ? enter(ctx, s, i, false) : s;

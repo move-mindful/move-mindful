@@ -53,6 +53,15 @@ test("the warm-up comes first when chosen", () => {
   assert.equal(s.step, 0);
 });
 
+test("the warm-up video ending starts the workout", () => {
+  const s = run([
+    { type: "begin", warmup: true, mode: "loop", now: 0 },
+    { type: "clipEnded", now: 270_000 },
+  ]);
+  assert.equal(s.phase, "workout");
+  assert.equal(s.stage, "tutorial", "and a looping tutorial doesn't end on that same event");
+});
+
 test("a rest counts down and moves on by itself", () => {
   let s = run([
     { type: "begin", warmup: false, mode: "off", now: 0 },
@@ -105,7 +114,7 @@ test("a tutorial comes up once; going back doesn't replay it", () => {
 test("a tutorial playing once starts the exercise when it ends", () => {
   let s = run([{ type: "begin", warmup: false, mode: "once", now: 0 }]);
   assert.equal(s.tutorialPlay, "once");
-  s = run([{ type: "tutorialEnded", now: 40_000 }], s);
+  s = run([{ type: "clipEnded", now: 40_000 }], s);
   assert.equal(s.stage, "exercise");
 });
 
@@ -119,4 +128,12 @@ test("a sided exercise plays each side, then the workout completes", () => {
   s = run([{ type: "tick", now: 40_000 }], s);
   assert.equal(s.phase, "complete");
   assert.equal(activeTime(s, 99_000), 40_000);
+});
+
+test("changing the tutorial setting applies to the tutorial on screen", () => {
+  let s = run([{ type: "begin", warmup: false, mode: "loop", now: 0 }]);
+  s = run([{ type: "mode", mode: "once", now: 1 }], s);
+  assert.equal(s.tutorialPlay, "once");
+  s = run([{ type: "clipEnded", now: 40_000 }], s);
+  assert.equal(s.stage, "exercise");
 });

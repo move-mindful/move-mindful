@@ -1,0 +1,55 @@
+"use client";
+
+import type { WorkoutStep } from "@move-mindful/core";
+import type { PlayerWorkout } from "@/lib/workouts/player";
+import { Sheet, SheetClose } from "./player-screens";
+import { WorkoutRows, type RowsPosition } from "./workout-rows";
+
+/**
+ * The workout overview: where you are, how long is left, and every exercise
+ * with its status. Tapping one jumps there. Opened from "Up next" or by
+ * swiping up; the workout waits while it's open.
+ */
+export function OverviewSheet({
+  workout,
+  steps,
+  subtitle,
+  progress,
+  position,
+  onJump,
+  onClose,
+}: {
+  workout: PlayerWorkout;
+  steps: WorkoutStep[];
+  subtitle: string;
+  progress: { label: string; left: string; fraction: number };
+  position: RowsPosition;
+  onJump: (step: number) => void;
+  onClose: () => void;
+}) {
+  return (
+    <Sheet label="Workout overview" onClose={onClose}>
+      <div className="flex flex-col gap-3.5 px-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-1">
+            <h2 className="text-2xl font-semibold tracking-[-0.01em]">{workout.title}</h2>
+            <div className="text-sm text-white/70">{subtitle}</div>
+          </div>
+          <SheetClose label="Close overview and resume" onClick={onClose} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-between gap-3 text-sm font-medium">
+            <span className="truncate">{progress.label}</span>
+            <span className="shrink-0 text-white/70">{progress.left}</span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.14]">
+            <div className="h-1.5 rounded-full bg-[#A99CFF]" style={{ width: `${Math.round(progress.fraction * 100)}%` }} />
+          </div>
+        </div>
+      </div>
+      <div className="min-h-0 overflow-y-auto overscroll-contain px-3">
+        <WorkoutRows workout={workout} steps={steps} position={position} onJump={onJump} />
+      </div>
+    </Sheet>
+  );
+}

@@ -42,7 +42,7 @@ const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 
 // Sections that are built but not released to members yet — admins only for now.
 // See lib/auth/locked-sections.ts for the authoritative check and the rationale.
-const isLockedSection = createRouteMatcher(["/classes(.*)", "/live(.*)"]);
+const isLockedSection = createRouteMatcher(["/classes(.*)", "/live(.*)", "/workouts(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
   // A ManyChat DM link lands on a public product page carrying

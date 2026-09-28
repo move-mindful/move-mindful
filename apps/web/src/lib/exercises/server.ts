@@ -242,6 +242,21 @@ export async function getExercises(): Promise<AdminExercise[]> {
   );
 }
 
+/**
+ * Exercises by id with only their ready clips — for the member player, which
+ * never needs a clip that's still processing. Skips the Mux sync the admin
+ * pages do, so it's cheap enough for every member page load.
+ */
+export async function getExercisesByIds(ids: string[]): Promise<AdminExercise[]> {
+  if (!ids.length) return [];
+  const supabase = createAdminClient();
+  const [{ data: exercises }, { data: videos }] = await Promise.all([
+    supabase.from("exercises").select("*").in("id", ids),
+    supabase.from("exercise_videos").select("*").in("exercise_id", ids).eq("status", "ready"),
+  ]);
+  return assemble((exercises ?? []) as ExerciseRow[], (videos ?? []) as VideoRow[], [], new Map());
+}
+
 export async function getExercise(id: string): Promise<AdminExercise | null> {
   const supabase = createAdminClient();
   await syncPendingVideos(supabase, id);

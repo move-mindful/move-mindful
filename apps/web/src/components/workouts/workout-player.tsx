@@ -1,0 +1,543 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useReducer, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import {
+  aboutMinutes,
+  activeTime,
+  estimateWorkout,
+  initialPlayerState,
+  isRunning,
+  playerReducer,
+  secondsLeft,
+  setStepFor,
+  workoutSteps,
+  type PlayerAction,
+  type SetStep,
+  type TutorialMode,
+  type WorkoutStep,
+} from "@move-mindful/core";
+import { levelsLabel } from "@/lib/exercises/shared";
+import { amountLabel, clock, equipmentText, loopFor, type PlayerClip, type PlayerWorkout } from "@/lib/workouts/player";
+import { OverviewSheet } from "./overview-sheet";
+import { ProgressBar, type SegmentFill } from "./progress-bar";
+import {
+  CompleteScreen,
+  Dim,
+  EndSheet,
+  PausedScreen,
+  RestScreen,
+  SetScreen,
+  Shade,
+  TapZones,
+  TopBar,
+  TutorialScreen,
+  TutorialSheet,
+  WarmupScreen,
+} from "./player-screens";
+import { POOL_SIZE, PoolVideos, useVideoPool, type PoolClip, type ShownClip } from "./video-pool";
+import { WorkoutPreview } from "./workout-preview";
+
+/**
+ * The member's workout: the preview, then the optional warm-up, the workout
+ * itself (story-style, one set at a time) and the summary. The state machine is
+ * `playerReducer` from @move-mindful/core; this component shows its state,
+ * keeps the videos and timers in step with it, and turns taps into actions.
+ * Designs: the player design canvas (plan.md, Phase 4.5).
+ */
+
+// The member's tutorial setting ("Before each new exercise"), kept on this
+// device for every workout.
+const MODE_KEY = "movemindful.tutorialMode";
+
+function storedMode(): TutorialMode {
+  try {
+    const v = window.localStorage.getItem(MODE_KEY);
+    return v === "once" || v === "off" ? v : "loop";
+  } catch {
+    return "loop";
+  }
+}
+
+function storeMode(mode: TutorialMode) {
+  try {
+    window.localStorage.setItem(MODE_KEY, mode);
+  } catch {
+    // Private mode or storage blocked: the setting lasts for this workout only.
+  }
+}
+
+type WithoutNow<T> = T extends unknown ? Omit<T, "now"> : never;
+
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+function shownOf(clip: PlayerClip | null | undefined, loop: boolean): ShownClip | null {
+  return clip ? { url: clip.url, poster: clip.poster, loop } : null;
+}
+
+export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; backHref: string }) {
+  const router = useRouter();
+
+  const estimates = useMemo(
+    () => Object.fromEntries(Object.values(workout.exercises).map((e) => [e.id, e.estimate])),
+    [workout.exercises],
+  );
+  const steps = useMemo(() => workoutSteps(workout.blocks, estimates), [workout.blocks, estimates]);
+  const totalSeconds = useMemo(() => estimateWorkout(workout.blocks, estimates).totalSeconds, [workout.blocks, estimates]);
+  const setSteps = steps.filter((s): s is SetStep => s.kind === "set");
+  const setCount = setSteps.length ? setSteps[setSteps.length - 1].setIndex + 1 : 0;
+  const exerciseCount = new Set(setSteps.map((s) => s.exerciseId)).size;
+
+  const reducer = useMemo(
+    () => playerReducer({ steps, hasTutorial: (id) => !!workout.exercises[id]?.tutorial }),
+    [steps, workout.exercises],
+  );
+  const [state, dispatch] = useReducer(reducer, initialPlayerState);
+  const act = useCallback((a: WithoutNow<PlayerAction>) => dispatch({ ...a, now: performance.now() } as PlayerAction), []);
+
+  const [muted, setMuted] = useState(false);
+  const [warmedUp, setWarmedUp] = useState(false);
+
+  const pool = useVideoPool({
+    onEnded: () => act({ type: "clipEnded" }),
+    onSoundBlocked: () => setMuted(true),
+  });
+
+  const running = isRunning(state);
+  const active = state.phase === "warmup" || state.phase === "workout";
+  const step: WorkoutStep | undefined = steps[state.step];
+  const set = step?.kind === "set" ? step : null;
+  const exercise = set ? workout.exercises[set.exerciseId] : undefined;
+  // The set this step is, or — for a rest — the one it leads into.
+  const targetIndex = setStepFor(steps, state.step);
+  const target = targetIndex !== null ? (steps[targetIndex] as SetStep) : null;
+  const targetExercise = target ? workout.exercises[target.exerciseId] : undefined;
+
+  // ── Videos ──────────────────────────────────────────
+
+  const shown = useMemo<ShownClip | null>(() => {
+    if (state.phase === "preview") return null;
+    if (state.phase === "warmup") return shownOf(workout.warmup?.clip, false);
+    const st = steps[state.step];
+    if (!st) return null;
+    // A rest shows the next exercise (blurred); the summary, the last one.
+    if (st.kind === "rest" || state.phase === "complete") {
+      const i = setStepFor(steps, state.step);
+      const s = i !== null ? steps[i] : null;
+      return s?.kind === "set" ? shownOf(loopFor(workout.exercises[s.exerciseId], s.side), true) : null;
+    }
+    const e = workout.exercises[st.exerciseId];
+    if (state.stage === "tutorial" && e?.tutorial) return shownOf(e.tutorial, state.tutorialPlay === "loop");
+    return shownOf(loopFor(e, st.side), true);
+  }, [state.phase, state.step, state.stage, state.tutorialPlay, steps, workout]);
+
+  // What's on screen, then what comes after it — kept loaded in the pool.
+  const upcoming = useMemo<PoolClip[]>(() => {
+    const list: PoolClip[] = [];
+    const add = (c: { url: string; poster: string } | null | undefined) => {
+      if (c && list.length < POOL_SIZE && !list.some((x) => x.url === c.url)) list.push({ url: c.url, poster: c.poster });
+    };
+    add(shown);
+    const started = state.phase === "workout" || state.phase === "complete";
+    if (!started) add(workout.warmup?.clip);
+    for (let i = started ? state.step : 0; i < steps.length && list.length < POOL_SIZE; i++) {
+      const st = steps[i];
+      if (st.kind !== "set") continue;
+      const e = workout.exercises[st.exerciseId];
+      const tutorial =
+        started && i === state.step
+          ? state.stage === "tutorial"
+          : st.firstOfExercise && state.mode !== "off" && !state.seen.includes(st.exerciseId);
+      if (tutorial) add(e?.tutorial);
+      add(loopFor(e, st.side));
+    }
+    return list;
+  }, [shown, state.phase, state.step, state.stage, state.mode, state.seen, steps, workout]);
+
+  useEffect(() => {
+    pool.sync(upcoming, shown, { playing: running, muted, take: state.take });
+  }, [pool, upcoming, shown, running, muted, state.take]);
+
+  // ── Clocks ──────────────────────────────────────────
+
+  // The countdown for a timed set or a rest: redraw a few times a second, and
+  // tell the reducer when it runs out.
+  const [now, setNow] = useState(0);
+  const timer = state.timer;
+  useEffect(() => {
+    if (!timer || timer.since === null) return;
+    const since = timer.since;
+    const id = window.setInterval(() => {
+      const t = performance.now();
+      setNow(t);
+      if (timer.leftMs - (t - since) <= 0) dispatch({ type: "tick", now: t });
+    }, 200);
+    return () => window.clearInterval(id);
+  }, [timer]);
+  const leftMs = timer
+    ? Math.max(0, Math.min(timer.leftMs, timer.since === null ? timer.leftMs : timer.leftMs - (now - timer.since)))
+    : 0;
+
+  // How far the warm-up, or a tutorial playing once, has got.
+  const clipTimed =
+    state.phase === "warmup" || (state.phase === "workout" && state.stage === "tutorial" && state.tutorialPlay === "once");
+  const [clipTime, setClipTime] = useState({ take: -1, time: 0, duration: 0 });
+  useEffect(() => {
+    if (!clipTimed) return;
+    const take = state.take;
+    const id = window.setInterval(() => {
+      const v = pool.current();
+      if (v) setClipTime({ take, time: v.currentTime, duration: Number.isFinite(v.duration) ? v.duration : 0 });
+    }, 250);
+    return () => window.clearInterval(id);
+  }, [clipTimed, state.take, pool]);
+  const clip = clipTime.take === state.take ? clipTime : { time: 0, duration: 0 };
+
+  // ── While working out ───────────────────────────────
+
+  // Keep the screen on, and pause when the member leaves the tab or locks the phone.
+  useEffect(() => {
+    if (!active) return;
+    let lock: WakeLockSentinel | null = null;
+    let gone = false;
+    const request = () => {
+      navigator.wakeLock?.request("screen").then(
+        (l) => {
+          if (gone) l.release().catch(() => {});
+          else lock = l;
+        },
+        () => {},
+      );
+    };
+    const onVisibility = () => {
+      if (document.hidden) act({ type: "pause" });
+      else request();
+    };
+    request();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      gone = true;
+      lock?.release().catch(() => {});
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [active, act]);
+
+  // Keyboard: arrows move between sets, space pauses, Escape closes a sheet.
+  useEffect(() => {
+    if (!active) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target instanceof HTMLElement ? e.target : null;
+      if (target?.closest("input, textarea, select")) return;
+      if (e.key === "Escape") {
+        if (state.sheet) act({ type: "sheet", sheet: null });
+        else act({ type: state.paused ? "resume" : "pause" });
+      } else if (e.key === " " && !target?.closest("button") && !state.sheet) {
+        e.preventDefault();
+        act({ type: state.paused ? "resume" : "pause" });
+      } else if (running && e.key === "ArrowRight") {
+        act({ type: "next" });
+      } else if (running && e.key === "ArrowLeft") {
+        act({ type: "back" });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [active, running, state.paused, state.sheet, act]);
+
+  // ── Actions ─────────────────────────────────────────
+
+  function begin(withWarmup: boolean) {
+    const warmup = withWarmup && !!workout.warmup;
+    setWarmedUp(warmup);
+    // Inside the tap, so every clip may play with sound later (see video-pool.tsx).
+    pool.unlock();
+    act({ type: "begin", warmup, mode: storedMode() });
+  }
+
+  const leave = () => router.push(backHref);
+  const pause = () => act({ type: "pause" });
+  const toggleMute = () => setMuted((m) => !m);
+  const openOverview = () => act({ type: "sheet", sheet: "overview" });
+  const openTutorialSheet = () => act({ type: "sheet", sheet: "tutorial" });
+
+  // ── What to show ────────────────────────────────────
+
+  const minutes = aboutMinutes(totalSeconds);
+  const setsDone = target?.setIndex ?? setCount;
+
+  function upNext(): { label: string; text: string } {
+    const j = setStepFor(steps, state.step + 1);
+    if (j === null) return { label: "Up next", text: "Finish" };
+    const next = steps[j] as SetStep;
+    const name = workout.exercises[next.exerciseId]?.name ?? "Next exercise";
+    if (set && next.exerciseId === set.exerciseId && next.setIndex === set.setIndex && next.side) {
+      return { label: "Up next", text: `Same move · ${cap(next.side)} side` };
+    }
+    if (set && next.exerciseId === set.exerciseId && next.block === set.block && !next.groupLabel) {
+      return { label: "Up next", text: `${name} · Set ${next.round}` };
+    }
+    return { label: "Up next", text: next.side ? `${name} · ${cap(next.side)} side` : name };
+  }
+
+  function setLine(s: SetStep): string {
+    const name = workout.exercises[s.exerciseId]?.name ?? "Exercise";
+    if (s.rounds < 2) return name;
+    return `${name} · ${s.groupLabel ? "Round" : "Set"} ${s.round} of ${s.rounds}`;
+  }
+
+  const fill: SegmentFill | null =
+    state.phase !== "workout" || !set
+      ? null
+      : state.stage === "tutorial"
+        ? { kind: "tutorial", fraction: state.tutorialPlay === "once" && clip.duration ? clip.time / clip.duration : 1 }
+        : set.measure === "time"
+          ? { kind: "set", fraction: 1 - leftMs / (set.amount * 1000) }
+          : { kind: "set", fraction: 1 };
+
+  const bar = (
+    <TopBar>
+      <ProgressBar steps={steps} current={state.step} fill={fill} complete={state.phase === "complete"} />
+    </TopBar>
+  );
+
+  let screen: ReactNode = null;
+  let blurred = false;
+
+  if (state.phase === "warmup" && workout.warmup) {
+    const duration = clip.duration || workout.warmup.clip.durationSeconds || 0;
+    if (state.paused) {
+      blurred = true;
+      screen = (
+        <>
+          <Dim />
+          <PausedScreen
+            subtitle="Warm-up"
+            stats={null}
+            onResume={() => act({ type: "resume" })}
+            onRestartSet={null}
+            onRestartWorkout={null}
+            onWatchTutorial={null}
+            onSkipWarmup={() => act({ type: "endWarmup" })}
+            onEnd={() => act({ type: "sheet", sheet: "end" })}
+          />
+        </>
+      );
+    } else {
+      screen = (
+        <>
+          <Shade bottom={320} />
+          <WarmupScreen
+            name={workout.warmup.name}
+            seconds={clip.time}
+            duration={duration}
+            muted={muted}
+            onPause={pause}
+            onSkip={() => act({ type: "endWarmup" })}
+            onMute={toggleMute}
+          />
+        </>
+      );
+    }
+  } else if (state.phase === "workout" && step) {
+    const zones = (onNext: () => void, nextLabel: string) => (
+      <TapZones
+        onBack={() => act({ type: "back" })}
+        onNext={onNext}
+        onHold={pause}
+        onSwipeUp={openOverview}
+        nextLabel={nextLabel}
+      />
+    );
+
+    if (state.paused) {
+      blurred = true;
+      const canWatch = !!targetExercise?.tutorial;
+      screen = (
+        <>
+          <Dim />
+          {bar}
+          <PausedScreen
+            subtitle={set ? setLine(set) : "Rest"}
+            stats={{
+              elapsed: clock(activeTime(state, 0) / 1000),
+              setsDone: `${setsDone} / ${setCount}`,
+              left: `~${aboutMinutes(secondsLeft(steps, state.step))} min`,
+            }}
+            onResume={() => act({ type: "resume" })}
+            onRestartSet={() => act({ type: "restartSet" })}
+            onRestartWorkout={() => act({ type: "restartWorkout" })}
+            onWatchTutorial={canWatch ? () => act({ type: "watchTutorial" }) : null}
+            onSkipWarmup={null}
+            onEnd={() => act({ type: "sheet", sheet: "end" })}
+          />
+        </>
+      );
+    } else if (step.kind === "rest") {
+      blurred = true;
+      const t = target;
+      const tName = t ? (workout.exercises[t.exerciseId]?.name ?? "Next exercise") : "";
+      const tAmount = t ? amountLabel(t.measure, t.amount) : "";
+      screen = (
+        <>
+          <Dim />
+          {bar}
+          {zones(() => act({ type: "next" }), "Skip the rest")}
+          <RestScreen
+            round={step.reason === "round"}
+            secondsLeft={leftMs / 1000}
+            totalSeconds={step.seconds}
+            roundLine={step.reason === "round" && t ? `${t.groupLabel} · round ${t.round} of ${t.rounds} is next` : null}
+            next={
+              t
+                ? {
+                    label: step.reason === "round" ? `Up next · Round ${t.round}` : "Up next",
+                    name: t.side ? `${tName} · ${cap(t.side)} side` : tName,
+                    detail: !t.groupLabel && t.rounds > 1 ? `Set ${t.round} of ${t.rounds} · ${tAmount}` : tAmount,
+                    thumbnail: targetExercise?.thumbnail ?? null,
+                  }
+                : null
+            }
+            onPause={pause}
+            onContinue={() => act({ type: "next" })}
+          />
+        </>
+      );
+    } else if (set && state.stage === "tutorial") {
+      const amount = amountLabel(set.measure, set.amount, exercise?.sided);
+      const once = state.tutorialPlay === "once";
+      const duration = clip.duration || exercise?.tutorial?.durationSeconds || 0;
+      screen = (
+        <>
+          <Shade bottom={460} />
+          {bar}
+          {zones(() => act({ type: "next" }), "Start the exercise")}
+          <TutorialScreen
+            name={exercise?.name ?? "Exercise"}
+            chips={[set.rounds > 1 ? `${set.rounds} ${set.groupLabel ? "rounds" : "sets"} · ${amount}` : amount]}
+            levels={exercise?.dumbbellLevels.length ? levelsLabel(exercise.dumbbellLevels) : null}
+            once={once ? { fraction: duration ? clip.time / duration : 0, secondsLeft: Math.max(0, duration - clip.time) } : null}
+            pill={{ label: "Workout", text: `${exerciseCount} ${exerciseCount === 1 ? "exercise" : "exercises"} · ${minutes} min` }}
+            muted={muted}
+            onBegin={() => act({ type: "next" })}
+            onPause={pause}
+            onOverview={openOverview}
+            onMute={toggleMute}
+            onTutorialSettings={openTutorialSheet}
+          />
+        </>
+      );
+    } else if (set) {
+      screen = (
+        <>
+          <Shade bottom={set.groupLabel ? 380 : 350} />
+          {bar}
+          {zones(() => act({ type: "next" }), "Next set")}
+          <SetScreen
+            name={exercise?.name ?? "Exercise"}
+            metric={set.measure === "time" ? { kind: "time", seconds: Math.ceil(leftMs / 1000) } : { kind: "reps", amount: set.amount }}
+            side={set.side}
+            groupLine={set.groupLabel ? `${set.groupLabel} · Round ${set.round} of ${set.rounds}` : null}
+            pill={upNext()}
+            muted={muted}
+            onPause={pause}
+            onOverview={openOverview}
+            onMute={toggleMute}
+            onTutorialSettings={openTutorialSheet}
+          />
+        </>
+      );
+    }
+  } else if (state.phase === "complete") {
+    blurred = true;
+    screen = (
+      <>
+        <Dim strength={0.74} />
+        {bar}
+        <CompleteScreen
+          title={workout.title}
+          time={clock(activeTime(state, 0) / 1000)}
+          exercises={exerciseCount}
+          sets={setCount}
+          onDone={leave}
+          onRestart={() => act({ type: "restartWorkout" })}
+        />
+      </>
+    );
+  }
+
+  const leftNow = secondsLeft(steps, state.step);
+  const equipment = equipmentText(workout);
+  const sheet =
+    state.sheet === "overview" && state.phase === "workout" ? (
+      <OverviewSheet
+        workout={workout}
+        steps={steps}
+        subtitle={`About ${minutes} min${equipment ? ` · ${equipment}` : ""}`}
+        progress={{
+          label: set ? setLine(set) : "Resting",
+          left: `About ${aboutMinutes(leftNow)} min left`,
+          fraction: totalSeconds ? Math.min(1, Math.max(0, 1 - leftNow / secondsLeft(steps, 0))) : 0,
+        }}
+        position={{ step: state.step, complete: false, warmup: warmedUp ? "done" : "skipped" }}
+        onJump={(i) => act({ type: "jump", step: i })}
+        onClose={() => act({ type: "sheet", sheet: null })}
+      />
+    ) : state.sheet === "tutorial" ? (
+      <TutorialSheet
+        mode={state.mode}
+        watch={
+          targetExercise?.tutorial
+            ? {
+                name: targetExercise.name,
+                duration: targetExercise.tutorial.durationSeconds,
+                thumbnail: targetExercise.thumbnail,
+              }
+            : null
+        }
+        onMode={(mode) => {
+          storeMode(mode);
+          act({ type: "mode", mode });
+        }}
+        onWatch={() => act({ type: "watchTutorial" })}
+        onClose={() => act({ type: "sheet", sheet: null })}
+      />
+    ) : state.sheet === "end" ? (
+      <EndSheet setsDone={setsDone} setsTotal={setCount} onEnd={leave} onKeepGoing={() => act({ type: "resume" })} />
+    ) : null;
+
+  return (
+    <>
+      {state.phase === "preview" && (
+        <WorkoutPreview
+          workout={workout}
+          steps={steps}
+          totalSeconds={totalSeconds}
+          exerciseCount={exerciseCount}
+          backHref={backHref}
+          onBegin={begin}
+        />
+      )}
+      {/* The stage. During the preview it's invisible but mounted, so the
+          first clips load while the member reads. */}
+      <div
+        aria-hidden={state.phase === "preview"}
+        className={`fixed inset-0 flex justify-center bg-[#08080F] text-white ${
+          state.phase === "preview" ? "pointer-events-none -z-10 opacity-0" : "z-50"
+        }`}
+      >
+        <div
+          className="relative h-full w-full select-none overflow-hidden bg-[#14142B]"
+          style={{ maxWidth: "calc(100dvh * 9 / 16)" }}
+        >
+          <PoolVideos
+            pool={pool}
+            className={`transition-[filter,transform] duration-300 ${blurred ? "scale-[1.06] blur-[4px] saturate-[0.8]" : ""}`}
+          />
+          {screen}
+          {sheet}
+        </div>
+      </div>
+    </>
+  );
+}

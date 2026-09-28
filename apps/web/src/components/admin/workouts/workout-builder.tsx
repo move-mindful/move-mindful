@@ -233,6 +233,17 @@ export function WorkoutBuilder({
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {workout && (
+            // The member view of the saved version (drafts show to admins only).
+            <a
+              href={`/workouts/${workout.id}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm font-medium text-zinc-600 hover:text-zinc-900 hover:underline"
+            >
+              Preview as member ↗
+            </a>
+          )}
           <button
             type="button"
             onClick={onSave}
