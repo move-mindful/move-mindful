@@ -104,9 +104,12 @@ export function WorkoutPreview({
         </div>
       </div>
 
-      {/* Begin, pinned to the bottom on phones — a frosted panel, so the workout
-          visibly scrolls on underneath it. */}
-      <div className="fixed inset-x-0 bottom-0 border-t border-white/10 bg-[#1C1C38]/80 shadow-[0_-12px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl theater:hidden">
+      {/* Begin, pinned to the bottom on phones. The page's own colour, so it runs
+          into Safari's toolbar (which takes its tint from the page), with a
+          hairline edge and a shadow above so the list visibly slides under it.
+          Its background also carries on below it, behind a floating Safari
+          toolbar, so nothing scrolls into view underneath. */}
+      <div className="fixed inset-x-0 bottom-0 border-t border-white/10 bg-[#14142B] shadow-[0_-12px_28px_rgba(0,0,0,0.5)] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-40 after:bg-[#14142B] theater:hidden">
         <div className="mx-auto max-w-[560px] px-5 pb-[max(20px,calc(env(safe-area-inset-bottom)+8px))] pt-4">{begin}</div>
       </div>
     </div>
