@@ -61,7 +61,20 @@ export interface PlayerState {
 
 export type PlayerAction =
   /** `guide`: open the gesture guide when the first exercise comes up (a first-time member). */
-  | { type: "begin"; warmup: boolean; mode: TutorialMode; guide?: boolean; autoAdvance?: boolean; now: number }
+  | {
+      type: "begin";
+      warmup: boolean;
+      mode: TutorialMode;
+      guide?: boolean;
+      autoAdvance?: boolean;
+      /**
+       * Resume saved progress: start at this set (see resumeFrom), with the
+       * workout time already done. A resume skips the warm-up.
+       */
+      from?: number;
+      activeMs?: number;
+      now: number;
+    }
   /** The warm-up finished or was skipped. */
   | { type: "endWarmup"; now: number }
   | { type: "next"; now: number }
@@ -199,17 +212,19 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
   const step = ctx.steps[s.step];
   switch (a.type) {
     case "begin": {
+      const from = a.from ? (setStepFor(ctx.steps, a.from) ?? 0) : 0;
       const started = {
         ...s,
         mode: fitTutorialMode(a.mode, !!a.autoAdvance),
-        activeMs: 0,
+        activeMs: from ? Math.max(0, a.activeMs ?? 0) : 0,
         activeSince: null,
-        seen: [],
+        // Resuming, the exercises already done don't show their tutorials again.
+        seen: [...new Set(ctx.steps.slice(0, from).flatMap((st) => (st.kind === "set" ? [st.exerciseId] : [])))],
         guidePending: !!a.guide,
         autoAdvance: !!a.autoAdvance,
       };
-      if (a.warmup) return { ...started, phase: "warmup", paused: false, sheet: null, timer: null, take: s.take + 1 };
-      return enter(ctx, started, 0, true);
+      if (a.warmup && !from) return { ...started, phase: "warmup", paused: false, sheet: null, timer: null, take: s.take + 1 };
+      return enter(ctx, started, from, true);
     }
     case "endWarmup":
       return s.phase === "warmup" ? enter(ctx, s, 0, true) : s;

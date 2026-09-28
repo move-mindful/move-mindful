@@ -5,3 +5,4 @@ export * from "./types";
 export * from "./access";
 export * from "./workouts";
 export * from "./workout-player";
+export * from "./workout-progress";

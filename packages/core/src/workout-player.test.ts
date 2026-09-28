@@ -229,6 +229,26 @@ test("auto-advance and Loop tutorials are never on together", () => {
   assert.equal(s.mode, "once");
 });
 
+test("resuming starts at the saved set, skips the warm-up, and keeps the time done", () => {
+  // Saved on row set 2: no tutorial (the row came up already), time carried over.
+  let s = run([{ type: "begin", warmup: true, mode: "loop", from: 2, activeMs: 90_000, now: 0 }]);
+  assert.equal(s.phase, "workout");
+  assert.equal(s.step, 2);
+  assert.equal(s.stage, "exercise");
+  assert.equal(activeTime(s, 10_000), 100_000);
+  // Going back to set 1 doesn't replay its tutorial either.
+  s = run([{ type: "back", now: 10_000 }], s);
+  assert.equal(s.step, 0);
+  assert.equal(s.stage, "exercise");
+  // Saved on the lunge: its first appearance, so its tutorial shows.
+  s = run([{ type: "begin", warmup: false, mode: "loop", from: 4, now: 0 }]);
+  assert.equal(s.step, 4);
+  assert.equal(s.stage, "tutorial");
+  // Saved on a rest: the set after it.
+  s = run([{ type: "begin", warmup: false, mode: "off", from: 1, now: 0 }]);
+  assert.equal(s.step, 2);
+});
+
 test("watching a tutorial again follows the tutorial setting", () => {
   // Play once: it plays through, then it's back to the exercise.
   let s = run([
