@@ -434,7 +434,8 @@ export function WorkoutPlayer({
             duration={duration}
             onPause={pause}
             onSkip={skip}
-            onSettings={openSettings}
+            muted={muted}
+            onToggleSound={() => setSound(muted)}
           />
         </>
       );
@@ -568,7 +569,8 @@ export function WorkoutPlayer({
               onBegin={next}
               onPause={pause}
               onOverview={openOverview}
-              onSettings={openSettings}
+              muted={muted}
+              onToggleSound={() => setSound(muted)}
             />
           </>
         );
@@ -611,7 +613,8 @@ export function WorkoutPlayer({
               hidden={chromeHidden}
               onPause={pause}
               onOverview={openOverview}
-              onSettings={openSettings}
+              muted={muted}
+              onToggleSound={() => setSound(muted)}
             />
           </>
         );

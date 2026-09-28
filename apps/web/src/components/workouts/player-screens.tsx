@@ -28,6 +28,8 @@ import {
   RestartWorkout,
   Sun,
   Settings,
+  Sound,
+  Muted,
   WatchTutorial,
 } from "./icons";
 
@@ -135,21 +137,32 @@ function SettingsButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-/** Settings · Up next (opens the overview) · Pause. */
+/** App audio on or off — the same setting as in Settings, a tap away. */
+function SoundButton({ muted, onToggle }: { muted: boolean; onToggle: () => void }) {
+  return (
+    <RoundButton label={muted ? "Turn app audio on" : "Turn app audio off"} onClick={onToggle}>
+      {muted ? <Muted /> : <Sound />}
+    </RoundButton>
+  );
+}
+
+/** Sound · Up next (opens the overview) · Pause. */
 function ControlsRow({
   pill,
+  muted,
   onPause,
   onOverview,
-  onSettings,
+  onToggleSound,
 }: {
   pill: { label: string; text: string };
+  muted: boolean;
   onPause: () => void;
   onOverview: () => void;
-  onSettings: () => void;
+  onToggleSound: () => void;
 }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <SettingsButton onClick={onSettings} />
+      <SoundButton muted={muted} onToggle={onToggleSound} />
       <button
         type="button"
         aria-label={`Open workout overview. ${pill.label}: ${pill.text}`}
@@ -379,7 +392,8 @@ export function SetScreen({
   hidden,
   onPause,
   onOverview,
-  onSettings,
+  muted,
+  onToggleSound,
 }: {
   name: string;
   /** Reps to do, or the seconds left on a timed set. */
@@ -392,7 +406,8 @@ export function SetScreen({
   hidden: boolean;
   onPause: () => void;
   onOverview: () => void;
-  onSettings: () => void;
+  muted: boolean;
+  onToggleSound: () => void;
 }) {
   return (
     <div className={`absolute inset-x-0 bottom-0 isolate flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
@@ -431,7 +446,7 @@ export function SetScreen({
       <Collapse open={!hidden}>
         <h1 className="mt-1 truncate text-xl font-semibold leading-tight">{name}</h1>
         <div className="mt-[18px]">
-          <ControlsRow pill={pill} onPause={onPause} onOverview={onOverview} onSettings={onSettings} />
+          <ControlsRow pill={pill} muted={muted} onPause={onPause} onOverview={onOverview} onToggleSound={onToggleSound} />
         </div>
       </Collapse>
     </div>
@@ -448,7 +463,8 @@ export function TutorialScreen({
   onBegin,
   onPause,
   onOverview,
-  onSettings,
+  muted,
+  onToggleSound,
 }: {
   name: string;
   chips: string[];
@@ -461,7 +477,8 @@ export function TutorialScreen({
   onBegin: () => void;
   onPause: () => void;
   onOverview: () => void;
-  onSettings: () => void;
+  muted: boolean;
+  onToggleSound: () => void;
 }) {
   return (
     <div className={`absolute inset-x-0 bottom-0 isolate flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
@@ -500,7 +517,7 @@ export function TutorialScreen({
       <Collapse open={!hidden}>
         <div className="mt-[18px] flex flex-col gap-[18px]">
           <BeginButton progress={progress} onBegin={onBegin} />
-          <ControlsRow pill={pill} onPause={onPause} onOverview={onOverview} onSettings={onSettings} />
+          <ControlsRow pill={pill} muted={muted} onPause={onPause} onOverview={onOverview} onToggleSound={onToggleSound} />
         </div>
       </Collapse>
     </div>
@@ -720,14 +737,16 @@ export function WarmupScreen({
   duration,
   onPause,
   onSkip,
-  onSettings,
+  muted,
+  onToggleSound,
 }: {
   name: string;
   seconds: number;
   duration: number;
   onPause: () => void;
   onSkip: () => void;
-  onSettings: () => void;
+  muted: boolean;
+  onToggleSound: () => void;
 }) {
   return (
     <>
@@ -742,7 +761,7 @@ export function WarmupScreen({
           <h1 className="truncate text-[22px] font-semibold leading-tight">{name}</h1>
         </div>
         <div className="flex items-center justify-between gap-3">
-          <SettingsButton onClick={onSettings} />
+          <SoundButton muted={muted} onToggle={onToggleSound} />
           <button
             type="button"
             onClick={onSkip}
@@ -847,8 +866,10 @@ export function PausedScreen({
           </button>
         </div>
       </div>
-      {/* Settings, top left under the progress bar. */}
-      <div className="absolute left-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] z-10">
+      {/* Settings under the progress bar: top right on phones, top left on desktop. */}
+      <div
+        className={`absolute top-[calc(max(20px,env(safe-area-inset-top))+18px)] z-10 ${theater ? "left-4" : "right-4"}`}
+      >
         <SettingsButton onClick={onSettings} />
       </div>
     </>
