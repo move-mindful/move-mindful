@@ -52,6 +52,8 @@ export interface WorkoutCard {
   minutes: number;
   exerciseCount: number;
   published: boolean;
+  /** Its step sequence's fingerprint (see sequenceKey in core), to check saved progress against. */
+  sequenceKey: string;
 }
 
 export function loopFor(exercise: PlayerExercise | undefined, side: Side | null): PlayerClip | null {

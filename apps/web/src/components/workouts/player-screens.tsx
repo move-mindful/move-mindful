@@ -1529,6 +1529,7 @@ export function SettingsSheet({
 export function EndSheet({
   setsDone,
   setsTotal,
+  canSave,
   onEnd,
   onCancel,
   variant = "bottom",
@@ -1536,7 +1537,13 @@ export function EndSheet({
 }: {
   setsDone: number;
   setsTotal: number;
-  onEnd: () => void;
+  /**
+   * Offer Save progress / Discard progress (signed in, past the first set);
+   * otherwise it's just End workout.
+   */
+  canSave: boolean;
+  /** Leave the workout, keeping the progress for Resume or not. */
+  onEnd: (keep: boolean) => void;
   /** Back to the pause screen. */
   onCancel: () => void;
   variant?: SheetVariant;
@@ -1553,12 +1560,21 @@ export function EndSheet({
           </p>
         </div>
         <div className="flex flex-col gap-2.5">
+          {canSave && (
+            <button
+              type="button"
+              onClick={() => onEnd(true)}
+              className="h-[54px] rounded-full bg-white text-base font-semibold text-[#14142B]"
+            >
+              Save progress
+            </button>
+          )}
           <button
             type="button"
-            onClick={onEnd}
+            onClick={() => onEnd(false)}
             className="h-[54px] rounded-full bg-[#FF5A5A]/[0.14] text-base font-semibold text-[#FF9E9E]"
           >
-            End workout
+            {canSave ? "Discard progress" : "End workout"}
           </button>
           <DismissButton autoFocus data-autofocus className="h-12 text-base font-semibold text-white/80">
             Cancel

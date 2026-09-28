@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { aboutMinutes, type WorkoutStep } from "@move-mindful/core";
 import { equipmentPills, levelLabel, type PlayerWorkout } from "@/lib/workouts/player";
-import { ArrowRight, ChevronLeft, EQUIPMENT_ICONS } from "./icons";
+import { ArrowRight, ChevronLeft, EQUIPMENT_ICONS, RestartWorkout } from "./icons";
 import { Switch } from "./player-screens";
 import { WorkoutRows } from "./workout-rows";
 
@@ -23,6 +23,8 @@ export function WorkoutPreview({
   warmup,
   onWarmup,
   onBegin,
+  resume,
+  onResume,
 }: {
   workout: PlayerWorkout;
   steps: WorkoutStep[];
@@ -33,6 +35,9 @@ export function WorkoutPreview({
   warmup: boolean;
   onWarmup: (on: boolean) => void;
   onBegin: (withWarmup: boolean) => void;
+  /** Saved progress to pick up: the set it resumes at, how far along, and whether it began with the warm-up. */
+  resume: { step: number; percent: number; warmedUp: boolean } | null;
+  onResume: () => void;
 }) {
   const level = levelLabel(workout.level);
   const pills = equipmentPills(workout);
@@ -45,7 +50,15 @@ export function WorkoutPreview({
   const canStart = steps.length > 0;
 
   const begin = (
-    <BeginRow workout={workout} canStart={canStart} warmup={warmup} onWarmup={onWarmup} onBegin={onBegin} />
+    <BeginRow
+      workout={workout}
+      canStart={canStart}
+      warmup={warmup}
+      onWarmup={onWarmup}
+      onBegin={onBegin}
+      resume={resume}
+      onResume={onResume}
+    />
   );
 
   return (
@@ -102,7 +115,15 @@ export function WorkoutPreview({
           </div>
           <section className="flex flex-col gap-2.5 theater:gap-3.5">
             <h2 className="text-[13px] font-bold uppercase tracking-[0.12em] text-white/65">The workout</h2>
-            <WorkoutRows workout={workout} steps={steps} position={null} warmupOff={!warmup} />
+            {/* With saved progress, what's done is checked off. */}
+            <WorkoutRows
+              workout={workout}
+              steps={steps}
+              position={
+                resume ? { step: resume.step, complete: false, warmup: resume.warmedUp ? "done" : "skipped" } : null
+              }
+              warmupOff={!warmup}
+            />
           </section>
         </div>
       </div>
@@ -193,7 +214,8 @@ function Stat({ value, label }: { value: string; label: string }) {
 
 /**
  * Begin workout, with a Warm-up switch beside it (on by default) when the
- * workout has one. Side by side on phones and on desktop.
+ * workout has one. Side by side on phones and on desktop. With saved
+ * progress it's Resume (and how far along) beside Start over instead.
  */
 function BeginRow({
   workout,
@@ -201,15 +223,45 @@ function BeginRow({
   warmup,
   onWarmup,
   onBegin,
+  resume,
+  onResume,
 }: {
   workout: PlayerWorkout;
   canStart: boolean;
   warmup: boolean;
   onWarmup: (on: boolean) => void;
   onBegin: (withWarmup: boolean) => void;
+  resume: { percent: number } | null;
+  onResume: () => void;
 }) {
   if (!canStart) {
     return <p className="py-4 text-center text-white/70 theater:text-left">This workout doesn&rsquo;t have any exercises yet.</p>;
+  }
+  if (resume) {
+    return (
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          onClick={onResume}
+          className="flex h-[58px] min-w-0 flex-1 items-center justify-center gap-2.5 whitespace-nowrap rounded-full bg-white px-4 text-[#14142B] theater:max-w-[320px]"
+        >
+          <span className="flex flex-col items-center leading-tight">
+            <span className="text-[17px] font-semibold">Resume</span>
+            <span className="text-[13px] font-medium text-[#14142B]/60">{resume.percent}% complete</span>
+          </span>
+          <ArrowRight />
+        </button>
+        {/* A fresh start, with the warm-up if the member's setting says so. */}
+        <button
+          type="button"
+          onClick={() => onBegin(!!workout.warmup && warmup)}
+          className="flex h-[58px] shrink-0 items-center gap-2 px-1 text-[15px] font-semibold text-white/85"
+        >
+          <RestartWorkout size={18} />
+          Start over
+        </button>
+      </div>
+    );
   }
   return (
     <div className="flex items-center gap-4">

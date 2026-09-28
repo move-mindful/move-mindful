@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
-import { aboutMinutes, estimateWorkout, type WorkoutBlock } from "@move-mindful/core";
+import { aboutMinutes, estimateWorkout, sequenceKey, workoutSteps, type WorkoutBlock } from "@move-mindful/core";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getExercisesByIds } from "@/lib/exercises/server";
 import { mp4Url, slotFor, thumbnailUrl, type AdminExercise, type ExerciseVideo } from "@/lib/exercises/shared";
@@ -138,6 +138,7 @@ export async function getWorkoutCards(includeDrafts: boolean): Promise<WorkoutCa
   workouts.forEach((w) => exerciseIds(w.blocks).forEach((id) => ids.add(id)));
   const rows = await getExercisesByIds([...ids]);
   const estimates = Object.fromEntries(rows.map((e) => [e.id, toCatalog(e).estimate]));
+  const playable = new Set(rows.filter((e) => e.kind === "exercise").map((e) => e.id));
   // A card with no uploaded cover shows a frame from its first exercise.
   const stills = new Map(
     rows.map((e) => {
@@ -156,6 +157,8 @@ export async function getWorkoutCards(includeDrafts: boolean): Promise<WorkoutCa
       minutes: aboutMinutes(estimateWorkout(w.blocks, estimates).totalSeconds),
       exerciseCount: used.length,
       published: !!w.publishedAt,
+      // The steps as the player builds them (see assemble), so saved progress matches.
+      sequenceKey: sequenceKey(workoutSteps(playableBlocks(w.blocks, playable), estimates)),
     };
   });
 }

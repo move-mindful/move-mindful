@@ -5,6 +5,7 @@ import { requireSectionUnlocked } from "@/lib/auth/locked-sections";
 import { getViewerAccess } from "@/lib/auth/viewer";
 import { getPlayerWorkout } from "@/lib/workouts/member";
 import { getPlayerPreferences } from "@/lib/member/preferences-server";
+import { getSavedProgress } from "@/lib/member/sessions-server";
 import { WorkoutPlayer } from "@/components/workouts/workout-player";
 
 export const viewport: Viewport = {
@@ -33,10 +34,19 @@ export default async function WorkoutPage({ params }: Props) {
   await requireSectionUnlocked();
   const { id } = await params;
   const [viewer, { userId }] = await Promise.all([getViewerAccess(), auth()]);
-  const [workout, preferences] = await Promise.all([
+  const [workout, preferences, progress] = await Promise.all([
     getPlayerWorkout(id, viewer.isAdmin),
     userId ? getPlayerPreferences(userId) : null,
+    userId ? getSavedProgress(userId, id) : null,
   ]);
   if (!workout) notFound();
-  return <WorkoutPlayer workout={workout} backHref="/workouts" preferences={preferences} signedIn={!!userId} />;
+  return (
+    <WorkoutPlayer
+      workout={workout}
+      backHref="/workouts"
+      preferences={preferences}
+      progress={progress}
+      signedIn={!!userId}
+    />
+  );
 }

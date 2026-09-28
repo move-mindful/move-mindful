@@ -3,8 +3,10 @@
 import {
   useCallback,
   useEffect,
+  useEffectEvent,
   useMemo,
   useReducer,
+  useRef,
   useState,
   useSyncExternalStore,
   type CSSProperties,
@@ -19,8 +21,11 @@ import {
   initialPlayerState,
   isRunning,
   playerReducer,
+  resumeFrom,
   secondsLeft,
+  sequenceKey,
   setStepFor,
+  workoutProgress,
   workoutSteps,
   type PlayerAction,
   type SetStep,
@@ -61,7 +66,9 @@ import { POOL_SIZE, PoolVideos, useVideoPool, type PoolClip, type ShownClip } fr
 import { WorkoutPreview } from "./workout-preview";
 import { GestureGuide } from "./gesture-guide";
 import { usePlayerPreferences } from "./preferences";
+import { saveWorkoutSession } from "@/app/actions/workout-sessions";
 import type { PlayerPreferences } from "@/lib/member/preferences";
+import type { SavedProgress, SessionEvent } from "@/lib/member/sessions";
 
 /**
  * The member's workout: the preview, then the optional warm-up, the workout
@@ -89,6 +96,16 @@ function useCanMixAudio(): boolean {
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
+/** A random (v4) UUID — randomUUID is only there on https pages, so build one otherwise. */
+function newId(): string {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const hex = [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 // Only tutorials and the warm-up are heard: an exercise's loop always plays
 // muted, even if its file has sound.
 function shownOf(clip: PlayerClip | null | undefined, loop: boolean, silent = false): ShownClip | null {
@@ -99,12 +116,15 @@ export function WorkoutPlayer({
   workout,
   backHref,
   preferences,
+  progress,
   signedIn,
 }: {
   workout: PlayerWorkout;
   backHref: string;
   /** The member's saved settings (null when signed out) — see usePlayerPreferences. */
   preferences: Partial<PlayerPreferences> | null;
+  /** Where the member left off in this workout, if they saved it (null signed out). */
+  progress: SavedProgress | null;
   signedIn: boolean;
 }) {
   const router = useRouter();
@@ -118,6 +138,7 @@ export function WorkoutPlayer({
   const setSteps = steps.filter((s): s is SetStep => s.kind === "set");
   const setCount = setSteps.length ? setSteps[setSteps.length - 1].setIndex + 1 : 0;
   const exerciseCount = new Set(setSteps.map((s) => s.exerciseId)).size;
+  const key = useMemo(() => sequenceKey(steps), [steps]);
 
   const reducer = useMemo(
     () => playerReducer({ steps, hasTutorial: (id) => !!workout.exercises[id]?.tutorial }),
@@ -128,6 +149,51 @@ export function WorkoutPlayer({
 
   const [prefs, updatePrefs] = usePlayerPreferences({ account: preferences, signedIn });
   const canMix = useCanMixAudio();
+
+  // Saved progress, offered on the preview as Resume: the page's, then
+  // whatever the last End workout left. Only while it still fits the workout
+  // (see resumeFrom).
+  const [saved, setSaved] = useState(progress);
+  const resumeAt = saved ? resumeFrom(steps, saved) : null;
+
+  // Signed in, the workout is saved as it goes (workout_sessions): the session
+  // is made when it begins and updated at every new set, so Resume is there
+  // even if the page is closed. Saves go one at a time, in order — the first
+  // creates the row the rest update.
+  const session = useRef<{ id: string; withWarmup: boolean } | null>(null);
+  const saving = useRef<Promise<unknown>>(Promise.resolve());
+  function record(event: SessionEvent, at: number, activeMs = activeTime(state, performance.now())) {
+    const current = session.current;
+    if (!signedIn || !current) return;
+    const save = {
+      sessionId: current.id,
+      workoutId: workout.id,
+      event,
+      step: at,
+      ...workoutProgress(steps, at),
+      activeSeconds: Math.min(86_400, Math.round(activeMs / 1000)),
+      sequenceKey: key,
+      withWarmup: current.withWarmup,
+    };
+    saving.current = saving.current.then(() => saveWorkoutSession(save)).catch(() => {
+      // Offline or the save failed: the next one carries the latest anyway.
+    });
+  }
+  function startSession(withWarmup: boolean) {
+    if (!signedIn) return;
+    session.current = { id: newId(), withWarmup };
+    record("start", 0, 0);
+  }
+  const onStep = useEffectEvent(() => {
+    if (state.phase === "workout") record("progress", setStepFor(steps, state.step) ?? state.step);
+    if (state.phase === "complete" && session.current) {
+      record("complete", steps.length);
+      session.current = null;
+    }
+  });
+  useEffect(() => {
+    onStep();
+  }, [state.phase, state.step]);
 
   // "Keep my music playing": an "ambient" session mixes with other apps'
   // audio (iOS then lets the Silent switch mute it); "auto" is the default,
@@ -328,9 +394,19 @@ export function WorkoutPlayer({
 
   // ── Actions ─────────────────────────────────────────
 
-  function begin(withWarmup: boolean) {
-    const warmup = withWarmup && !!workout.warmup;
-    setWarmedUp(warmup);
+  function start({
+    warmup,
+    warmedUp = warmup,
+    from,
+    activeMs,
+  }: {
+    warmup: boolean;
+    /** For the overview's warm-up row: done or skipped. */
+    warmedUp?: boolean;
+    from?: number;
+    activeMs?: number;
+  }) {
+    setWarmedUp(warmedUp);
     setMuted(!prefs.instructorAudio);
     // Inside the tap, so every clip may play with sound later (see video-pool.tsx).
     pool.unlock();
@@ -341,10 +417,54 @@ export function WorkoutPlayer({
       mode: prefs.tutorialMode,
       guide: !theater && !prefs.seenGestureGuide,
       autoAdvance: prefs.autoAdvance,
+      from,
+      activeMs,
     });
   }
 
-  const leave = () => router.push(backHref);
+  /** A fresh start (Begin, or Start over): a new session, replacing any saved progress. */
+  function begin(withWarmup: boolean) {
+    const warmup = withWarmup && !!workout.warmup;
+    startSession(warmup);
+    setSaved(null);
+    start({ warmup });
+  }
+
+  /** Pick up saved progress: its session, from the set it was on, without the warm-up. */
+  function resume() {
+    if (!saved || resumeAt === null) return;
+    session.current = signedIn ? { id: saved.sessionId, withWarmup: saved.withWarmup } : null;
+    start({ warmup: false, warmedUp: saved.withWarmup, from: resumeAt, activeMs: saved.activeSeconds * 1000 });
+  }
+
+  /** End workout: keep the progress for Resume, or throw it away; back to the preview. */
+  function endWorkout(keep: boolean) {
+    const at = targetIndex ?? steps.length;
+    const current = session.current;
+    if (keep && current) {
+      record("progress", at);
+      setSaved({
+        sessionId: current.id,
+        step: at,
+        activeSeconds: Math.round(activeTime(state, performance.now()) / 1000),
+        sequenceKey: key,
+        withWarmup: current.withWarmup,
+      });
+    } else {
+      record("discard", at);
+      setSaved(null);
+    }
+    session.current = null;
+    // Back to this workout's preview, not the list.
+    setChromeHidden(false);
+    act({ type: "exit" });
+  }
+
+  // Let the last save land first (a moment at most), so the list shows it.
+  const leave = () => {
+    const wait = new Promise((resolve) => setTimeout(resolve, 1500));
+    void Promise.race([saving.current, wait]).then(() => router.push(backHref));
+  };
   const pause = () => act({ type: "pause" });
   const setSound = (on: boolean) => {
     updatePrefs({ instructorAudio: on });
@@ -672,7 +792,11 @@ export function WorkoutPlayer({
           exercises={exerciseCount}
           sets={setCount}
           onDone={leave}
-          onRestart={() => act({ type: "restartWorkout" })}
+          onRestart={() => {
+            // Once more from the top: a new session (the finished one stays finished).
+            startSession(false);
+            act({ type: "restartWorkout" });
+          }}
           theater={theater}
         />
       </>
@@ -735,11 +859,9 @@ export function WorkoutPlayer({
       <EndSheet
         setsDone={setsDone}
         setsTotal={setCount}
-        onEnd={() => {
-          // Back to this workout's preview, not the list.
-          setChromeHidden(false);
-          act({ type: "exit" });
-        }}
+        // Signed in and past the first set, there's progress worth keeping.
+        canSave={signedIn && targetIndex !== null && targetIndex > 0}
+        onEnd={endWorkout}
         onCancel={() => act({ type: "sheet", sheet: null })}
         variant={theater ? "dialog" : "bottom"}
         drawerOpen={theater ? undefined : state.sheet === "end"}
@@ -758,6 +880,12 @@ export function WorkoutPlayer({
           warmup={prefs.warmup}
           onWarmup={(on) => updatePrefs({ warmup: on })}
           onBegin={begin}
+          resume={
+            resumeAt !== null && saved
+              ? { step: resumeAt, percent: workoutProgress(steps, resumeAt).percent, warmedUp: saved.withWarmup }
+              : null
+          }
+          onResume={resume}
         />
       )}
       {/* The stage. During the preview it's invisible but mounted, so the

@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { getViewerAccess } from "@/lib/auth/viewer";
 import { getPlayerWorkout } from "@/lib/workouts/member";
 import { getPlayerPreferences } from "@/lib/member/preferences-server";
+import { getSavedProgress } from "@/lib/member/sessions-server";
 import { WorkoutPlayer } from "@/components/workouts/workout-player";
 
 /**
@@ -30,11 +31,15 @@ export const viewport: Viewport = {
 
 export default async function DemoWorkoutPage() {
   const [viewer, { userId }] = await Promise.all([getViewerAccess(), auth()]);
-  const [workout, preferences] = await Promise.all([
+  const [workout, preferences, progress] = await Promise.all([
     getPlayerWorkout(DEMO_WORKOUT_ID, viewer.isAdmin),
-    // Signed-out visitors keep their settings on the device only.
+    // Signed-out visitors keep their settings on the device only, and their
+    // progress isn't saved.
     userId ? getPlayerPreferences(userId) : null,
+    userId ? getSavedProgress(userId, DEMO_WORKOUT_ID) : null,
   ]);
   if (!workout) notFound();
-  return <WorkoutPlayer workout={workout} backHref="/" preferences={preferences} signedIn={!!userId} />;
+  return (
+    <WorkoutPlayer workout={workout} backHref="/" preferences={preferences} progress={progress} signedIn={!!userId} />
+  );
 }
