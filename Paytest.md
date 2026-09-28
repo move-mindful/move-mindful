@@ -1,3 +1,9 @@
+# Pay test: ManyChat link → sign-up → purchase → tags
+
+A manual end-to-end check of the funnel integrations: the `mc` contact id
+surviving sign-up, and the `signup` / `purchased:posture` tags landing in
+ManyChat and Mailchimp. Not yet run. Background in [manychat.md](./manychat.md).
+
 ### Before you touch anything
 
 **Clear the two tags off your own ManyChat contact.** You added `signup` and `purchased:posture` to yourself by hand to wire the conditions. If they're still there, this whole test proves nothing — you can't tell an integration that worked from tags you set yourself last week.

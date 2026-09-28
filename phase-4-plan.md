@@ -1,6 +1,14 @@
 # Phase 4 — Backend Media Organization (Implementation Plan)
 
-> Status: **Approved.** Decisions finalized; build proceeds in the order in §9.
+> **Historical (Sep 2026).** Phase 4 shipped; this is the plan as approved, kept
+> as the record of why things were built this way. Some decisions were
+> superseded later — in-browser Mux upload now exists (the admin Upload page),
+> live recordings can be imported (and trimmed) once Mux finalizes them,
+> collections reorder by drag, instructors, class dates and per-class access
+> were added, and `/admin` now opens on Exercises. For the current state see
+> [README.md](./README.md) and Phase 4 in [plan.md](./plan.md).
+
+> Status at the time: **Approved.** Decisions finalized; build proceeds in the order in §9.
 > Scope decisions were gathered interactively; this doc turns them into a concrete, file-by-file plan with the exact SQL migration and route structure for review.
 
 ---
