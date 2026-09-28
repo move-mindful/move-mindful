@@ -176,7 +176,7 @@ move-mindful/
 ├── Paytest.md                  # Manual end-to-end test: ManyChat link → sign-up → purchase → tags
 ├── phase-4-plan.md             # Historical: the approved Phase 4 implementation plan
 ├── TODO.md                     # Running marketing/product to-do list
-├── AGENTS.md / CLAUDE.md       # Instructions for AI coding agents working in this repo
+├── CLAUDE.md                   # Instructions for AI coding agents (AGENTS.md is a symlink to it)
 ├── turbo.json                  # Turborepo task config
 ├── tsconfig.base.json          # Shared TypeScript compiler options
 └── package.json                # Root workspace config
@@ -261,4 +261,4 @@ npm test -w @move-mindful/core
 - [manychat.md](./manychat.md) — the ManyChat integration and DM flow design; [Paytest.md](./Paytest.md) — its end-to-end test
 - [design/](./design/) — mirrors of the design canvases, each with a README linking the live canvas
 - [phase-4-plan.md](./phase-4-plan.md) — historical record of the Phase 4 (admin CMS) plan
-- [AGENTS.md](./AGENTS.md) — working rules for AI coding agents (also loaded via `CLAUDE.md`)
+- [CLAUDE.md](./CLAUDE.md) — working rules for AI coding agents (`AGENTS.md` links to it)

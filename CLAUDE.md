@@ -1,14 +1,17 @@
 # Move Mindful
 
-A video fitness platform with on-demand classes, livestreaming, push notifications, and group chat. Web and iOS are co-equal platforms.
+A video fitness platform with on-demand classes, exercise-by-exercise workouts, livestreaming, push notifications, and group chat. Web and iOS are co-equal platforms.
 
-## Project Plan
+## Docs
 
-See [plan.md](./plan.md) for the full architecture, tech stack, build order, security guidelines, and cost breakdown.
+- [README.md](./README.md) — project overview, current status, setup instructions, and project structure. **Keep the README up to date** — when new features are added, integrations are wired up, or the project structure changes, update the README to reflect the current state.
+- [plan.md](./plan.md) — the full architecture, tech stack, build order, security guidelines, and cost breakdown. Tick build-order items off as they ship.
+- [postureproject.md](./postureproject.md) — the pivot to one-time products: decisions, launch to-dos, flagged risks.
+- [manychat.md](./manychat.md) — the ManyChat integration and DM flow design.
+- `design/*/README.md` — how each design canvas mirror relates to the live page, and how to edit a canvas.
+- [phase-4-plan.md](./phase-4-plan.md) — historical record of the Phase 4 plan; don't treat it as current.
 
-## README
-
-See [README.md](./README.md) for project overview, current status, setup instructions, and project structure. **Keep the README up to date** — when new features are added, integrations are wired up, or the project structure changes, update the README to reflect the current state.
+`AGENTS.md` is a symlink to this file, for tools that read that name — edit this one.
 
 ## Tech Stack
 
@@ -25,14 +28,22 @@ See [README.md](./README.md) for project overview, current status, setup instruc
 ## Project Structure
 
 ```
-/packages/core       ← Shared TypeScript: types, API client, business logic
-/apps/web            ← React + Next.js (website + purchase flows)
-/apps/mobile         ← React Native / Expo (iOS app)
+/packages/core        ← Shared TypeScript: the workout model, player state machine and saved progress (tested); the original access model (unused)
+/apps/web             ← Next.js 16: website, purchase flows, admin CMS, workout player
+/apps/mobile          ← React Native / Expo (iOS app — starter screen only)
+/supabase/migrations  ← Numbered SQL migrations
 ```
 
 ## Local Development
 
 - **Claude Preview (`preview_*` tools) does not work reliably in this environment — don't use it to verify changes.** Navigation/snapshots tend to hang or fail. Verify another way (read the code, run the relevant build/typecheck/tests, or ask the user to check in their own browser).
+- **`apps/web` runs Next.js 16, which has breaking changes from older versions.** Read the relevant guide in `node_modules/next/dist/docs/` before writing Next.js code (see `apps/web/AGENTS.md`); likewise the versioned Expo docs for `apps/mobile`.
+- **Checks:** `npm test -w @move-mindful/core` (unit tests), `npx tsc --noEmit -p apps/web` (typecheck), `npm run lint`, and a production build (`npx next build` in `apps/web`) for changes to routing, server actions or data loading.
+
+## Database
+
+- Migrations are numbered SQL files in `supabase/migrations/`. **The owner applies them by hand in the Supabase SQL Editor — never run SQL against the live database.** Write the migration, say it needs applying, and make the code cope until it has run (reads come back empty rather than crashing).
+- Server code uses the service-role client (`lib/supabase/admin.ts`) after checking who the viewer is; the browser never writes to the database.
 
 ## Git / GitHub accounts
 
@@ -55,7 +66,9 @@ See [README.md](./README.md) for project overview, current status, setup instruc
 
 - All purchases happen on the web (no in-app purchases at launch)
 - Derive user ID from Clerk session, never from URL or request body
-- Clerk auth middleware on every protected API route
+- Clerk auth on every protected route — and inside every server action, since actions are reachable by direct POST
 - No secret keys in `NEXT_PUBLIC_` env vars
-- Supabase RLS enabled on all tables
-- Verify Stripe webhooks with `constructEvent()`
+- Supabase RLS enabled on all tables; member-owned tables (`member_preferences`, `workout_sessions`) have no policies and are only read and written on the server
+- Gate paid content on the server before rendering (`getViewerAccess()` / `viewerCanAccess()`), so Mux playback ids never reach a browser that isn't entitled to them
+- Verify every webhook's sender before trusting it: Clerk by its Svix signature, RevenueCat by its shared secret — and Stripe with `constructEvent()` if its webhooks are ever consumed directly
+- A new table keyed by a Clerk user id must be cleared in `deleteMemberData()` (`lib/member/delete-server.ts`), so deleting an account deletes its data
