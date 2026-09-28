@@ -69,6 +69,10 @@ export function TopShade({ tall = false }: { tall?: boolean }) {
  * The shade behind a stack of bottom controls: it sits inside the stack, so it
  * grows and shrinks with it (extra lines, controls swiped away) and always
  * reaches just a little above the top element. The stack needs `isolate`.
+ *
+ * Its stops are fixed distances down from its top edge, not percentages, so a
+ * short stack (controls swiped away) shows only the gentle top of the same
+ * fade instead of squeezing the whole fade into less space.
  */
 function BottomShade() {
   return (
@@ -77,7 +81,7 @@ function BottomShade() {
       className="pointer-events-none absolute inset-x-0 -top-12 bottom-0 -z-10"
       style={{
         background:
-          "linear-gradient(0deg, rgba(14,14,32,0.8) 0%, rgba(14,14,32,0.66) 50%, rgba(14,14,32,0.3) 78%, rgba(14,14,32,0) 100%)",
+          "linear-gradient(180deg, rgba(14,14,32,0) 0px, rgba(14,14,32,0.3) 56px, rgba(14,14,32,0.66) 128px, rgba(14,14,32,0.8) 256px)",
       }}
     />
   );
