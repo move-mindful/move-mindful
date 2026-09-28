@@ -958,8 +958,9 @@ const SheetDismiss = createContext<(() => void) | null>(null);
 /**
  * A sheet over the stage: from the bottom on phones; on desktop a panel down
  * the right side, or a dialog in the middle. It slides in when it opens and
- * back out however it's closed — the ✕, a tap on the dimmed area, or (bottom
- * sheets) a swipe down.
+ * back out however it's closed — the ✕, a tap on the dimmed area, or, for a
+ * `swipeable` bottom sheet, a swipe down. Only the overview is swipeable: it's
+ * the one sheet you can also open with a swipe, so the gesture works both ways.
  */
 export function Sheet({
   label,
@@ -967,6 +968,7 @@ export function Sheet({
   children,
   alert = false,
   variant = "bottom",
+  swipeable = false,
   pull,
 }: {
   label: string;
@@ -974,11 +976,13 @@ export function Sheet({
   children: ReactNode;
   alert?: boolean;
   variant?: SheetVariant;
+  /** On a phone, swipe down to close (with a grab bar at the top to say so). */
+  swipeable?: boolean;
   /** Set when the sheet opens under the finger (the overview's pull-up). */
   pull?: SheetPull;
 }) {
   const panel = {
-    bottom: `max-h-[88%] w-full rounded-t-[28px] bg-[#1A1A34] pt-2.5 ${bottomPad}`,
+    bottom: `max-h-[88%] w-full rounded-t-[28px] bg-[#1A1A34] ${swipeable ? "pt-2.5" : "pt-6"} ${bottomPad}`,
     side: "h-full w-[440px] max-w-full bg-[#17172F] py-7 shadow-[-24px_0_60px_rgba(0,0,0,0.45)]",
     dialog:
       "max-h-[90%] w-[420px] max-w-[calc(100%-32px)] rounded-[28px] bg-[#1A1A34] pb-6 pt-8 shadow-[0_30px_80px_rgba(0,0,0,0.5)]",
@@ -990,7 +994,8 @@ export function Sheet({
   useEffect(() => {
     close.current = onClose;
   });
-  useSwipeToClose(panelRef, backdropRef, onClose, variant === "bottom");
+  const swipes = variant === "bottom" && swipeable;
+  useSwipeToClose(panelRef, backdropRef, onClose, swipes);
 
   const closing = useRef(false);
   const dismiss = useCallback(() => {
@@ -1074,7 +1079,7 @@ export function Sheet({
           aria-label={label}
           className={`relative flex flex-col gap-4 ${panel}`}
         >
-          {variant === "bottom" && <div className="h-[5px] w-10 shrink-0 self-center rounded-full bg-white/[0.28]" />}
+          {swipes && <div className="h-[5px] w-10 shrink-0 self-center rounded-full bg-white/[0.28]" />}
           {children}
         </section>
       </div>
