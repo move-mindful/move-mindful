@@ -34,7 +34,7 @@ export function OverviewSheet({
 }) {
   const side = variant === "side";
   return (
-    <Sheet label="Workout overview" onClose={onClose} variant={variant} swipeable pull={pull}>
+    <Sheet label="Workout overview" onClose={onClose} variant={variant} pull={pull}>
       <div className={`flex flex-col gap-3.5 ${side ? "px-7" : "px-5"}`}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1">
