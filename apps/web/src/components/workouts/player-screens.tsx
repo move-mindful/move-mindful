@@ -431,7 +431,9 @@ export function RestScreen({
               strokeWidth="8"
               strokeLinecap="round"
               strokeDasharray={RING}
-              strokeDashoffset={RING * (1 - (totalSeconds > 0 ? secondsLeft / totalSeconds : 0))}
+              // Negative, so the ring empties clockwise from 12 o'clock, like a
+              // clock hand sweeping round.
+              strokeDashoffset={-RING * (1 - (totalSeconds > 0 ? secondsLeft / totalSeconds : 0))}
               transform="rotate(-90 124 124)"
               style={{ transition: "stroke-dashoffset 250ms linear" }}
             />
