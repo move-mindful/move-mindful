@@ -38,7 +38,7 @@ export function OverviewSheet({
             <h2 className={`${side ? "text-[26px]" : "text-2xl"} font-semibold tracking-[-0.01em]`}>{workout.title}</h2>
             <div className="text-sm text-white/70">{subtitle}</div>
           </div>
-          <SheetClose label="Close overview and resume" onClick={onClose} />
+          <SheetClose label="Close overview and resume" />
         </div>
         <div className="flex flex-col gap-2">
           <div className="flex justify-between gap-3 text-sm font-medium">

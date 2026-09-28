@@ -111,6 +111,8 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
   const [muted, setMuted] = useState(false);
   const [warmedUp, setWarmedUp] = useState(false);
   const theater = useTheater();
+  // Controls swiped away (phones): just the reps over the video, until a swipe up.
+  const [chromeHidden, setChromeHidden] = useState(false);
 
   const pool = useVideoPool({
     onEnded: () => act({ type: "clipEnded" }),
@@ -385,8 +387,18 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
   } else if (state.phase === "workout" && step) {
     const back = () => act({ type: "back" });
     const next = () => act({ type: "next" });
+    // Swipe up: bring hidden controls back, or else open the overview. Swipe
+    // down: hide the controls (a swipe down on the overview closes it first).
     const zones = (nextLabel: string) => (
-      <TapZones onBack={back} onNext={next} onHold={pause} onSwipeUp={openOverview} nextLabel={nextLabel} />
+      <TapZones
+        onBack={back}
+        onNext={next}
+        onMiddle={pause}
+        onHold={pause}
+        onSwipeUp={() => (chromeHidden ? setChromeHidden(false) : openOverview())}
+        onSwipeDown={() => setChromeHidden(true)}
+        nextLabel={nextLabel}
+      />
     );
 
     if (state.paused) {
@@ -472,7 +484,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
       } else {
         screen = (
           <>
-            <Shade bottom={460} />
+            <Shade bottom={chromeHidden ? 200 : 460} />
             {bar}
             {zones("Start the exercise")}
             <TutorialScreen
@@ -485,6 +497,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
                 text: `${exerciseCount} ${exerciseCount === 1 ? "exercise" : "exercises"} · ${minutes} min`,
               }}
               muted={muted}
+              hidden={chromeHidden}
               onBegin={next}
               onPause={pause}
               onOverview={openOverview}
@@ -520,7 +533,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
       } else {
         screen = (
           <>
-            <Shade bottom={set.groupLabel ? 380 : 350} />
+            <Shade bottom={chromeHidden ? 200 : set.groupLabel ? 380 : 350} />
             {bar}
             {zones("Next set")}
             <SetScreen
@@ -530,6 +543,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
               groupLine={groupLine}
               pill={pill}
               muted={muted}
+              hidden={chromeHidden}
               onPause={pause}
               onOverview={openOverview}
               onMute={toggleMute}
@@ -601,7 +615,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
         setsDone={setsDone}
         setsTotal={setCount}
         onEnd={leave}
-        onKeepGoing={() => act({ type: "resume" })}
+        onCancel={() => act({ type: "sheet", sheet: null })}
         variant={theater ? "dialog" : "bottom"}
       />
     ) : null;

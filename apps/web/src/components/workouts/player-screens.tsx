@@ -1,6 +1,15 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode, type RefObject } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  type ComponentProps,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import type { TutorialMode } from "@move-mindful/core";
 import { clock } from "@/lib/workouts/player";
 import {
@@ -50,7 +59,7 @@ export function Shade({ bottom = 350 }: { bottom?: number }) {
         style={{ background: "linear-gradient(180deg, rgba(14,14,32,0.72) 0%, rgba(14,14,32,0.38) 55%, rgba(14,14,32,0) 100%)" }}
       />
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0"
+        className="pointer-events-none absolute inset-x-0 bottom-0 transition-[height] duration-300 ease-out"
         style={{
           height: bottom,
           background:
@@ -133,24 +142,30 @@ export function Chip({ children, large = false }: { children: ReactNode; large?:
 // ── Tap zones ─────────────────────────────────────────
 
 /**
- * Stories-style gestures over the video: tap the left third to go back, the
- * rest to move on, press and hold anywhere to pause, swipe up for the
- * overview. Buttons sit above this layer, so they never count as a tap here.
+ * Gestures over the video, in three zones: tap the left third to go back, the
+ * middle to pause, the right third to move on. Press and hold anywhere also
+ * pauses; swipe up or down to show or hide the controls and the overview (the
+ * player decides which). Buttons sit above this layer, so they never count as
+ * a tap here.
  */
 export function TapZones({
   onBack,
   onNext,
+  onMiddle,
   onHold,
   onSwipeUp,
+  onSwipeDown,
   nextLabel = "Next",
 }: {
   onBack: () => void;
   onNext: () => void;
+  onMiddle: () => void;
   onHold: () => void;
   onSwipeUp: () => void;
+  onSwipeDown: () => void;
   nextLabel?: string;
 }) {
-  const press = useRef<{ x: number; y: number; left: boolean; done: boolean; timer: number } | null>(null);
+  const press = useRef<{ x: number; y: number; zone: 0 | 1 | 2; done: boolean; timer: number } | null>(null);
   useEffect(() => () => window.clearTimeout(press.current?.timer), []);
 
   const end = () => {
@@ -167,10 +182,11 @@ export function TapZones({
         onPointerDown={(e) => {
           end();
           const box = e.currentTarget.getBoundingClientRect();
+          const third = (e.clientX - box.left) / (box.width / 3);
           const p = {
             x: e.clientX,
             y: e.clientY,
-            left: e.clientX - box.left < box.width / 3,
+            zone: (third < 1 ? 0 : third < 2 ? 1 : 2) as 0 | 1 | 2,
             done: false,
             timer: 0,
           };
@@ -185,10 +201,11 @@ export function TapZones({
           if (!p || p.done) return;
           const dx = e.clientX - p.x;
           const dy = e.clientY - p.y;
-          if (dy < -60 && Math.abs(dx) < 80) {
+          if (Math.abs(dy) > 60 && Math.abs(dx) < 80) {
             p.done = true;
             window.clearTimeout(p.timer);
-            onSwipeUp();
+            if (dy < 0) onSwipeUp();
+            else onSwipeDown();
           } else if (Math.hypot(dx, dy) > 16) {
             window.clearTimeout(p.timer);
           }
@@ -197,12 +214,11 @@ export function TapZones({
           const p = press.current;
           end();
           if (!p || p.done || Math.hypot(e.clientX - p.x, e.clientY - p.y) > 24) return;
-          if (p.left) onBack();
-          else onNext();
+          [onBack, onMiddle, onNext][p.zone]();
         }}
         onPointerCancel={end}
       />
-      {/* The same moves for keyboards and screen readers. */}
+      {/* Back and next for keyboards and screen readers (Pause is a real button). */}
       <button type="button" className="sr-only" onClick={onBack}>
         Previous set
       </button>
@@ -210,6 +226,24 @@ export function TapZones({
         {nextLabel}
       </button>
     </>
+  );
+}
+
+/**
+ * Folds its content away (height and opacity together) when the member hides
+ * the controls with a swipe down. `inert` takes the hidden buttons out of the
+ * tab order and away from screen readers too.
+ */
+function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
+  return (
+    <div
+      inert={!open}
+      className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+        open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+      }`}
+    >
+      <div className="min-h-0 overflow-hidden">{children}</div>
+    </div>
   );
 }
 
@@ -222,6 +256,7 @@ export function SetScreen({
   groupLine,
   pill,
   muted,
+  hidden,
   onPause,
   onOverview,
   onMute,
@@ -235,38 +270,42 @@ export function SetScreen({
   groupLine: string | null;
   pill: { label: string; text: string };
   muted: boolean;
+  /** Controls swiped away: just the reps (or time) left over the video. */
+  hidden: boolean;
   onPause: () => void;
   onOverview: () => void;
   onMute: () => void;
   onTutorialSettings: (() => void) | null;
 }) {
   return (
-    <div className={`absolute inset-x-0 bottom-0 flex flex-col gap-[18px] px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
-      <div className="flex flex-col gap-0.5">
-        {groupLine && (
-          <div className="mb-1.5 flex items-center gap-[7px] text-[13px] font-semibold tracking-[0.02em] text-[#A99CFF]">
+    <div className={`absolute inset-x-0 bottom-0 flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
+      {groupLine && (
+        <Collapse open={!hidden}>
+          <div className="mb-2 flex items-center gap-[7px] text-[13px] font-semibold tracking-[0.02em] text-[#A99CFF]">
             <Loop size={14} />
             {groupLine}
           </div>
+        </Collapse>
+      )}
+      <div className="flex items-center gap-3">
+        {metric.kind === "reps" ? (
+          <span className="flex items-baseline gap-1.5">
+            <span className="text-[56px] font-semibold leading-none tracking-[-0.03em] tabular-nums">{metric.amount}</span>
+            <span className="text-[26px] font-medium">{metric.amount === 1 ? "rep" : "reps"}</span>
+          </span>
+        ) : (
+          <span role="timer" className="text-[56px] font-semibold leading-none tracking-[-0.03em] tabular-nums">
+            {clock(metric.seconds)}
+          </span>
         )}
-        <div className="flex items-center gap-3">
-          {metric.kind === "reps" ? (
-            <span className="flex items-baseline gap-1.5">
-              <span className="text-[56px] font-semibold leading-none tracking-[-0.03em] tabular-nums">{metric.amount}</span>
-              <span className="text-[26px] font-medium">{metric.amount === 1 ? "rep" : "reps"}</span>
-            </span>
-          ) : (
-            <span role="timer" className="text-[56px] font-semibold leading-none tracking-[-0.03em] tabular-nums">
-              {clock(metric.seconds)}
-            </span>
-          )}
-          {side && (
-            <span className="flex h-7 items-center rounded-full bg-[#A99CFF] px-3 text-[13px] font-bold tracking-[0.08em] text-[#14142B]">
-              {side.toUpperCase()}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center justify-between gap-3">
+        {side && (
+          <span className="flex h-7 items-center rounded-full bg-[#A99CFF] px-3 text-[13px] font-bold tracking-[0.08em] text-[#14142B]">
+            {side.toUpperCase()}
+          </span>
+        )}
+      </div>
+      <Collapse open={!hidden}>
+        <div className="mt-0.5 flex items-center justify-between gap-3">
           <h1 className="min-w-0 text-xl font-semibold leading-tight">{name}</h1>
           {onTutorialSettings && (
             <RoundButton label="Tutorial settings" onClick={onTutorialSettings}>
@@ -274,8 +313,10 @@ export function SetScreen({
             </RoundButton>
           )}
         </div>
-      </div>
-      <ControlsRow pill={pill} muted={muted} onPause={onPause} onOverview={onOverview} onMute={onMute} />
+        <div className="mt-[18px]">
+          <ControlsRow pill={pill} muted={muted} onPause={onPause} onOverview={onOverview} onMute={onMute} />
+        </div>
+      </Collapse>
     </div>
   );
 }
@@ -287,6 +328,7 @@ export function TutorialScreen({
   once,
   pill,
   muted,
+  hidden,
   onBegin,
   onPause,
   onOverview,
@@ -300,6 +342,8 @@ export function TutorialScreen({
   once: { fraction: number; secondsLeft: number } | null;
   pill: { label: string; text: string };
   muted: boolean;
+  /** Controls swiped away: just the sets and reps left over the video. */
+  hidden: boolean;
   onBegin: () => void;
   onPause: () => void;
   onOverview: () => void;
@@ -307,32 +351,35 @@ export function TutorialScreen({
   onTutorialSettings: () => void;
 }) {
   return (
-    <div className={`absolute inset-x-0 bottom-0 flex flex-col gap-[18px] px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-3">
+    <div className={`absolute inset-x-0 bottom-0 flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
+      <Collapse open={!hidden}>
+        <div className="mb-3 flex items-center justify-between gap-3">
           <h1 className="min-w-0 text-[30px] font-semibold leading-[1.1] tracking-[-0.01em]">{name}</h1>
           <RoundButton label="Tutorial settings" onClick={onTutorialSettings}>
             <Tutorial />
           </RoundButton>
         </div>
-        <div className="mt-1 flex flex-wrap gap-2">
-          {chips.map((c) => (
-            <Chip key={c}>{c}</Chip>
-          ))}
-          {levels && (
-            <Chip>
-              <Dumbbell size={16} />
-              {levels}
-            </Chip>
-          )}
-        </div>
+      </Collapse>
+      <div className="flex flex-wrap gap-2">
+        {chips.map((c) => (
+          <Chip key={c}>{c}</Chip>
+        ))}
+        {levels && !hidden && (
+          <Chip>
+            <Dumbbell size={16} />
+            {levels}
+          </Chip>
+        )}
       </div>
-      <BeginButton once={once} onBegin={onBegin} />
-      <ControlsRow pill={pill} muted={muted} onPause={onPause} onOverview={onOverview} onMute={onMute} />
+      <Collapse open={!hidden}>
+        <div className="mt-[18px] flex flex-col gap-[18px]">
+          <BeginButton once={once} onBegin={onBegin} />
+          <ControlsRow pill={pill} muted={muted} onPause={onPause} onOverview={onOverview} onMute={onMute} />
+        </div>
+      </Collapse>
     </div>
   );
 }
-
 
 /**
  * Starts the exercise from its tutorial: "Begin", or — for a tutorial playing
@@ -805,10 +852,14 @@ function useSwipeToClose(
   }, [panel, backdrop, enabled]);
 }
 
+/** Closes the sheet this is inside, with its slide-out. */
+const SheetDismiss = createContext<(() => void) | null>(null);
+
 /**
  * A sheet over the stage: from the bottom on phones; on desktop a panel down
- * the right side, or a dialog in the middle. Tapping the dimmed area closes
- * it, and a bottom sheet can also be swiped down.
+ * the right side, or a dialog in the middle. It slides in when it opens and
+ * back out however it's closed — the ✕, a tap on the dimmed area, or (bottom
+ * sheets) a swipe down.
  */
 export function Sheet({
   label,
@@ -824,47 +875,80 @@ export function Sheet({
   variant?: SheetVariant;
 }) {
   const panel = {
-    bottom: `max-h-[88%] w-full rounded-t-[28px] bg-[#1A1A34] pt-2.5 ${bottomPad}`,
-    side: "h-full w-[440px] max-w-full bg-[#17172F] py-7 shadow-[-24px_0_60px_rgba(0,0,0,0.45)]",
-    dialog: "max-h-[90%] w-[420px] max-w-[calc(100%-32px)] rounded-[28px] bg-[#1A1A34] pb-6 pt-8 shadow-[0_30px_80px_rgba(0,0,0,0.5)]",
+    bottom: `max-h-[88%] w-full rounded-t-[28px] bg-[#1A1A34] pt-2.5 animate-sheet-up ${bottomPad}`,
+    side: "h-full w-[440px] max-w-full bg-[#17172F] py-7 shadow-[-24px_0_60px_rgba(0,0,0,0.45)] animate-sheet-left",
+    dialog:
+      "max-h-[90%] w-[420px] max-w-[calc(100%-32px)] rounded-[28px] bg-[#1A1A34] pb-6 pt-8 shadow-[0_30px_80px_rgba(0,0,0,0.5)] animate-dialog-in",
   }[variant];
   const place = { bottom: "flex-col justify-end", side: "justify-end", dialog: "items-center justify-center" }[variant];
   const panelRef = useRef<HTMLElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
+  const close = useRef(onClose);
+  useEffect(() => {
+    close.current = onClose;
+  });
   useSwipeToClose(panelRef, backdropRef, onClose, variant === "bottom");
+
+  const closing = useRef(false);
+  const dismiss = useCallback(() => {
+    const el = panelRef.current;
+    if (closing.current) return;
+    closing.current = true;
+    if (el) {
+      el.style.transition = "transform 220ms ease-in, opacity 220ms ease-in";
+      el.style.transform = { bottom: "translateY(100%)", side: "translateX(100%)", dialog: "scale(0.96)" }[variant];
+      if (variant === "dialog") el.style.opacity = "0";
+    }
+    if (backdropRef.current) {
+      backdropRef.current.style.transition = "opacity 220ms ease-in";
+      backdropRef.current.style.opacity = "0";
+    }
+    window.setTimeout(() => close.current(), 220);
+  }, [variant]);
+
   return (
-    <div className={`absolute inset-0 z-20 flex ${place}`}>
-      <div
-        ref={backdropRef}
-        className={`absolute inset-0 ${variant === "bottom" ? "bg-[#080814]/60" : "bg-[#06060E]/55"}`}
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <section
-        ref={panelRef}
-        role={alert ? "alertdialog" : "dialog"}
-        aria-modal="true"
-        aria-label={label}
-        className={`relative flex flex-col gap-4 ${panel}`}
-      >
-        {variant === "bottom" && <div className="h-[5px] w-10 shrink-0 self-center rounded-full bg-white/[0.28]" />}
-        {children}
-      </section>
-    </div>
+    <SheetDismiss.Provider value={dismiss}>
+      <div className={`absolute inset-0 z-20 flex ${place}`}>
+        <div
+          ref={backdropRef}
+          className={`absolute inset-0 animate-fade-in ${variant === "bottom" ? "bg-[#080814]/60" : "bg-[#06060E]/55"}`}
+          onClick={dismiss}
+          aria-hidden="true"
+        />
+        <section
+          ref={panelRef}
+          role={alert ? "alertdialog" : "dialog"}
+          aria-modal="true"
+          aria-label={label}
+          className={`relative flex flex-col gap-4 motion-reduce:animate-none ${panel}`}
+        >
+          {variant === "bottom" && <div className="h-[5px] w-10 shrink-0 self-center rounded-full bg-white/[0.28]" />}
+          {children}
+        </section>
+      </div>
+    </SheetDismiss.Provider>
   );
 }
 
-export function SheetClose({ label, onClick }: { label: string; onClick: () => void }) {
+/** A button that closes the sheet it's in, sliding it away. */
+function DismissButton({ className, children, ...rest }: ComponentProps<"button">) {
+  const dismiss = useContext(SheetDismiss);
   return (
-    <button
-      type="button"
+    <button type="button" {...rest} onClick={() => dismiss?.()} className={className}>
+      {children}
+    </button>
+  );
+}
+
+export function SheetClose({ label }: { label: string }) {
+  return (
+    <DismissButton
       aria-label={label}
-      onClick={onClick}
       autoFocus
       className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/10"
     >
       <Close />
-    </button>
+    </DismissButton>
   );
 }
 
@@ -898,7 +982,7 @@ export function TutorialSheet({
       >
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-[22px] font-semibold tracking-[-0.01em]">Tutorials</h2>
-          <SheetClose label="Close tutorial settings" onClick={onClose} />
+          <SheetClose label="Close tutorial settings" />
         </div>
         {watch && (
           <button
@@ -958,17 +1042,18 @@ export function EndSheet({
   setsDone,
   setsTotal,
   onEnd,
-  onKeepGoing,
+  onCancel,
   variant = "bottom",
 }: {
   setsDone: number;
   setsTotal: number;
   onEnd: () => void;
-  onKeepGoing: () => void;
+  /** Back to the pause screen. */
+  onCancel: () => void;
   variant?: SheetVariant;
 }) {
   return (
-    <Sheet label="End workout?" onClose={onKeepGoing} alert variant={variant}>
+    <Sheet label="End workout?" onClose={onCancel} alert variant={variant}>
       <div className={`flex flex-col gap-[22px] ${variant === "dialog" ? "px-7" : "px-5"}`}>
         <div className="flex flex-col items-center gap-2 text-center">
           <h2 className="text-[26px] font-semibold tracking-[-0.01em]">End workout?</h2>
@@ -984,14 +1069,9 @@ export function EndSheet({
           >
             End workout
           </button>
-          <button
-            type="button"
-            onClick={onKeepGoing}
-            autoFocus
-            className="h-12 text-base font-semibold text-white/80"
-          >
-            Keep going
-          </button>
+          <DismissButton autoFocus className="h-12 text-base font-semibold text-white/80">
+            Cancel
+          </DismissButton>
         </div>
       </div>
     </Sheet>
