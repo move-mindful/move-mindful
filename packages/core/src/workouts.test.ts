@@ -24,7 +24,7 @@ const move = (exerciseId: string, measure: "reps" | "time", amount: number): Wor
 });
 
 test("reps use the pace; each set adds 5 s to get into position", () => {
-  const est = estimateWorkout([{ kind: "exercise", move: move("row", "reps", 12), sets: 3 }], exercises);
+  const est = estimateWorkout([{ kind: "exercise", move: move("row", "reps", 12), sets: 3, restBetweenSets: 0 }], exercises);
   assert.equal(est.exerciseSeconds, 12 * 2.5 * 3); // 90
   assert.equal(est.transitionSeconds, 3 * 5);
   assert.equal(est.restSeconds, 0);
@@ -32,14 +32,23 @@ test("reps use the pace; each set adds 5 s to get into position", () => {
 });
 
 test("a sided exercise counts both sides and a side switch", () => {
-  const est = estimateWorkout([{ kind: "exercise", move: move("squat", "time", 30), sets: 2 }], exercises);
+  const est = estimateWorkout([{ kind: "exercise", move: move("squat", "time", 30), sets: 2, restBetweenSets: 0 }], exercises);
   assert.equal(est.exerciseSeconds, 30 * 2 * 2); // 30 s per side, 2 sets
   assert.equal(est.transitionSeconds, (5 + 3) * 2);
 });
 
+test("rest between sets comes after every set but the last", () => {
+  const est = estimateWorkout(
+    [{ kind: "exercise", move: move("row", "reps", 12), sets: 3, restBetweenSets: 30 }],
+    exercises,
+  );
+  assert.equal(est.restSeconds, 30 * 2);
+  assert.equal(est.totalSeconds, 90 + 15 + 60);
+});
+
 test("rest blocks add their length", () => {
   const blocks: WorkoutBlock[] = [
-    { kind: "exercise", move: move("hold", "time", 45), sets: 1 },
+    { kind: "exercise", move: move("hold", "time", 45), sets: 1, restBetweenSets: 0 },
     { kind: "rest", seconds: 60 },
   ];
   const est = estimateWorkout(blocks, exercises);
@@ -65,14 +74,14 @@ test("a group rests between exercises and between rounds, but not after the last
 });
 
 test("an unknown pace falls back to 3 s per rep and is reported", () => {
-  const est = estimateWorkout([{ kind: "exercise", move: move("unpaced", "reps", 10), sets: 1 }], exercises);
+  const est = estimateWorkout([{ kind: "exercise", move: move("unpaced", "reps", 10), sets: 1, restBetweenSets: 0 }], exercises);
   assert.equal(est.exerciseSeconds, 30);
   assert.deepEqual(est.missingPace, ["unpaced"]);
 });
 
 test("tutorials count once per exercise, however often it appears", () => {
   const blocks: WorkoutBlock[] = [
-    { kind: "exercise", move: move("row", "reps", 10), sets: 2 },
+    { kind: "exercise", move: move("row", "reps", 10), sets: 2, restBetweenSets: 0 },
     { kind: "group", rounds: 2, restBetweenExercises: 0, restBetweenRounds: 0, moves: [move("row", "reps", 8), move("squat", "reps", 6)] },
   ];
   assert.equal(estimateWorkout(blocks, exercises).tutorialSeconds, 40 + 50);

@@ -23,8 +23,8 @@ export interface WorkoutMove {
 }
 
 export type WorkoutBlock =
-  /** A single exercise, done for `sets` sets. */
-  | { kind: "exercise"; move: WorkoutMove; sets: number }
+  /** A single exercise, done for `sets` sets with `restBetweenSets` between them. */
+  | { kind: "exercise"; move: WorkoutMove; sets: number; restBetweenSets: number }
   /** A rest the admin placed between blocks. */
   | { kind: "rest"; seconds: number }
   /**
@@ -99,8 +99,8 @@ function moveSeconds(
 }
 
 /**
- * Estimate a workout's length. Rests exist only where the admin put them —
- * there's no automatic rest between the sets of a single exercise.
+ * Estimate a workout's length. Rests are the rest blocks, the rest between a
+ * single exercise's sets (none after the last set), and a group's rests.
  */
 export function estimateWorkout(
   blocks: WorkoutBlock[],
@@ -122,6 +122,7 @@ export function estimateWorkout(
       const { work, transition } = moveSeconds(block.move, exercises[block.move.exerciseId], opts, missing);
       exerciseSeconds += work * block.sets;
       transitionSeconds += transition * block.sets;
+      restSeconds += block.restBetweenSets * (block.sets - 1);
     } else if (block.moves.length > 0) {
       for (const move of block.moves) {
         used.add(move.exerciseId);
