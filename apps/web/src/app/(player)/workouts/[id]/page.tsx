@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
 import { requireSectionUnlocked } from "@/lib/auth/locked-sections";
 import { getViewerAccess } from "@/lib/auth/viewer";
 import { getPlayerWorkout } from "@/lib/workouts/member";
+import { getPlayerPreferences } from "@/lib/member/preferences-server";
 import { WorkoutPlayer } from "@/components/workouts/workout-player";
 
 export const viewport: Viewport = {
@@ -30,8 +32,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function WorkoutPage({ params }: Props) {
   await requireSectionUnlocked();
   const { id } = await params;
-  const viewer = await getViewerAccess();
-  const workout = await getPlayerWorkout(id, viewer.isAdmin);
+  const [viewer, { userId }] = await Promise.all([getViewerAccess(), auth()]);
+  const [workout, preferences] = await Promise.all([
+    getPlayerWorkout(id, viewer.isAdmin),
+    userId ? getPlayerPreferences(userId) : null,
+  ]);
   if (!workout) notFound();
-  return <WorkoutPlayer workout={workout} backHref="/workouts" />;
+  return <WorkoutPlayer workout={workout} backHref="/workouts" preferences={preferences} signedIn={!!userId} />;
 }

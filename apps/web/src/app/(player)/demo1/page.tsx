@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
 import { getViewerAccess } from "@/lib/auth/viewer";
 import { getPlayerWorkout } from "@/lib/workouts/member";
+import { getPlayerPreferences } from "@/lib/member/preferences-server";
 import { WorkoutPlayer } from "@/components/workouts/workout-player";
 
 /**
@@ -27,8 +29,12 @@ export const viewport: Viewport = {
 };
 
 export default async function DemoWorkoutPage() {
-  const viewer = await getViewerAccess();
-  const workout = await getPlayerWorkout(DEMO_WORKOUT_ID, viewer.isAdmin);
+  const [viewer, { userId }] = await Promise.all([getViewerAccess(), auth()]);
+  const [workout, preferences] = await Promise.all([
+    getPlayerWorkout(DEMO_WORKOUT_ID, viewer.isAdmin),
+    // Signed-out visitors keep their settings on the device only.
+    userId ? getPlayerPreferences(userId) : null,
+  ]);
   if (!workout) notFound();
-  return <WorkoutPlayer workout={workout} backHref="/" />;
+  return <WorkoutPlayer workout={workout} backHref="/" preferences={preferences} signedIn={!!userId} />;
 }

@@ -48,7 +48,8 @@ import {
 } from "./theater";
 import { POOL_SIZE, PoolVideos, useVideoPool, type PoolClip, type ShownClip } from "./video-pool";
 import { WorkoutPreview } from "./workout-preview";
-import { storedSoundOn, storedTutorialMode, storeSoundOn, storeTutorialMode } from "./preferences";
+import { usePlayerPreferences } from "./preferences";
+import type { PlayerPreferences } from "@/lib/member/preferences";
 
 /**
  * The member's workout: the preview, then the optional warm-up, the workout
@@ -68,7 +69,18 @@ function shownOf(clip: PlayerClip | null | undefined, loop: boolean, silent = fa
   return clip ? { url: clip.url, poster: clip.poster, loop, silent } : null;
 }
 
-export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; backHref: string }) {
+export function WorkoutPlayer({
+  workout,
+  backHref,
+  preferences,
+  signedIn,
+}: {
+  workout: PlayerWorkout;
+  backHref: string;
+  /** The member's saved settings (null when signed out) — see usePlayerPreferences. */
+  preferences: Partial<PlayerPreferences> | null;
+  signedIn: boolean;
+}) {
   const router = useRouter();
 
   const estimates = useMemo(
@@ -88,6 +100,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
   const [state, dispatch] = useReducer(reducer, initialPlayerState);
   const act = useCallback((a: WithoutNow<PlayerAction>) => dispatch({ ...a, now: performance.now() } as PlayerAction), []);
 
+  const [prefs, updatePrefs] = usePlayerPreferences({ account: preferences, signedIn });
   const [muted, setMuted] = useState(false);
   const [warmedUp, setWarmedUp] = useState(false);
   const theater = useTheater();
@@ -261,16 +274,16 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
   function begin(withWarmup: boolean) {
     const warmup = withWarmup && !!workout.warmup;
     setWarmedUp(warmup);
-    setMuted(!storedSoundOn());
+    setMuted(!prefs.instructorAudio);
     // Inside the tap, so every clip may play with sound later (see video-pool.tsx).
     pool.unlock();
-    act({ type: "begin", warmup, mode: storedTutorialMode() });
+    act({ type: "begin", warmup, mode: prefs.tutorialMode });
   }
 
   const leave = () => router.push(backHref);
   const pause = () => act({ type: "pause" });
   const setSound = (on: boolean) => {
-    storeSoundOn(on);
+    updatePrefs({ instructorAudio: on });
     setMuted(!on);
   };
   const openOverview = () => act({ type: "sheet", sheet: "overview" });
@@ -602,7 +615,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
         mode={state.mode}
         soundOn={!muted}
         onMode={(mode) => {
-          storeTutorialMode(mode);
+          updatePrefs({ tutorialMode: mode });
           act({ type: "mode", mode });
         }}
         onSound={setSound}
@@ -628,6 +641,8 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
           totalSeconds={totalSeconds}
           exerciseCount={exerciseCount}
           backHref={backHref}
+          warmup={prefs.warmup}
+          onWarmup={(on) => updatePrefs({ warmup: on })}
           onBegin={begin}
         />
       )}
