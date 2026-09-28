@@ -533,8 +533,16 @@ export function TutorialScreen({
           <Marquee>{name}</Marquee>
         </h1>
       </Collapse>
-      {/* Minimised, this row is all that's left: the pills, the exercise and a
-          small Skip, all one pill high. */}
+      {/* Minimised: "Tutorial:" and the exercise above the pills, and a small
+          Skip at the end of their row. */}
+      <Collapse open={hidden}>
+        <p className="mb-2 flex min-w-0 items-baseline gap-1.5 text-xl leading-tight">
+          <span className="shrink-0 font-medium text-white/70">Tutorial:</span>
+          <span className="min-w-0 flex-1 font-semibold">
+            <Marquee>{name}</Marquee>
+          </span>
+        </p>
+      </Collapse>
       <div className={`flex gap-2 ${hidden ? "flex-nowrap items-center" : "flex-wrap"}`}>
         {chips.map((c) => (
           <span key={c} className="shrink-0">
@@ -550,12 +558,9 @@ export function TutorialScreen({
           </span>
         )}
         {hidden && (
-          <>
-            <span className="min-w-0 flex-1 text-[15px] font-semibold" aria-hidden="true">
-              <Marquee>{name}</Marquee>
-            </span>
+          <span className="ml-auto shrink-0">
             <MiniSkipButton progress={progress} onBegin={onBegin} />
-          </>
+          </span>
         )}
       </div>
       <Collapse open={!hidden}>
