@@ -51,6 +51,16 @@ function cleanBlocks(blocks: WorkoutBlock[], info: Map<string, ExerciseInfo>): W
   return out;
 }
 
+// save_workout_sequence (011_workout_set_rest_and_cover.sql) takes an exercise
+// block flat — { kind, exerciseId, measure, amount, firstSide, sets,
+// restBetweenSets } — rather than with the exercise nested under `move`.
+// Rests and groups already match its shape.
+function toSequencePayload(blocks: WorkoutBlock[]) {
+  return blocks.map((b) =>
+    b.kind === "exercise" ? { kind: b.kind, ...b.move, sets: b.sets, restBetweenSets: b.restBetweenSets } : b,
+  );
+}
+
 function revalidateWorkouts(id?: string) {
   revalidatePath("/admin/workouts");
   revalidatePath("/admin/exercises");
@@ -98,7 +108,7 @@ export async function saveWorkout(input: WorkoutInput): Promise<{ id?: string; e
   const { error } = await supabase.rpc("save_workout_sequence", {
     p_workout_id: id,
     p_warmup_exercise_id: warmup,
-    p_blocks: cleanBlocks(input.blocks, info),
+    p_blocks: toSequencePayload(cleanBlocks(input.blocks, info)),
   });
   if (error) return { id, error: `The sequence didn't save: ${error.message}` };
 
