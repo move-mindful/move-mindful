@@ -1,8 +1,8 @@
 "use server";
 
-import { headers } from "next/headers";
 import { requireAdmin } from "@/lib/auth/admin";
 import { mux } from "@/lib/mux/client";
+import { requestOrigin } from "@/lib/mux/request-origin";
 
 export interface CreatedUpload {
   /** The original filename — display only; files are matched back by array index. */
@@ -24,21 +24,6 @@ const MAX_FILES = 50;
 function titleFromFilename(name: string): string {
   const base = name.replace(/\.[^./\\]+$/, "").trim();
   return base || name;
-}
-
-// The browser uploads straight to a Google Cloud Storage signed URL, so Mux must
-// bake our origin into that URL's CORS headers. Derive it from the request rather
-// than hard-coding, so it works the same in local/preview/prod.
-async function requestOrigin(): Promise<string> {
-  const h = await headers();
-  const origin = h.get("origin");
-  if (origin) return origin;
-  const host = h.get("host");
-  if (host) {
-    const proto = h.get("x-forwarded-proto") ?? "https";
-    return `${proto}://${host}`;
-  }
-  return "*";
 }
 
 /**
