@@ -7,9 +7,7 @@ import {
   useEffect,
   useLayoutEffect,
   useRef,
-  useState,
   type ComponentProps,
-  type CSSProperties,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -115,60 +113,6 @@ export function LoadingSpinner({ show }: { show: boolean }) {
   );
 }
 
-/**
- * One line of text that, if it doesn't fit, scrolls round like a ticker: it
- * rests at the start, then slides left with a second copy following a gap
- * behind, which lands exactly where the first began — so each loop restarts
- * seamlessly. About 30px a second. Text that fits stays put. Reduced motion: it
- * stays put and clips (see .marquee in globals.css).
- */
-const MARQUEE_GAP = 48;
-
-export function Marquee({ children }: { children: ReactNode }) {
-  const outer = useRef<HTMLSpanElement>(null);
-  const first = useRef<HTMLSpanElement>(null);
-  // The text's width when it's wider than the line, else 0.
-  const [width, setWidth] = useState(0);
-
-  useEffect(() => {
-    const o = outer.current;
-    const f = first.current;
-    if (!o || !f) return;
-    const measure = () => {
-      const w = Math.ceil(f.getBoundingClientRect().width);
-      setWidth(w > o.clientWidth + 1 ? w : 0);
-    };
-    const observer = new ResizeObserver(measure);
-    observer.observe(o);
-    observer.observe(f);
-    return () => observer.disconnect();
-  }, []);
-
-  // One loop: the rest (15% of it), then the slide of text + gap.
-  const distance = width + MARQUEE_GAP;
-  const seconds = width ? distance / 30 / 0.85 : 0;
-  return (
-    <span ref={outer} className="block overflow-hidden whitespace-nowrap">
-      <span
-        className={`inline-block ${width ? "marquee" : ""}`}
-        style={
-          width ? ({ "--marquee-shift": `-${distance}px`, animationDuration: `${seconds}s` } as CSSProperties) : undefined
-        }
-      >
-        {/* inline-block, so the ResizeObserver sees it (it ignores inline boxes). */}
-        <span ref={first} className="inline-block">
-          {children}
-        </span>
-        {width > 0 && (
-          <span aria-hidden="true" className="inline-block" style={{ paddingLeft: MARQUEE_GAP }}>
-            {children}
-          </span>
-        )}
-      </span>
-    </span>
-  );
-}
-
 /** The dim layer behind rests, pause and the summary. */
 export function Dim({ strength = 0.66 }: { strength?: number }) {
   return <div className="pointer-events-none absolute inset-0" style={{ background: `rgba(10,10,26,${strength})` }} />;
@@ -214,9 +158,7 @@ function ControlsRow({
         <ChevronUp />
         <span className="flex min-w-0 flex-col gap-px">
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/70">{pill.label}</span>
-          <span className="text-[15px] font-medium">
-            <Marquee>{pill.text}</Marquee>
-          </span>
+          <span className="truncate text-[15px] font-medium">{pill.text}</span>
         </span>
       </button>
       <RoundButton label="Pause" onClick={onPause}>
@@ -481,17 +423,12 @@ export function SetScreen({
       </div>
       {/* Controls swiped away: what's next, under the reps. */}
       <Collapse open={hidden}>
-        <p className="mt-1 flex min-w-0 items-baseline gap-1.5 text-xl leading-tight">
-          <span className="shrink-0 font-medium text-white/70">{pill.label}:</span>
-          <span className="min-w-0 flex-1 font-semibold">
-            <Marquee>{pill.text}</Marquee>
-          </span>
+        <p className="mt-1 truncate text-xl font-medium leading-tight text-white/70">
+          {pill.label}: {pill.text}
         </p>
       </Collapse>
       <Collapse open={!hidden}>
-        <h1 className="mt-1 text-xl font-semibold leading-tight">
-          <Marquee>{name}</Marquee>
-        </h1>
+        <h1 className="mt-1 truncate text-xl font-semibold leading-tight">{name}</h1>
         <div className="mt-[18px]">
           <ControlsRow pill={pill} onPause={onPause} onOverview={onOverview} onSettings={onSettings} />
         </div>
@@ -529,19 +466,12 @@ export function TutorialScreen({
     <div className={`absolute inset-x-0 bottom-0 isolate flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
       <BottomShade />
       <Collapse open={!hidden}>
-        <h1 className="mb-3 text-[30px] font-semibold leading-[1.2] tracking-[-0.01em]">
-          <Marquee>{name}</Marquee>
-        </h1>
+        <h1 className="mb-3 truncate text-[30px] font-semibold leading-[1.2] tracking-[-0.01em]">{name}</h1>
       </Collapse>
       {/* Minimised: "Tutorial:" and the exercise above the pills, and a small
           Skip at the end of their row. */}
       <Collapse open={hidden}>
-        <p className="mb-2 flex min-w-0 items-baseline gap-1.5 text-xl leading-tight">
-          <span className="shrink-0 font-medium text-white/70">Tutorial:</span>
-          <span className="min-w-0 flex-1 font-semibold">
-            <Marquee>{name}</Marquee>
-          </span>
-        </p>
+        <p className="mb-2 truncate text-xl font-medium leading-tight text-white/70">Tutorial: {name}</p>
       </Collapse>
       <div className={`flex gap-2 ${hidden ? "flex-nowrap items-center" : "flex-wrap"}`}>
         {chips.map((c) => (
@@ -805,9 +735,7 @@ export function WarmupScreen({
             <Sun size={14} />
             Warm-up
           </span>
-          <h1 className="text-[22px] font-semibold leading-tight">
-            <Marquee>{name}</Marquee>
-          </h1>
+          <h1 className="truncate text-[22px] font-semibold leading-tight">{name}</h1>
         </div>
         <div className="flex items-center justify-between gap-3">
           <SettingsButton onClick={onSettings} />
