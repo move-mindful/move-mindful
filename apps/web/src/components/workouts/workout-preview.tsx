@@ -109,10 +109,10 @@ export function WorkoutPreview({
 
       {/* Begin, pinned to the bottom on phones. The page's own colour, so it runs
           into Safari's toolbar (which takes its tint from the page), with a
-          hairline edge and a shadow above so the list visibly slides under it.
+          hairline edge so the list visibly slides under it.
           Its background also carries on below it, behind a floating Safari
           toolbar, so nothing scrolls into view underneath. */}
-      <div className="fixed inset-x-0 bottom-0 border-t border-white/10 bg-[#14142B] shadow-[0_-12px_28px_rgba(0,0,0,0.5)] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-40 after:bg-[#14142B] theater:hidden">
+      <div className="fixed inset-x-0 bottom-0 border-t border-white/10 bg-[#14142B] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-40 after:bg-[#14142B] theater:hidden">
         <div className="mx-auto max-w-[560px] px-5 pb-[max(20px,calc(env(safe-area-inset-bottom)+8px))] pt-4">{begin}</div>
       </div>
     </div>
