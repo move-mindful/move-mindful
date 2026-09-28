@@ -25,6 +25,15 @@ body {
     sans-serif;
 }
 
+/* Dark full-screen pages (the workout preview and player): darken the page
+   itself too, not just their content. iOS Safari colours the status-bar area
+   from the page background, so otherwise it shows as a white strip at the top
+   — as does an overscroll bounce. */
+html:has([data-dark-page]),
+html:has([data-dark-page]) body {
+  background: #14142b;
+}
+
 /* The workout player's desktop "theater" layout: a wide enough landscape screen
    to put the exercise info and controls beside the 9:16 video instead of over
    it. Keep in step with THEATER_QUERY in components/workouts/theater.tsx. */
