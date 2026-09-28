@@ -843,6 +843,7 @@ export function PausedScreen({
   onSkipWarmup,
   onEnd,
   onSettings,
+  autoAdvance,
   theater = false,
 }: {
   subtitle: string;
@@ -854,6 +855,8 @@ export function PausedScreen({
   onSkipWarmup: (() => void) | null;
   onEnd: () => void;
   onSettings: (() => void) | null;
+  /** The AUTO › ON/OFF pill above "Paused", a quick switch for auto-advance (not on the warm-up's). */
+  autoAdvance: { on: boolean; onChange: (on: boolean) => void } | null;
   theater?: boolean;
 }) {
   const secondary =
@@ -863,6 +866,7 @@ export function PausedScreen({
       <div className={theater ? centered : "absolute inset-0 flex flex-col overflow-y-auto"}>
         <div className={`flex flex-col items-center gap-5 ${theater ? "" : "flex-1 justify-end pb-8 pt-16"}`}>
           <div className="flex flex-col items-center gap-1 text-center">
+            {autoAdvance && <AutoPill on={autoAdvance.on} onChange={autoAdvance.onChange} />}
             <h1 className="text-[30px] font-semibold tracking-[-0.01em]">Paused</h1>
             <div className="text-base text-white/75">{subtitle}</div>
           </div>
@@ -925,6 +929,26 @@ export function PausedScreen({
         </div>
       )}
     </>
+  );
+}
+
+/** AUTO › ON / AUTO › OFF — tap to switch auto-advance. Lit in the accent while it's on. */
+function AutoPill({ on, onChange }: { on: boolean; onChange: (on: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label="Auto-advance"
+      onClick={() => onChange(!on)}
+      className={`mb-2 flex h-[30px] items-center gap-1 rounded-full pl-3.5 pr-3 text-[13px] font-bold uppercase tracking-[0.08em] transition-colors ${
+        on ? "bg-[#A99CFF]/25 text-[#DAD3FF] ring-1 ring-[#A99CFF]/60" : "bg-white/[0.14] text-white/75"
+      }`}
+    >
+      Auto
+      <ChevronRight size={14} />
+      <span className="w-[2.1em] text-left">{on ? "On" : "Off"}</span>
+    </button>
   );
 }
 

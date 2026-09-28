@@ -470,6 +470,13 @@ export function WorkoutPlayer({
     updatePrefs({ instructorAudio: on });
     setMuted(!on);
   };
+  // Auto-advance, from Settings or the pause screen's AUTO pill. Hands-free, a
+  // looping tutorial would wait for a tap, so turning it on moves Loop to Play
+  // once (Off stays off); the reducer does the same to the player.
+  const setAutoAdvance = (on: boolean) => {
+    updatePrefs({ autoAdvance: on, tutorialMode: fitTutorialMode(state.mode, on) });
+    act({ type: "autoAdvance", on });
+  };
   const openOverview = () => act({ type: "sheet", sheet: "overview" });
   const openSettings = () => act({ type: "sheet", sheet: "settings" });
 
@@ -546,6 +553,7 @@ export function WorkoutPlayer({
             onSkipWarmup={skip}
             onEnd={() => act({ type: "sheet", sheet: "end" })}
             onSettings={null}
+            autoAdvance={null}
             theater={theater}
           />
         </>
@@ -634,6 +642,7 @@ export function WorkoutPlayer({
             onSkipWarmup={null}
             onEnd={() => act({ type: "sheet", sheet: "end" })}
             onSettings={openSettings}
+            autoAdvance={{ on: state.autoAdvance, onChange: setAutoAdvance }}
             theater={theater}
           />
         </>
@@ -838,16 +847,7 @@ export function WorkoutPlayer({
           act({ type: "mode", mode });
         }}
         onSound={setSound}
-        autoAdvance={{
-          on: state.autoAdvance,
-          onChange: (on) => {
-            // Hands-free: a looping tutorial would wait for a tap, so turning
-            // auto-advance on moves Loop to Play once (Off stays off). The
-            // reducer does the same to the player.
-            updatePrefs({ autoAdvance: on, tutorialMode: fitTutorialMode(state.mode, on) });
-            act({ type: "autoAdvance", on });
-          },
-        }}
+        autoAdvance={{ on: state.autoAdvance, onChange: setAutoAdvance }}
         onGuide={theater ? null : () => act({ type: "sheet", sheet: "guide" })}
         onClose={() => act({ type: "sheet", sheet: null })}
         variant={theater ? "side" : "bottom"}
