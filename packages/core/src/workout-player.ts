@@ -261,7 +261,9 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
         ...s,
         step: i,
         stage: "tutorial",
-        tutorialPlay: "loop",
+        // Follows the setting: Play once plays it through and carries on;
+        // Loop (and Off — they asked to see it) waits for a tap.
+        tutorialPlay: s.mode === "once" ? "once" : "loop",
         paused: false,
         sheet: null,
         timer: null,

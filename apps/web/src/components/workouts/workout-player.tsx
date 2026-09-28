@@ -245,12 +245,23 @@ export function WorkoutPlayer({
   // tutorial's trips round, so its progress can restart without sliding back.
   const clipTimed = state.phase === "warmup" || (state.phase === "workout" && state.stage === "tutorial");
   const [clipTime, setClipTime] = useState({ take: -1, time: 0, duration: 0, cycle: 0 });
+  // A tutorial playing once should end (and start the exercise) on the
+  // video's "ended" event; if it ever wraps round to the start instead, treat
+  // that as its end too.
+  const playsOnce = state.phase === "workout" && state.stage === "tutorial" && state.tutorialPlay === "once";
   useEffect(() => {
     if (!clipTimed) return;
     const take = state.take;
+    let last = 0;
     const id = window.setInterval(() => {
       const v = pool.current();
       if (!v) return;
+      const wrapped = v.currentTime + 0.5 < last;
+      last = v.currentTime;
+      if (wrapped && playsOnce) {
+        act({ type: "clipEnded" });
+        return;
+      }
       setClipTime((prev) => ({
         take,
         time: v.currentTime,
@@ -259,7 +270,7 @@ export function WorkoutPlayer({
       }));
     }, 250);
     return () => window.clearInterval(id);
-  }, [clipTimed, state.take, pool]);
+  }, [clipTimed, playsOnce, state.take, pool, act]);
   const clip = clipTime.take === state.take ? clipTime : { time: 0, duration: 0, cycle: 0 };
 
   // ── While working out ───────────────────────────────

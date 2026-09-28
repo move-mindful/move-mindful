@@ -204,3 +204,24 @@ test("without auto-advance a rep set waits for a tap; turning it on starts the c
   s = run([{ type: "autoAdvance", on: false, now: 610_000 }], s);
   assert.equal(s.timer, null);
 });
+
+test("watching a tutorial again follows the tutorial setting", () => {
+  // Play once: it plays through, then it's back to the exercise.
+  let s = run([
+    { type: "begin", warmup: false, mode: "once", now: 0 },
+    { type: "clipEnded", now: 1000 },
+    { type: "pause", now: 2000 },
+    { type: "watchTutorial", now: 3000 },
+  ]);
+  assert.equal(s.stage, "tutorial");
+  assert.equal(s.tutorialPlay, "once");
+  s = run([{ type: "clipEnded", now: 40_000 }], s);
+  assert.equal(s.stage, "exercise");
+  // Loop: it waits for a tap.
+  s = run([
+    { type: "begin", warmup: false, mode: "loop", now: 0 },
+    { type: "next", now: 1000 },
+    { type: "watchTutorial", now: 2000 },
+  ]);
+  assert.equal(s.tutorialPlay, "loop");
+});
