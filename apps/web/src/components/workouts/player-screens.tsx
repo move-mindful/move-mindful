@@ -7,7 +7,9 @@ import {
   useEffect,
   useLayoutEffect,
   useRef,
+  useState,
   type ComponentProps,
+  type CSSProperties,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -110,6 +112,48 @@ export function LoadingSpinner({ show }: { show: boolean }) {
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * One line of text that, if it doesn't fit, slides along to show the rest —
+ * pausing at each end, then back — at a steady reading speed. Text that fits
+ * stays put. Reduced motion: it stays put and clips (see .marquee in
+ * globals.css).
+ */
+export function Marquee({ children }: { children: ReactNode }) {
+  const outer = useRef<HTMLSpanElement>(null);
+  const inner = useRef<HTMLSpanElement>(null);
+  const [overflow, setOverflow] = useState(0);
+
+  useEffect(() => {
+    const o = outer.current;
+    const i = inner.current;
+    if (!o || !i) return;
+    const measure = () => setOverflow(Math.max(0, Math.ceil(i.scrollWidth - o.clientWidth)));
+    const observer = new ResizeObserver(measure);
+    observer.observe(o);
+    observer.observe(i);
+    return () => observer.disconnect();
+  }, []);
+
+  // About 30px a second each way, plus the pauses at either end (the keyframes
+  // give each pause a fifth of the cycle).
+  const seconds = overflow ? Math.max(5, (overflow / 30) * 2 / 0.5) : 0;
+  return (
+    <span ref={outer} className="block overflow-hidden whitespace-nowrap">
+      <span
+        ref={inner}
+        className={`inline-block ${overflow ? "marquee" : ""}`}
+        style={
+          overflow
+            ? ({ "--marquee-shift": `-${overflow}px`, animationDuration: `${seconds}s` } as CSSProperties)
+            : undefined
+        }
+      >
+        {children}
+      </span>
+    </span>
   );
 }
 
@@ -422,7 +466,9 @@ export function SetScreen({
         )}
       </div>
       <Collapse open={!hidden}>
-        <h1 className="mt-1 text-xl font-semibold leading-tight">{name}</h1>
+        <h1 className="mt-1 text-xl font-semibold leading-tight">
+          <Marquee>{name}</Marquee>
+        </h1>
         <div className="mt-[18px]">
           <ControlsRow pill={pill} onPause={onPause} onOverview={onOverview} onSettings={onSettings} />
         </div>
@@ -460,7 +506,9 @@ export function TutorialScreen({
     <div className={`absolute inset-x-0 bottom-0 isolate flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
       <BottomShade />
       <Collapse open={!hidden}>
-        <h1 className="mb-3 text-[30px] font-semibold leading-[1.1] tracking-[-0.01em]">{name}</h1>
+        <h1 className="mb-3 text-[30px] font-semibold leading-[1.2] tracking-[-0.01em]">
+          <Marquee>{name}</Marquee>
+        </h1>
       </Collapse>
       {/* Minimised, this row is all that's left: the pills, the exercise and a
           small Skip, all one pill high. */}
@@ -480,8 +528,8 @@ export function TutorialScreen({
         )}
         {hidden && (
           <>
-            <span className="min-w-0 flex-1 truncate text-[15px] font-semibold" aria-hidden="true">
-              {name}
+            <span className="min-w-0 flex-1 text-[15px] font-semibold" aria-hidden="true">
+              <Marquee>{name}</Marquee>
             </span>
             <MiniSkipButton progress={progress} onBegin={onBegin} />
           </>
@@ -729,7 +777,9 @@ export function WarmupScreen({
             <Sun size={14} />
             Warm-up
           </span>
-          <h1 className="text-[22px] font-semibold leading-tight">{name}</h1>
+          <h1 className="text-[22px] font-semibold leading-tight">
+            <Marquee>{name}</Marquee>
+          </h1>
         </div>
         <div className="flex items-center justify-between gap-3">
           <SettingsButton onClick={onSettings} />

@@ -34,6 +34,34 @@ html:has([data-dark-page]) body {
   background: #14142b;
 }
 
+/* An exercise name too long for its line slides along to show the rest, then
+   back (Marquee in components/workouts/player-screens.tsx sets the distance and
+   duration). */
+@keyframes marquee {
+  0%,
+  20% {
+    transform: translateX(0);
+  }
+  45%,
+  70% {
+    transform: translateX(var(--marquee-shift));
+  }
+  95%,
+  100% {
+    transform: translateX(0);
+  }
+}
+.marquee {
+  animation-name: marquee;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee {
+    animation: none;
+  }
+}
+
 /* The workout player's desktop "theater" layout: a wide enough landscape screen
    to put the exercise info and controls beside the 9:16 video instead of over
    it. Keep in step with THEATER_QUERY in components/workouts/theater.tsx. */
