@@ -49,23 +49,37 @@ export function TopBar({ children }: { children: ReactNode }) {
   );
 }
 
-/** Darken the top and bottom of the video so the white type reads over it. */
-export function Shade({ bottom = 350 }: { bottom?: number }) {
+/**
+ * Darken the top of the video just enough for the progress bar (and, on the
+ * warm-up, the times under it) to read. The bottom controls carry their own
+ * shade — see BottomShade.
+ */
+export function TopShade({ tall = false }: { tall?: boolean }) {
   return (
-    <>
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-[110px]"
-        style={{ background: "linear-gradient(180deg, rgba(14,14,32,0.58) 0%, rgba(14,14,32,0.3) 55%, rgba(14,14,32,0) 100%)" }}
-      />
-      <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 transition-[height] duration-300 ease-out"
-        style={{
-          height: bottom,
-          background:
-            "linear-gradient(0deg, rgba(14,14,32,0.8) 0%, rgba(14,14,32,0.68) 42%, rgba(14,14,32,0.3) 72%, rgba(14,14,32,0) 100%)",
-        }}
-      />
-    </>
+    <div
+      className={`pointer-events-none absolute inset-x-0 top-0 ${
+        tall ? "h-[calc(max(20px,env(safe-area-inset-top))+66px)]" : "h-[calc(max(20px,env(safe-area-inset-top))+40px)]"
+      }`}
+      style={{ background: "linear-gradient(180deg, rgba(14,14,32,0.58) 0%, rgba(14,14,32,0.3) 55%, rgba(14,14,32,0) 100%)" }}
+    />
+  );
+}
+
+/**
+ * The shade behind a stack of bottom controls: it sits inside the stack, so it
+ * grows and shrinks with it (extra lines, controls swiped away) and always
+ * reaches just a little above the top element. The stack needs `isolate`.
+ */
+function BottomShade() {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-x-0 -top-12 bottom-0 -z-10"
+      style={{
+        background:
+          "linear-gradient(0deg, rgba(14,14,32,0.8) 0%, rgba(14,14,32,0.66) 50%, rgba(14,14,32,0.3) 78%, rgba(14,14,32,0) 100%)",
+      }}
+    />
   );
 }
 
@@ -350,7 +364,8 @@ export function SetScreen({
   onSettings: () => void;
 }) {
   return (
-    <div className={`absolute inset-x-0 bottom-0 flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
+    <div className={`absolute inset-x-0 bottom-0 isolate flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
+      <BottomShade />
       {groupLine && (
         <Collapse open={!hidden}>
           <div className="mb-2 flex items-center gap-[7px] text-[13px] font-semibold tracking-[0.02em] text-[#A99CFF]">
@@ -412,7 +427,8 @@ export function TutorialScreen({
   onSettings: () => void;
 }) {
   return (
-    <div className={`absolute inset-x-0 bottom-0 flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
+    <div className={`absolute inset-x-0 bottom-0 isolate flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
+      <BottomShade />
       <Collapse open={!hidden}>
         <h1 className="mb-3 text-[30px] font-semibold leading-[1.1] tracking-[-0.01em]">{name}</h1>
       </Collapse>
@@ -640,7 +656,8 @@ export function WarmupScreen({
   return (
     <>
       <WarmupProgress seconds={seconds} duration={duration} />
-      <div className={`absolute inset-x-0 bottom-0 flex flex-col gap-[18px] px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
+      <div className={`absolute inset-x-0 bottom-0 isolate flex flex-col gap-[18px] px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
+        <BottomShade />
         <div className="flex flex-col gap-2">
           <span className="flex h-[26px] items-center gap-1.5 self-start rounded-full bg-white/[0.16] pl-[9px] pr-[11px] text-xs font-bold uppercase tracking-[0.08em]">
             <Sun size={14} />

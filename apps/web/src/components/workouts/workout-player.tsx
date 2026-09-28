@@ -27,7 +27,7 @@ import {
   PausedScreen,
   RestScreen,
   SetScreen,
-  Shade,
+  TopShade,
   TapZones,
   TopBar,
   TutorialScreen,
@@ -367,7 +367,7 @@ export function WorkoutPlayer({
     } else if (theater) {
       screen = (
         <>
-          <Shade bottom={0} />
+          <TopShade tall />
           <WarmupProgress seconds={clip.time} duration={duration} />
         </>
       );
@@ -380,7 +380,7 @@ export function WorkoutPlayer({
     } else {
       screen = (
         <>
-          <Shade bottom={320} />
+          <TopShade tall />
           <WarmupScreen
             name={workout.warmup.name}
             seconds={clip.time}
@@ -489,7 +489,7 @@ export function WorkoutPlayer({
       if (theater) {
         screen = (
           <>
-            <Shade bottom={0} />
+            <TopShade />
             {bar}
             {zones("Start the exercise")}
           </>
@@ -504,7 +504,7 @@ export function WorkoutPlayer({
       } else {
         screen = (
           <>
-            <Shade bottom={chromeHidden ? 200 : 460} />
+            <TopShade />
             {bar}
             {zones("Start the exercise")}
             <TutorialScreen
@@ -536,7 +536,7 @@ export function WorkoutPlayer({
       if (theater) {
         screen = (
           <>
-            <Shade bottom={0} />
+            <TopShade />
             {bar}
             {zones("Next set")}
           </>
@@ -551,7 +551,7 @@ export function WorkoutPlayer({
       } else {
         screen = (
           <>
-            <Shade bottom={chromeHidden ? 200 : set.groupLabel ? 380 : 350} />
+            <TopShade />
             {bar}
             {zones("Next set")}
             <SetScreen
