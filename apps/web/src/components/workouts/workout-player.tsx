@@ -213,13 +213,9 @@ export function WorkoutPlayer({
     return list;
   }, [shown, state.phase, state.step, state.stage, state.mode, state.seen, steps, workout]);
 
-  // The overview and settings stop the clock, but the video keeps
-  // playing behind them — a pause mid-slide made the sheet stutter.
-  const playing =
-    running ||
-    ((state.phase === "workout" || state.phase === "warmup") &&
-      !state.paused &&
-      (state.sheet === "overview" || state.sheet === "settings"));
+  // Sheets stop the clock. The video keeps playing behind the overview (so
+  // pulling it up doesn't stutter) but pauses under Settings and End workout.
+  const playing = running || (state.phase === "workout" && !state.paused && state.sheet === "overview");
   useEffect(() => {
     pool.sync(upcoming, shown, { playing, muted, take: state.take });
   }, [pool, upcoming, shown, playing, muted, state.take]);

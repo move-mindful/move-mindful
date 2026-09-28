@@ -1346,18 +1346,18 @@ export function SettingsSheet({
           </h3>
           <div className="flex items-center justify-between gap-4 rounded-2xl border-[1.5px] border-white/[0.12] bg-white/[0.04] px-4 py-3.5">
             <span className="flex min-w-0 flex-col gap-[3px]">
-              <span className="text-[17px] font-semibold">Instructor audio</span>
-              <span className="text-sm leading-snug text-white/75">Tutorials and the warm-up. Exercise clips are silent.</span>
+              <span className="text-[17px] font-semibold">App audio</span>
+              <span className="text-sm leading-snug text-white/75">Turn app audio on or off.</span>
             </span>
-            <Switch on={soundOn} onChange={onSound} label="Instructor audio" />
+            <Switch on={soundOn} onChange={onSound} label="App audio" />
           </div>
           {mix && (
             <div className="flex items-center justify-between gap-4 rounded-2xl border-[1.5px] border-white/[0.12] bg-white/[0.04] px-4 py-3.5">
               <span className="flex min-w-0 flex-col gap-[3px]">
                 <span className="text-[17px] font-semibold">Keep my music playing</span>
                 <span className="text-sm leading-snug text-white/75">
-                  Play the instructor over music from other apps instead of pausing it. On iPhone, Silent mode mutes the
-                  instructor.
+                  Audio instructions will play without pausing music from other apps. Note: Phone silent mode must be
+                  off.
                 </span>
               </span>
               <Switch on={mix.on} onChange={mix.onChange} label="Keep my music playing" />
