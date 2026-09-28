@@ -34,6 +34,7 @@ import {
   TutorialScreen,
   TutorialSheet,
   WarmupProgress,
+  createSheetPull,
   WarmupScreen,
 } from "./player-screens";
 import { List, Muted, Pause, Sound, Tutorial } from "./icons";
@@ -113,6 +114,8 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
   const theater = useTheater();
   // Controls swiped away (phones): just the reps over the video, until a swipe up.
   const [chromeHidden, setChromeHidden] = useState(false);
+  // The overview being dragged up by the finger (phones) — see createSheetPull.
+  const [pull] = useState(createSheetPull);
 
   const pool = useVideoPool({
     onEnded: () => act({ type: "clipEnded" }),
@@ -170,12 +173,10 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
     return list;
   }, [shown, state.phase, state.step, state.stage, state.mode, state.seen, steps, workout]);
 
-  // The overview and tutorial settings stop the clock, but a silent loop keeps
-  // moving behind them (and pausing the video mid-slide made the sheet stutter).
-  // Tutorials and the warm-up, which talk, do pause.
+  // The overview and tutorial settings stop the clock, but the video keeps
+  // playing behind them — a pause mid-slide made the sheet stutter.
   const playing =
-    running ||
-    (state.phase === "workout" && !state.paused && (state.sheet === "overview" || state.sheet === "tutorial") && !!shown?.silent);
+    running || (state.phase === "workout" && !state.paused && (state.sheet === "overview" || state.sheet === "tutorial"));
   useEffect(() => {
     pool.sync(upcoming, shown, { playing, muted, take: state.take });
   }, [pool, upcoming, shown, playing, muted, state.take]);
@@ -403,6 +404,17 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
         onHold={pause}
         onSwipeUp={() => (chromeHidden ? setChromeHidden(false) : openOverview())}
         onSwipeDown={() => setChromeHidden(true)}
+        pullUp={!chromeHidden && !theater}
+        onPullMove={(distance) => {
+          if (!pull.active) {
+            pull.start();
+            openOverview();
+          }
+          pull.move(distance);
+        }}
+        onPullEnd={(distance, velocity) => {
+          if (pull.active) pull.end(distance, velocity);
+        }}
         nextLabel={nextLabel}
       />
     );
@@ -595,6 +607,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
         onJump={(i) => act({ type: "jump", step: i })}
         onClose={() => act({ type: "sheet", sheet: null })}
         variant={theater ? "side" : "bottom"}
+        pull={theater ? undefined : pull}
       />
     ) : state.sheet === "tutorial" ? (
       <TutorialSheet

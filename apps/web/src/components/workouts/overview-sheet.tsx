@@ -2,7 +2,7 @@
 
 import type { WorkoutStep } from "@move-mindful/core";
 import type { PlayerWorkout } from "@/lib/workouts/player";
-import { Sheet, SheetClose, type SheetVariant } from "./player-screens";
+import { Sheet, SheetClose, type SheetPull, type SheetVariant } from "./player-screens";
 import { WorkoutRows, type RowsPosition } from "./workout-rows";
 
 /**
@@ -19,6 +19,7 @@ export function OverviewSheet({
   onJump,
   onClose,
   variant = "bottom",
+  pull,
 }: {
   workout: PlayerWorkout;
   steps: WorkoutStep[];
@@ -28,10 +29,12 @@ export function OverviewSheet({
   onJump: (step: number) => void;
   onClose: () => void;
   variant?: SheetVariant;
+  /** Set when it's being pulled up by the finger. */
+  pull?: SheetPull;
 }) {
   const side = variant === "side";
   return (
-    <Sheet label="Workout overview" onClose={onClose} variant={variant}>
+    <Sheet label="Workout overview" onClose={onClose} variant={variant} pull={pull}>
       <div className={`flex flex-col gap-3.5 ${side ? "px-7" : "px-5"}`}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1">

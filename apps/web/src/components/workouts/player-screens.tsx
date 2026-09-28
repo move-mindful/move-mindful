@@ -143,11 +143,62 @@ export function Chip({ children, large = false }: { children: ReactNode; large?:
 // ── Tap zones ─────────────────────────────────────────
 
 /**
+ * An overview being pulled up by the finger, passed from the tap zones (via
+ * the player) to the sheet. The sheet only mounts after the pull has started,
+ * so it catches up with the distance so far — and a quick flick can end before
+ * it mounts at all, in which case the outcome waits for it.
+ */
+export function createSheetPull() {
+  type Follower = { move: (distance: number) => void; end: (distance: number, velocity: number) => void };
+  let active = false;
+  let distance = 0;
+  let pending: { distance: number; velocity: number } | null = null;
+  let follower: Follower | null = null;
+  return {
+    get active() {
+      return active;
+    },
+    start() {
+      active = true;
+      distance = 0;
+      pending = null;
+    },
+    move(d: number) {
+      distance = d;
+      follower?.move(d);
+    },
+    end(d: number, velocity: number) {
+      active = false;
+      if (follower) follower.end(d, velocity);
+      else pending = { distance: d, velocity };
+    },
+    /** For the sheet: follow the pull, if there is one. Returns a detach function, or null. */
+    follow(f: Follower): (() => void) | null {
+      if (pending) {
+        const done = pending;
+        pending = null;
+        f.move(done.distance);
+        const frame = requestAnimationFrame(() => f.end(done.distance, done.velocity));
+        return () => cancelAnimationFrame(frame);
+      }
+      if (!active) return null;
+      follower = f;
+      f.move(distance);
+      return () => {
+        if (follower === f) follower = null;
+      };
+    },
+  };
+}
+
+export type SheetPull = ReturnType<typeof createSheetPull>;
+
+/**
  * Gestures over the video, in three zones: tap the left third to go back, the
  * middle to pause, the right third to move on. Press and hold anywhere also
- * pauses; swipe up or down to show or hide the controls and the overview (the
- * player decides which). Buttons sit above this layer, so they never count as
- * a tap here.
+ * pauses. Swipe down hides the controls; swipe up shows them again — or, with
+ * `pullUp`, drags the overview up under the finger. Buttons sit above this
+ * layer, so they never count as a tap here.
  */
 export function TapZones({
   onBack,
@@ -156,6 +207,9 @@ export function TapZones({
   onHold,
   onSwipeUp,
   onSwipeDown,
+  pullUp,
+  onPullMove,
+  onPullEnd,
   nextLabel = "Next",
 }: {
   onBack: () => void;
@@ -164,9 +218,23 @@ export function TapZones({
   onHold: () => void;
   onSwipeUp: () => void;
   onSwipeDown: () => void;
+  /** Dragging up pulls the overview (instead of a swipe up calling `onSwipeUp`). */
+  pullUp: boolean;
+  onPullMove: (distance: number) => void;
+  /** `velocity` is upward, in px per ms. */
+  onPullEnd: (distance: number, velocity: number) => void;
   nextLabel?: string;
 }) {
-  const press = useRef<{ x: number; y: number; zone: 0 | 1 | 2; done: boolean; timer: number } | null>(null);
+  const press = useRef<{
+    x: number;
+    y: number;
+    zone: 0 | 1 | 2;
+    done: boolean;
+    pulling: boolean;
+    last: { y: number; t: number };
+    velocity: number;
+    timer: number;
+  } | null>(null);
   useEffect(() => () => window.clearTimeout(press.current?.timer), []);
 
   const end = () => {
@@ -189,6 +257,9 @@ export function TapZones({
             y: e.clientY,
             zone: (third < 1 ? 0 : third < 2 ? 1 : 2) as 0 | 1 | 2,
             done: false,
+            pulling: false,
+            last: { y: e.clientY, t: e.timeStamp },
+            velocity: 0,
             timer: 0,
           };
           p.timer = window.setTimeout(() => {
@@ -199,10 +270,22 @@ export function TapZones({
         }}
         onPointerMove={(e) => {
           const p = press.current;
-          if (!p || p.done) return;
+          if (!p) return;
           const dx = e.clientX - p.x;
           const dy = e.clientY - p.y;
-          if (Math.abs(dy) > 60 && Math.abs(dx) < 80) {
+          const dt = e.timeStamp - p.last.t;
+          if (dt > 0) p.velocity = (p.last.y - e.clientY) / dt;
+          p.last = { y: e.clientY, t: e.timeStamp };
+          if (p.pulling) {
+            onPullMove(Math.max(0, -dy));
+            return;
+          }
+          if (p.done) return;
+          if (pullUp && dy < -10 && Math.abs(dy) > Math.abs(dx)) {
+            p.pulling = true;
+            window.clearTimeout(p.timer);
+            onPullMove(-dy);
+          } else if (Math.abs(dy) > 60 && Math.abs(dx) < 80) {
             p.done = true;
             window.clearTimeout(p.timer);
             if (dy < 0) onSwipeUp();
@@ -214,10 +297,19 @@ export function TapZones({
         onPointerUp={(e) => {
           const p = press.current;
           end();
-          if (!p || p.done || Math.hypot(e.clientX - p.x, e.clientY - p.y) > 24) return;
+          if (!p) return;
+          if (p.pulling) {
+            onPullEnd(Math.max(0, p.y - e.clientY), p.velocity);
+            return;
+          }
+          if (p.done || Math.hypot(e.clientX - p.x, e.clientY - p.y) > 24) return;
           [onBack, onMiddle, onNext][p.zone]();
         }}
-        onPointerCancel={end}
+        onPointerCancel={() => {
+          const p = press.current;
+          end();
+          if (p?.pulling) onPullEnd(0, 0);
+        }}
       />
       {/* Back and next for keyboards and screen readers (Pause is a real button). */}
       <button type="button" className="sr-only" onClick={onBack}>
@@ -875,12 +967,15 @@ export function Sheet({
   children,
   alert = false,
   variant = "bottom",
+  pull,
 }: {
   label: string;
   onClose: () => void;
   children: ReactNode;
   alert?: boolean;
   variant?: SheetVariant;
+  /** Set when the sheet opens under the finger (the overview's pull-up). */
+  pull?: SheetPull;
 }) {
   const panel = {
     bottom: `max-h-[88%] w-full rounded-t-[28px] bg-[#1A1A34] pt-2.5 ${bottomPad}`,
@@ -897,11 +992,51 @@ export function Sheet({
   });
   useSwipeToClose(panelRef, backdropRef, onClose, variant === "bottom");
 
-  // Slide in: start off-screen, let that frame paint, then transition in.
+  const closing = useRef(false);
+  const dismiss = useCallback(() => {
+    const el = panelRef.current;
+    if (closing.current) return;
+    closing.current = true;
+    if (el) {
+      el.style.transition = "transform 220ms ease-in, opacity 220ms ease-in";
+      el.style.transform = OFFSTAGE[variant];
+      if (variant === "dialog") el.style.opacity = "0";
+    }
+    if (backdropRef.current) {
+      backdropRef.current.style.transition = "opacity 220ms ease-in";
+      backdropRef.current.style.opacity = "0";
+    }
+    window.setTimeout(() => close.current(), 220);
+  }, [variant]);
+
+  // Slide in: start off-screen, let that frame paint, then transition in. Or,
+  // when it's being pulled up, sit under the finger and settle on release.
   useLayoutEffect(() => {
     const el = panelRef.current;
     const backdrop = backdropRef.current;
-    if (!el || !backdrop || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!el || !backdrop) return;
+    const detach = pull?.follow({
+      move: (distance) => {
+        const h = el.offsetHeight;
+        el.style.willChange = "transform";
+        el.style.transition = "none";
+        backdrop.style.transition = "none";
+        el.style.transform = `translateY(${Math.max(0, h - distance)}px)`;
+        backdrop.style.opacity = String(Math.min(1, distance / h));
+      },
+      end: (distance, velocity) => {
+        if (distance > 80 || velocity > 0.4) {
+          el.style.transition = "transform 320ms cubic-bezier(0.32, 0.72, 0, 1)";
+          el.style.transform = "";
+          backdrop.style.transition = "opacity 250ms ease-out";
+          backdrop.style.opacity = "";
+        } else {
+          dismiss();
+        }
+      },
+    });
+    if (detach) return detach;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     el.style.willChange = "transform";
     el.style.transform = OFFSTAGE[variant];
     if (variant === "dialog") el.style.opacity = "0";
@@ -920,24 +1055,8 @@ export function Sheet({
       cancelAnimationFrame(first);
       cancelAnimationFrame(second);
     };
-  }, [variant]);
+  }, [variant, pull, dismiss]);
 
-  const closing = useRef(false);
-  const dismiss = useCallback(() => {
-    const el = panelRef.current;
-    if (closing.current) return;
-    closing.current = true;
-    if (el) {
-      el.style.transition = "transform 220ms ease-in, opacity 220ms ease-in";
-      el.style.transform = OFFSTAGE[variant];
-      if (variant === "dialog") el.style.opacity = "0";
-    }
-    if (backdropRef.current) {
-      backdropRef.current.style.transition = "opacity 220ms ease-in";
-      backdropRef.current.style.opacity = "0";
-    }
-    window.setTimeout(() => close.current(), 220);
-  }, [variant]);
 
   return (
     <SheetDismiss.Provider value={dismiss}>
