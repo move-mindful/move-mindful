@@ -99,6 +99,11 @@ const hasAccess = customerInfo.entitlements.active['premium'] !== undefined
 - AirPlay works automatically on Apple devices (native `<video>` / iOS)
 - Chromecast: future enhancement (requires Google Cast SDK integration)
 
+### 1b. Exercise-by-exercise workouts
+- Workouts assembled from short vertical exercise clips (tutorial + looping clip per exercise), played full screen with a story-style progress bar
+- Admin builder for single exercises, rests, supersets and circuits, with an estimated time; exercise library with upload, edit, archive and tags
+- See Phase 4.5 in the build order below
+
 ### 2. Push Notifications
 - Expo Notifications handles Apple APNs setup
 - Use cases: new class alerts, challenge reminders, live stream starting
@@ -159,6 +164,27 @@ const hasAccess = customerInfo.entitlements.active['premium'] !== undefined
 - [ ] In-browser Mux direct upload (deferred; admins upload in the Mux dashboard, then Sync)
 
 See [phase-4-plan.md](./phase-4-plan.md) for the full implementation plan, schema, and decisions.
+
+### Phase 4.5 — Exercise-by-exercise workouts
+A new class format: short vertical (9:16) exercise clips, assembled into workouts in an admin builder and played back story-style (segmented progress bar, tap left/right to move between sets). Designed in two claude.ai design canvases (private to the owner): the [member player](https://claude.ai/artifact/QP3yY6AQbaYUJcx3qqU478) and the [admin builder, upload screen and exercise library](https://claude.ai/artifact/MuarX7i3BhFxZ5gyvDM977).
+
+Built in vertical slices, so each step leaves something usable and real footage shapes decisions early:
+
+- [ ] **0. Test footage** (in parallel) — film 3–4 exercises that cover the awkward cases: one done on each side (separate right and left loops), a timed hold with no reps, one with a tutorial, and a warm-up
+- [ ] **1. Playback test** — `/admin/lab/playback`: loop seams and next-clip handoff (MP4 static rendition vs HLS), preloading, sound after an automatic advance, full screen — on iPhone Safari and desktop. Its results set the Mux settings every exercise clip is uploaded with
+- [ ] **2. Exercises** — Supabase tables (exercises: kind exercise / warm-up, sided, timed-only, dumbbell levels, equipment, archived; exercise videos: tutorial / loop / right loop / left loop with reps-in-clip; exercise tags), then the admin upload, library and edit screens (reusing the existing Mux direct upload). Then upload the real exercise library through them
+- [ ] **3. Workouts** — workouts and their blocks (single exercise with sets / rest / superset or circuit with rounds), the builder, and the time estimate in `packages/core` with tests so every platform computes the same number
+- [ ] **4. Member player (web)** — preview → warm-up → player (reps, timed, sided, groups, rests, tutorial modes) → pause → end → complete. Mobile layout first, then the desktop theater layout
+- [ ] **5. Progress** — save progress / resume with % complete, completed-workout history
+- [ ] **6. Access and placement** — which entitlement unlocks workouts (membership, a standalone product, or both — undecided) and where they appear on `/home`. The iOS app reuses the `packages/core` logic in Phase 5
+
+Key product rules from design review:
+- An exercise has a tutorial (with audio) and a looping clip; sided exercises have separate right and left loops. "Reps in clip" gives the pace used for time estimates (blank = timed only)
+- Dumbbells are levels, never pounds: an exercise lists every level that works ("Light / Medium"); a workout's equipment shows one pill per level
+- A workout is a list of blocks: a single exercise (sets), a rest, or a group (rounds, rest between exercises, rest between rounds; exercises in a group do one set each). Two exercises = "Superset N", three or more = "Circuit N"
+- The warm-up is optional for members and plays once, start to finish; listed workout times exclude it
+- Editing an exercise changes it in every workout that uses it; a replaced clip stays live until the new one finishes processing. Archiving hides an exercise from the library and builder search while existing workouts keep working; delete only when nothing uses it
+- Ending a workout early asks to save progress or discard it; saved progress shows "Resume · N% complete" on the workout preview
 
 ### Phase 5 — iOS app
 - [ ] Expo + React Native app
