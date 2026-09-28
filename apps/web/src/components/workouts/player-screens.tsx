@@ -90,7 +90,7 @@ function SettingsButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-/** Pause · Up next (opens the overview) · Settings. */
+/** Settings · Up next (opens the overview) · Pause. */
 function ControlsRow({
   pill,
   onPause,
@@ -104,9 +104,7 @@ function ControlsRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <RoundButton label="Pause" onClick={onPause}>
-        <Pause />
-      </RoundButton>
+      <SettingsButton onClick={onSettings} />
       <button
         type="button"
         aria-label={`Open workout overview. ${pill.label}: ${pill.text}`}
@@ -119,7 +117,9 @@ function ControlsRow({
           <span className="truncate text-[15px] font-medium">{pill.text}</span>
         </span>
       </button>
-      <SettingsButton onClick={onSettings} />
+      <RoundButton label="Pause" onClick={onPause}>
+        <Pause />
+      </RoundButton>
     </div>
   );
 }
@@ -644,9 +644,7 @@ export function WarmupScreen({
           <h1 className="text-[22px] font-semibold leading-tight">{name}</h1>
         </div>
         <div className="flex items-center justify-between gap-3">
-          <RoundButton label="Pause" onClick={onPause}>
-            <Pause />
-          </RoundButton>
+          <SettingsButton onClick={onSettings} />
           <button
             type="button"
             onClick={onSkip}
@@ -655,7 +653,9 @@ export function WarmupScreen({
             Skip warm-up
             <ArrowRight size={18} />
           </button>
-          <SettingsButton onClick={onSettings} />
+          <RoundButton label="Pause" onClick={onPause}>
+            <Pause />
+          </RoundButton>
         </div>
       </div>
     </>
@@ -1190,14 +1190,14 @@ export function SettingsSheet({
 }) {
   return (
     <Sheet label="Settings" onClose={onClose} variant={variant} slideIn={false}>
+      <div className={`flex items-center justify-between gap-3 ${variant === "side" ? "px-7" : "px-5"}`}>
+        <h2 className="text-[22px] font-semibold tracking-[-0.01em]">Settings</h2>
+        <SheetClose label="Close settings" />
+      </div>
       <div
         data-sheet-scroll
         className={`flex min-h-0 flex-col gap-[18px] overflow-y-auto overscroll-contain ${variant === "side" ? "px-7" : "px-5"}`}
       >
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-[22px] font-semibold tracking-[-0.01em]">Settings</h2>
-          <SheetClose label="Close settings" />
-        </div>
         <section aria-labelledby="settings-sound" className="flex flex-col gap-3">
           <h3 id="settings-sound" className="text-base font-semibold">
             Sound
