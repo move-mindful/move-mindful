@@ -462,15 +462,29 @@ export function TutorialScreen({
       <Collapse open={!hidden}>
         <h1 className="mb-3 text-[30px] font-semibold leading-[1.1] tracking-[-0.01em]">{name}</h1>
       </Collapse>
-      <div className="flex flex-wrap gap-2">
+      {/* Minimised, this row is all that's left: the pills, the exercise and a
+          small Skip, all one pill high. */}
+      <div className={`flex gap-2 ${hidden ? "flex-nowrap items-center" : "flex-wrap"}`}>
         {chips.map((c) => (
-          <Chip key={c}>{c}</Chip>
+          <span key={c} className="shrink-0">
+            <Chip>{c}</Chip>
+          </span>
         ))}
-        {levels && !hidden && (
-          <Chip>
-            <Dumbbell size={16} />
-            {levels}
-          </Chip>
+        {levels && (
+          <span className="shrink-0">
+            <Chip>
+              <Dumbbell size={16} />
+              {levels}
+            </Chip>
+          </span>
+        )}
+        {hidden && (
+          <>
+            <span className="min-w-0 flex-1 truncate text-[15px] font-semibold" aria-hidden="true">
+              {name}
+            </span>
+            <MiniSkipButton progress={progress} onBegin={onBegin} />
+          </>
         )}
       </div>
       <Collapse open={!hidden}>
@@ -528,6 +542,28 @@ export function BeginButton({
       </span>
       <span className="absolute inset-y-0 right-[22px] flex items-center text-[15px] font-medium tabular-nums text-white/80">
         {clock(Math.ceil(progress.secondsLeft))}
+      </span>
+    </button>
+  );
+}
+
+/** Skip tutorial, pill-sized, for the tutorial's minimised row: fills as it plays. */
+function MiniSkipButton({ progress, onBegin }: { progress: TutorialProgress; onBegin: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onBegin}
+      aria-label="Skip tutorial and start the exercise"
+      className="relative flex h-[30px] shrink-0 items-center gap-1 overflow-hidden rounded-full border-[1.5px] border-white/55 bg-white/[0.08] pl-3 pr-2.5 text-sm font-semibold"
+    >
+      <span
+        key={progress.cycle}
+        className="absolute inset-y-0 left-0 bg-white/20"
+        style={{ width: `${Math.min(100, progress.fraction * 100)}%`, transition: "width 250ms linear" }}
+      />
+      <span className="relative">Skip</span>
+      <span className="relative">
+        <ArrowRight size={15} />
       </span>
     </button>
   );
