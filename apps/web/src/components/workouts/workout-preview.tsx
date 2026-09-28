@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { aboutMinutes, type WorkoutStep } from "@move-mindful/core";
 import { equipmentPills, levelLabel, type PlayerWorkout } from "@/lib/workouts/player";
 import { ArrowRight, ChevronLeft, EQUIPMENT_ICONS } from "./icons";
 import { Switch } from "./player-screens";
+import { storeWarmupOn, useWarmupOn } from "./preferences";
 import { WorkoutRows } from "./workout-rows";
 
 /**
@@ -40,10 +40,11 @@ export function WorkoutPreview({
     null;
   const canStart = steps.length > 0;
 
-  // Whether Begin starts with the warm-up (the switch beside it).
-  const [warmup, setWarmup] = useState(true);
+  // Whether Begin starts with the warm-up (the switch beside it), remembered
+  // on this device.
+  const warmup = useWarmupOn();
   const begin = (
-    <BeginRow workout={workout} canStart={canStart} warmup={warmup} onWarmup={setWarmup} onBegin={onBegin} />
+    <BeginRow workout={workout} canStart={canStart} warmup={warmup} onWarmup={storeWarmupOn} onBegin={onBegin} />
   );
 
   return (

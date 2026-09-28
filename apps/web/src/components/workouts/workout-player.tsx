@@ -14,7 +14,6 @@ import {
   workoutSteps,
   type PlayerAction,
   type SetStep,
-  type TutorialMode,
   type WorkoutStep,
 } from "@move-mindful/core";
 import { levelsLabel } from "@/lib/exercises/shared";
@@ -49,6 +48,7 @@ import {
 } from "./theater";
 import { POOL_SIZE, PoolVideos, useVideoPool, type PoolClip, type ShownClip } from "./video-pool";
 import { WorkoutPreview } from "./workout-preview";
+import { storedSoundOn, storedTutorialMode, storeSoundOn, storeTutorialMode } from "./preferences";
 
 /**
  * The member's workout: the preview, then the optional warm-up, the workout
@@ -57,47 +57,6 @@ import { WorkoutPreview } from "./workout-preview";
  * keeps the videos and timers in step with it, and turns taps into actions.
  * Designs: the player design canvas (plan.md, Phase 4.5).
  */
-
-// The member's tutorial setting ("Before each new exercise"), kept on this
-// device for every workout.
-const MODE_KEY = "movemindful.tutorialMode";
-
-function storedMode(): TutorialMode {
-  try {
-    const v = window.localStorage.getItem(MODE_KEY);
-    return v === "once" || v === "off" ? v : "loop";
-  } catch {
-    return "loop";
-  }
-}
-
-function storeMode(mode: TutorialMode) {
-  try {
-    window.localStorage.setItem(MODE_KEY, mode);
-  } catch {
-    // Private mode or storage blocked: the setting lasts for this workout only.
-  }
-}
-
-// Whether tutorials and the warm-up play with sound (Settings), kept on this
-// device like the tutorial setting. Exercise loops are always silent.
-const SOUND_KEY = "movemindful.sound";
-
-function storedSoundOn(): boolean {
-  try {
-    return window.localStorage.getItem(SOUND_KEY) !== "off";
-  } catch {
-    return true;
-  }
-}
-
-function storeSoundOn(on: boolean) {
-  try {
-    window.localStorage.setItem(SOUND_KEY, on ? "on" : "off");
-  } catch {
-    // Storage blocked: the setting lasts for this workout only.
-  }
-}
 
 type WithoutNow<T> = T extends unknown ? Omit<T, "now"> : never;
 
@@ -305,7 +264,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
     setMuted(!storedSoundOn());
     // Inside the tap, so every clip may play with sound later (see video-pool.tsx).
     pool.unlock();
-    act({ type: "begin", warmup, mode: storedMode() });
+    act({ type: "begin", warmup, mode: storedTutorialMode() });
   }
 
   const leave = () => router.push(backHref);
@@ -643,7 +602,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
         mode={state.mode}
         soundOn={!muted}
         onMode={(mode) => {
-          storeMode(mode);
+          storeTutorialMode(mode);
           act({ type: "mode", mode });
         }}
         onSound={setSound}
