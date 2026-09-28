@@ -192,7 +192,7 @@ Built in vertical slices, so each step leaves something usable and real footage 
   - [x] Player settings (tutorial mode, instructor audio, warm-up) saved to the member's account — `012_member_preferences.sql` (a `member_preferences` row per Clerk user, settings as JSON by area)
   - [x] Apply `012_member_preferences.sql` in Supabase
   - [x] A workout sessions table (`013_workout_sessions.sql`: started, finished, sets done, % and time, where to resume, a fingerprint of the sequence) — saved as the member goes (Begin, every new set, the end), so Resume survives a closed page; End workout offers Save progress / Discard progress; the preview offers Resume · N% complete / Start over, for 7 days after the last save; `/workouts` cards show "Resume · N%" or "Done · 3 days ago". Signed-in only (on `/demo1` too). Resume logic in `packages/core/src/workout-progress.ts`, with tests
-  - [ ] Apply `013_workout_sessions.sql` in Supabase
+  - [x] Apply `013_workout_sessions.sql` in Supabase
   - [ ] Show completion history and "time since last workout" — the data is recorded; where it appears is decided with `/home` (step 6)
 - [ ] **6. Access and placement** — which entitlement unlocks workouts (membership, a standalone product, or both — undecided) and where they appear on `/home`. The iOS app reuses the `packages/core` logic in Phase 5
 
