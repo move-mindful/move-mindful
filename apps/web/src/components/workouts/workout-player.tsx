@@ -323,7 +323,13 @@ export function WorkoutPlayer({
     // Inside the tap, so every clip may play with sound later (see video-pool.tsx).
     pool.unlock();
     // First time on a phone: the gesture guide opens as the first exercise comes up.
-    act({ type: "begin", warmup, mode: prefs.tutorialMode, guide: !theater && !prefs.seenGestureGuide });
+    act({
+      type: "begin",
+      warmup,
+      mode: prefs.tutorialMode,
+      guide: !theater && !prefs.seenGestureGuide,
+      autoAdvance: prefs.autoAdvance,
+    });
   }
 
   const leave = () => router.push(backHref);
@@ -365,8 +371,9 @@ export function WorkoutPlayer({
       ? null
       : state.stage === "tutorial"
         ? { kind: "tutorial", fraction: state.tutorialPlay === "once" && clip.duration ? clip.time / clip.duration : 1 }
-        : set.measure === "time"
-          ? { kind: "set", fraction: 1 - leftMs / (set.amount * 1000) }
+        : state.timer
+          ? // A countdown — a timed set, or a rep set on auto-advance — fills the segment as it runs.
+            { kind: "set", fraction: 1 - leftMs / ((set.measure === "time" ? set.amount : set.seconds) * 1000) }
           : { kind: "set", fraction: 1 };
 
   const bar = (
@@ -683,6 +690,13 @@ export function WorkoutPlayer({
           act({ type: "mode", mode });
         }}
         onSound={setSound}
+        autoAdvance={{
+          on: state.autoAdvance,
+          onChange: (on) => {
+            updatePrefs({ autoAdvance: on });
+            act({ type: "autoAdvance", on });
+          },
+        }}
         onGuide={theater ? null : () => act({ type: "sheet", sheet: "guide" })}
         onClose={() => act({ type: "sheet", sheet: null })}
         variant={theater ? "side" : "bottom"}

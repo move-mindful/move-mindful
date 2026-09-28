@@ -1395,6 +1395,7 @@ export function SettingsSheet({
   mix,
   onMode,
   onSound,
+  autoAdvance,
   onGuide,
   onClose,
   variant = "bottom",
@@ -1406,6 +1407,7 @@ export function SettingsSheet({
   mix: { on: boolean; onChange: (on: boolean) => void } | null;
   onMode: (mode: TutorialMode) => void;
   onSound: (on: boolean) => void;
+  autoAdvance: { on: boolean; onChange: (on: boolean) => void };
   /** Show the gesture guide again (phones only; null on desktop). */
   onGuide: (() => void) | null;
   onClose: () => void;
@@ -1446,6 +1448,20 @@ export function SettingsSheet({
               <Switch on={mix.on} onChange={mix.onChange} label="Keep my music playing" />
             </div>
           )}
+        </section>
+        <section aria-labelledby="settings-exercises" className="flex flex-col gap-3">
+          <h3 id="settings-exercises" className="text-base font-semibold">
+            Exercises
+          </h3>
+          <div className="flex items-center justify-between gap-4 rounded-2xl border-[1.5px] border-white/[0.12] bg-white/[0.04] px-4 py-3.5">
+            <span className="flex min-w-0 flex-col gap-[3px]">
+              <span className="text-[17px] font-semibold">Auto-advance</span>
+              <span className="text-sm leading-snug text-white/75">
+                Rep sets move on by themselves after the time the reps usually take. Tap to move on sooner.
+              </span>
+            </span>
+            <Switch on={autoAdvance.on} onChange={autoAdvance.onChange} label="Auto-advance" />
+          </div>
         </section>
         <section aria-labelledby="settings-tutorials" className="flex flex-col gap-3">
           <h3 id="settings-tutorials" className="text-base font-semibold">

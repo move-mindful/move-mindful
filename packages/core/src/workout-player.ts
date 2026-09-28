@@ -42,11 +42,16 @@ export interface PlayerState {
   take: number;
   /** Show the gesture guide as the first exercise comes up (after any warm-up). */
   guidePending: boolean;
+  /**
+   * Rep sets move on by themselves after their estimated time (the step's
+   * `seconds`: reps at the clip's pace, plus getting into position).
+   */
+  autoAdvance: boolean;
 }
 
 export type PlayerAction =
   /** `guide`: open the gesture guide when the first exercise comes up (a first-time member). */
-  | { type: "begin"; warmup: boolean; mode: TutorialMode; guide?: boolean; now: number }
+  | { type: "begin"; warmup: boolean; mode: TutorialMode; guide?: boolean; autoAdvance?: boolean; now: number }
   /** The warm-up finished or was skipped. */
   | { type: "endWarmup"; now: number }
   | { type: "next"; now: number }
@@ -59,6 +64,8 @@ export type PlayerAction =
   | { type: "resume"; now: number }
   | { type: "sheet"; sheet: PlayerSheet; now: number }
   | { type: "mode"; mode: TutorialMode; now: number }
+  /** Turn auto-advance on or off; applies to the set on screen too. */
+  | { type: "autoAdvance"; on: boolean; now: number }
   | { type: "restartSet"; now: number }
   | { type: "restartWorkout"; now: number }
   | { type: "watchTutorial"; now: number }
@@ -86,6 +93,7 @@ export const initialPlayerState: PlayerState = {
   activeSince: null,
   take: 0,
   guidePending: false,
+  autoAdvance: false,
 };
 
 /** Playing right now: not paused, no sheet over it, and past the preview. */
@@ -114,10 +122,12 @@ export function setStepFor(steps: WorkoutStep[], index: number): number | null {
   return null;
 }
 
-function timerFor(step: WorkoutStep, stage: PlayerState["stage"]): PlayerState["timer"] {
+function timerFor(step: WorkoutStep, stage: PlayerState["stage"], autoAdvance: boolean): PlayerState["timer"] {
   if (step.kind === "rest") return { leftMs: step.seconds * 1000, since: null };
-  if (stage === "exercise" && step.measure === "time") return { leftMs: step.amount * 1000, since: null };
-  return null;
+  if (stage !== "exercise") return null;
+  if (step.measure === "time") return { leftMs: step.amount * 1000, since: null };
+  // Reps, with auto-advance: the set's estimated length.
+  return autoAdvance ? { leftMs: step.seconds * 1000, since: null } : null;
 }
 
 /** Start the countdown and the workout clock while running; freeze them otherwise. */
@@ -166,20 +176,28 @@ function enter(ctx: PlayerContext, s: PlayerState, index: number, forward: boole
     stage,
     tutorialPlay: s.mode === "once" ? "once" : "loop",
     seen,
-    timer: timerFor(step, stage),
+    timer: timerFor(step, stage, s.autoAdvance),
   };
 }
 
 function startExercise(ctx: PlayerContext, s: PlayerState): PlayerState {
   const step = ctx.steps[s.step];
-  return { ...s, stage: "exercise", timer: timerFor(step, "exercise"), take: s.take + 1 };
+  return { ...s, stage: "exercise", timer: timerFor(step, "exercise", s.autoAdvance), take: s.take + 1 };
 }
 
 function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerState {
   const step = ctx.steps[s.step];
   switch (a.type) {
     case "begin": {
-      const started = { ...s, mode: a.mode, activeMs: 0, activeSince: null, seen: [], guidePending: !!a.guide };
+      const started = {
+        ...s,
+        mode: a.mode,
+        activeMs: 0,
+        activeSince: null,
+        seen: [],
+        guidePending: !!a.guide,
+        autoAdvance: !!a.autoAdvance,
+      };
       if (a.warmup) return { ...started, phase: "warmup", paused: false, sheet: null, timer: null, take: s.take + 1 };
       return enter(ctx, started, 0, true);
     }
@@ -210,6 +228,14 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
       return { ...s, paused: false, sheet: null };
     case "sheet":
       return { ...s, sheet: a.sheet };
+    case "autoAdvance": {
+      const next = { ...s, autoAdvance: a.on };
+      // A rep set on screen picks it up (a fresh countdown) or drops it.
+      if (s.phase === "workout" && step?.kind === "set" && s.stage === "exercise" && step.measure === "reps") {
+        return { ...next, timer: timerFor(step, "exercise", a.on) };
+      }
+      return next;
+    }
     case "mode":
       // A tutorial on screen switches to the new setting too ("off" leaves it
       // up until Begin).
@@ -247,7 +273,7 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
         ? enter(ctx, s, a.step, a.step > s.step)
         : s;
     case "exit":
-      return { ...initialPlayerState, mode: s.mode, take: s.take + 1 };
+      return { ...initialPlayerState, mode: s.mode, autoAdvance: s.autoAdvance, take: s.take + 1 };
   }
 }
 

@@ -19,6 +19,7 @@ const KEYS = {
   instructorAudio: "movemindful.sound",
   mixAudio: "movemindful.mixAudio",
   warmup: "movemindful.warmup",
+  autoAdvance: "movemindful.autoAdvance",
   seenGestureGuide: "movemindful.seenGestureGuide",
 } as const;
 
@@ -45,6 +46,8 @@ function readDevice(): Partial<PlayerPreferences> {
   if (mix === "on" || mix === "off") out.mixAudio = mix === "on";
   const warmup = readItem(KEYS.warmup);
   if (warmup === "on" || warmup === "off") out.warmup = warmup === "on";
+  const auto = readItem(KEYS.autoAdvance);
+  if (auto === "on" || auto === "off") out.autoAdvance = auto === "on";
   if (readItem(KEYS.seenGestureGuide) === "yes") out.seenGestureGuide = true;
   return { ...out, ...memory };
 }
@@ -58,6 +61,7 @@ function writeDevice(changes: Partial<PlayerPreferences>) {
     }
     if (changes.mixAudio !== undefined) window.localStorage.setItem(KEYS.mixAudio, changes.mixAudio ? "on" : "off");
     if (changes.warmup !== undefined) window.localStorage.setItem(KEYS.warmup, changes.warmup ? "on" : "off");
+    if (changes.autoAdvance !== undefined) window.localStorage.setItem(KEYS.autoAdvance, changes.autoAdvance ? "on" : "off");
     if (changes.seenGestureGuide) window.localStorage.setItem(KEYS.seenGestureGuide, "yes");
   } catch {
     // Blocked: `memory` keeps it for now.

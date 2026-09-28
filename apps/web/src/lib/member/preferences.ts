@@ -18,6 +18,8 @@ export interface PlayerPreferences {
   mixAudio: boolean;
   /** Begin workouts with their warm-up. */
   warmup: boolean;
+  /** Rep sets move on by themselves after their estimated time. */
+  autoAdvance: boolean;
   /** Has seen the first-run gesture guide (so it doesn't show again). */
   seenGestureGuide: boolean;
 }
@@ -27,6 +29,7 @@ export const DEFAULT_PLAYER_PREFERENCES: PlayerPreferences = {
   instructorAudio: true,
   mixAudio: false,
   warmup: true,
+  autoAdvance: false,
   seenGestureGuide: false,
 };
 
@@ -39,6 +42,7 @@ export function cleanPlayerPreferences(raw: unknown): Partial<PlayerPreferences>
   if (typeof r.instructorAudio === "boolean") out.instructorAudio = r.instructorAudio;
   if (typeof r.mixAudio === "boolean") out.mixAudio = r.mixAudio;
   if (typeof r.warmup === "boolean") out.warmup = r.warmup;
+  if (typeof r.autoAdvance === "boolean") out.autoAdvance = r.autoAdvance;
   if (typeof r.seenGestureGuide === "boolean") out.seenGestureGuide = r.seenGestureGuide;
   return out;
 }
