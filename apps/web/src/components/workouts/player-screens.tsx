@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   type ComponentProps,
   type ReactNode,
@@ -56,14 +57,14 @@ export function Shade({ bottom = 350 }: { bottom?: number }) {
     <>
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-[110px]"
-        style={{ background: "linear-gradient(180deg, rgba(14,14,32,0.72) 0%, rgba(14,14,32,0.38) 55%, rgba(14,14,32,0) 100%)" }}
+        style={{ background: "linear-gradient(180deg, rgba(14,14,32,0.58) 0%, rgba(14,14,32,0.3) 55%, rgba(14,14,32,0) 100%)" }}
       />
       <div
         className="pointer-events-none absolute inset-x-0 bottom-0 transition-[height] duration-300 ease-out"
         style={{
           height: bottom,
           background:
-            "linear-gradient(0deg, rgba(14,14,32,0.95) 0%, rgba(14,14,32,0.84) 42%, rgba(14,14,32,0.4) 72%, rgba(14,14,32,0) 100%)",
+            "linear-gradient(0deg, rgba(14,14,32,0.8) 0%, rgba(14,14,32,0.68) 42%, rgba(14,14,32,0.3) 72%, rgba(14,14,32,0) 100%)",
         }}
       />
     </>
@@ -635,7 +636,11 @@ export function PausedScreen({
     "flex h-[54px] shrink-0 items-center justify-center gap-2.5 rounded-full bg-white/[0.12] text-base font-semibold";
   return (
     <div className={theater ? centered : "absolute inset-0 flex flex-col overflow-y-auto"}>
-      <div className={`flex flex-col items-center gap-4 ${theater ? "" : "flex-1 justify-center pb-6 pt-16"}`}>
+      <div className={`flex flex-col items-center gap-5 ${theater ? "" : "flex-1 justify-end pb-8 pt-16"}`}>
+        <div className="flex flex-col items-center gap-1 text-center">
+          <h1 className="text-[30px] font-semibold tracking-[-0.01em]">Paused</h1>
+          <div className="text-base text-white/75">{subtitle}</div>
+        </div>
         <button
           type="button"
           aria-label="Resume workout"
@@ -645,10 +650,6 @@ export function PausedScreen({
         >
           <Play />
         </button>
-        <div className="flex flex-col items-center gap-1">
-          <h1 className="text-[30px] font-semibold tracking-[-0.01em]">Paused</h1>
-          <div className="text-base text-white/75">{subtitle}</div>
-        </div>
       </div>
       <div className={`gap-3.5 ${bottomGroup(theater)}`}>
         {stats && (
@@ -852,6 +853,13 @@ function useSwipeToClose(
   }, [panel, backdrop, enabled]);
 }
 
+/** Where each kind of sheet slides in from, and back out to. */
+const OFFSTAGE: Record<SheetVariant, string> = {
+  bottom: "translateY(100%)",
+  side: "translateX(100%)",
+  dialog: "scale(0.96)",
+};
+
 /** Closes the sheet this is inside, with its slide-out. */
 const SheetDismiss = createContext<(() => void) | null>(null);
 
@@ -875,10 +883,10 @@ export function Sheet({
   variant?: SheetVariant;
 }) {
   const panel = {
-    bottom: `max-h-[88%] w-full rounded-t-[28px] bg-[#1A1A34] pt-2.5 animate-sheet-up ${bottomPad}`,
-    side: "h-full w-[440px] max-w-full bg-[#17172F] py-7 shadow-[-24px_0_60px_rgba(0,0,0,0.45)] animate-sheet-left",
+    bottom: `max-h-[88%] w-full rounded-t-[28px] bg-[#1A1A34] pt-2.5 ${bottomPad}`,
+    side: "h-full w-[440px] max-w-full bg-[#17172F] py-7 shadow-[-24px_0_60px_rgba(0,0,0,0.45)]",
     dialog:
-      "max-h-[90%] w-[420px] max-w-[calc(100%-32px)] rounded-[28px] bg-[#1A1A34] pb-6 pt-8 shadow-[0_30px_80px_rgba(0,0,0,0.5)] animate-dialog-in",
+      "max-h-[90%] w-[420px] max-w-[calc(100%-32px)] rounded-[28px] bg-[#1A1A34] pb-6 pt-8 shadow-[0_30px_80px_rgba(0,0,0,0.5)]",
   }[variant];
   const place = { bottom: "flex-col justify-end", side: "justify-end", dialog: "items-center justify-center" }[variant];
   const panelRef = useRef<HTMLElement>(null);
@@ -889,6 +897,31 @@ export function Sheet({
   });
   useSwipeToClose(panelRef, backdropRef, onClose, variant === "bottom");
 
+  // Slide in: start off-screen, let that frame paint, then transition in.
+  useLayoutEffect(() => {
+    const el = panelRef.current;
+    const backdrop = backdropRef.current;
+    if (!el || !backdrop || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    el.style.willChange = "transform";
+    el.style.transform = OFFSTAGE[variant];
+    if (variant === "dialog") el.style.opacity = "0";
+    backdrop.style.opacity = "0";
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => {
+        el.style.transition = "transform 320ms cubic-bezier(0.32, 0.72, 0, 1), opacity 200ms ease-out";
+        el.style.transform = "";
+        el.style.opacity = "";
+        backdrop.style.transition = "opacity 250ms ease-out";
+        backdrop.style.opacity = "";
+      });
+    });
+    return () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+    };
+  }, [variant]);
+
   const closing = useRef(false);
   const dismiss = useCallback(() => {
     const el = panelRef.current;
@@ -896,7 +929,7 @@ export function Sheet({
     closing.current = true;
     if (el) {
       el.style.transition = "transform 220ms ease-in, opacity 220ms ease-in";
-      el.style.transform = { bottom: "translateY(100%)", side: "translateX(100%)", dialog: "scale(0.96)" }[variant];
+      el.style.transform = OFFSTAGE[variant];
       if (variant === "dialog") el.style.opacity = "0";
     }
     if (backdropRef.current) {
@@ -911,7 +944,7 @@ export function Sheet({
       <div className={`absolute inset-0 z-20 flex ${place}`}>
         <div
           ref={backdropRef}
-          className={`absolute inset-0 animate-fade-in ${variant === "bottom" ? "bg-[#080814]/60" : "bg-[#06060E]/55"}`}
+          className={`absolute inset-0 ${variant === "bottom" ? "bg-[#080814]/60" : "bg-[#06060E]/55"}`}
           onClick={dismiss}
           aria-hidden="true"
         />
@@ -920,7 +953,7 @@ export function Sheet({
           role={alert ? "alertdialog" : "dialog"}
           aria-modal="true"
           aria-label={label}
-          className={`relative flex flex-col gap-4 motion-reduce:animate-none ${panel}`}
+          className={`relative flex flex-col gap-4 ${panel}`}
         >
           {variant === "bottom" && <div className="h-[5px] w-10 shrink-0 self-center rounded-full bg-white/[0.28]" />}
           {children}

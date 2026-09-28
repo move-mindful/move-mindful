@@ -170,9 +170,15 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
     return list;
   }, [shown, state.phase, state.step, state.stage, state.mode, state.seen, steps, workout]);
 
+  // The overview and tutorial settings stop the clock, but a silent loop keeps
+  // moving behind them (and pausing the video mid-slide made the sheet stutter).
+  // Tutorials and the warm-up, which talk, do pause.
+  const playing =
+    running ||
+    (state.phase === "workout" && !state.paused && (state.sheet === "overview" || state.sheet === "tutorial") && !!shown?.silent);
   useEffect(() => {
-    pool.sync(upcoming, shown, { playing: running, muted, take: state.take });
-  }, [pool, upcoming, shown, running, muted, state.take]);
+    pool.sync(upcoming, shown, { playing, muted, take: state.take });
+  }, [pool, upcoming, shown, playing, muted, state.take]);
 
   // ── Clocks ──────────────────────────────────────────
 
