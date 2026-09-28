@@ -32,12 +32,12 @@ import {
   TapZones,
   TopBar,
   TutorialScreen,
-  TutorialSheet,
+  SettingsSheet,
   WarmupProgress,
   createSheetPull,
   WarmupScreen,
 } from "./player-screens";
-import { List, Muted, Pause, Sound, Tutorial } from "./icons";
+import { List, Muted, Pause, Settings, Sound } from "./icons";
 import {
   TheaterArrows,
   TheaterButtons,
@@ -173,10 +173,10 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
     return list;
   }, [shown, state.phase, state.step, state.stage, state.mode, state.seen, steps, workout]);
 
-  // The overview and tutorial settings stop the clock, but the video keeps
+  // The overview and settings stop the clock, but the video keeps
   // playing behind them — a pause mid-slide made the sheet stutter.
   const playing =
-    running || (state.phase === "workout" && !state.paused && (state.sheet === "overview" || state.sheet === "tutorial"));
+    running || (state.phase === "workout" && !state.paused && (state.sheet === "overview" || state.sheet === "settings"));
   useEffect(() => {
     pool.sync(upcoming, shown, { playing, muted, take: state.take });
   }, [pool, upcoming, shown, playing, muted, state.take]);
@@ -282,7 +282,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
   const pause = () => act({ type: "pause" });
   const toggleMute = () => setMuted((m) => !m);
   const openOverview = () => act({ type: "sheet", sheet: "overview" });
-  const openTutorialSheet = () => act({ type: "sheet", sheet: "tutorial" });
+  const openSettings = () => act({ type: "sheet", sheet: "settings" });
 
   // ── What to show ────────────────────────────────────
 
@@ -330,10 +330,8 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
   let beside: ReactNode = null;
   let blurred = false;
 
-  const sideButtons = (withTutorial: boolean): TheaterButton[] => [
-    ...(withTutorial
-      ? [{ label: "Tutorial", aria: "Tutorial settings", icon: <Tutorial />, onClick: openTutorialSheet }]
-      : []),
+  const sideButtons = (withSettings: boolean): TheaterButton[] => [
+    ...(withSettings ? [{ label: "Settings", aria: "Settings", icon: <Settings />, onClick: openSettings }] : []),
     ...(state.phase === "workout"
       ? [{ label: "Workout", aria: "Open workout overview", icon: <List />, onClick: openOverview }]
       : []),
@@ -517,7 +515,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
               onPause={pause}
               onOverview={openOverview}
               onMute={toggleMute}
-              onTutorialSettings={openTutorialSheet}
+              onSettings={openSettings}
             />
           </>
         );
@@ -562,7 +560,7 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
               onPause={pause}
               onOverview={openOverview}
               onMute={toggleMute}
-              onTutorialSettings={openTutorialSheet}
+              onSettings={openSettings}
             />
           </>
         );
@@ -609,8 +607,8 @@ export function WorkoutPlayer({ workout, backHref }: { workout: PlayerWorkout; b
       />
     ) : null;
   const sheet =
-    state.sheet === "tutorial" ? (
-      <TutorialSheet
+    state.sheet === "settings" ? (
+      <SettingsSheet
         mode={state.mode}
         watch={
           targetExercise?.tutorial

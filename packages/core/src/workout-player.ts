@@ -14,7 +14,7 @@ export type TutorialMode = "loop" | "once" | "off";
 
 export type PlayerPhase = "preview" | "warmup" | "workout" | "complete";
 
-export type PlayerSheet = "overview" | "tutorial" | "end" | null;
+export type PlayerSheet = "overview" | "settings" | "end" | null;
 
 export interface PlayerState {
   phase: PlayerPhase;

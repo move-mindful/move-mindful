@@ -28,7 +28,7 @@ import {
   RestartWorkout,
   Sound,
   Sun,
-  Tutorial,
+  Settings,
   WatchTutorial,
 } from "./icons";
 
@@ -340,7 +340,7 @@ export function SetScreen({
   onPause,
   onOverview,
   onMute,
-  onTutorialSettings,
+  onSettings,
 }: {
   name: string;
   /** Reps to do, or the seconds left on a timed set. */
@@ -355,7 +355,7 @@ export function SetScreen({
   onPause: () => void;
   onOverview: () => void;
   onMute: () => void;
-  onTutorialSettings: (() => void) | null;
+  onSettings: (() => void) | null;
 }) {
   return (
     <div className={`absolute inset-x-0 bottom-0 flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
@@ -387,9 +387,9 @@ export function SetScreen({
       <Collapse open={!hidden}>
         <div className="mt-0.5 flex items-center justify-between gap-3">
           <h1 className="min-w-0 text-xl font-semibold leading-tight">{name}</h1>
-          {onTutorialSettings && (
-            <RoundButton label="Tutorial settings" onClick={onTutorialSettings}>
-              <Tutorial />
+          {onSettings && (
+            <RoundButton label="Settings" onClick={onSettings}>
+              <Settings />
             </RoundButton>
           )}
         </div>
@@ -413,7 +413,7 @@ export function TutorialScreen({
   onPause,
   onOverview,
   onMute,
-  onTutorialSettings,
+  onSettings,
 }: {
   name: string;
   chips: string[];
@@ -428,15 +428,15 @@ export function TutorialScreen({
   onPause: () => void;
   onOverview: () => void;
   onMute: () => void;
-  onTutorialSettings: () => void;
+  onSettings: () => void;
 }) {
   return (
     <div className={`absolute inset-x-0 bottom-0 flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
       <Collapse open={!hidden}>
         <div className="mb-3 flex items-center justify-between gap-3">
           <h1 className="min-w-0 text-[30px] font-semibold leading-[1.1] tracking-[-0.01em]">{name}</h1>
-          <RoundButton label="Tutorial settings" onClick={onTutorialSettings}>
-            <Tutorial />
+          <RoundButton label="Settings" onClick={onSettings}>
+            <Settings />
           </RoundButton>
         </div>
       </Collapse>
@@ -1179,7 +1179,7 @@ const MODES: Array<{ id: TutorialMode; title: string; desc: string }> = [
   { id: "off", title: "Off", desc: "Go straight to the exercise. Tutorials stay one tap away." },
 ];
 
-export function TutorialSheet({
+export function SettingsSheet({
   mode,
   watch,
   onMode,
@@ -1196,64 +1196,69 @@ export function TutorialSheet({
   variant?: SheetVariant;
 }) {
   return (
-    <Sheet label="Tutorial settings" onClose={onClose} variant={variant} slideIn={false}>
+    <Sheet label="Settings" onClose={onClose} variant={variant} slideIn={false}>
       <div
         data-sheet-scroll
         className={`flex min-h-0 flex-col gap-[18px] overflow-y-auto overscroll-contain ${variant === "side" ? "px-7" : "px-5"}`}
       >
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-[22px] font-semibold tracking-[-0.01em]">Tutorials</h2>
-          <SheetClose label="Close tutorial settings" />
+          <h2 className="text-[22px] font-semibold tracking-[-0.01em]">Settings</h2>
+          <SheetClose label="Close settings" />
         </div>
-        {watch && (
-          <button
-            type="button"
-            onClick={onWatch}
-            className="flex items-center gap-3.5 rounded-[18px] bg-white/[0.07] py-2.5 pl-2.5 pr-3.5 text-left"
-          >
-            <span className="h-[72px] w-[54px] shrink-0 overflow-hidden rounded-xl bg-white/10">
-              {watch.thumbnail && (
-                // eslint-disable-next-line @next/next/no-img-element -- a tiny Mux still; nothing to optimize
-                <img src={watch.thumbnail} alt="" className="size-full object-cover" />
-              )}
-            </span>
-            <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
-              <span className="text-[17px] font-semibold">Watch the {watch.name.toLowerCase()} tutorial</span>
-              <span className="text-sm text-white/70">
-                {watch.duration ? `${clock(watch.duration)} · ` : ""}with audio
-              </span>
-            </span>
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#A99CFF] text-[#14142B]">
-              <Play size={18} />
-            </span>
-          </button>
-        )}
-        <fieldset className="flex min-w-0 flex-col gap-2.5">
-          <legend className="mb-2.5 text-xs font-semibold uppercase tracking-[0.1em] text-white/70">
-            Before each new exercise
-          </legend>
-          {MODES.map((m) => (
-            <label
-              key={m.id}
-              className={`flex cursor-pointer items-start gap-3.5 rounded-2xl border-[1.5px] px-4 py-3.5 ${
-                mode === m.id ? "border-[#A99CFF]/85 bg-[#A99CFF]/[0.14]" : "border-white/[0.12] bg-white/[0.04]"
-              }`}
+        <section aria-labelledby="settings-tutorials" className="flex flex-col gap-3">
+          <h3 id="settings-tutorials" className="text-base font-semibold">
+            Tutorials
+          </h3>
+          {watch && (
+            <button
+              type="button"
+              onClick={onWatch}
+              className="flex items-center gap-3.5 rounded-[18px] bg-white/[0.07] py-2.5 pl-2.5 pr-3.5 text-left"
             >
-              <input
-                type="radio"
-                name="tutorial-mode"
-                value={m.id}
-                checked={mode === m.id}
-                onChange={() => onMode(m.id)}
-                className="mt-px size-5 shrink-0 accent-[#A99CFF]"
-              />
-              <span className="flex min-w-0 flex-col gap-[3px]">
-                <span className="text-[17px] font-semibold">{m.title}</span>
-                <span className="text-sm leading-snug text-white/75">{m.desc}</span>
+              <span className="h-[72px] w-[54px] shrink-0 overflow-hidden rounded-xl bg-white/10">
+                {watch.thumbnail && (
+                  // eslint-disable-next-line @next/next/no-img-element -- a tiny Mux still; nothing to optimize
+                  <img src={watch.thumbnail} alt="" className="size-full object-cover" />
+                )}
               </span>
-            </label>
-          ))}
-        </fieldset>
+              <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
+                <span className="text-[17px] font-semibold">Watch the {watch.name.toLowerCase()} tutorial</span>
+                <span className="text-sm text-white/70">
+                  {watch.duration ? `${clock(watch.duration)} · ` : ""}with audio
+                </span>
+              </span>
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#A99CFF] text-[#14142B]">
+                <Play size={18} />
+              </span>
+            </button>
+          )}
+          <fieldset className="flex min-w-0 flex-col gap-2.5">
+            <legend className="mb-2.5 text-xs font-semibold uppercase tracking-[0.1em] text-white/70">
+              Before each new exercise
+            </legend>
+            {MODES.map((m) => (
+              <label
+                key={m.id}
+                className={`flex cursor-pointer items-start gap-3.5 rounded-2xl border-[1.5px] px-4 py-3.5 ${
+                  mode === m.id ? "border-[#A99CFF]/85 bg-[#A99CFF]/[0.14]" : "border-white/[0.12] bg-white/[0.04]"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="tutorial-mode"
+                  value={m.id}
+                  checked={mode === m.id}
+                  onChange={() => onMode(m.id)}
+                  className="mt-px size-5 shrink-0 accent-[#A99CFF]"
+                />
+                <span className="flex min-w-0 flex-col gap-[3px]">
+                  <span className="text-[17px] font-semibold">{m.title}</span>
+                  <span className="text-sm leading-snug text-white/75">{m.desc}</span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+        </section>
       </div>
     </Sheet>
   );
