@@ -168,3 +168,18 @@ test("a first-time member's gesture guide opens as the first exercise comes up",
   s = run([{ type: "sheet", sheet: null, now: 100_000 }, { type: "restartWorkout", now: 100_000 }], s);
   assert.equal(s.sheet, null, "and it doesn't come back on a restart");
 });
+
+test("ending the workout goes back to the preview", () => {
+  const s = run([
+    { type: "begin", warmup: false, mode: "once", now: 0 },
+    { type: "jump", step: 3, now: 1000 },
+    { type: "pause", now: 2000 },
+    { type: "sheet", sheet: "end", now: 2000 },
+    { type: "exit", now: 3000 },
+  ]);
+  assert.equal(s.phase, "preview");
+  assert.equal(s.sheet, null);
+  assert.equal(s.paused, false);
+  assert.equal(s.timer, null);
+  assert.equal(s.mode, "once", "the tutorial setting carries over");
+});

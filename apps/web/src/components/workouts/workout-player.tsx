@@ -685,7 +685,11 @@ export function WorkoutPlayer({
       <EndSheet
         setsDone={setsDone}
         setsTotal={setCount}
-        onEnd={leave}
+        onEnd={() => {
+          // Back to this workout's preview, not the list.
+          setChromeHidden(false);
+          act({ type: "exit" });
+        }}
         onCancel={() => act({ type: "sheet", sheet: null })}
         variant={theater ? "dialog" : "bottom"}
         drawerOpen={theater ? undefined : state.sheet === "end"}

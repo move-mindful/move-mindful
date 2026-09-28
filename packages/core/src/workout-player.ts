@@ -62,7 +62,9 @@ export type PlayerAction =
   | { type: "restartSet"; now: number }
   | { type: "restartWorkout"; now: number }
   | { type: "watchTutorial"; now: number }
-  | { type: "jump"; step: number; now: number };
+  | { type: "jump"; step: number; now: number }
+  /** End the workout: back to the preview, as if it hadn't started. */
+  | { type: "exit"; now: number };
 
 export interface PlayerContext {
   steps: WorkoutStep[];
@@ -244,6 +246,8 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
       return s.phase === "workout" && a.step >= 0 && a.step < ctx.steps.length
         ? enter(ctx, s, a.step, a.step > s.step)
         : s;
+    case "exit":
+      return { ...initialPlayerState, mode: s.mode, take: s.take + 1 };
   }
 }
 

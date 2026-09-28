@@ -50,7 +50,7 @@ export function WorkoutPreview({
 
   return (
     <div className="min-h-dvh bg-[#14142B] text-white">
-      <div className="mx-auto max-w-[560px] pb-44 theater:max-w-none theater:pb-0">
+      <div className="mx-auto max-w-[560px] pb-32 theater:max-w-none theater:pb-0">
         {/* The cover — on desktop, the whole left half, with the details over it. */}
         <div className="relative h-[330px] overflow-hidden theater:fixed theater:inset-y-0 theater:left-0 theater:h-auto theater:w-1/2">
           {cover && (
@@ -104,14 +104,10 @@ export function WorkoutPreview({
         </div>
       </div>
 
-      {/* Begin, pinned to the bottom on phones. */}
-      <div className="fixed inset-x-0 bottom-0 theater:hidden">
-        <div
-          className="mx-auto max-w-[560px] px-5 pb-[max(28px,calc(env(safe-area-inset-bottom)+12px))] pt-9"
-          style={{ background: "linear-gradient(0deg, #14142B 74%, rgba(20,20,43,0) 100%)" }}
-        >
-          {begin}
-        </div>
+      {/* Begin, pinned to the bottom on phones — a frosted panel, so the workout
+          visibly scrolls on underneath it. */}
+      <div className="fixed inset-x-0 bottom-0 border-t border-white/10 bg-[#1C1C38]/80 shadow-[0_-12px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl theater:hidden">
+        <div className="mx-auto max-w-[560px] px-5 pb-[max(20px,calc(env(safe-area-inset-bottom)+8px))] pt-4">{begin}</div>
       </div>
     </div>
   );
