@@ -50,7 +50,7 @@ export function OverviewSheet({
           </div>
         </div>
       </div>
-      <div className={`min-h-0 overflow-y-auto overscroll-contain ${side ? "px-4" : "px-3"}`}>
+      <div data-sheet-scroll className={`min-h-0 overflow-y-auto overscroll-contain ${side ? "px-4" : "px-3"}`}>
         <WorkoutRows workout={workout} steps={steps} position={position} onJump={onJump} />
       </div>
     </Sheet>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import type { TutorialMode } from "@move-mindful/core";
 import { clock } from "@/lib/workouts/player";
 import {
@@ -719,8 +719,96 @@ export function CompleteScreen({
 export type SheetVariant = "bottom" | "side" | "dialog";
 
 /**
+ * Swipe a bottom sheet down to close it. The drag starts from anywhere on the
+ * sheet — on a scrolling list only once it's scrolled to the top, so swiping
+ * still scrolls the list first. Let go past 90px (or with a quick flick) and it
+ * slides away and closes; any less and it springs back. Touch only: on desktop
+ * sheets aren't bottom sheets. Mark scrolling areas with `data-sheet-scroll`.
+ */
+function useSwipeToClose(
+  panel: RefObject<HTMLElement | null>,
+  backdrop: RefObject<HTMLElement | null>,
+  onClose: () => void,
+  enabled: boolean,
+) {
+  const close = useRef(onClose);
+  useEffect(() => {
+    close.current = onClose;
+  });
+
+  useEffect(() => {
+    const el = panel.current;
+    if (!enabled || !el) return;
+    let start: { y: number; t: number; scroller: HTMLElement | null } | null = null;
+    let dy = 0;
+    let dragging = false;
+
+    const place = (y: number, animate: boolean) => {
+      const ease = animate ? "200ms ease-out" : "none";
+      el.style.transition = animate ? `transform ${ease}` : "none";
+      el.style.transform = y ? `translateY(${y}px)` : "";
+      if (backdrop.current) {
+        backdrop.current.style.transition = animate ? `opacity ${ease}` : "none";
+        backdrop.current.style.opacity = String(Math.max(0, 1 - y / el.offsetHeight));
+      }
+    };
+
+    const onStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      const target = e.target instanceof Element ? e.target : null;
+      start = {
+        y: e.touches[0].clientY,
+        t: e.timeStamp,
+        scroller: target?.closest<HTMLElement>("[data-sheet-scroll]") ?? null,
+      };
+      dy = 0;
+      dragging = false;
+    };
+    const onMove = (e: TouchEvent) => {
+      if (!start) return;
+      dy = e.touches[0].clientY - start.y;
+      if (!dragging) {
+        const atTop = !start.scroller || start.scroller.scrollTop <= 0;
+        if (dy > 6 && atTop) dragging = true;
+        else if (Math.abs(dy) > 6) start = null; // a scroll, not a swipe
+        if (!dragging) return;
+      }
+      e.preventDefault();
+      place(Math.max(0, dy), false);
+    };
+    const onEnd = (e: TouchEvent) => {
+      if (!start || !dragging) {
+        start = null;
+        return;
+      }
+      const flick = dy / Math.max(1, e.timeStamp - start.t) > 0.5;
+      start = null;
+      dragging = false;
+      if (dy > 90 || (flick && dy > 30)) {
+        place(el.offsetHeight, true);
+        window.setTimeout(() => close.current(), 200);
+      } else {
+        place(0, true);
+      }
+    };
+
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    el.addEventListener("touchend", onEnd);
+    el.addEventListener("touchcancel", onEnd);
+    return () => {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+      el.removeEventListener("touchcancel", onEnd);
+    };
+  }, [panel, backdrop, enabled]);
+}
+
+/**
  * A sheet over the stage: from the bottom on phones; on desktop a panel down
- * the right side, or a dialog in the middle. Tapping the dimmed area closes it.
+ * the right side, or a dialog in the middle. Tapping the dimmed area closes
+ * it, and a bottom sheet can also be swiped down.
  */
 export function Sheet({
   label,
@@ -741,14 +829,19 @@ export function Sheet({
     dialog: "max-h-[90%] w-[420px] max-w-[calc(100%-32px)] rounded-[28px] bg-[#1A1A34] pb-6 pt-8 shadow-[0_30px_80px_rgba(0,0,0,0.5)]",
   }[variant];
   const place = { bottom: "flex-col justify-end", side: "justify-end", dialog: "items-center justify-center" }[variant];
+  const panelRef = useRef<HTMLElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
+  useSwipeToClose(panelRef, backdropRef, onClose, variant === "bottom");
   return (
     <div className={`absolute inset-0 z-20 flex ${place}`}>
       <div
+        ref={backdropRef}
         className={`absolute inset-0 ${variant === "bottom" ? "bg-[#080814]/60" : "bg-[#06060E]/55"}`}
         onClick={onClose}
         aria-hidden="true"
       />
       <section
+        ref={panelRef}
         role={alert ? "alertdialog" : "dialog"}
         aria-modal="true"
         aria-label={label}
@@ -799,7 +892,10 @@ export function TutorialSheet({
 }) {
   return (
     <Sheet label="Tutorial settings" onClose={onClose} variant={variant}>
-      <div className={`flex min-h-0 flex-col gap-[18px] overflow-y-auto overscroll-contain ${variant === "side" ? "px-7" : "px-5"}`}>
+      <div
+        data-sheet-scroll
+        className={`flex min-h-0 flex-col gap-[18px] overflow-y-auto overscroll-contain ${variant === "side" ? "px-7" : "px-5"}`}
+      >
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-[22px] font-semibold tracking-[-0.01em]">Tutorials</h2>
           <SheetClose label="Close tutorial settings" onClick={onClose} />
