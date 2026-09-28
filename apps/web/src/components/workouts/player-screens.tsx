@@ -214,7 +214,9 @@ function ControlsRow({
         <ChevronUp />
         <span className="flex min-w-0 flex-col gap-px">
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/70">{pill.label}</span>
-          <span className="truncate text-[15px] font-medium">{pill.text}</span>
+          <span className="text-[15px] font-medium">
+            <Marquee>{pill.text}</Marquee>
+          </span>
         </span>
       </button>
       <RoundButton label="Pause" onClick={onPause}>
