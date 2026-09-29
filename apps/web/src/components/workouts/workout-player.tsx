@@ -217,6 +217,9 @@ export function WorkoutPlayer({
   }, [prefs.mixAudio]);
   const [muted, setMuted] = useState(false);
   const [warmedUp, setWarmedUp] = useState(false);
+  // Settings opened from the guide's last page ("Change settings"): closing
+  // Settings goes back to that page rather than into the workout.
+  const [settingsFromGuide, setSettingsFromGuide] = useState(false);
   const theater = useTheater();
   // Controls swiped away (phones): just the reps over the video, until a swipe up.
   const [chromeHidden, setChromeHidden] = useState(false);
@@ -848,8 +851,16 @@ export function WorkoutPlayer({
         }}
         onSound={setSound}
         autoAdvance={{ on: state.autoAdvance, onChange: setAutoAdvance }}
-        onGuide={theater ? null : () => act({ type: "sheet", sheet: "guide" })}
-        onClose={() => act({ type: "sheet", sheet: null })}
+        onGuide={
+          theater
+            ? null
+            : () => {
+                // "How to use the player": the guide from the start.
+                setSettingsFromGuide(false);
+                act({ type: "sheet", sheet: "guide" });
+              }
+        }
+        onClose={() => act({ type: "sheet", sheet: settingsFromGuide ? "guide" : null })}
         variant={theater ? "side" : "bottom"}
         drawerOpen={theater ? undefined : state.sheet === "settings"}
       />
@@ -914,12 +925,16 @@ export function WorkoutPlayer({
           {!theater && state.sheet === "guide" && (
             <GestureGuide
               settings={{ mode: state.mode, autoAdvance: state.autoAdvance }}
+              startOnSettings={settingsFromGuide}
               onSettings={() => {
-                // Straight into Settings; the workout stays held until it closes.
+                // Into Settings, and back to this page when it closes; the
+                // workout stays held throughout.
+                setSettingsFromGuide(true);
                 updatePrefs({ seenGestureGuide: true });
                 act({ type: "sheet", sheet: "settings" });
               }}
               onDone={() => {
+                setSettingsFromGuide(false);
                 updatePrefs({ seenGestureGuide: true });
                 act({ type: "sheet", sheet: null });
               }}

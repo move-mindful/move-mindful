@@ -101,11 +101,13 @@ const PAGES: Page[] = [
   {
     title: "Settings",
     picture: (
-      // The gear, then the tutorial modes.
-      <div className="flex flex-col items-center gap-5">
-        <Bubble ring>
-          <Settings size={24} />
-        </Bubble>
+      <>
+        {/* The gear exactly where it sits on the pause screen: top right,
+            under the progress bar (see PausedScreen). */}
+        <span className="absolute right-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] flex size-[52px] items-center justify-center rounded-full bg-white/[0.14] ring-2 ring-[#A99CFF]">
+          <Settings />
+        </span>
+        {/* The tutorial modes, in the middle. */}
         <div className="flex gap-2">
           {["Loop", "Play once", "Off"].map((m, i) => (
             <span
@@ -118,7 +120,7 @@ const PAGES: Page[] = [
             </span>
           ))}
         </div>
-      </div>
+      </>
     ),
     rows: [
       {
@@ -209,14 +211,18 @@ export function GestureGuide({
   settings,
   onSettings,
   onDone,
+  startOnSettings = false,
 }: {
   /** How tutorials and auto-advance are set now, for the last page. */
   settings: { mode: TutorialMode; autoAdvance: boolean };
   /** "Change settings" on the last page: close the guide and open Settings. */
   onSettings: () => void;
   onDone: () => void;
+  /** Open on the last page — coming back from Settings after "Change settings". */
+  startOnSettings?: boolean;
 }) {
-  const [page, setPage] = useState(0);
+  // The last page is the one after PAGES.
+  const [page, setPage] = useState(startOnSettings ? PAGES.length : 0);
   const pages = [...PAGES, settingsPage(settings)];
   const current = pages[page];
   const last = page === pages.length - 1;
@@ -273,7 +279,7 @@ export function GestureGuide({
             onClick={() => (last ? onDone() : setPage(page + 1))}
             className="h-[54px] flex-1 rounded-full bg-white text-[17px] font-semibold text-[#14142B]"
           >
-            {last ? "Continue" : "Next"}
+            {last ? "Close" : "Next"}
           </button>
         </div>
       </section>
@@ -399,14 +405,8 @@ function Tag({ dark = false, children }: { dark?: boolean; children: ReactNode }
   );
 }
 
-function Bubble({ ring = false, children }: { ring?: boolean; children: ReactNode }) {
-  return (
-    <span
-      className={`flex size-14 items-center justify-center rounded-full bg-white/[0.16] ${ring ? "ring-2 ring-[#A99CFF]" : ""}`}
-    >
-      {children}
-    </span>
-  );
+function Bubble({ children }: { children: ReactNode }) {
+  return <span className="flex size-14 items-center justify-center rounded-full bg-white/[0.16]">{children}</span>;
 }
 
 function Row({ icon, tint, title, text }: { icon: ReactNode; tint: string; title: string; text: string }) {
