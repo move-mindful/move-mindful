@@ -32,6 +32,8 @@ export interface AdminExercise {
   /** 1 (gentle) to 4 (intense); exercises only, null when not set. */
   intensity: number | null;
   tagIds: string[];
+  /** Exercises it pairs well with in a superset or circuit (both ways). */
+  pairIds: string[];
   archivedAt: string | null;
   createdAt: string;
   videos: ExerciseVideo[];
@@ -51,8 +53,18 @@ export interface ExerciseInput {
   dumbbellLevels: string[];
   intensity: number | null;
   tagIds: string[];
+  pairIds: string[];
   /** Reps in clip for existing loop clips, keyed by exercise_videos id. */
   reps: Record<string, number | null>;
+}
+
+/** Another exercise, as the "Pairs well with" picker lists it. */
+export interface ExerciseOption {
+  id: string;
+  name: string;
+  archived: boolean;
+  /** Its live loop (the right side's, when sided), for the thumbnail. */
+  thumbPlaybackId: string | null;
 }
 
 export interface ExerciseTag {

@@ -48,6 +48,7 @@ Land within a minute of the target.
 ## Rules
 - Use only exercises from the library, by key. Every one listed is available.
 - A superset or circuit pairs different exercises: never the same one twice in a group. If the library is too small for what the brief asks, keep the workout simple and say so in the notes.
+- "pairs well with" on an exercise lists the exercises the instructor likes grouped with it in a superset or circuit. When you group exercises, reach for those pairings first; a circuit works best when its exercises pair with each other. Other groupings are fine when the brief needs them or an exercise has no pairings listed.
 - Anything in the brief marked "your call" is yours to decide: choose what best suits the rest of the brief and the house style.
 - Follow the instructor's notes under "Anything else".`;
 

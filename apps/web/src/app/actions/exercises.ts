@@ -72,6 +72,34 @@ async function syncTags(supabase: AdminClient, exerciseId: string, tagIds: strin
   }
 }
 
+// Pairings go both ways and are stored once, smaller id first
+// (016_exercise_pairings.sql). Only other, existing exercises (not warm-ups).
+async function syncPairings(
+  supabase: AdminClient,
+  exerciseId: string,
+  pairIds: string[],
+): Promise<{ error?: string }> {
+  const wanted = [...new Set(pairIds ?? [])].filter((id) => id !== exerciseId);
+  const { data: valid } = wanted.length
+    ? await supabase.from("exercises").select("id").eq("kind", "exercise").in("id", wanted)
+    : { data: [] };
+  const { error } = await supabase
+    .from("exercise_pairings")
+    .delete()
+    .or(`exercise_a.eq.${exerciseId},exercise_b.eq.${exerciseId}`);
+  // No table yet (016 not run) is fine here: saveExercise already stopped if pairings were picked.
+  if (error) return {};
+  if (valid?.length) {
+    const rows = valid.map((v) => {
+      const [a, b] = [exerciseId, v.id as string].sort();
+      return { exercise_a: a, exercise_b: b };
+    });
+    const { error: insertError } = await supabase.from("exercise_pairings").insert(rows);
+    if (insertError) return { error: insertError.message };
+  }
+  return {};
+}
+
 // Turning "done on each side" on or off changes which clips an exercise has; the
 // clips for slots it no longer has are deleted on save (the form warns first).
 async function removeUnusedClips(
@@ -117,6 +145,13 @@ export async function saveExercise(input: ExerciseInput): Promise<{ id?: string;
     kind = existing.kind as ExerciseKind;
   }
 
+  // Pairings picked before 016_exercise_pairings.sql has run: say so before
+  // writing anything, so a new exercise isn't saved twice on the retry.
+  if (kind === "exercise" && input.pairIds?.length) {
+    const { error } = await supabase.from("exercise_pairings").select("exercise_a").limit(1);
+    if (error) return { error: "Pairings can’t be saved until migration 016_exercise_pairings.sql has run." };
+  }
+
   const sided = kind === "exercise" && !!input.sided;
   const equipment = EQUIPMENT_OPTIONS.map((o) => o.id as string).filter((id) =>
     input.equipment?.includes(id),
@@ -147,6 +182,10 @@ export async function saveExercise(input: ExerciseInput): Promise<{ id?: string;
   const id = written.id;
 
   await syncTags(supabase, id, input.tagIds);
+  if (kind === "exercise") {
+    const paired = await syncPairings(supabase, id, input.pairIds);
+    if (paired.error) return { id, error: paired.error };
+  }
 
   if (input.id) {
     const { data: loops } = await supabase

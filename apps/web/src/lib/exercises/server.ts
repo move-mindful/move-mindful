@@ -5,6 +5,7 @@ import { mux } from "@/lib/mux/client";
 import type {
   AdminExercise,
   ExerciseKind,
+  ExerciseOption,
   ExerciseTag,
   ExerciseVideo,
   VideoRole,
@@ -204,11 +205,24 @@ export async function getExerciseUsage(supabase: AdminClient): Promise<Map<strin
   return new Map([...byExercise].map(([id, set]) => [id, set.size]));
 }
 
+type PairingRow = { exercise_a: string; exercise_b: string };
+
+/** Every pairing, both ways round; empty until 016_exercise_pairings.sql has run. */
+async function getPairings(supabase: AdminClient): Promise<PairingRow[]> {
+  const { data } = await supabase.from("exercise_pairings").select("exercise_a, exercise_b");
+  return (data ?? []) as PairingRow[];
+}
+
+function pairsOf(id: string, pairings: PairingRow[]): string[] {
+  return pairings.flatMap((p) => (p.exercise_a === id ? [p.exercise_b] : p.exercise_b === id ? [p.exercise_a] : []));
+}
+
 function assemble(
   exercises: ExerciseRow[],
   videos: VideoRow[],
   links: Array<{ exercise_id: string; tag_id: string }>,
   usage: Map<string, number>,
+  pairings: PairingRow[] = [],
 ): AdminExercise[] {
   return exercises.map((e) => ({
     id: e.id,
@@ -220,6 +234,7 @@ function assemble(
     dumbbellLevels: e.dumbbell_levels ?? [],
     intensity: e.intensity ?? null,
     tagIds: links.filter((l) => l.exercise_id === e.id).map((l) => l.tag_id),
+    pairIds: pairsOf(e.id, pairings),
     archivedAt: e.archived_at,
     createdAt: e.created_at,
     videos: videos.filter((v) => v.exercise_id === e.id).map(toVideo),
@@ -227,22 +242,49 @@ function assemble(
   }));
 }
 
-/** Every exercise and warm-up (archived included), with clips and tag ids. */
+/** Every exercise and warm-up (archived included), with clips, tag ids and pairings. */
 export async function getExercises(): Promise<AdminExercise[]> {
   const supabase = createAdminClient();
   await syncPendingVideos(supabase);
-  const [{ data: exercises }, { data: videos }, { data: links }, usage] = await Promise.all([
+  const [{ data: exercises }, { data: videos }, { data: links }, usage, pairings] = await Promise.all([
     supabase.from("exercises").select("*").order("name"),
     supabase.from("exercise_videos").select("*"),
     supabase.from("exercise_tag_links").select("exercise_id, tag_id"),
     getExerciseUsage(supabase),
+    getPairings(supabase),
   ]);
   return assemble(
     (exercises ?? []) as ExerciseRow[],
     (videos ?? []) as VideoRow[],
     links ?? [],
     usage,
+    pairings,
   );
+}
+
+/** Every exercise (not warm-ups) by name, with a thumbnail, for the "Pairs well with" picker. */
+export async function getExerciseOptions(): Promise<ExerciseOption[]> {
+  const supabase = createAdminClient();
+  const [{ data: exercises }, { data: loops }] = await Promise.all([
+    supabase.from("exercises").select("id, name, archived_at").eq("kind", "exercise").order("name"),
+    supabase
+      .from("exercise_videos")
+      .select("exercise_id, mux_playback_id, created_at")
+      .in("role", ["loop", "loop_right"])
+      .eq("status", "ready")
+      .order("created_at", { ascending: false }),
+  ]);
+  // Newest ready loop first, so the first one seen per exercise is the live one.
+  const thumbs = new Map<string, string>();
+  for (const v of loops ?? []) {
+    if (v.mux_playback_id && !thumbs.has(v.exercise_id as string)) thumbs.set(v.exercise_id as string, v.mux_playback_id as string);
+  }
+  return (exercises ?? []).map((e) => ({
+    id: e.id as string,
+    name: e.name as string,
+    archived: !!e.archived_at,
+    thumbPlaybackId: thumbs.get(e.id as string) ?? null,
+  }));
 }
 
 /**
@@ -263,14 +305,15 @@ export async function getExercisesByIds(ids: string[]): Promise<AdminExercise[]>
 export async function getExercise(id: string): Promise<AdminExercise | null> {
   const supabase = createAdminClient();
   await syncPendingVideos(supabase, id);
-  const [{ data: exercise }, { data: videos }, { data: links }, usage] = await Promise.all([
+  const [{ data: exercise }, { data: videos }, { data: links }, usage, pairings] = await Promise.all([
     supabase.from("exercises").select("*").eq("id", id).maybeSingle(),
     supabase.from("exercise_videos").select("*").eq("exercise_id", id),
     supabase.from("exercise_tag_links").select("exercise_id, tag_id").eq("exercise_id", id),
     getExerciseUsage(supabase),
+    getPairings(supabase),
   ]);
   if (!exercise) return null;
-  return assemble([exercise as ExerciseRow], (videos ?? []) as VideoRow[], links ?? [], usage)[0];
+  return assemble([exercise as ExerciseRow], (videos ?? []) as VideoRow[], links ?? [], usage, pairings)[0];
 }
 
 /** All exercise tags in their display order, with how many exercises use each. */

@@ -241,9 +241,10 @@ function equipmentText(equipment: string[], dumbbellLevels: string[]): string {
     .join(", ");
 }
 
-function libraryLine(key: string, e: CatalogExercise, tags: string[]): string {
+function libraryLine(key: string, e: CatalogExercise, tags: string[], pairs: string[]): string {
   const parts = [`${key}: ${e.name}`];
   if (tags.length) parts.push(`tags: ${tags.join(", ")}`);
+  if (pairs.length) parts.push(`pairs well with: ${pairs.join(", ")}`);
   parts.push(`equipment: ${equipmentText(e.equipment, e.dumbbellLevels)}`);
   if (e.intensity) parts.push(`intensity ${e.intensity}`);
   if (e.sided) parts.push("each side");
@@ -401,6 +402,9 @@ export async function generateWorkoutDraft(input: GenerateCriteria, workoutId: s
   // Short keys instead of ids: easier for Claude to keep straight, and the
   // schema's enum means it can only name exercises that are here.
   const byKey = new Map(usable.map((x, i) => [`e${i + 1}`, x.catalog]));
+  const keyOf = new Map([...byKey].map(([k, c]) => [c.id, k]));
+  // Pairings by key, among the exercises Claude can use here.
+  const pairKeys = (c: CatalogExercise) => c.pairIds.map((id) => keyOf.get(id)).filter((k): k is string => !!k);
   const warmupByKey = new Map(warmups.map((w, i) => [`w${i + 1}`, w]));
   const keyOfWarmup = new Map([...warmupByKey].map(([k, w]) => [w.id, k]));
 
@@ -412,7 +416,7 @@ export async function generateWorkoutDraft(input: GenerateCriteria, workoutId: s
     criteria.equipment.length
       ? "Only the exercises that fit the equipment on hand are listed."
       : "Every finished exercise is listed.",
-    ...usable.map((x, i) => libraryLine(`e${i + 1}`, x.catalog, x.tags)),
+    ...usable.map((x, i) => libraryLine(`e${i + 1}`, x.catalog, x.tags, pairKeys(x.catalog))),
     "",
     "## Warm-ups",
     ...(warmups.length

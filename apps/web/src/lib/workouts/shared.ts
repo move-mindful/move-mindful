@@ -30,6 +30,8 @@ export interface CatalogExercise {
   dumbbellLevels: string[];
   /** 1 (gentle) to 4 (intense), when set. */
   intensity: number | null;
+  /** Exercises it pairs well with in a superset or circuit. */
+  pairIds: string[];
   estimate: EstimateExercise;
   /** For the preview panel. */
   videos: ExerciseVideo[];

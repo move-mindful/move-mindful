@@ -28,11 +28,13 @@ import {
   type AdminExercise,
   type ExerciseInput,
   type ExerciseKind,
+  type ExerciseOption,
   type ExerciseTag,
   type VideoRole,
   type VideoSlot,
 } from "@/lib/exercises/shared";
 import { ClipPreview } from "@/components/admin/exercises/clip-preview";
+import { PairPicker } from "@/components/admin/exercises/pair-picker";
 import { TagPicker } from "@/components/admin/exercises/tag-picker";
 import { CheckIcon, Pill, Section } from "@/components/admin/exercises/ui";
 
@@ -55,7 +57,16 @@ function parseReps(value: string | undefined): number | null {
 }
 
 /** Upload / edit screen for one exercise or warm-up. `exercise` is null when creating. */
-export function ExerciseForm({ exercise, tags: initialTags }: { exercise: AdminExercise | null; tags: ExerciseTag[] }) {
+export function ExerciseForm({
+  exercise,
+  tags: initialTags,
+  exerciseOptions,
+}: {
+  exercise: AdminExercise | null;
+  tags: ExerciseTag[];
+  /** Every exercise, for "Pairs well with". */
+  exerciseOptions: ExerciseOption[];
+}) {
   const router = useRouter();
   const editing = !!exercise;
   const videos = exercise?.videos ?? [];
@@ -67,6 +78,7 @@ export function ExerciseForm({ exercise, tags: initialTags }: { exercise: AdminE
   const [equipment, setEquipment] = useState<string[]>(exercise?.equipment ?? []);
   const [levels, setLevels] = useState<string[]>(exercise?.dumbbellLevels ?? []);
   const [intensity, setIntensity] = useState<number | null>(exercise?.intensity ?? null);
+  const [pairIds, setPairIds] = useState<string[]>(exercise?.pairIds ?? []);
   const [tags, setTags] = useState(initialTags);
   const [tagIds, setTagIds] = useState<string[]>(exercise?.tagIds ?? []);
   const [reps, setReps] = useState<Partial<Record<VideoRole, string>>>(() => {
@@ -127,6 +139,7 @@ export function ExerciseForm({ exercise, tags: initialTags }: { exercise: AdminE
       equipment,
       dumbbellLevels: levels,
       intensity: kind === "exercise" ? intensity : null,
+      pairIds: kind === "exercise" ? pairIds : [],
       tagIds,
       reps: repsById,
     };
@@ -375,6 +388,17 @@ export function ExerciseForm({ exercise, tags: initialTags }: { exercise: AdminE
                 </div>
                 <p className="text-sm text-zinc-500">
                   How hard it is, from 1 (gentle) to 4 (intense). Generate with AI uses it to vary a workout.
+                </p>
+              </div>
+            )}
+
+            {kind === "exercise" && (
+              <div className="space-y-2">
+                <span className="text-sm font-medium text-zinc-600">Pairs well with</span>
+                <PairPicker options={exerciseOptions} selected={pairIds} onChange={setPairIds} selfId={exercise?.id} />
+                <p className="text-sm text-zinc-500">
+                  Exercises that go well with this one in a superset or circuit. Pairings work both ways. Generate with AI
+                  reaches for them first, and the builder suggests them.
                 </p>
               </div>
             )}

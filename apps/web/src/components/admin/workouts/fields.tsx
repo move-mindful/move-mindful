@@ -125,24 +125,43 @@ export function Thumb({ exercise, onClick }: { exercise: CatalogExercise | undef
   );
 }
 
-/** Typeahead over the exercise library; Enter adds the top match. */
+/**
+ * Typeahead over the exercise library; Enter adds the top match. `suggested`
+ * (a group's pairings) is offered as soon as the box is focused, and sorts
+ * first among typed matches.
+ */
 export function ExerciseSearch({
   catalog,
   onPick,
   placeholder,
   compact,
+  suggested = [],
 }: {
   catalog: CatalogExercise[];
   onPick: (exercise: CatalogExercise) => void;
   placeholder: string;
   compact?: boolean;
+  /** Exercise ids to suggest, best first. */
+  suggested?: string[];
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const q = query.trim().toLowerCase();
-  const matches = catalog
-    .filter((e) => e.kind === "exercise" && !e.archived && (!q || e.name.toLowerCase().includes(q)))
+  const pool = catalog.filter((e) => e.kind === "exercise" && !e.archived);
+  const rank = new Map(suggested.map((id, i) => [id, i]));
+  const suggestions = suggested
+    .map((id) => pool.find((e) => e.id === id))
+    .filter((e): e is CatalogExercise => !!e)
     .slice(0, 8);
+  const showingSuggestions = !q && suggestions.length > 0;
+  const matches = q
+    ? pool
+        .filter((e) => e.name.toLowerCase().includes(q))
+        .sort((a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity))
+        .slice(0, 8)
+    : showingSuggestions
+      ? suggestions
+      : pool.slice(0, 8);
 
   function pick(e: CatalogExercise) {
     onPick(e);
@@ -172,8 +191,11 @@ export function ExerciseSearch({
           compact ? "h-9" : "h-11"
         }`}
       />
-      {open && (q || compact === undefined) && (
+      {open && (q || compact === undefined || showingSuggestions) && (
         <ul className="absolute inset-x-0 top-full z-20 mt-1 max-h-80 overflow-auto rounded-xl border border-zinc-200 bg-white p-1 shadow-xl">
+          {showingSuggestions && (
+            <li className="px-2 pb-1 pt-1.5 text-xs font-semibold uppercase tracking-wide text-zinc-400">Pairs well with this group</li>
+          )}
           {matches.length === 0 ? (
             <li className="px-3 py-2 text-sm text-zinc-500">
               {q ? `No exercises match “${query.trim()}”.` : "No exercises in the library yet."}
@@ -193,6 +215,7 @@ export function ExerciseSearch({
                     )}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm font-medium">{e.name}</span>
+                  {q && rank.has(e.id) && <Flag>Pairs well</Flag>}
                   {e.sided && <Flag>R + L</Flag>}
                   {!e.playable && <Flag>Missing clip</Flag>}
                 </button>

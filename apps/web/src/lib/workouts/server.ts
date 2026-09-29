@@ -69,6 +69,7 @@ export function toCatalog(e: AdminExercise): CatalogExercise {
     equipment: e.equipment,
     dumbbellLevels: e.dumbbellLevels,
     intensity: e.intensity,
+    pairIds: e.pairIds,
     estimate: {
       sided: e.sided,
       paceSeconds: paces.length ? paces.reduce((a, b) => a + b, 0) / paces.length : null,

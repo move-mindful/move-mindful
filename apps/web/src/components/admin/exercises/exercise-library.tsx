@@ -52,6 +52,7 @@ export function ExerciseLibrary({ exercises, tags }: { exercises: AdminExercise[
   const [manageOpen, setManageOpen] = useState(false);
 
   const tagName = new Map(tags.map((t) => [t.id, t.name]));
+  const exerciseName = new Map(exercises.map((e) => [e.id, e.name]));
   const inTab = (e: AdminExercise) =>
     tab === "archived" ? !!e.archivedAt : !e.archivedAt && e.kind === tab;
   const q = query.trim().toLowerCase();
@@ -268,6 +269,14 @@ export function ExerciseLibrary({ exercises, tags }: { exercises: AdminExercise[
             </div>
             <ClipPreview key={selected.id} kind={selected.kind} sided={selected.sided} videos={selected.videos} />
             <PanelFacts exercise={selected} />
+            {selected.pairIds.length > 0 && (
+              <div>
+                <p className="text-xs text-zinc-500">Pairs well with</p>
+                <p className="text-sm font-semibold">
+                  {selected.pairIds.map((id) => exerciseName.get(id)).filter(Boolean).join(", ")}
+                </p>
+              </div>
+            )}
             <div className="border-t border-zinc-100 pt-3">
               <p className="text-sm font-semibold">
                 {selected.usedIn

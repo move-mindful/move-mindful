@@ -148,6 +148,19 @@ export function WorkoutBuilder({
   }
   const needs = [...equipment].map((e) => (e === "dumbbells" && levels.size ? `Dumbbells (${levelsLabel([...levels])})` : equipmentLabel(e)));
 
+  // A group's suggestions: the pairings of the exercises already in it, those
+  // that pair with more of them first.
+  function pairSuggestions(moves: KMove[]): string[] {
+    const inGroup = new Set(moves.map((m) => m.exerciseId));
+    const counts = new Map<string, number>();
+    for (const m of moves) {
+      for (const id of byId.get(m.exerciseId)?.pairIds ?? []) {
+        if (!inGroup.has(id)) counts.set(id, (counts.get(id) ?? 0) + 1);
+      }
+    }
+    return [...counts].sort((a, b) => b[1] - a[1]).map(([id]) => id);
+  }
+
   function update(key: string, change: (b: KBlock) => KBlock) {
     setBlocks((prev) => prev.map((b) => (b.key === key ? change(b) : b)));
   }
@@ -580,6 +593,7 @@ export function WorkoutBuilder({
                             <ExerciseSearch
                               compact
                               catalog={catalog}
+                              suggested={pairSuggestions(b.moves)}
                               placeholder={b.moves.length < 2 ? "Add an exercise to this group…" : "Add another exercise…"}
                               onPick={(e) => update(b.key, (x) => (x.kind === "group" ? { ...x, moves: [...x.moves, newMove(e)] } : x))}
                             />
