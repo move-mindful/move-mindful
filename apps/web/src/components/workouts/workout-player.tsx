@@ -65,6 +65,7 @@ import {
 import { POOL_SIZE, PoolVideos, useVideoPool, type PoolClip, type ShownClip } from "./video-pool";
 import { WorkoutPreview } from "./workout-preview";
 import { GestureGuide } from "./gesture-guide";
+import { DesktopGuide } from "./desktop-guide";
 import { usePlayerPreferences } from "./preferences";
 import { saveWorkoutSession } from "@/app/actions/workout-sessions";
 import type { PlayerPreferences } from "@/lib/member/preferences";
@@ -376,6 +377,14 @@ export function WorkoutPlayer({
   }, [active, act]);
 
   // Keyboard: arrows move between sets, space pauses, Escape closes a sheet.
+  /** Esc: closes what's open the way its own close does, or pauses and resumes. */
+  const onEscape = useEffectEvent(() => {
+    if (state.sheet === "guide") finishGuide();
+    else if (state.sheet === "settings" && settingsFromGuide) act({ type: "sheet", sheet: "guide" });
+    else if (state.sheet) act({ type: "sheet", sheet: null });
+    else act({ type: state.paused ? "resume" : "pause" });
+  });
+
   useEffect(() => {
     if (!active) return;
     const onKey = (e: KeyboardEvent) => {
@@ -383,8 +392,7 @@ export function WorkoutPlayer({
       const target = e.target instanceof HTMLElement ? e.target : null;
       if (target?.closest("input, textarea, select")) return;
       if (e.key === "Escape") {
-        if (state.sheet) act({ type: "sheet", sheet: null });
-        else act({ type: state.paused ? "resume" : "pause" });
+        onEscape();
       } else if (e.key === " " && !target?.closest("button") && !state.sheet) {
         e.preventDefault();
         act({ type: state.paused ? "resume" : "pause" });
@@ -416,13 +424,14 @@ export function WorkoutPlayer({
     setMuted(!prefs.instructorAudio);
     // Inside the tap, so every clip may play with sound later (see video-pool.tsx).
     pool.unlock();
-    // First time on a phone (or every time, on the demo): the gesture guide
-    // opens before the warm-up, or as the first exercise comes up without one.
+    // First time in this layout (or every time, on the demo): the guide opens
+    // before the warm-up, or as the first exercise comes up without one. The
+    // phone and desktop guides are remembered separately.
     act({
       type: "begin",
       warmup,
       mode: prefs.tutorialMode,
-      guide: !theater && (guideEveryTime || !prefs.seenGestureGuide),
+      guide: guideEveryTime || !(theater ? prefs.seenDesktopGuide : prefs.seenGestureGuide),
       autoAdvance: prefs.autoAdvance,
       from,
       activeMs,
@@ -468,6 +477,18 @@ export function WorkoutPlayer({
   }
 
   // Let the last save land first (a moment at most), so the list shows it.
+  /** The guide's Close (or Esc): remembered as seen, in this layout; on with the workout. */
+  function finishGuide() {
+    setSettingsFromGuide(false);
+    updatePrefs(theater ? { seenDesktopGuide: true } : { seenGestureGuide: true });
+    act({ type: "sheet", sheet: null });
+  }
+  /** The guide's Change settings: into Settings, and back to the guide when it closes. */
+  function guideToSettings() {
+    setSettingsFromGuide(true);
+    updatePrefs(theater ? { seenDesktopGuide: true } : { seenGestureGuide: true });
+    act({ type: "sheet", sheet: "settings" });
+  }
   const leave = () => {
     const wait = new Promise((resolve) => setTimeout(resolve, 1500));
     void Promise.race([saving.current, wait]).then(() => router.push(backHref));
@@ -855,15 +876,11 @@ export function WorkoutPlayer({
         }}
         onSound={setSound}
         autoAdvance={{ on: state.autoAdvance, onChange: setAutoAdvance }}
-        onGuide={
-          theater
-            ? null
-            : () => {
-                // "How to use the player": the guide from the start.
-                setSettingsFromGuide(false);
-                act({ type: "sheet", sheet: "guide" });
-              }
-        }
+        onGuide={() => {
+          // "How to use the player": this layout's guide, from the start.
+          setSettingsFromGuide(false);
+          act({ type: "sheet", sheet: "guide" });
+        }}
         onClose={() => act({ type: "sheet", sheet: settingsFromGuide ? "guide" : null })}
         variant={theater ? "side" : "bottom"}
         drawerOpen={theater ? undefined : state.sheet === "settings"}
@@ -930,18 +947,8 @@ export function WorkoutPlayer({
             <GestureGuide
               settings={{ mode: state.mode, autoAdvance: state.autoAdvance }}
               startOnSettings={settingsFromGuide}
-              onSettings={() => {
-                // Into Settings, and back to this page when it closes; the
-                // workout stays held throughout.
-                setSettingsFromGuide(true);
-                updatePrefs({ seenGestureGuide: true });
-                act({ type: "sheet", sheet: "settings" });
-              }}
-              onDone={() => {
-                setSettingsFromGuide(false);
-                updatePrefs({ seenGestureGuide: true });
-                act({ type: "sheet", sheet: null });
-              }}
+              onSettings={guideToSettings}
+              onDone={finishGuide}
             />
           )}
         </div>
@@ -949,6 +956,14 @@ export function WorkoutPlayer({
         {theater && overview}
         {theater && settings}
         {theater && end}
+        {theater && state.sheet === "guide" && (
+          <DesktopGuide
+            settings={{ mode: state.mode, autoAdvance: state.autoAdvance }}
+            startOnSettings={settingsFromGuide}
+            onSettings={guideToSettings}
+            onDone={finishGuide}
+          />
+        )}
       </div>
     </>
   );

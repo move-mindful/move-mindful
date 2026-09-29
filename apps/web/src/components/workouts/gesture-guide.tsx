@@ -29,7 +29,8 @@ import { TAP_ZONES } from "./player-screens";
  * The workout waits while it's open.
  */
 
-interface Page {
+/** One page of a guide: a picture, a title and a few rows (shared with the desktop guide). */
+export interface Page {
   title: string;
   /** What goes above the panel. */
   picture: ReactNode;
@@ -76,19 +77,7 @@ const PAGES: Page[] = [
   },
   {
     title: "Watch the tutorial any time",
-    picture: (
-      // A mini pause screen, with Watch the tutorial picked out.
-      <div className="flex w-[240px] flex-col items-center gap-4">
-        <span className="flex size-16 items-center justify-center rounded-full bg-white text-[#14142B]">
-          <Play size={26} />
-        </span>
-        <span className="text-lg font-semibold">Paused</span>
-        <span className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-white/[0.12] text-[15px] font-semibold ring-2 ring-[#A99CFF]">
-          <WatchTutorial size={18} />
-          Watch the tutorial
-        </span>
-      </div>
-    ),
+    picture: <PausedPicture />,
     rows: [
       { icon: <Pause size={18} />, title: "Pause", text: "Tap the middle of the screen." },
       {
@@ -175,8 +164,9 @@ const PAGES: Page[] = [
 ];
 
 /** What each tutorial mode does, for the last page. */
+// Worded for fingers and mice alike: the desktop guide shares this page.
 const MODE_TEXT: Record<TutorialMode, { label: string; text: string }> = {
-  loop: { label: "Loop", text: "Each new exercise's tutorial plays on repeat until you tap to start." },
+  loop: { label: "Loop", text: "Each new exercise's tutorial plays on repeat until you start the exercise." },
   once: { label: "Play once", text: "Each new exercise's tutorial plays once, then the exercise starts." },
   off: { label: "Off", text: "Exercises start straight away. Watch a tutorial any time from the pause screen." },
 };
@@ -185,7 +175,7 @@ const MODE_TEXT: Record<TutorialMode, { label: string; text: string }> = {
  * The last page: how tutorials and auto-advance are set right now — the
  * defaults, for someone new — in plain words, with a way into Settings.
  */
-function settingsPage({ mode, autoAdvance }: { mode: TutorialMode; autoAdvance: boolean }): Page {
+export function settingsPage({ mode, autoAdvance }: { mode: TutorialMode; autoAdvance: boolean }): Page {
   return {
     title: "Your settings",
     picture: <SettingsPicture mode={mode} autoAdvance={autoAdvance} />,
@@ -202,7 +192,7 @@ function settingsPage({ mode, autoAdvance }: { mode: TutorialMode; autoAdvance: 
         title: `Auto-advance: ${autoAdvance ? "On" : "Off"}`,
         text: autoAdvance
           ? "Rep sets move on by themselves after the time the reps usually take."
-          : "Rep sets wait for your tap. Timed sets and rests move on by themselves.",
+          : "Rep sets wait for you to move on. Timed sets and rests move on by themselves.",
       },
     ],
   };
@@ -284,6 +274,22 @@ export function GestureGuide({
           </button>
         </div>
       </section>
+    </div>
+  );
+}
+
+/** A mini pause screen, with Watch the tutorial picked out (shared with the desktop guide). */
+export function PausedPicture() {
+  return (
+    <div className="flex w-[240px] flex-col items-center gap-4">
+      <span className="flex size-16 items-center justify-center rounded-full bg-white text-[#14142B]">
+        <Play size={26} />
+      </span>
+      <span className="text-lg font-semibold">Paused</span>
+      <span className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-white/[0.12] text-[15px] font-semibold ring-2 ring-[#A99CFF]">
+        <WatchTutorial size={18} />
+        Watch the tutorial
+      </span>
     </div>
   );
 }
@@ -410,7 +416,7 @@ function Bubble({ children }: { children: ReactNode }) {
   return <span className="flex size-14 items-center justify-center rounded-full bg-white/[0.16]">{children}</span>;
 }
 
-function Row({ icon, tint, title, text }: { icon: ReactNode; tint: string; title: string; text: string }) {
+export function Row({ icon, tint, title, text }: { icon: ReactNode; tint: string; title: string; text: string }) {
   return (
     <div className="flex items-center gap-3.5">
       <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${tint}`}>{icon}</span>

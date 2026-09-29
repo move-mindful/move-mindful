@@ -22,6 +22,7 @@ const KEYS = {
   warmup: "movemindful.warmup",
   autoAdvance: "movemindful.autoAdvance",
   seenGestureGuide: "movemindful.seenGestureGuide",
+  seenDesktopGuide: "movemindful.seenDesktopGuide",
 } as const;
 
 // A change made on this page, kept even when storage is blocked (some private
@@ -50,6 +51,7 @@ function readDevice(): Partial<PlayerPreferences> {
   const auto = readItem(KEYS.autoAdvance);
   if (auto === "on" || auto === "off") out.autoAdvance = auto === "on";
   if (readItem(KEYS.seenGestureGuide) === "yes") out.seenGestureGuide = true;
+  if (readItem(KEYS.seenDesktopGuide) === "yes") out.seenDesktopGuide = true;
   return { ...out, ...memory };
 }
 
@@ -64,6 +66,7 @@ function writeDevice(changes: Partial<PlayerPreferences>) {
     if (changes.warmup !== undefined) window.localStorage.setItem(KEYS.warmup, changes.warmup ? "on" : "off");
     if (changes.autoAdvance !== undefined) window.localStorage.setItem(KEYS.autoAdvance, changes.autoAdvance ? "on" : "off");
     if (changes.seenGestureGuide) window.localStorage.setItem(KEYS.seenGestureGuide, "yes");
+    if (changes.seenDesktopGuide) window.localStorage.setItem(KEYS.seenDesktopGuide, "yes");
   } catch {
     // Blocked: `memory` keeps it for now.
   }

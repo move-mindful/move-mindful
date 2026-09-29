@@ -20,8 +20,13 @@ export interface PlayerPreferences {
   warmup: boolean;
   /** Rep sets move on by themselves after their estimated time. */
   autoAdvance: boolean;
-  /** Has seen the first-run gesture guide (so it doesn't show again). */
+  /** Has seen the first-run gesture guide on a phone (so it doesn't show again). */
   seenGestureGuide: boolean;
+  /**
+   * Has seen the desktop guide — kept apart from the phone one because the
+   * controls differ (buttons and keys rather than taps and swipes).
+   */
+  seenDesktopGuide: boolean;
 }
 
 export const DEFAULT_PLAYER_PREFERENCES: PlayerPreferences = {
@@ -31,6 +36,7 @@ export const DEFAULT_PLAYER_PREFERENCES: PlayerPreferences = {
   warmup: true,
   autoAdvance: false,
   seenGestureGuide: false,
+  seenDesktopGuide: false,
 };
 
 /** Keep only well-formed player settings from untrusted JSON. */
@@ -44,5 +50,6 @@ export function cleanPlayerPreferences(raw: unknown): Partial<PlayerPreferences>
   if (typeof r.warmup === "boolean") out.warmup = r.warmup;
   if (typeof r.autoAdvance === "boolean") out.autoAdvance = r.autoAdvance;
   if (typeof r.seenGestureGuide === "boolean") out.seenGestureGuide = r.seenGestureGuide;
+  if (typeof r.seenDesktopGuide === "boolean") out.seenDesktopGuide = r.seenDesktopGuide;
   return out;
 }

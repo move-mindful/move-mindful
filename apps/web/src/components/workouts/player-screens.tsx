@@ -1539,7 +1539,9 @@ export function SettingsSheet({
             >
               <span className="flex min-w-0 flex-col gap-[3px]">
                 <span className="text-[17px] font-semibold">How to use the player</span>
-                <span className="text-sm leading-snug text-white/75">The taps, swipes and settings, again.</span>
+                <span className="text-sm leading-snug text-white/75">
+                  {variant === "bottom" ? "The taps, swipes and settings, again." : "The controls and settings, again."}
+                </span>
               </span>
               <ChevronRight />
             </button>
