@@ -216,7 +216,7 @@ Built in vertical slices, so each step leaves something usable and real footage 
   - [x] Apply `014_exercise_intensity.sql` in Supabase
   - [x] Add `ANTHROPIC_API_KEY` to Vercel (and `.env.local` for local use)
   - [x] Editable instructions for Generate with AI ("Edit instructions" in the window; default in `lib/workouts/generator-prompt.ts`, saved copy in `app_settings` via `015_app_settings.sql`); the technical rules stay fixed
-  - [ ] Apply `015_app_settings.sql` in Supabase
+  - [x] Apply `015_app_settings.sql` in Supabase
   - [x] "Pairs well with" on exercises (`016_exercise_pairings.sql`, both ways): Generate with AI reaches for them first when grouping, and the builder suggests them when adding to a superset or circuit
   - [x] Apply `016_exercise_pairings.sql` in Supabase
 - [ ] **4. Member player (web)** — preview → warm-up → player (reps, timed, sided, groups, rests, tutorial modes) → pause → end → complete. Mobile layout first, then the desktop theater layout
