@@ -99,12 +99,15 @@ export function TheaterSetInfo({
   side,
   groupLine,
   upNext,
+  fill = null,
 }: {
   name: string;
   metric: { kind: "reps"; amount: number } | { kind: "time"; seconds: number };
   side: "right" | "left" | null;
   groupLine: string | null;
   upNext: string;
+  /** How far until the set moves on by itself (auto-advance, a timed set): UP NEXT fills with it. */
+  fill?: number | null;
 }) {
   return (
     <Info gap={4}>
@@ -133,7 +136,7 @@ export function TheaterSetInfo({
       </div>
       <h1 className="text-[28px] font-semibold leading-tight">{name}</h1>
       {/* The same Up next pill as the phone's minimised view. */}
-      <LabelLine label="Up next" text={upNext} className="mt-3 max-w-full" />
+      <LabelLine label="Up next" text={upNext} fill={fill} className="mt-3 max-w-full" />
     </Info>
   );
 }

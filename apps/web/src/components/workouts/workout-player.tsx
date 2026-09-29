@@ -875,6 +875,7 @@ export function WorkoutPlayer({
               side={set.side}
               groupLine={groupLine}
               upNext={pill.text}
+              fill={state.timer && fill?.kind === "set" ? fill.fraction : null}
             />
             <TheaterArrows onBack={back} onNext={next} nextLabel="Next set" />
             <TheaterButtons buttons={sideButtons()} />
