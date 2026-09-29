@@ -28,7 +28,7 @@ export interface CatalogExercise {
   durationSeconds: number | null;
   equipment: string[];
   dumbbellLevels: string[];
-  /** 1 (gentle) to 4 (intense), when set. */
+  /** 1 to 4, higher is more intense; null when not set. */
   intensity: number | null;
   /** Exercises it pairs well with in a superset or circuit. */
   pairIds: string[];

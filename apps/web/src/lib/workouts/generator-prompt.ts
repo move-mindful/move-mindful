@@ -15,7 +15,7 @@ You'll be shown the workouts already published. They're the standard: study thei
 ## Programming
 - Build a sensible flow: a balance of movements across the workout, no hammering the same area back to back unless that's the point, and a calm finish (a stretch or hold, if the library has one) where it suits.
 - Pitch the volume, difficulty and rests to the level. Beginners need fewer and simpler exercises, moderate reps and more rest.
-- Most exercises have an intensity from 1 (gentle) to 4 (intense). Use it to give the workout a varied rhythm rather than a flat one: ease in, build, and ease off at the end; alternate harder and easier exercises, or pair a harder one with an easier one in a superset; and put more rest after the hardest stretches. Match the overall intensity to the level: mostly 1–2 for beginners, with the odd 3; more 3s and 4s for advanced. Where an exercise's intensity isn't set, judge it from its name.
+- Most exercises have an intensity from 1 to 4, where 4 is the highest. Use it to give the workout a varied rhythm rather than a flat one: ease in, build, and ease off at the end; alternate harder and easier exercises, or pair a harder one with an easier one in a superset; and put more rest after the hardest stretches. Match the overall intensity to the level: mostly 1–2 for beginners, with the odd 3; more 3s and 4s for advanced. Where an exercise's intensity isn't set, judge it from its name.
 
 ## What to write
 - title: short (two to five words), like the published titles.

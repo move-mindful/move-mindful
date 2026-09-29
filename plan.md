@@ -239,7 +239,7 @@ Built in vertical slices, so each step leaves something usable and real footage 
 Key product rules from design review:
 - An exercise has a tutorial (with audio) and a looping clip; sided exercises have separate right and left loops. "Reps in clip" gives the pace used for time estimates (blank = timed only)
 - Dumbbells are levels, never pounds: an exercise lists every level that works ("Light / Medium"); a workout's equipment shows one pill per level
-- Intensity is 1 (gentle) to 4 (intense), optional, exercises only; it's for programming (Generate with AI) and isn't shown to members
+- Intensity is a plain 1–4 (higher is more intense) with no descriptive words, so the meaning stays the admin's; optional, exercises only; it's for programming (Generate with AI) and isn't shown to members
 - "Pairs well with" goes both ways and is a preference, not a limit: Generate with AI favours pairings but may group other exercises
 - Generate with AI never saves: it fills the builder, and the admin reviews and saves like any edit
 - A workout is a list of blocks: a single exercise (sets, with rest between sets), a rest, or a group (rounds, rest between exercises, rest between rounds; exercises in a group do one set each). Two exercises = "Superset N", three or more = "Circuit N"

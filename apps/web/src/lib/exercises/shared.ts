@@ -29,7 +29,7 @@ export interface AdminExercise {
   timedOnly: boolean;
   equipment: string[];
   dumbbellLevels: string[];
-  /** 1 (gentle) to 4 (intense); exercises only, null when not set. */
+  /** 1 to 4, higher is more intense; exercises only, null when not set. */
   intensity: number | null;
   tagIds: string[];
   /** Exercises it pairs well with in a superset or circuit (both ways). */
@@ -87,17 +87,14 @@ export const DUMBBELL_LEVELS = [
   { id: "heavy", label: "Heavy" },
 ] as const;
 
-/** Exercise intensity, 1–4 (014_exercise_intensity.sql). */
-export const INTENSITY_LEVELS = [
-  { value: 1, label: "Gentle" },
-  { value: 2, label: "Moderate" },
-  { value: 3, label: "Challenging" },
-  { value: 4, label: "Intense" },
-] as const;
+/**
+ * Exercise intensity (014_exercise_intensity.sql): plain numbers on purpose —
+ * no words attached, so what each level means is the admin's call.
+ */
+export const INTENSITY_LEVELS = [1, 2, 3, 4] as const;
 
 export function intensityLabel(value: number | null): string {
-  const level = INTENSITY_LEVELS.find((l) => l.value === value);
-  return level ? `${level.value} · ${level.label}` : "Not set";
+  return value ? `${value} of 4` : "Not set";
 }
 
 export const ROLE_LABELS: Record<VideoRole, string> = {

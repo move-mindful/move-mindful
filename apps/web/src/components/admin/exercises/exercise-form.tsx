@@ -379,15 +379,14 @@ export function ExerciseForm({
               <div className="space-y-2">
                 <span className="text-sm font-medium text-zinc-600">Intensity</span>
                 <div className="flex flex-wrap gap-2">
-                  {INTENSITY_LEVELS.map((l) => (
-                    <Pill key={l.value} on={intensity === l.value} onClick={() => setIntensity(intensity === l.value ? null : l.value)}>
-                      <span className="tabular-nums">{l.value}</span>
-                      <span className={intensity === l.value ? "font-medium text-white/75" : "font-medium text-zinc-400"}>{l.label}</span>
+                  {INTENSITY_LEVELS.map((n) => (
+                    <Pill key={n} on={intensity === n} onClick={() => setIntensity(intensity === n ? null : n)}>
+                      <span className="w-3 text-center tabular-nums">{n}</span>
                     </Pill>
                   ))}
                 </div>
                 <p className="text-sm text-zinc-500">
-                  How hard it is, from 1 (gentle) to 4 (intense). Generate with AI uses it to vary a workout.
+                  From 1 to 4. Generate with AI uses it to vary a workout.
                 </p>
               </div>
             )}
