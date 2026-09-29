@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -13,19 +13,29 @@ import {
   type WorkoutBlock,
   type WorkoutMove,
 } from "@move-mindful/core";
-import { deleteWorkout, removeWorkoutCover, saveWorkout, setWorkoutCover, setWorkoutPublished } from "@/app/actions/workouts";
-import { equipmentLabel, formatDuration, levelsLabel } from "@/lib/exercises/shared";
 import {
+  deleteWorkout,
+  generateWorkout,
+  removeWorkoutCover,
+  saveWorkout,
+  setWorkoutCover,
+  setWorkoutPublished,
+} from "@/app/actions/workouts";
+import { equipmentLabel, formatDuration, levelsLabel, type ExerciseTag } from "@/lib/exercises/shared";
+import {
+  EMPTY_CRITERIA,
   LEVELS,
   publishProblems,
   type AdminWorkout,
   type CatalogExercise,
+  type GenerateCriteria,
   type WorkoutLevel,
 } from "@/lib/workouts/shared";
 import { ClipPreview } from "@/components/admin/exercises/clip-preview";
 import { Flag, Section } from "@/components/admin/exercises/ui";
 import { DurationInput, ExerciseSearch, Segmented, Stepper, Thumb } from "@/components/admin/workouts/fields";
 import { CoverField, resizeCover } from "@/components/admin/workouts/cover-field";
+import { GenerateDialog } from "@/components/admin/workouts/generate-dialog";
 
 // The builder keeps a stable key on every block and move so React can track
 // rows as they're reordered; keys are stripped before saving.
@@ -69,16 +79,25 @@ function move<T>(list: T[], from: number, to: number): T[] {
   return copy;
 }
 
+// What "Generate with AI" replaced, for Undo, and what it wrote — so another
+// try refills the title and description only if they haven't been edited since.
+type Snapshot = { title: string; description: string; level: WorkoutLevel | null; warmupId: string | null; blocks: KBlock[] };
+type AiDraft = { notes: string; title: string; description: string; level: WorkoutLevel; before: Snapshot };
+
+const aiBtn = "rounded-md px-2.5 py-1 font-medium text-violet-800 hover:bg-violet-100";
 const iconBtn = "flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30";
 
 export function WorkoutBuilder({
   workout,
   catalog,
   instructors,
+  tags,
 }: {
   workout: AdminWorkout | null;
   catalog: CatalogExercise[];
   instructors: Array<{ id: string; name: string }>;
+  /** Exercise tags, for the Focus choices in "Generate with AI". */
+  tags: ExerciseTag[];
 }) {
   const router = useRouter();
   const [title, setTitle] = useState(workout?.title ?? "");
@@ -92,6 +111,13 @@ export function WorkoutBuilder({
   const [coverUrl, setCoverUrl] = useState<string | null>(workout?.coverImageUrl ?? null);
   const [coverBusy, setCoverBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiCriteria, setAiCriteria] = useState<GenerateCriteria>(() => ({ ...EMPTY_CRITERIA, level: workout?.level ?? null }));
+  const [aiDraft, setAiDraft] = useState<AiDraft | null>(null);
+  // Bumped on every run and on Cancel, so an abandoned run's answer is ignored.
+  const aiRun = useRef(0);
 
   const byId = new Map(catalog.map((c) => [c.id, c]));
   const estimates: Record<string, EstimateExercise> = Object.fromEntries(catalog.map((c) => [c.id, c.estimate]));
@@ -141,7 +167,64 @@ export function WorkoutBuilder({
       blocks: plain,
     });
     if (res.error) setError(res.error);
+    else setAiDraft(null); // saved: nothing left to undo
     return res.error ? null : (res.id ?? null);
+  }
+
+  // Claude drafts a sequence; it fills the builder unsaved, for review.
+  async function generate(criteria: GenerateCriteria) {
+    const run = ++aiRun.current;
+    setAiCriteria(criteria);
+    setAiBusy(true);
+    setAiError(null);
+    let res: Awaited<ReturnType<typeof generateWorkout>>;
+    try {
+      res = await generateWorkout(criteria, workout?.id ?? null);
+    } catch {
+      res = { error: "Couldn’t reach the server. Try again." };
+    }
+    if (run !== aiRun.current) return;
+    setAiBusy(false);
+    if (!res.workout) {
+      setAiError(res.error);
+      return;
+    }
+    const g = res.workout;
+    // The title, description and level are filled in only where they're blank
+    // or still what the last try wrote — never over the admin's own words.
+    const refill = (current: string, last: string | undefined) => !current.trim() || current === last;
+    if (refill(title, aiDraft?.title)) setTitle(g.title);
+    if (refill(description, aiDraft?.description)) setDescription(g.description);
+    if (criteria.level || level === null || level === aiDraft?.level) setLevel(g.level);
+    setWarmupId(g.warmupExerciseId);
+    setBlocks(withKeys(g.blocks));
+    setPreviewId(null);
+    setAiDraft({
+      notes: g.notes,
+      title: g.title,
+      description: g.description,
+      level: g.level,
+      before: { title, description, level, warmupId, blocks },
+    });
+    setAiOpen(false);
+  }
+
+  function closeGenerate() {
+    aiRun.current++;
+    setAiBusy(false);
+    setAiError(null);
+    setAiOpen(false);
+  }
+
+  function undoGenerate() {
+    if (!aiDraft) return;
+    const b = aiDraft.before;
+    setTitle(b.title);
+    setDescription(b.description);
+    setLevel(b.level);
+    setWarmupId(b.warmupId);
+    setBlocks(b.blocks);
+    setAiDraft(null);
   }
 
   async function onSave() {
@@ -265,6 +348,59 @@ export function WorkoutBuilder({
 
       {error && <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
 
+      {aiDraft && (
+        <div className="mt-4 flex flex-wrap items-start gap-x-4 gap-y-2 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-950">
+          <div className="min-w-0 flex-1 space-y-1">
+            <p className="font-semibold">✦ Drafted with AI. Review it, then {published ? "save your changes" : "save the draft"}.</p>
+            {aiDraft.notes && <p className="text-violet-900/80">{aiDraft.notes}</p>}
+            {aiCriteria.minutes && (
+              <p className="text-violet-900/80">
+                Target {aiCriteria.minutes} min · comes to about {aboutMinutes(estimate.totalSeconds)} min
+              </p>
+            )}
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                setAiOpen(true);
+                generate(aiCriteria);
+              }}
+              className={aiBtn}
+            >
+              Try again
+            </button>
+            <button type="button" onClick={() => setAiOpen(true)} className={aiBtn}>
+              Change criteria
+            </button>
+            <button type="button" onClick={undoGenerate} className={aiBtn}>
+              Undo
+            </button>
+            <button
+              type="button"
+              aria-label="Dismiss"
+              onClick={() => setAiDraft(null)}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-violet-500 hover:bg-violet-100 hover:text-violet-800"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
+      {aiOpen && (
+        <GenerateDialog
+          initial={aiCriteria}
+          tags={tags}
+          warmups={catalog.filter((c) => c.kind === "warmup" && c.playable && !c.archived)}
+          replacing={blocks.length > 0}
+          busy={aiBusy}
+          error={aiError}
+          onGenerate={generate}
+          onClose={closeGenerate}
+        />
+      )}
+
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-6">
           <Section title="Details">
@@ -336,7 +472,11 @@ export function WorkoutBuilder({
 
             {blocks.length === 0 && (
               <p className="rounded-lg border border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500">
-                Search below to add the first exercise.
+                Search below to add the first exercise, or{" "}
+                <button type="button" onClick={() => setAiOpen(true)} className="font-semibold text-violet-700 hover:underline">
+                  generate a workout with AI
+                </button>
+                .
               </p>
             )}
 
@@ -469,6 +609,13 @@ export function WorkoutBuilder({
                 className="h-11 rounded-lg border border-zinc-300 px-4 text-sm font-medium hover:bg-zinc-50"
               >
                 + Superset / circuit
+              </button>
+              <button
+                type="button"
+                onClick={() => setAiOpen(true)}
+                className="h-11 rounded-lg border border-violet-300 px-4 text-sm font-medium text-violet-700 hover:bg-violet-50"
+              >
+                ✦ Generate with AI
               </button>
             </div>
           </Section>

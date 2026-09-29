@@ -69,6 +69,62 @@ export interface WorkoutListRow {
   coverImageUrl: string | null;
 }
 
+// ── Generate with AI ──────────────────────────────────
+// The builder's "Generate with AI" window. Every field is optional: whatever
+// is left blank is Claude's call. See lib/workouts/generate.ts.
+
+export type GenerateStyle = "straight" | "supersets" | "circuit" | "mix";
+
+export const GENERATE_STYLES: Array<{ id: GenerateStyle; label: string }> = [
+  { id: "straight", label: "Straight sets" },
+  { id: "supersets", label: "Supersets" },
+  { id: "circuit", label: "Circuit" },
+  { id: "mix", label: "Mix" },
+];
+
+/** "Bodyweight only" in the equipment choices — no equipment at all. */
+export const BODYWEIGHT_ONLY = "none";
+
+export interface GenerateCriteria {
+  /** Target length in minutes, as the builder estimates it. */
+  minutes: number | null;
+  level: WorkoutLevel | null;
+  /** Exercise tag ids to focus on. */
+  focusTagIds: string[];
+  /** Equipment on hand (EQUIPMENT_OPTIONS ids), or [BODYWEIGHT_ONLY]. */
+  equipment: string[];
+  /** Dumbbell weights on hand, when dumbbells are. */
+  dumbbellLevels: string[];
+  style: GenerateStyle | null;
+  /** "auto" = Claude's call, "none" = no warm-up, otherwise a warm-up's id. */
+  warmup: string;
+  /** Anything else, in the admin's words. */
+  prompt: string;
+}
+
+export const EMPTY_CRITERIA: GenerateCriteria = {
+  minutes: null,
+  level: null,
+  focusTagIds: [],
+  equipment: [],
+  dumbbellLevels: [],
+  style: null,
+  warmup: "auto",
+  prompt: "",
+};
+
+export interface GeneratedWorkout {
+  title: string;
+  description: string;
+  level: WorkoutLevel;
+  warmupExerciseId: string | null;
+  blocks: WorkoutBlock[];
+  /** A word to the admin about the thinking behind it. Never shown to members. */
+  notes: string;
+}
+
+export type GenerateResult = { workout: GeneratedWorkout; error?: never } | { workout?: never; error: string };
+
 /** Why a workout can't be published yet (empty when it can). */
 export function publishProblems(
   blocks: WorkoutBlock[],
