@@ -65,12 +65,13 @@ export function WorkoutPreview({
     // The page is a step lighter than the player's ink (#14142B), which the
     // pinned Begin bar keeps so it matches Safari's toolbar and reads as its
     // own panel over the list.
-    <div className="min-h-dvh bg-[#1F1F3E] text-white">
-      {/* Back floats over everything, so it stays in reach as the page scrolls. */}
+    <div className="relative min-h-dvh bg-[#1F1F3E] text-white">
+      {/* Back sits at the top of the page and scrolls away with it (above the
+          pinned cover); on desktop it stays put over the fixed left half. */}
       <Link
         href={backHref}
         aria-label="Back"
-        className="fixed left-4 top-5 z-20 flex size-11 items-center justify-center rounded-full bg-[#0E0E20]/50 backdrop-blur-md theater:left-12 theater:top-8 theater:w-auto theater:gap-1 theater:pl-3 theater:pr-[18px]"
+        className="absolute left-4 top-5 z-20 theater:fixed flex size-11 items-center justify-center rounded-full bg-[#0E0E20]/50 backdrop-blur-md theater:left-12 theater:top-8 theater:w-auto theater:gap-1 theater:pl-3 theater:pr-[18px]"
       >
         <ChevronLeft />
         <span className="hidden text-[15px] font-semibold theater:inline">Back</span>
