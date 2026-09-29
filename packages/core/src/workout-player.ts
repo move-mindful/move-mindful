@@ -59,6 +59,8 @@ export interface PlayerState {
   take: number;
   /** Show the gesture guide as the first exercise comes up (a workout begun without a warm-up, or resumed). */
   guidePending: boolean;
+  /** Begun with the warm-up: going back from the first exercise returns to it. */
+  withWarmup: boolean;
   /**
    * Rep sets move on by themselves after the time the reps take (the step's
    * `workSeconds`: reps at the clip's pace; getting ready comes before it).
@@ -136,6 +138,7 @@ export const initialPlayerState: PlayerState = {
   activeSince: null,
   take: 0,
   guidePending: false,
+  withWarmup: false,
   autoAdvance: false,
 };
 
@@ -256,6 +259,7 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
         seen: [...new Set(ctx.steps.slice(0, from).flatMap((st) => (st.kind === "set" ? [st.exerciseId] : [])))],
         guidePending: !!a.guide,
         autoAdvance: !!a.autoAdvance,
+        withWarmup: a.warmup && !from,
       };
       if (a.warmup && !from) {
         // The guide, if it's due, comes first: learned (and settings chosen)
@@ -278,7 +282,11 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
       if (s.phase !== "workout") return s;
       let i = s.step - 1;
       while (i >= 0 && ctx.steps[i].kind === "rest") i--;
-      // Nothing before it: start this set again.
+      // Nothing before it: back to the warm-up from the top, if the workout
+      // began with it; otherwise start this set again.
+      if (i < 0 && s.withWarmup) {
+        return { ...s, phase: "warmup", step: 0, stage: "exercise", paused: false, sheet: null, timer: null, take: s.take + 1 };
+      }
       return enter(ctx, s, i >= 0 ? i : s.step, false);
     }
     case "tick": {

@@ -54,6 +54,22 @@ test("the warm-up comes first when chosen", () => {
   assert.equal(s.step, 0);
 });
 
+test("back from the first exercise returns to the warm-up, if the workout began with it", () => {
+  let s = run([{ type: "begin", warmup: true, mode: "off", now: 0 }, { type: "endWarmup", now: 1000 }]);
+  assert.equal(s.phase, "workout");
+  const take = s.take;
+  s = run([{ type: "back", now: 2000 }], s);
+  assert.equal(s.phase, "warmup");
+  assert.equal(s.take, take + 1, "from the top");
+  // Without the warm-up, back restarts the first set.
+  s = run([{ type: "begin", warmup: false, mode: "off", now: 0 }, { type: "back", now: 1000 }]);
+  assert.equal(s.phase, "workout");
+  assert.equal(s.step, 0);
+  // "Restart this set" stays on the set.
+  s = run([{ type: "begin", warmup: true, mode: "off", now: 0 }, { type: "endWarmup", now: 1000 }, { type: "restartSet", now: 2000 }]);
+  assert.equal(s.phase, "workout");
+});
+
 test("the warm-up can start over: asking holds it, restarting plays it from the top", () => {
   let s = run([{ type: "begin", warmup: true, mode: "off", now: 0 }]);
   const take = s.take;
