@@ -1,5 +1,6 @@
 import { getInstructorOptions } from "@/lib/admin/queries";
 import { getExerciseTags } from "@/lib/exercises/server";
+import { getGeneratorInstructions } from "@/lib/workouts/generate";
 import { getCatalog } from "@/lib/workouts/server";
 import { WorkoutBuilder } from "@/components/admin/workouts/workout-builder";
 
@@ -8,6 +9,13 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export default async function NewWorkoutPage() {
-  const [catalog, instructors, tags] = await Promise.all([getCatalog(), getInstructorOptions(), getExerciseTags()]);
-  return <WorkoutBuilder workout={null} catalog={catalog} instructors={instructors} tags={tags} />;
+  const [catalog, instructors, tags, aiInstructions] = await Promise.all([
+    getCatalog(),
+    getInstructorOptions(),
+    getExerciseTags(),
+    getGeneratorInstructions(),
+  ]);
+  return (
+    <WorkoutBuilder workout={null} catalog={catalog} instructors={instructors} tags={tags} aiInstructions={aiInstructions} />
+  );
 }

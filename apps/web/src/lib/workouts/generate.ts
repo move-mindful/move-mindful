@@ -13,6 +13,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getExercises, getExerciseTags } from "@/lib/exercises/server";
 import { DUMBBELL_LEVELS, EQUIPMENT_OPTIONS, equipmentLabel, formatDuration } from "@/lib/exercises/shared";
 import { cleanBlocks, type ExerciseInfo } from "@/lib/workouts/clean";
+import { DEFAULT_INSTRUCTIONS, FIXED_RULES, INSTRUCTIONS_MAX } from "@/lib/workouts/generator-prompt";
 import { toCatalog, toWorkout, type BlockRow, type WorkoutRow } from "@/lib/workouts/server";
 import {
   BODYWEIGHT_ONLY,
@@ -36,6 +37,10 @@ import {
  * by much, Claude gets one chance to adjust it. Nothing is saved here: the
  * builder fills in and the admin reviews it.
  *
+ * The system prompt is the admin's instructions (editable in the Generate
+ * window, saved in `app_settings`; see generator-prompt.ts) followed by the
+ * fixed rules.
+ *
  * Needs ANTHROPIC_API_KEY (server-only). The builder pages allow 60 s
  * (`maxDuration`), which bounds the timeouts below.
  */
@@ -48,42 +53,36 @@ const FIRST_TIMEOUT_MS = 45_000;
 const RETRY_IF_UNDER_MS = 25_000;
 const DEADLINE_MS = 55_000;
 
-const SYSTEM = `You program follow-along workouts for Move Mindful, an on-demand video fitness platform. An instructor has asked you to draft a workout. They'll review it in the workout builder, adjust it and publish it themselves.
+// ── The editable instructions ─────────────────────────
 
-## How the player runs a workout
-- The sequence plays top to bottom. Each block is one of:
-  - exercise: one exercise for a number of sets, with restBetweenSets seconds of rest after every set but the last.
-  - group: a superset (two exercises) or circuit (three or more). Members do each exercise once per round, for \`rounds\` rounds, with restBetweenExercises after each exercise except a round's last, and restBetweenRounds after every round but the final one. A group needs at least two exercises.
-  - rest: a countdown of \`seconds\`.
-- Rests only happen where you put them. Moving on to the next block has no rest of its own, so add a rest block (or use an exercise's or group's rest settings) wherever members need a breather.
-- Each exercise is counted in reps or timed in seconds. Exercises marked "timed only" (holds, stretches) must be timed.
-- For an exercise marked "each side", the amount is per side: members do all of it on one side, then all of it on the other. firstSide says which comes first; use "right" unless there's a reason not to.
-- Members follow a looping demo video of each exercise and may watch its tutorial first. The warm-up is an optional video members can take before the workout; it isn't part of the sequence.
+const INSTRUCTIONS_KEY = "workout_generator_instructions";
 
-## Timing
-The builder estimates a workout's length like this. When there's a target length, use the same arithmetic and check your total before you answer:
-- A set counted in reps lasts reps × the exercise's pace (seconds per rep, listed with each exercise; assume 3 s when it's unknown). A timed set lasts its seconds. An "each side" exercise takes twice as long, since the amount is per side.
-- Every set, and every exercise in every round of a group, adds 5 s to get into position, plus 3 s more for an "each side" exercise.
-- Add every rest: restBetweenSets × (sets − 1), each rest block, and in a group restBetweenExercises × (exercises − 1) × rounds + restBetweenRounds × (rounds − 1).
-- The warm-up and tutorials aren't counted.
-Land within a minute of the target.
+/** The saved instructions, or the default — also before 015_app_settings.sql has run. */
+export async function getGeneratorInstructions(): Promise<string> {
+  const { data } = await createAdminClient()
+    .from("app_settings")
+    .select("value")
+    .eq("key", INSTRUCTIONS_KEY)
+    .maybeSingle();
+  return (data?.value as string | undefined)?.trim() || DEFAULT_INSTRUCTIONS;
+}
 
-## House style
-You'll be shown the workouts already published. They're the standard: study their titles and descriptions, how many exercises they use, their sets, reps, hold times and rests, how they order and group exercises, and where they place rests. Make the new workout feel like it belongs alongside them, unless the brief asks for something different, without copying any one of them.
-
-## Programming
-- Use only exercises from the library, by key. Every one listed is available.
-- A superset or circuit pairs different exercises: never the same one twice in a group. If the library is too small for what the brief asks, keep the workout simple and say so in the notes.
-- Build a sensible flow: a balance of movements across the workout, no hammering the same area back to back unless that's the point, and a calm finish (a stretch or hold, if the library has one) where it suits.
-- Pitch the volume, difficulty and rests to the level. Beginners need fewer and simpler exercises, moderate reps and more rest.
-- Most exercises have an intensity from 1 (gentle) to 4 (intense). Use it to give the workout a varied rhythm rather than a flat one: ease in, build, and ease off at the end; alternate harder and easier exercises, or pair a harder one with an easier one in a superset; and put more rest after the hardest stretches. Match the overall intensity to the level: mostly 1–2 for beginners, with the odd 3; more 3s and 4s for advanced. Where an exercise's intensity isn't set, judge it from its name.
-- Anything in the brief marked "your call" is yours to decide: choose what best suits the rest of the brief and the house style.
-- Follow the instructor's notes under "Anything else".
-
-## What to write
-- title: short (two to five words), like the published titles.
-- description: one or two sentences for members, in the published workouts' voice.
-- notes: one to three plain sentences for the instructor: the idea behind the workout and anything worth checking. Members never see it.`;
+/** Save the instructions; blank, or the default word for word, resets to the default. */
+export async function setGeneratorInstructions(text: string): Promise<{ text?: string; error?: string }> {
+  const supabase = createAdminClient();
+  const clean = text.trim().slice(0, INSTRUCTIONS_MAX);
+  const reset = !clean || clean === DEFAULT_INSTRUCTIONS;
+  const { error } = reset
+    ? await supabase.from("app_settings").delete().eq("key", INSTRUCTIONS_KEY)
+    : await supabase
+        .from("app_settings")
+        .upsert({ key: INSTRUCTIONS_KEY, value: clean, updated_at: new Date().toISOString() });
+  if (error) {
+    console.error("[generate-workout] saving instructions:", error);
+    return { error: "Couldn’t save the instructions. If migration 015_app_settings.sql hasn’t run yet, run it first." };
+  }
+  return { text: reset ? DEFAULT_INSTRUCTIONS : clean };
+}
 
 // ── The reply's shape ─────────────────────────────────
 
@@ -323,6 +322,7 @@ class GenerateError extends Error {}
 
 async function ask(
   client: Anthropic,
+  system: string,
   messages: Anthropic.MessageParam[],
   schema: Record<string, unknown>,
   timeout: number,
@@ -331,7 +331,7 @@ async function ask(
     {
       model: MODEL,
       max_tokens: 8000,
-      system: SYSTEM,
+      system,
       messages,
       output_config: { format: { type: "json_schema", schema } },
     },
@@ -371,7 +371,13 @@ export async function generateWorkoutDraft(input: GenerateCriteria, workoutId: s
   }
   const started = Date.now();
 
-  const [exercises, tags, examples] = await Promise.all([getExercises(), getExerciseTags(), publishedWorkouts(workoutId)]);
+  const [exercises, tags, examples, instructions] = await Promise.all([
+    getExercises(),
+    getExerciseTags(),
+    publishedWorkouts(workoutId),
+    getGeneratorInstructions(),
+  ]);
+  const system = `${instructions}\n\n${FIXED_RULES}`;
   const tagNames = new Map(tags.map((t) => [t.id, t.name]));
   const entries = exercises.map((e) => ({ catalog: toCatalog(e), tags: e.tagIds.map((id) => tagNames.get(id)).filter((t): t is string => !!t) }));
   const catalog = entries.map((x) => x.catalog);
@@ -463,7 +469,7 @@ export async function generateWorkoutDraft(input: GenerateCriteria, workoutId: s
   const hasExercises = (w: GeneratedWorkout) => w.blocks.some((b) => b.kind !== "rest");
 
   try {
-    const first = await ask(client, messages, schema, FIRST_TIMEOUT_MS);
+    const first = await ask(client, system, messages, schema, FIRST_TIMEOUT_MS);
     let workout = finish(first.raw);
     if (!hasExercises(workout)) return { error: "Claude came back without any exercises. Try again." };
 
@@ -477,6 +483,7 @@ export async function generateWorkoutDraft(input: GenerateCriteria, workoutId: s
         try {
           const second = await ask(
             client,
+            system,
             [
               ...messages,
               { role: "assistant", content: first.text },

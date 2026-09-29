@@ -5,7 +5,7 @@ import type { WorkoutBlock } from "@move-mindful/core";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { cleanBlocks, type ExerciseInfo } from "@/lib/workouts/clean";
-import { generateWorkoutDraft } from "@/lib/workouts/generate";
+import { generateWorkoutDraft, setGeneratorInstructions } from "@/lib/workouts/generate";
 import { getCatalog, getWorkout } from "@/lib/workouts/server";
 import {
   LEVELS,
@@ -89,6 +89,12 @@ export async function saveWorkout(input: WorkoutInput): Promise<{ id?: string; e
 export async function generateWorkout(criteria: GenerateCriteria, workoutId: string | null): Promise<GenerateResult> {
   await requireAdmin();
   return generateWorkoutDraft(criteria, workoutId);
+}
+
+/** Save the instructions Claude gets in "Generate with AI" (blank or the default resets them). */
+export async function saveGeneratorInstructions(text: string): Promise<{ text?: string; error?: string }> {
+  await requireAdmin();
+  return setGeneratorInstructions(String(text ?? ""));
 }
 
 /** Publish (after checking it's complete) or move back to draft. */

@@ -17,6 +17,7 @@ import {
   deleteWorkout,
   generateWorkout,
   removeWorkoutCover,
+  saveGeneratorInstructions,
   saveWorkout,
   setWorkoutCover,
   setWorkoutPublished,
@@ -92,12 +93,15 @@ export function WorkoutBuilder({
   catalog,
   instructors,
   tags,
+  aiInstructions,
 }: {
   workout: AdminWorkout | null;
   catalog: CatalogExercise[];
   instructors: Array<{ id: string; name: string }>;
   /** Exercise tags, for the Focus choices in "Generate with AI". */
   tags: ExerciseTag[];
+  /** The instructions Claude gets in "Generate with AI", as saved now. */
+  aiInstructions: string;
 }) {
   const router = useRouter();
   const [title, setTitle] = useState(workout?.title ?? "");
@@ -116,6 +120,7 @@ export function WorkoutBuilder({
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiCriteria, setAiCriteria] = useState<GenerateCriteria>(() => ({ ...EMPTY_CRITERIA, level: workout?.level ?? null }));
   const [aiDraft, setAiDraft] = useState<AiDraft | null>(null);
+  const [instructionsText, setInstructionsText] = useState(aiInstructions);
   // Bumped on every run and on Cancel, so an abandoned run's answer is ignored.
   const aiRun = useRef(0);
 
@@ -396,7 +401,13 @@ export function WorkoutBuilder({
           replacing={blocks.length > 0}
           busy={aiBusy}
           error={aiError}
+          instructions={instructionsText}
           onGenerate={generate}
+          onSaveInstructions={async (text) => {
+            const res = await saveGeneratorInstructions(text);
+            if (res.text !== undefined) setInstructionsText(res.text);
+            return res;
+          }}
           onClose={closeGenerate}
         />
       )}
