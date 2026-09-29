@@ -73,6 +73,7 @@ You'll be shown the workouts already published. They're the standard: study thei
 
 ## Programming
 - Use only exercises from the library, by key. Every one listed is available.
+- A superset or circuit pairs different exercises: never the same one twice in a group. If the library is too small for what the brief asks, keep the workout simple and say so in the notes.
 - Build a sensible flow: a balance of movements across the workout, no hammering the same area back to back unless that's the point, and a calm finish (a stretch or hold, if the library has one) where it suits.
 - Pitch the volume, difficulty and rests to the level. Beginners need fewer and simpler exercises, moderate reps and more rest.
 - Most exercises have an intensity from 1 (gentle) to 4 (intense). Use it to give the workout a varied rhythm rather than a flat one: ease in, build, and ease off at the end; alternate harder and easier exercises, or pair a harder one with an easier one in a superset; and put more rest after the hardest stretches. Match the overall intensity to the level: mostly 1–2 for beginners, with the odd 3; more 3s and 4s for advanced. Where an exercise's intensity isn't set, judge it from its name.
