@@ -37,6 +37,8 @@ interface ExerciseRow {
   timed_only: boolean;
   equipment: string[] | null;
   dumbbell_levels: string[] | null;
+  /** Missing until 014_exercise_intensity.sql has run. */
+  intensity?: number | null;
   archived_at: string | null;
   created_at: string;
 }
@@ -216,6 +218,7 @@ function assemble(
     timedOnly: e.timed_only,
     equipment: e.equipment ?? [],
     dumbbellLevels: e.dumbbell_levels ?? [],
+    intensity: e.intensity ?? null,
     tagIds: links.filter((l) => l.exercise_id === e.id).map((l) => l.tag_id),
     archivedAt: e.archived_at,
     createdAt: e.created_at,

@@ -16,6 +16,7 @@ import {
 import {
   DUMBBELL_LEVELS,
   EQUIPMENT_OPTIONS,
+  INTENSITY_LEVELS,
   ROLE_HINTS,
   ROLE_LABELS,
   formatDuration,
@@ -65,6 +66,7 @@ export function ExerciseForm({ exercise, tags: initialTags }: { exercise: AdminE
   const [timedOnly, setTimedOnly] = useState(exercise?.timedOnly ?? false);
   const [equipment, setEquipment] = useState<string[]>(exercise?.equipment ?? []);
   const [levels, setLevels] = useState<string[]>(exercise?.dumbbellLevels ?? []);
+  const [intensity, setIntensity] = useState<number | null>(exercise?.intensity ?? null);
   const [tags, setTags] = useState(initialTags);
   const [tagIds, setTagIds] = useState<string[]>(exercise?.tagIds ?? []);
   const [reps, setReps] = useState<Partial<Record<VideoRole, string>>>(() => {
@@ -124,6 +126,7 @@ export function ExerciseForm({ exercise, tags: initialTags }: { exercise: AdminE
       timedOnly,
       equipment,
       dumbbellLevels: levels,
+      intensity: kind === "exercise" ? intensity : null,
       tagIds,
       reps: repsById,
     };
@@ -356,6 +359,23 @@ export function ExerciseForm({ exercise, tags: initialTags }: { exercise: AdminE
                     </p>
                   )}
                 </div>
+              </div>
+            )}
+
+            {kind === "exercise" && (
+              <div className="space-y-2">
+                <span className="text-sm font-medium text-zinc-600">Intensity</span>
+                <div className="flex flex-wrap gap-2">
+                  {INTENSITY_LEVELS.map((l) => (
+                    <Pill key={l.value} on={intensity === l.value} onClick={() => setIntensity(intensity === l.value ? null : l.value)}>
+                      <span className="tabular-nums">{l.value}</span>
+                      <span className={intensity === l.value ? "font-medium text-white/75" : "font-medium text-zinc-400"}>{l.label}</span>
+                    </Pill>
+                  ))}
+                </div>
+                <p className="text-sm text-zinc-500">
+                  How hard it is, from 1 (gentle) to 4 (intense). Generate with AI uses it to vary a workout.
+                </p>
               </div>
             )}
 

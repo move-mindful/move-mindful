@@ -75,6 +75,7 @@ You'll be shown the workouts already published. They're the standard: study thei
 - Use only exercises from the library, by key. Every one listed is available.
 - Build a sensible flow: a balance of movements across the workout, no hammering the same area back to back unless that's the point, and a calm finish (a stretch or hold, if the library has one) where it suits.
 - Pitch the volume, difficulty and rests to the level. Beginners need fewer and simpler exercises, moderate reps and more rest.
+- Most exercises have an intensity from 1 (gentle) to 4 (intense). Use it to give the workout a varied rhythm rather than a flat one: ease in, build, and ease off at the end; alternate harder and easier exercises, or pair a harder one with an easier one in a superset; and put more rest after the hardest stretches. Match the overall intensity to the level: mostly 1–2 for beginners, with the odd 3; more 3s and 4s for advanced. Where an exercise's intensity isn't set, judge it from its name.
 - Anything in the brief marked "your call" is yours to decide: choose what best suits the rest of the brief and the house style.
 - Follow the instructor's notes under "Anything else".
 
@@ -244,6 +245,7 @@ function libraryLine(key: string, e: CatalogExercise, tags: string[]): string {
   const parts = [`${key}: ${e.name}`];
   if (tags.length) parts.push(`tags: ${tags.join(", ")}`);
   parts.push(`equipment: ${equipmentText(e.equipment, e.dumbbellLevels)}`);
+  if (e.intensity) parts.push(`intensity ${e.intensity}`);
   if (e.sided) parts.push("each side");
   const pace = e.estimate.paceSeconds;
   parts.push(e.timedOnly ? "timed only" : `pace ${pace ? `${pace.toFixed(1)} s` : "unknown"} per rep`);
@@ -257,6 +259,11 @@ function describeWorkout(
   estimates: Record<string, EstimateExercise>,
 ): string {
   const name = (id: string) => byId.get(id)?.name ?? "(a removed exercise)";
+  // An exercise in the sequence, with its intensity so Claude can see the rhythm.
+  const named = (id: string) => {
+    const intensity = byId.get(id)?.intensity;
+    return intensity ? `${name(id)} (intensity ${intensity})` : name(id);
+  };
   const amount = (m: WorkoutMove) =>
     `${m.amount}${m.measure === "reps" ? " reps" : " s"}${byId.get(m.exerciseId)?.sided ? " each side" : ""}`;
   const labels = groupLabels(w.blocks);
@@ -272,12 +279,12 @@ function describeWorkout(
       lines.push(`${n} Rest ${b.seconds} s`);
     } else if (b.kind === "exercise") {
       const rest = b.sets > 1 ? `, ${b.restBetweenSets} s rest between sets` : "";
-      lines.push(`${n} ${name(b.move.exerciseId)} — ${b.sets} × ${amount(b.move)}${rest}`);
+      lines.push(`${n} ${named(b.move.exerciseId)} — ${b.sets} × ${amount(b.move)}${rest}`);
     } else {
       lines.push(
         `${n} ${labels[i]}, ${b.rounds} rounds — ${b.restBetweenExercises} s rest between exercises, ${b.restBetweenRounds} s between rounds:`,
       );
-      b.moves.forEach((m, j) => lines.push(`   ${String.fromCharCode(65 + j)}. ${name(m.exerciseId)} — ${amount(m)}`));
+      b.moves.forEach((m, j) => lines.push(`   ${String.fromCharCode(65 + j)}. ${named(m.exerciseId)} — ${amount(m)}`));
     }
   });
   return lines.join("\n");

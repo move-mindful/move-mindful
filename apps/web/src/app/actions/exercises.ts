@@ -35,6 +35,30 @@ function cleanReps(value: unknown): number | null {
   return Number.isFinite(n) && n > 0 && n < 1000 ? n : null;
 }
 
+function cleanIntensity(value: unknown): number | null {
+  const n = Math.round(Number(value));
+  return n >= 1 && n <= 4 ? n : null;
+}
+
+// Before 014_exercise_intensity.sql has run, PostgREST rejects the unknown
+// column (PGRST204); an exercise without an intensity can still be saved.
+function missingIntensityColumn(error: { code?: string; message?: string } | null): boolean {
+  return !!error && error.code === "PGRST204" && !!error.message?.includes("intensity");
+}
+
+async function writeExercise(
+  supabase: AdminClient,
+  id: string | undefined,
+  fields: Record<string, unknown>,
+): Promise<{ id?: string; error: { code?: string; message: string } | null }> {
+  if (id) {
+    const { error } = await supabase.from("exercises").update(fields).eq("id", id);
+    return { id, error };
+  }
+  const { data, error } = await supabase.from("exercises").insert(fields).select("id").single();
+  return { id: data?.id as string | undefined, error: error ?? (data ? null : { message: "Couldn't save it." }) };
+}
+
 async function syncTags(supabase: AdminClient, exerciseId: string, tagIds: string[]) {
   const wanted = [...new Set(tagIds ?? [])];
   const { data: valid } = wanted.length
@@ -106,18 +130,21 @@ export async function saveExercise(input: ExerciseInput): Promise<{ id?: string;
     dumbbell_levels: equipment.includes("dumbbells")
       ? DUMBBELL_LEVELS.map((l) => l.id as string).filter((id) => input.dumbbellLevels?.includes(id))
       : [],
+    intensity: kind === "exercise" ? cleanIntensity(input.intensity) : null,
     updated_at: new Date().toISOString(),
   };
 
-  let id = input.id;
-  if (id) {
-    const { error } = await supabase.from("exercises").update(fields).eq("id", id);
-    if (error) return { error: error.message };
-  } else {
-    const { data, error } = await supabase.from("exercises").insert(fields).select("id").single();
-    if (error || !data) return { error: error?.message ?? "Couldn't save it." };
-    id = data.id as string;
+  let written = await writeExercise(supabase, input.id, fields);
+  if (missingIntensityColumn(written.error)) {
+    if (fields.intensity !== null) {
+      return { error: "Intensity can’t be saved until migration 014_exercise_intensity.sql has run. Clear it to save for now." };
+    }
+    const withoutIntensity: Record<string, unknown> = { ...fields };
+    delete withoutIntensity.intensity;
+    written = await writeExercise(supabase, input.id, withoutIntensity);
   }
+  if (written.error || !written.id) return { error: written.error?.message ?? "Couldn't save it." };
+  const id = written.id;
 
   await syncTags(supabase, id, input.tagIds);
 

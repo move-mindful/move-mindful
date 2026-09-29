@@ -28,6 +28,8 @@ export interface CatalogExercise {
   durationSeconds: number | null;
   equipment: string[];
   dumbbellLevels: string[];
+  /** 1 (gentle) to 4 (intense), when set. */
+  intensity: number | null;
   estimate: EstimateExercise;
   /** For the preview panel. */
   videos: ExerciseVideo[];
