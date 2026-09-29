@@ -277,3 +277,64 @@ test("watching a tutorial again follows the tutorial setting", () => {
   ]);
   assert.equal(s.tutorialPlay, "loop");
 });
+
+// With a 3-second get-ready before exercises.
+const ready = playerReducer({ steps, hasTutorial: (id) => id !== "plank", readyMs: 3000 });
+function runReady(actions: PlayerAction[], from: PlayerState = initialPlayerState): PlayerState {
+  return actions.reduce(ready, from);
+}
+
+test("get ready counts down before the first exercise, then it starts", () => {
+  let s = runReady([{ type: "begin", warmup: false, mode: "off", now: 0 }]);
+  assert.equal(s.stage, "ready");
+  assert.equal(timerLeft(s, 1000), 2000);
+  s = runReady([{ type: "tick", now: 2999 }], s);
+  assert.equal(s.stage, "ready");
+  s = runReady([{ type: "tick", now: 3000 }], s);
+  assert.equal(s.stage, "exercise");
+  assert.equal(s.step, 0);
+  assert.equal(s.timer, null, "a rep set without auto-advance waits for a tap");
+});
+
+test("get ready also comes after the warm-up and after a tutorial, and Start now skips it", () => {
+  let s = runReady([{ type: "begin", warmup: true, mode: "off", now: 0 }, { type: "endWarmup", now: 1000 }]);
+  assert.equal(s.stage, "ready", "after the warm-up");
+  s = runReady([{ type: "begin", warmup: false, mode: "loop", now: 0 }]);
+  assert.equal(s.stage, "tutorial");
+  s = runReady([{ type: "next", now: 1000 }], s);
+  assert.equal(s.stage, "ready", "after the tutorial");
+  s = runReady([{ type: "next", now: 1500 }], s);
+  assert.equal(s.stage, "exercise", "Start now");
+});
+
+test("after a rest there's no get ready — the rest was the countdown", () => {
+  let s = runReady([{ type: "begin", warmup: false, mode: "off", now: 0 }, { type: "next", now: 1000 }, { type: "next", now: 2000 }]);
+  assert.equal(steps[s.step].kind, "rest");
+  s = runReady([{ type: "tick", now: 32_000 }], s);
+  assert.equal(s.step, 2);
+  assert.equal(s.stage, "exercise");
+});
+
+test("a timed set's clock starts after get ready, and it gets ready between sides", () => {
+  // Plank (45 s) follows row set 2 with no rest.
+  let s = runReady([{ type: "begin", warmup: false, mode: "off", now: 0 }, { type: "jump", step: 3, now: 0 }]);
+  assert.equal(s.stage, "ready");
+  s = runReady([{ type: "tick", now: 3000 }], s);
+  assert.equal(s.stage, "exercise");
+  assert.equal(timerLeft(s, 3000), 45_000, "the full 45 seconds");
+  // Lunge right (20 s), then left: get ready for each side.
+  s = runReady([{ type: "tick", now: 48_000 }, { type: "tick", now: 51_000 }, { type: "tick", now: 71_000 }], s);
+  assert.equal(s.step, 5, "on to the left side");
+  assert.equal(s.stage, "ready");
+});
+
+test("pausing holds the get-ready countdown; going back gets ready again", () => {
+  let s = runReady([{ type: "begin", warmup: false, mode: "off", now: 0 }, { type: "pause", now: 1000 }, { type: "tick", now: 60_000 }]);
+  assert.equal(s.stage, "ready");
+  s = runReady([{ type: "resume", now: 60_000 }], s);
+  assert.equal(timerLeft(s, 60_000), 2000);
+  s = runReady([{ type: "next", now: 60_000 }, { type: "back", now: 61_000 }], s);
+  assert.equal(s.step, 0);
+  assert.equal(s.stage, "ready");
+});
+

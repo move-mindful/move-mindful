@@ -31,16 +31,20 @@ export interface PlayerState {
   phase: PlayerPhase;
   /** The current step (an index into the workout's steps). */
   step: number;
-  /** A set shows its exercise's tutorial first, or goes straight to the exercise. */
-  stage: "tutorial" | "exercise";
+  /**
+   * Where a set is: its exercise's tutorial, the get-ready countdown before
+   * the exercise (see `readyMs`), or the exercise itself.
+   */
+  stage: "tutorial" | "ready" | "exercise";
   /** How the tutorial on screen ends: when the member taps ("loop"), or on its own ("once"). */
   tutorialPlay: "loop" | "once";
   mode: TutorialMode;
   paused: boolean;
   sheet: PlayerSheet;
   /**
-   * The countdown for a timed set or a rest: `leftMs` as of `since`, or frozen
-   * at `leftMs` while `since` is null (paused, or a sheet is open).
+   * The countdown for a timed set, a rest or getting ready: `leftMs` as of
+   * `since`, or frozen at `leftMs` while `since` is null (paused, or a sheet
+   * is open).
    */
   timer: { leftMs: number; since: number | null } | null;
   /** Exercises whose tutorial has come up already, so it doesn't again. */
@@ -103,6 +107,14 @@ export interface PlayerContext {
   steps: WorkoutStep[];
   /** Whether an exercise has a tutorial to show. */
   hasTutorial: (exerciseId: string) => boolean;
+  /**
+   * A "get ready" countdown this long before a set's exercise starts (none
+   * when absent or 0): after a tutorial, and whenever a set comes up without
+   * a rest counting down into it — the start, after the warm-up, between
+   * exercises or sides, going back, resuming. After a rest it's skipped: the
+   * rest was the countdown.
+   */
+  readyMs?: number;
 }
 
 export const initialPlayerState: PlayerState = {
@@ -173,9 +185,16 @@ function settle(s: PlayerState, now: number): PlayerState {
   return { ...s, timer, activeMs, activeSince };
 }
 
+/** The get-ready countdown, fresh. */
+function readyTimer(ctx: PlayerContext): PlayerState["timer"] {
+  return { leftMs: ctx.readyMs ?? 0, since: null };
+}
+
 /**
  * Go to step `index`. Moving forward onto an exercise's first set shows its
  * tutorial (unless tutorials are off or it has none); going back never does.
+ * Otherwise a set gets ready first — unless a rest has just counted down
+ * into it (see `readyMs`).
  */
 function enter(ctx: PlayerContext, s: PlayerState, index: number, forward: boolean): PlayerState {
   // The gesture guide, if it's waiting, opens over the first step (holding the clock).
@@ -195,6 +214,8 @@ function enter(ctx: PlayerContext, s: PlayerState, index: number, forward: boole
     stage = "tutorial";
     seen = [...seen, step.exerciseId];
   }
+  const afterRest = forward && s.phase === "workout" && ctx.steps[s.step]?.kind === "rest" && index === s.step + 1;
+  if (stage === "exercise" && step.kind === "set" && ctx.readyMs && !afterRest) stage = "ready";
   return {
     ...base,
     phase: "workout",
@@ -202,13 +223,18 @@ function enter(ctx: PlayerContext, s: PlayerState, index: number, forward: boole
     stage,
     tutorialPlay: s.mode === "once" ? "once" : "loop",
     seen,
-    timer: timerFor(step, stage, s.autoAdvance),
+    timer: stage === "ready" ? readyTimer(ctx) : timerFor(step, stage, s.autoAdvance),
   };
 }
 
 function startExercise(ctx: PlayerContext, s: PlayerState): PlayerState {
   const step = ctx.steps[s.step];
   return { ...s, stage: "exercise", timer: timerFor(step, "exercise", s.autoAdvance), take: s.take + 1 };
+}
+
+/** A tutorial done with (played through, or skipped): get ready, then the exercise. */
+function afterTutorial(ctx: PlayerContext, s: PlayerState): PlayerState {
+  return ctx.readyMs ? { ...s, stage: "ready", timer: readyTimer(ctx), take: s.take + 1 } : startExercise(ctx, s);
 }
 
 function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerState {
@@ -239,7 +265,9 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
     case "next":
       if (s.phase === "warmup") return enter(ctx, s, 0, true);
       if (s.phase !== "workout") return s;
-      if (step?.kind === "set" && s.stage === "tutorial") return startExercise(ctx, s);
+      if (step?.kind === "set" && s.stage === "tutorial") return afterTutorial(ctx, s);
+      // "Start now" while getting ready.
+      if (step?.kind === "set" && s.stage === "ready") return startExercise(ctx, s);
       return enter(ctx, s, s.step + 1, true);
     case "back": {
       if (s.phase !== "workout") return s;
@@ -250,11 +278,13 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
     }
     case "tick": {
       if (!isRunning(s) || s.phase !== "workout" || !s.timer) return s;
-      return timerLeft(s, a.now)! <= 0 ? enter(ctx, s, s.step + 1, true) : s;
+      if (timerLeft(s, a.now)! > 0) return s;
+      // Ready: the exercise starts. Otherwise the set or rest is over.
+      return s.stage === "ready" ? startExercise(ctx, s) : enter(ctx, s, s.step + 1, true);
     }
     case "clipEnded":
       if (s.phase === "warmup") return enter(ctx, s, 0, true);
-      return s.phase === "workout" && s.stage === "tutorial" && s.tutorialPlay === "once" ? startExercise(ctx, s) : s;
+      return s.phase === "workout" && s.stage === "tutorial" && s.tutorialPlay === "once" ? afterTutorial(ctx, s) : s;
     case "pause":
       return s.phase === "warmup" || s.phase === "workout" ? { ...s, paused: true } : s;
     case "resume":
