@@ -149,12 +149,15 @@ function SoundButton({ muted, onToggle }: { muted: boolean; onToggle: () => void
 /** Sound · Up next (opens the overview) · Pause. */
 function ControlsRow({
   pill,
+  fill = null,
   muted,
   onPause,
   onOverview,
   onToggleSound,
 }: {
   pill: { label: string; text: string };
+  /** How far until the set moves on by itself (auto-advance, a timed set): Up next fills with it. */
+  fill?: number | null;
   muted: boolean;
   onPause: () => void;
   onOverview: () => void;
@@ -167,10 +170,13 @@ function ControlsRow({
         type="button"
         aria-label={`Open workout overview. ${pill.label}: ${pill.text}`}
         onClick={onOverview}
-        className="flex h-[52px] min-w-0 items-center gap-2.5 rounded-full border border-white/20 bg-white/10 pl-3.5 pr-5 text-left backdrop-blur-md"
+        className="relative flex h-[52px] min-w-0 items-center gap-2.5 overflow-hidden rounded-full border border-white/20 bg-white/10 pl-3.5 pr-5 text-left backdrop-blur-md"
       >
-        <ChevronUp />
-        <span className="flex min-w-0 flex-col gap-px">
+        {fill !== null && <ProgressFill fraction={fill} />}
+        <span className="relative">
+          <ChevronUp />
+        </span>
+        <span className="relative flex min-w-0 flex-col gap-px">
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/70">{pill.label}</span>
           <span className="truncate text-[15px] font-medium">{pill.text}</span>
         </span>
@@ -420,6 +426,7 @@ export function SetScreen({
   side,
   groupLine,
   pill,
+  fill = null,
   hidden,
   onPause,
   onOverview,
@@ -433,6 +440,8 @@ export function SetScreen({
   /** "Superset 1 · Round 2 of 3" inside a group. */
   groupLine: string | null;
   pill: { label: string; text: string };
+  /** How far until the set moves on by itself, if it will — see ControlsRow. */
+  fill?: number | null;
   /** Controls swiped away: just the reps (or time) left over the video. */
   hidden: boolean;
   onPause: () => void;
@@ -475,7 +484,14 @@ export function SetScreen({
       <Collapse open={!hidden}>
         <h1 className="mt-1 truncate text-xl font-semibold leading-tight">{name}</h1>
         <div className="mt-[18px]">
-          <ControlsRow pill={pill} muted={muted} onPause={onPause} onOverview={onOverview} onToggleSound={onToggleSound} />
+          <ControlsRow
+            pill={pill}
+            fill={fill}
+            muted={muted}
+            onPause={onPause}
+            onOverview={onOverview}
+            onToggleSound={onToggleSound}
+          />
         </div>
       </Collapse>
     </div>

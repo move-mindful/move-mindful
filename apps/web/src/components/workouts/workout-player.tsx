@@ -892,6 +892,8 @@ export function WorkoutPlayer({
               side={set.side}
               groupLine={groupLine}
               pill={pill}
+              // Moving on by itself (auto-advance, or a timed set): Up next fills as it counts down.
+              fill={state.timer && fill?.kind === "set" ? fill.fraction : null}
               hidden={chromeHidden}
               onPause={pause}
               onOverview={openOverview}
