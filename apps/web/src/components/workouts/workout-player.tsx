@@ -228,6 +228,10 @@ export function WorkoutPlayer({
   // Settings opened from the guide's last page ("Change settings"): closing
   // Settings goes back to that page rather than into the workout.
   const [settingsFromGuide, setSettingsFromGuide] = useState(false);
+  // Paused on a rest or get-ready screen: it stays on that screen, its
+  // countdown held, rather than switching to the pause screen (More options
+  // gets there).
+  const [holdInPlace, setHoldInPlace] = useState(false);
   const theater = useTheater();
   // Controls swiped away (phones): just the reps over the video, until a swipe up.
   const [chromeHidden, setChromeHidden] = useState(false);
@@ -242,6 +246,17 @@ export function WorkoutPlayer({
   });
 
   const running = isRunning(state);
+  // A countdown screen — a rest, or getting ready — where pausing holds in place.
+  const onCountdown =
+    state.phase === "workout" && (steps[state.step]?.kind === "rest" || state.stage === "ready");
+  function pause() {
+    setHoldInPlace(onCountdown);
+    act({ type: "pause" });
+  }
+  function resumePlay() {
+    setHoldInPlace(false);
+    act({ type: "resume" });
+  }
   const active = state.phase === "warmup" || state.phase === "workout";
   const step: WorkoutStep | undefined = steps[state.step];
   const set = step?.kind === "set" ? step : null;
@@ -356,6 +371,11 @@ export function WorkoutPlayer({
   // ── While working out ───────────────────────────────
 
   // Keep the screen on, and pause when the member leaves the tab or locks the phone.
+  // Leaving the page pauses — held in place on a rest or get-ready screen, like Pause.
+  const onHidden = useEffectEvent(() => {
+    if (!state.paused) pause();
+  });
+
   useEffect(() => {
     if (!active) return;
     let lock: WakeLockSentinel | null = null;
@@ -370,7 +390,7 @@ export function WorkoutPlayer({
       );
     };
     const onVisibility = () => {
-      if (document.hidden) act({ type: "pause" });
+      if (document.hidden) onHidden();
       else request();
     };
     request();
@@ -382,14 +402,17 @@ export function WorkoutPlayer({
     };
   }, [active, act]);
 
-  // Keyboard: arrows move between sets, space pauses, Escape closes a sheet.
   /** Esc: closes what's open the way its own close does, or pauses and resumes. */
   const onEscape = useEffectEvent(() => {
     if (state.sheet === "guide") finishGuide();
     else if (state.sheet === "settings" && settingsFromGuide) act({ type: "sheet", sheet: "guide" });
     else if (state.sheet) act({ type: "sheet", sheet: null });
-    else act({ type: state.paused ? "resume" : "pause" });
+    else if (state.paused) resumePlay();
+    else pause();
   });
+  const onSpace = useEffectEvent(() => (state.paused ? resumePlay() : pause()));
+
+  // Keyboard: arrows move between sets, space pauses, Escape closes a sheet.
 
   useEffect(() => {
     if (!active) return;
@@ -401,7 +424,7 @@ export function WorkoutPlayer({
         onEscape();
       } else if (e.key === " " && !target?.closest("button") && !state.sheet) {
         e.preventDefault();
-        act({ type: state.paused ? "resume" : "pause" });
+        onSpace();
       } else if (running && e.key === "ArrowRight") {
         act({ type: "next" });
       } else if (running && e.key === "ArrowLeft") {
@@ -499,7 +522,6 @@ export function WorkoutPlayer({
     const wait = new Promise((resolve) => setTimeout(resolve, 1500));
     void Promise.race([saving.current, wait]).then(() => router.push(backHref));
   };
-  const pause = () => act({ type: "pause" });
   const setSound = (on: boolean) => {
     updatePrefs({ instructorAudio: on });
     setMuted(!on);
@@ -584,7 +606,7 @@ export function WorkoutPlayer({
           <PausedScreen
             subtitle="Warm-up"
             stats={null}
-            onResume={() => act({ type: "resume" })}
+            onResume={resumePlay}
             onRestartSet={null}
             onRestartWorkout={null}
             onWatchTutorial={null}
@@ -637,13 +659,18 @@ export function WorkoutPlayer({
   } else if (state.phase === "workout" && step) {
     const back = () => act({ type: "back" });
     const next = () => act({ type: "next" });
+    // On from a held countdown (Continue, Start now, a tap): unpause as it goes.
+    const goOn = () => {
+      if (state.paused) resumePlay();
+      next();
+    };
     // Swipe up: bring hidden controls back, or else open the overview. Swipe
     // down: hide the controls (a swipe down on the overview closes it first).
     const zones = (nextLabel: string) => (
       <TapZones
         onBack={back}
-        onNext={next}
-        onMiddle={pause}
+        onNext={goOn}
+        onMiddle={state.paused ? resumePlay : pause}
         onHold={pause}
         onSwipeUp={() => (chromeHidden ? setChromeHidden(false) : openOverview())}
         onSwipeDown={() => setChromeHidden(true)}
@@ -659,7 +686,7 @@ export function WorkoutPlayer({
       />
     );
 
-    if (state.paused) {
+    if (state.paused && !(holdInPlace && onCountdown)) {
       blurred = true;
       const canWatch = !!targetExercise?.tutorial;
       screen = (
@@ -673,7 +700,7 @@ export function WorkoutPlayer({
               setsDone: `${setsDone} / ${setCount}`,
               left: `~${aboutMinutes(secondsLeft(steps, state.step))} min`,
             }}
-            onResume={() => act({ type: "resume" })}
+            onResume={resumePlay}
             onRestartSet={() => act({ type: "restartSet" })}
             onRestartWorkout={() => act({ type: "restartWorkout" })}
             onWatchTutorial={canWatch ? () => act({ type: "watchTutorial" }) : null}
@@ -710,8 +737,11 @@ export function WorkoutPlayer({
                   }
                 : null
             }
+            paused={state.paused}
             onPause={pause}
-            onContinue={next}
+            onResume={resumePlay}
+            onMore={() => setHoldInPlace(false)}
+            onContinue={goOn}
             theater={theater}
           />
         </>
@@ -737,8 +767,11 @@ export function WorkoutPlayer({
             levels={exercise?.dumbbellLevels.length ? levelsLabel(exercise.dumbbellLevels) : null}
             secondsLeft={leftMs / 1000}
             totalSeconds={GET_READY_MS / 1000}
+            paused={state.paused}
             onPause={pause}
-            onStart={next}
+            onResume={resumePlay}
+            onMore={() => setHoldInPlace(false)}
+            onStart={goOn}
             theater={theater}
           />
         </>

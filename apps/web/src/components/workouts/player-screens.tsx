@@ -651,13 +651,66 @@ const bottomGroup = (theater: boolean) =>
 
 const RING = 2 * Math.PI * 116;
 
+/**
+ * The buttons under a countdown (rest, get ready): Pause — which holds the
+ * countdown right there and turns into Resume — beside the way on (Continue,
+ * Start now). Held, a small More options opens the full pause screen
+ * (settings, restarting, ending the workout).
+ */
+function CountdownControls({
+  paused,
+  onPause,
+  onResume,
+  onMore,
+  goLabel,
+  onGo,
+}: {
+  paused: boolean;
+  onPause: () => void;
+  onResume: () => void;
+  onMore: () => void;
+  goLabel: string;
+  onGo: () => void;
+}) {
+  return (
+    <>
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={paused ? onResume : onPause}
+          className="flex h-[58px] flex-1 items-center justify-center gap-2.5 rounded-full bg-white/[0.14] text-[17px] font-semibold"
+        >
+          {paused ? <Play size={18} /> : <Pause size={18} />}
+          {paused ? "Resume" : "Pause"}
+        </button>
+        <button
+          type="button"
+          onClick={onGo}
+          className="flex h-[58px] flex-[1.4] items-center justify-center gap-2.5 rounded-full bg-white text-[17px] font-semibold text-[#14142B]"
+        >
+          {goLabel}
+          <ArrowRight />
+        </button>
+      </div>
+      {paused && (
+        <button type="button" onClick={onMore} className="-mb-2 h-10 self-center px-3 text-[15px] font-semibold text-white/75">
+          More options
+        </button>
+      )}
+    </>
+  );
+}
+
 export function RestScreen({
   round,
   secondsLeft,
   totalSeconds,
   roundLine,
   next,
+  paused,
   onPause,
+  onResume,
+  onMore,
   onContinue,
   theater = false,
 }: {
@@ -667,7 +720,11 @@ export function RestScreen({
   totalSeconds: number;
   roundLine: string | null;
   next: { label: string; name: string; detail: string; thumbnail: string | null } | null;
+  /** Held right here (Pause), the countdown stopped — see CountdownControls. */
+  paused: boolean;
   onPause: () => void;
+  onResume: () => void;
+  onMore: () => void;
   onContinue: () => void;
   theater?: boolean;
 }) {
@@ -680,6 +737,7 @@ export function RestScreen({
         <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.16em] text-[#A99CFF]">
           {round && <Loop size={16} />}
           {round ? "Round rest" : "Rest"}
+          {paused && <span className="text-white/75">· Paused</span>}
         </div>
         <div className="relative size-[248px]">
           <svg viewBox="0 0 248 248" className="absolute inset-0 size-full" aria-hidden="true">
@@ -692,6 +750,7 @@ export function RestScreen({
               stroke="#A99CFF"
               strokeWidth="8"
               strokeLinecap="round"
+              opacity={paused ? 0.45 : 1}
               strokeDasharray={RING}
               // Negative, so the ring empties clockwise from 12 o'clock, like a
               // clock hand sweeping round.
@@ -726,24 +785,14 @@ export function RestScreen({
             </span>
           </div>
         )}
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={onPause}
-            className="flex h-[58px] flex-1 items-center justify-center gap-2.5 rounded-full bg-white/[0.14] text-[17px] font-semibold"
-          >
-            <Pause />
-            Pause
-          </button>
-          <button
-            type="button"
-            onClick={onContinue}
-            className="flex h-[58px] flex-[1.4] items-center justify-center gap-2.5 rounded-full bg-white text-[17px] font-semibold text-[#14142B]"
-          >
-            Continue
-            <ArrowRight />
-          </button>
-        </div>
+        <CountdownControls
+          paused={paused}
+          onPause={onPause}
+          onResume={onResume}
+          onMore={onMore}
+          goLabel="Continue"
+          onGo={onContinue}
+        />
       </div>
     </div>
   );
@@ -863,7 +912,10 @@ export function ReadyScreen({
   levels,
   secondsLeft,
   totalSeconds,
+  paused,
   onPause,
+  onResume,
+  onMore,
   onStart,
   theater = false,
 }: {
@@ -876,7 +928,11 @@ export function ReadyScreen({
   levels: string | null;
   secondsLeft: number;
   totalSeconds: number;
+  /** Held right here (Pause), the countdown stopped — see CountdownControls. */
+  paused: boolean;
   onPause: () => void;
+  onResume: () => void;
+  onMore: () => void;
   onStart: () => void;
   theater?: boolean;
 }) {
@@ -893,7 +949,10 @@ export function ReadyScreen({
       className={`pointer-events-none [&_button]:pointer-events-auto ${theater ? centered : "absolute inset-0 flex flex-col"}`}
     >
       <div className={`flex flex-col items-center gap-[22px] px-6 text-center ${theater ? "" : "flex-1 justify-center pt-10"}`}>
-        <div className="text-xl font-bold uppercase tracking-[0.16em] text-[#A99CFF]">Get ready</div>
+        <div className="flex items-center gap-2 text-xl font-bold uppercase tracking-[0.16em] text-[#A99CFF]">
+          Get ready
+          {paused && <span className="text-white/75">· Paused</span>}
+        </div>
         <div className="relative size-[200px]">
           <svg viewBox="0 0 200 200" className="absolute inset-0 size-full" aria-hidden="true">
             <circle cx="100" cy="100" r="92" fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="8" />
@@ -905,6 +964,7 @@ export function ReadyScreen({
               stroke="#A99CFF"
               strokeWidth="8"
               strokeLinecap="round"
+              opacity={paused ? 0.45 : 1}
               strokeDasharray={READY_RING}
               // Empties clockwise from 12 o'clock, like the rest ring.
               strokeDashoffset={-READY_RING * (1 - (totalSeconds > 0 ? secondsLeft / totalSeconds : 0))}
@@ -945,24 +1005,14 @@ export function ReadyScreen({
         </div>
       </div>
       <div className={`relative gap-4 ${bottomGroup(theater)}`}>
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={onPause}
-            className="flex h-[58px] flex-1 items-center justify-center gap-2.5 rounded-full bg-white/[0.14] text-[17px] font-semibold"
-          >
-            <Pause size={18} />
-            Pause
-          </button>
-          <button
-            type="button"
-            onClick={onStart}
-            className="flex h-[58px] flex-[1.4] items-center justify-center gap-2.5 rounded-full bg-white text-[17px] font-semibold text-[#14142B]"
-          >
-            Start now
-            <ArrowRight />
-          </button>
-        </div>
+        <CountdownControls
+          paused={paused}
+          onPause={onPause}
+          onResume={onResume}
+          onMore={onMore}
+          goLabel="Start now"
+          onGo={onStart}
+        />
       </div>
     </div>
   );
