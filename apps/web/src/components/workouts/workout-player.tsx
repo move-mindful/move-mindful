@@ -40,6 +40,7 @@ import {
   Dim,
   EndSheet,
   PausedScreen,
+  ReadyScreen,
   RestScreen,
   SetScreen,
   TopShade,
@@ -97,6 +98,9 @@ function useCanMixAudio(): boolean {
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
+/** The get-ready countdown before an exercise starts (see readyMs in core). */
+const GET_READY_MS = 3000;
+
 /** A random (v4) UUID — randomUUID is only there on https pages, so build one otherwise. */
 function newId(): string {
   if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
@@ -145,7 +149,7 @@ export function WorkoutPlayer({
   const key = useMemo(() => sequenceKey(steps), [steps]);
 
   const reducer = useMemo(
-    () => playerReducer({ steps, hasTutorial: (id) => !!workout.exercises[id]?.tutorial }),
+    () => playerReducer({ steps, hasTutorial: (id) => !!workout.exercises[id]?.tutorial, readyMs: GET_READY_MS }),
     [steps, workout.exercises],
   );
   const [state, dispatch] = useReducer(reducer, initialPlayerState);
@@ -290,7 +294,9 @@ export function WorkoutPlayer({
 
   // Sheets stop the clock. The video keeps playing behind the overview (so
   // pulling it up doesn't stutter) but pauses under Settings and End workout.
-  const playing = running || (state.phase === "workout" && !state.paused && state.sheet === "overview");
+  // Getting ready, the exercise holds on its first frame and starts with the countdown's end.
+  const holding = state.phase === "workout" && state.stage === "ready";
+  const playing = !holding && (running || (state.phase === "workout" && !state.paused && state.sheet === "overview"));
   useEffect(() => {
     pool.sync(upcoming, shown, { playing, muted, take: state.take });
   }, [pool, upcoming, shown, playing, muted, state.take]);
@@ -538,7 +544,9 @@ export function WorkoutPlayer({
       ? null
       : state.stage === "tutorial"
         ? { kind: "tutorial", fraction: state.tutorialPlay === "once" && clip.duration ? clip.time / clip.duration : 1 }
-        : state.timer
+        : state.stage === "ready"
+          ? { kind: "set", fraction: 0 }
+          : state.timer
           ? // A countdown — a timed set, or a rep set on auto-advance — fills the segment as it runs.
             { kind: "set", fraction: 1 - leftMs / ((set.measure === "time" ? set.amount : set.seconds) * 1000) }
           : { kind: "set", fraction: 1 };
@@ -554,6 +562,8 @@ export function WorkoutPlayer({
   let screen: ReactNode = null;
   let beside: ReactNode = null;
   let blurred = false;
+  // Lighter than `blurred`: the get-ready screen, where the starting position should show through.
+  let softBlur = false;
 
   const sideButtons = (): TheaterButton[] => [
     { label: "Settings", aria: "Settings", icon: <Settings />, onClick: openSettings },
@@ -702,6 +712,33 @@ export function WorkoutPlayer({
             }
             onPause={pause}
             onContinue={next}
+            theater={theater}
+          />
+        </>
+      );
+    } else if (set && state.stage === "ready") {
+      softBlur = true;
+      const readyLine =
+        set.rounds > 1
+          ? set.groupLabel
+            ? `${set.groupLabel} · Round ${set.round} of ${set.rounds}`
+            : `Set ${set.round} of ${set.rounds}`
+          : null;
+      screen = (
+        <>
+          <Dim strength={0.56} />
+          {bar}
+          {zones("Start now")}
+          <ReadyScreen
+            name={exercise?.name ?? "Exercise"}
+            metric={set.measure === "reps" ? { kind: "reps", amount: set.amount } : { kind: "time", seconds: set.amount }}
+            side={set.side}
+            setLine={readyLine}
+            levels={exercise?.dumbbellLevels.length ? levelsLabel(exercise.dumbbellLevels) : null}
+            secondsLeft={leftMs / 1000}
+            totalSeconds={GET_READY_MS / 1000}
+            onPause={pause}
+            onStart={next}
             theater={theater}
           />
         </>
@@ -934,7 +971,9 @@ export function WorkoutPlayer({
         <div className="relative h-full w-(--col) overflow-hidden bg-[#14142B]">
           <PoolVideos
             pool={pool}
-            className={`transition-[filter,transform] duration-300 ${blurred ? "scale-[1.06] blur-[4px] saturate-[0.8]" : ""}`}
+            className={`transition-[filter,transform] duration-300 ${
+              blurred ? "scale-[1.06] blur-[4px] saturate-[0.8]" : softBlur ? "scale-[1.03] blur-[2px]" : ""
+            }`}
           />
           <LoadingSpinner
             show={buffering && running && (state.phase === "warmup" || (state.phase === "workout" && step?.kind === "set"))}

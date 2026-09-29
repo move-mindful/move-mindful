@@ -844,6 +844,130 @@ export function WarmupScreen({
   );
 }
 
+// ── Get ready ─────────────────────────────────────────
+
+const READY_RING = 2 * Math.PI * 92;
+
+/**
+ * The few seconds before an exercise starts: GET READY, a ring counting
+ * down, and what's coming — the exercise, its reps or time, the side, the
+ * set and the dumbbell level — over its first frame, dimmed, so the member
+ * can get into position. Start now skips the rest of it. On desktop it's
+ * centred in the video column, like the rest screen.
+ */
+export function ReadyScreen({
+  name,
+  metric,
+  side,
+  setLine,
+  levels,
+  secondsLeft,
+  totalSeconds,
+  onPause,
+  onStart,
+  theater = false,
+}: {
+  name: string;
+  metric: { kind: "reps"; amount: number } | { kind: "time"; seconds: number };
+  side: "right" | "left" | null;
+  /** "Set 1 of 3", "Superset 1 · Round 2 of 3" — null for a single set. */
+  setLine: string | null;
+  /** "Light / Medium" — null when it takes no dumbbells. */
+  levels: string | null;
+  secondsLeft: number;
+  totalSeconds: number;
+  onPause: () => void;
+  onStart: () => void;
+  theater?: boolean;
+}) {
+  const shown = Math.max(1, Math.ceil(secondsLeft));
+  const [amount, unit] =
+    metric.kind === "reps"
+      ? [String(metric.amount), metric.amount === 1 ? "rep" : "reps"]
+      : metric.seconds < 60
+        ? [String(metric.seconds), "sec"]
+        : [clock(metric.seconds), ""];
+  const chip = "flex h-[30px] items-center rounded-full px-3 text-sm font-medium";
+  return (
+    <div
+      className={`pointer-events-none [&_button]:pointer-events-auto ${theater ? centered : "absolute inset-0 flex flex-col"}`}
+    >
+      <div className={`flex flex-col items-center gap-[22px] px-6 text-center ${theater ? "" : "flex-1 justify-center pt-10"}`}>
+        <div className="text-xl font-bold uppercase tracking-[0.16em] text-[#A99CFF]">Get ready</div>
+        <div className="relative size-[200px]">
+          <svg viewBox="0 0 200 200" className="absolute inset-0 size-full" aria-hidden="true">
+            <circle cx="100" cy="100" r="92" fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="8" />
+            <circle
+              cx="100"
+              cy="100"
+              r="92"
+              fill="none"
+              stroke="#A99CFF"
+              strokeWidth="8"
+              strokeLinecap="round"
+              strokeDasharray={READY_RING}
+              // Empties clockwise from 12 o'clock, like the rest ring.
+              strokeDashoffset={-READY_RING * (1 - (totalSeconds > 0 ? secondsLeft / totalSeconds : 0))}
+              transform="rotate(-90 100 100)"
+              style={{ transition: "stroke-dashoffset 250ms linear" }}
+            />
+          </svg>
+          <div
+            role="timer"
+            aria-label={`Starting in ${shown} ${shown === 1 ? "second" : "seconds"}`}
+            className="absolute inset-0 flex items-center justify-center text-[96px] font-semibold tracking-[-0.04em] tabular-nums"
+          >
+            {shown}
+          </div>
+        </div>
+        <div className="flex flex-col items-center gap-2.5">
+          <h1 className="line-clamp-2 text-[30px] font-semibold leading-[1.1] tracking-[-0.01em]">{name}</h1>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[44px] font-semibold leading-none tracking-[-0.03em] tabular-nums">{amount}</span>
+            {unit && <span className="text-[22px] font-medium">{unit}</span>}
+          </div>
+          {(side || setLine || levels) && (
+            <div className="mt-1 flex flex-wrap justify-center gap-2">
+              {side && (
+                <span className="flex h-[30px] items-center rounded-full bg-[#A99CFF] px-3 text-[13px] font-bold uppercase tracking-[0.06em] text-[#14142B]">
+                  {side} side
+                </span>
+              )}
+              {setLine && <span className={`${chip} bg-white/[0.14]`}>{setLine}</span>}
+              {levels && (
+                <span className={`${chip} gap-1.5 bg-white/[0.14] pl-2.5`}>
+                  <Dumbbell size={16} />
+                  {levels}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+      <div className={`relative gap-4 ${bottomGroup(theater)}`}>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onPause}
+            className="flex h-[58px] flex-1 items-center justify-center gap-2.5 rounded-full bg-white/[0.14] text-[17px] font-semibold"
+          >
+            <Pause size={18} />
+            Pause
+          </button>
+          <button
+            type="button"
+            onClick={onStart}
+            className="flex h-[58px] flex-[1.4] items-center justify-center gap-2.5 rounded-full bg-white text-[17px] font-semibold text-[#14142B]"
+          >
+            Start now
+            <ArrowRight />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Paused ────────────────────────────────────────────
 
 export function PausedScreen({
