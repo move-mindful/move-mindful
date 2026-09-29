@@ -69,7 +69,7 @@ A video fitness platform with on-demand classes, exercise-by-exercise workouts, 
 - Derive user ID from Clerk session, never from URL or request body
 - Clerk auth on every protected route — and inside every server action, since actions are reachable by direct POST
 - No secret keys in `NEXT_PUBLIC_` env vars
-- Supabase RLS enabled on all tables; member-owned tables (`member_preferences`, `workout_sessions`) have no policies and are only read and written on the server
+- Supabase RLS enabled on all tables; member-owned tables (`member_preferences`, `workout_sessions`) and admin settings (`app_settings`) have no policies and are only read and written on the server
 - Gate paid content on the server before rendering (`getViewerAccess()` / `viewerCanAccess()`), so Mux playback ids never reach a browser that isn't entitled to them
 - Verify every webhook's sender before trusting it: Clerk by its Svix signature, RevenueCat by its shared secret — and Stripe with `constructEvent()` if its webhooks are ever consumed directly
 - A new table keyed by a Clerk user id must be cleared in `deleteMemberData()` (`lib/member/delete-server.ts`), so deleting an account deletes its data

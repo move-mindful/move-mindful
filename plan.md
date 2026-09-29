@@ -213,8 +213,10 @@ Built in vertical slices, so each step leaves something usable and real footage 
   - [x] Build a real workout once exercises are uploaded ("Demo Workout")
   - [x] **Generate with AI** in the builder: optional criteria (blank = Claude's call); Claude drafts from the finished library and the published workouts (the house style) in a JSON schema mirroring the sequence; fills the builder unsaved, with notes, Try again, Change criteria and Undo (`lib/workouts/generate.ts`)
   - [x] Exercise intensity, 1–4 (`014_exercise_intensity.sql`), set in the exercise form and shown in the library; Generate with AI uses it to vary a workout's rhythm
-  - [ ] Apply `014_exercise_intensity.sql` in Supabase
-  - [ ] Add `ANTHROPIC_API_KEY` to Vercel (and `.env.local` for local use)
+  - [x] Apply `014_exercise_intensity.sql` in Supabase
+  - [x] Add `ANTHROPIC_API_KEY` to Vercel (and `.env.local` for local use)
+  - [x] Editable instructions for Generate with AI ("Edit instructions" in the window; default in `lib/workouts/generator-prompt.ts`, saved copy in `app_settings` via `015_app_settings.sql`); the technical rules stay fixed
+  - [ ] Apply `015_app_settings.sql` in Supabase
 - [ ] **4. Member player (web)** — preview → warm-up → player (reps, timed, sided, groups, rests, tutorial modes) → pause → end → complete. Mobile layout first, then the desktop theater layout
   - [x] Player steps (`workoutSteps`) and state machine (`playerReducer`) in `packages/core`, with tests
   - [x] `/workouts/[id]` preview + player, mobile layout, and the desktop theater layout; a `/workouts` list — admin-only (section lock) until step 6
