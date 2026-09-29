@@ -90,12 +90,11 @@ export function WorkoutPreview({
               style={{ objectPosition: "50% 28%" }}
             />
           )}
+          {/* Phones: just a shade at the top here — the fade into the page
+              travels with the content below, so it stays soft as it scrolls. */}
           <div
             className="absolute inset-0 theater:hidden"
-            style={{
-              background:
-                "linear-gradient(180deg, rgba(31,31,62,0.4) 0%, rgba(31,31,62,0) 28%, rgba(31,31,62,0.25) 60%, #1F1F3E 100%)",
-            }}
+            style={{ background: "linear-gradient(180deg, rgba(31,31,62,0.4) 0%, rgba(31,31,62,0) 28%)" }}
           />
           <div
             className="absolute inset-0 hidden theater:block"
@@ -111,12 +110,22 @@ export function WorkoutPreview({
           </div>
         </div>
 
-        {/* Solid, so it covers the pinned cover as it scrolls up — but for a
-            faded top edge, so the title still sits in the photo's fade. */}
+        {/* Solid, so it covers the pinned cover as it scrolls up. The photo's
+            fade into the page rides on top of it (the same stops the cover
+            had: clear at 28% of its height, 0.25 at 60%, solid at the
+            bottom), so at rest it looks as before and, scrolling, the title
+            keeps its soft fade rather than meeting a hard edge. */}
         <div
           className="relative z-10 -mt-12 flex flex-col gap-6 px-5 theater:ml-[50%] theater:mt-0 theater:min-h-dvh theater:px-20 theater:pb-16 theater:pt-[88px]"
-          style={{ background: "linear-gradient(180deg, rgba(31,31,62,0) 0px, #1F1F3E 48px)" }}
+          style={{ background: "linear-gradient(180deg, rgba(31,31,62,0.73) 0px, #1F1F3E 48px)" }}
         >
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 -top-[190px] h-[190px] theater:hidden"
+            style={{
+              background: "linear-gradient(180deg, rgba(31,31,62,0) 0%, rgba(31,31,62,0.25) 56%, rgba(31,31,62,0.73) 100%)",
+            }}
+          />
           <div className="flex flex-col gap-6 theater:hidden">
             <Details workout={workout} level={level} pills={pills} totalSeconds={totalSeconds} exerciseCount={exerciseCount} />
           </div>
