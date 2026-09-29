@@ -597,7 +597,7 @@ export function WorkoutPlayer({
       );
       beside = (
         <>
-          <TheaterWarmupInfo name={workout.warmup.name} onSkip={skip} />
+          <TheaterWarmupInfo name={workout.warmup.name} fraction={duration ? clip.time / duration : 0} onSkip={skip} />
           <TheaterButtons buttons={sideButtons()} />
         </>
       );

@@ -3,7 +3,7 @@
 import { useSyncExternalStore, type ReactNode } from "react";
 import { clock } from "@/lib/workouts/player";
 import { ArrowRight, ChevronLeft, ChevronRight, Dumbbell, Loop, Sun } from "./icons";
-import { BeginButton, Chip, type TutorialProgress } from "./player-screens";
+import { BeginButton, Chip, ProgressFill, type TutorialProgress } from "./player-screens";
 
 // The player's desktop ("theater") layout, from the desktop frames of the
 // player design canvas: the 9:16 video in the middle, what's on to its left,
@@ -163,7 +163,16 @@ export function TheaterTutorialInfo({
   );
 }
 
-export function TheaterWarmupInfo({ name, onSkip }: { name: string; onSkip: () => void }) {
+export function TheaterWarmupInfo({
+  name,
+  fraction,
+  onSkip,
+}: {
+  name: string;
+  /** How far through the warm-up it is — Skip warm-up fills with it. */
+  fraction: number;
+  onSkip: () => void;
+}) {
   return (
     <Info gap={14}>
       <span className="flex h-[30px] items-center gap-[7px] rounded-full bg-white/[0.14] pl-2.5 pr-[13px] text-[13px] font-bold uppercase tracking-[0.08em]">
@@ -174,10 +183,13 @@ export function TheaterWarmupInfo({ name, onSkip }: { name: string; onSkip: () =
       <button
         type="button"
         onClick={onSkip}
-        className="mt-2.5 flex h-14 w-60 items-center justify-center gap-2.5 rounded-full border-[1.5px] border-white/55 bg-white/[0.08] text-[17px] font-semibold"
+        className="relative mt-2.5 flex h-14 w-60 items-center justify-center gap-2.5 overflow-hidden rounded-full border-[1.5px] border-white/55 bg-white/[0.08] text-[17px] font-semibold"
       >
-        Skip warm-up
-        <ArrowRight />
+        <ProgressFill fraction={fraction} />
+        <span className="relative">Skip warm-up</span>
+        <span className="relative">
+          <ArrowRight />
+        </span>
       </button>
     </Info>
   );

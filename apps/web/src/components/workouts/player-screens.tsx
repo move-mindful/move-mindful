@@ -550,6 +550,22 @@ export function TutorialScreen({
   );
 }
 
+/**
+ * The band behind a Skip button that fills as its clip plays — Skip tutorial
+ * and Skip warm-up, full size and minimised. `restartKey` restarts the fill
+ * (rather than sliding it back) when a looping clip goes round again.
+ */
+export function ProgressFill({ fraction, restartKey = 0 }: { fraction: number; restartKey?: number }) {
+  return (
+    <span
+      key={restartKey}
+      aria-hidden="true"
+      className="absolute inset-y-0 left-0 bg-white/20"
+      style={{ width: `${Math.min(100, Math.max(0, fraction * 100))}%`, transition: "width 250ms linear" }}
+    />
+  );
+}
+
 export interface TutorialProgress {
   fraction: number;
   secondsLeft: number;
@@ -584,11 +600,7 @@ export function BeginButton({
       }
       className={`relative flex h-[58px] items-center justify-center gap-2.5 overflow-hidden rounded-full border-[1.5px] border-white/55 bg-white/[0.08] text-[17px] font-semibold ${className}`}
     >
-      <span
-        key={progress.cycle}
-        className="absolute inset-y-0 left-0 bg-white/20"
-        style={{ width: `${Math.min(100, progress.fraction * 100)}%`, transition: "width 250ms linear" }}
-      />
+      <ProgressFill fraction={progress.fraction} restartKey={progress.cycle} />
       <span className="relative">Skip tutorial</span>
       <span className="relative">
         <ArrowRight />
@@ -619,11 +631,7 @@ function MiniSkipButton({
       aria-label={aria}
       className="relative flex h-[30px] shrink-0 items-center gap-1 overflow-hidden rounded-full border-[1.5px] border-white/55 bg-white/[0.08] pl-3 pr-2.5 text-sm font-semibold"
     >
-      <span
-        key={progress.cycle}
-        className="absolute inset-y-0 left-0 bg-white/20"
-        style={{ width: `${Math.min(100, progress.fraction * 100)}%`, transition: "width 250ms linear" }}
-      />
+      <ProgressFill fraction={progress.fraction} restartKey={progress.cycle} />
       <span className="relative">{label}</span>
       <span className="relative">
         <ArrowRight size={15} />
@@ -813,13 +821,17 @@ export function WarmupScreen({
         <Collapse open={!hidden}>
           <div className="mt-[18px] flex items-center justify-between gap-3">
             <SoundButton muted={muted} onToggle={onToggleSound} />
+            {/* Fills as the warm-up plays, like Skip tutorial. */}
             <button
               type="button"
               onClick={onSkip}
-              className="flex h-[52px] min-w-0 flex-1 items-center justify-center gap-2 rounded-full border border-white/[0.22] bg-white/[0.12] text-base font-semibold backdrop-blur-md"
+              className="relative flex h-[52px] min-w-0 flex-1 items-center justify-center gap-2 overflow-hidden rounded-full border-[1.5px] border-white/55 bg-white/[0.08] text-base font-semibold backdrop-blur-md"
             >
-              Skip warm-up
-              <ArrowRight size={18} />
+              <ProgressFill fraction={duration ? seconds / duration : 0} />
+              <span className="relative">Skip warm-up</span>
+              <span className="relative">
+                <ArrowRight size={18} />
+              </span>
             </button>
             <RoundButton label="Pause" onClick={onPause}>
               <Pause />
