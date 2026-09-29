@@ -913,6 +913,12 @@ export function WorkoutPlayer({
           {!theater && end}
           {!theater && state.sheet === "guide" && (
             <GestureGuide
+              settings={{ mode: state.mode, autoAdvance: state.autoAdvance }}
+              onSettings={() => {
+                // Straight into Settings; the workout stays held until it closes.
+                updatePrefs({ seenGestureGuide: true });
+                act({ type: "sheet", sheet: "settings" });
+              }}
               onDone={() => {
                 updatePrefs({ seenGestureGuide: true });
                 act({ type: "sheet", sheet: null });

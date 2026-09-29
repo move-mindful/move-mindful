@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Image from "next/image";
+import type { TutorialMode } from "@move-mindful/core";
 import guideBackground from "./guide-background.webp";
 import {
   ArrowDown,
@@ -20,9 +21,11 @@ import { TAP_ZONES } from "./player-screens";
 /**
  * The first-run guide to the player, over the stage on phones: tapping (the
  * three zones drawn over the video), swiping, watching a tutorial from the
- * pause screen, Settings and the tutorial mode, and auto-advance. Shown once,
- * as the first exercise comes up (see guidePending in the core reducer), and
- * again from Settings. The workout waits while it's open.
+ * pause screen, Settings and the tutorial mode, auto-advance, and last how the
+ * member's tutorials and auto-advance are set right now, with a way into
+ * Settings. Shown once, as the first exercise comes up (see guidePending in
+ * the core reducer), and again from Settings. The workout waits while it's
+ * open.
  */
 
 interface Page {
@@ -168,10 +171,55 @@ const PAGES: Page[] = [
   },
 ];
 
-export function GestureGuide({ onDone }: { onDone: () => void }) {
+/** What each tutorial mode does, for the last page. */
+const MODE_TEXT: Record<TutorialMode, { label: string; text: string }> = {
+  loop: { label: "Loop", text: "Each new exercise's tutorial plays on repeat until you tap to start." },
+  once: { label: "Play once", text: "Each new exercise's tutorial plays once, then the exercise starts." },
+  off: { label: "Off", text: "Exercises start straight away. Watch a tutorial any time from the pause screen." },
+};
+
+/**
+ * The last page: how tutorials and auto-advance are set right now — the
+ * defaults, for someone new — in plain words, with a way into Settings.
+ */
+function settingsPage({ mode, autoAdvance }: { mode: TutorialMode; autoAdvance: boolean }): Page {
+  return {
+    title: "Your settings",
+    picture: <SettingsPicture mode={mode} autoAdvance={autoAdvance} />,
+    rows: [
+      {
+        icon: <WatchTutorial size={18} />,
+        tint: "bg-[#A99CFF]/25 text-[#C9C0FF]",
+        title: `Tutorials: ${MODE_TEXT[mode].label}`,
+        text: MODE_TEXT[mode].text,
+      },
+      {
+        icon: <Timer size={18} />,
+        tint: "bg-[#A99CFF]/25 text-[#C9C0FF]",
+        title: `Auto-advance: ${autoAdvance ? "On" : "Off"}`,
+        text: autoAdvance
+          ? "Rep sets move on by themselves after the time the reps usually take."
+          : "Rep sets wait for your tap. Timed sets and rests move on by themselves.",
+      },
+    ],
+  };
+}
+
+export function GestureGuide({
+  settings,
+  onSettings,
+  onDone,
+}: {
+  /** How tutorials and auto-advance are set now, for the last page. */
+  settings: { mode: TutorialMode; autoAdvance: boolean };
+  /** "Change settings" on the last page: close the guide and open Settings. */
+  onSettings: () => void;
+  onDone: () => void;
+}) {
   const [page, setPage] = useState(0);
-  const current = PAGES[page];
-  const last = page === PAGES.length - 1;
+  const pages = [...PAGES, settingsPage(settings)];
+  const current = pages[page];
+  const last = page === pages.length - 1;
 
   return (
     <div className="absolute inset-0 z-30 flex flex-col" role="dialog" aria-modal="true" aria-label="How to use the player">
@@ -190,7 +238,7 @@ export function GestureGuide({ onDone }: { onDone: () => void }) {
       <section className="relative flex flex-col gap-4 rounded-t-[28px] bg-[#1A1A34] px-5 pb-[max(28px,calc(env(safe-area-inset-bottom)+12px))] pt-6">
         <div className="flex flex-col gap-1">
           <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/60">
-            How it works · {page + 1} of {PAGES.length}
+            How it works · {page + 1} of {pages.length}
           </span>
           <h2 className="text-[22px] font-semibold tracking-[-0.01em]">{current.title}</h2>
         </div>
@@ -199,10 +247,22 @@ export function GestureGuide({ onDone }: { onDone: () => void }) {
             <Row key={`${r.title}-${r.text}`} icon={r.icon} tint={r.tint ?? "bg-white/[0.14]"} title={r.title} text={r.text} />
           ))}
         </div>
-        <div className="mt-1 flex items-center gap-3">
+        {last && (
           <button
             type="button"
-            onClick={() => (page === 0 ? onDone() : setPage(page - 1))}
+            onClick={onSettings}
+            className="mt-1 flex h-[54px] items-center justify-center gap-2 rounded-full bg-white/[0.12] text-base font-semibold"
+          >
+            <Settings size={18} />
+            Change settings
+          </button>
+        )}
+        <div className={`flex items-center gap-3 ${last ? "" : "mt-1"}`}>
+          {/* Skipping the how-to still lands on the settings, so everyone
+              sees how their tutorials and auto-advance are set. */}
+          <button
+            type="button"
+            onClick={() => setPage(page === 0 ? pages.length - 1 : page - 1)}
             className="h-[54px] px-4 text-base font-semibold text-white/75"
           >
             {page === 0 ? "Skip" : "Back"}
@@ -213,7 +273,7 @@ export function GestureGuide({ onDone }: { onDone: () => void }) {
             onClick={() => (last ? onDone() : setPage(page + 1))}
             className="h-[54px] flex-1 rounded-full bg-white text-[17px] font-semibold text-[#14142B]"
           >
-            {last ? "Got it" : "Next"}
+            {last ? "Continue" : "Next"}
           </button>
         </div>
       </section>
@@ -221,9 +281,38 @@ export function GestureGuide({ onDone }: { onDone: () => void }) {
   );
 }
 
+/** The last page's picture: a mini Settings panel showing the current choices. */
+function SettingsPicture({ mode, autoAdvance }: { mode: TutorialMode; autoAdvance: boolean }) {
+  return (
+    <div className="flex w-[270px] flex-col gap-3 rounded-[20px] bg-[#1A1A34]/85 p-4 ring-1 ring-white/10">
+      <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/60">Tutorials</span>
+      <div className="flex gap-2">
+        {(["loop", "once", "off"] as const).map((m) => (
+          <span
+            key={m}
+            className={`rounded-full border-[1.5px] px-3 py-1.5 text-sm font-semibold ${
+              m === mode ? "border-[#A99CFF]/85 bg-[#A99CFF]/[0.14]" : "border-white/[0.18] bg-white/[0.05] text-white/70"
+            }`}
+          >
+            {MODE_TEXT[m].label}
+          </span>
+        ))}
+      </div>
+      <span className="mt-1 flex items-center justify-between text-[15px] font-semibold">
+        Auto-advance
+        <span className={`relative h-[26px] w-[44px] rounded-full ${autoAdvance ? "bg-[#A99CFF]" : "bg-white/25"}`}>
+          <span
+            className={`absolute top-0.5 size-[22px] rounded-full bg-white ${autoAdvance ? "right-0.5" : "left-0.5"}`}
+          />
+        </span>
+      </span>
+    </div>
+  );
+}
+
 /**
  * A studio photo, darkened and blurred — the guide's background. `soft`
- * (pages 2–5) blurs and darkens it less.
+ * (pages 2–6) blurs and darkens it less.
  */
 function PhotoBackdrop({ soft }: { soft: boolean }) {
   return (
