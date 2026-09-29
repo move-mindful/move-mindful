@@ -11,6 +11,7 @@ import {
   equipmentLabel,
   formatDuration,
   formatPace,
+  intensityLabel,
   levelsLabel,
   paceSeconds,
   rolesFor,
@@ -189,14 +190,17 @@ export function ExerciseLibrary({ exercises, tags }: { exercises: AdminExercise[
                   ...attentionFlags(e),
                 ];
                 return (
-                  <li key={e.id}>
+                  <li
+                    key={e.id}
+                    className={`flex items-center transition ${
+                      on ? "bg-zinc-50 shadow-[inset_3px_0_0_#18181b]" : "hover:bg-zinc-50"
+                    }`}
+                  >
                     <button
                       type="button"
                       onClick={() => setSelectedId(e.id)}
                       aria-current={on}
-                      className={`grid w-full grid-cols-[36px_minmax(0,1fr)_150px_140px] items-center gap-4 px-5 py-2 text-left transition ${
-                        on ? "bg-zinc-50 shadow-[inset_3px_0_0_#18181b]" : "hover:bg-zinc-50"
-                      }`}
+                      className="grid min-w-0 flex-1 grid-cols-[36px_minmax(0,1fr)_150px_24px_140px] items-center gap-4 py-2 pl-5 text-left"
                     >
                       <span className="relative h-12 w-9 overflow-hidden rounded-md bg-zinc-200">
                         {clip?.playbackId && (
@@ -222,8 +226,17 @@ export function ExerciseLibrary({ exercises, tags }: { exercises: AdminExercise[
                           <span className="block text-xs text-zinc-500">{levelsLabel(e.dumbbellLevels)}</span>
                         )}
                       </span>
+                      {e.kind === "exercise" ? <IntensityMeter value={e.intensity} /> : <span />}
                       <span className="text-sm text-zinc-700">{countedBy(e)}</span>
                     </button>
+                    <Link
+                      href={`/admin/exercises/${e.id}`}
+                      aria-label={`Edit ${e.name}`}
+                      className="mx-4 flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2.5 text-sm font-medium text-zinc-600 transition hover:border-zinc-300 hover:text-zinc-900"
+                    >
+                      <PencilIcon />
+                      Edit
+                    </Link>
                   </li>
                 );
               })}
@@ -297,7 +310,7 @@ export function ExerciseLibrary({ exercises, tags }: { exercises: AdminExercise[
                 href={`/admin/exercises/${selected.id}`}
                 className="flex h-10 items-center justify-center rounded-lg bg-zinc-900 text-sm font-medium text-white hover:bg-zinc-700"
               >
-                Edit or replace videos
+                Edit exercise
               </Link>
             )}
           </section>
@@ -320,6 +333,7 @@ function PanelFacts({ exercise: e }: { exercise: AdminExercise }) {
     );
     const tutorial = slotFor(e.videos, "tutorial").current;
     facts.push(["Tutorial", tutorial ? formatDuration(tutorial.durationSeconds) : "Missing"]);
+    facts.push(["Intensity", intensityLabel(e.intensity)]);
   }
   facts.push(["Equipment", e.equipment.length ? e.equipment.map(equipmentLabel).join(", ") : "None"]);
   if (e.dumbbellLevels.length) facts.push(["Dumbbells", levelsLabel(e.dumbbellLevels)]);
@@ -337,5 +351,29 @@ function PanelFacts({ exercise: e }: { exercise: AdminExercise }) {
         <p className="col-span-2 text-xs text-amber-700">Not ready for workouts until its clips are uploaded and processed.</p>
       )}
     </dl>
+  );
+}
+
+/** Four rising bars, filled up to the exercise's intensity (all empty when it isn't set). */
+function IntensityMeter({ value }: { value: number | null }) {
+  const label = value ? `Intensity ${intensityLabel(value)}` : "Intensity not set";
+  return (
+    <span role="img" aria-label={label} title={label} className="flex h-4 items-end gap-0.5">
+      {[1, 2, 3, 4].map((n) => (
+        <span
+          key={n}
+          className={`w-1 rounded-sm ${value && n <= value ? "bg-zinc-800" : "bg-zinc-200"}`}
+          style={{ height: `${n * 25}%` }}
+        />
+      ))}
+    </span>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+    </svg>
   );
 }
