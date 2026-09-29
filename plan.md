@@ -24,6 +24,7 @@ A video fitness platform offering on-demand classes, exercise-by-exercise workou
 | Push Notifications | Expo Notifications            | iOS push notifications                       |
 | Web Hosting        | Vercel                        | Next.js hosting, serverless functions, CDN   |
 | Backend / DB       | Supabase                      | Postgres, auth helpers, storage, realtime    |
+| AI                 | Claude API (Anthropic)        | Admin: "Generate with AI" in the workout builder |
 | App Store          | Apple Developer Program       | Required to publish iOS app ($99/year)       |
 
 ---
@@ -210,6 +211,10 @@ Built in vertical slices, so each step leaves something usable and real footage 
   - [x] Rest between sets on single exercises; uploaded workout cover image (`011_workout_set_rest_and_cover.sql`)
   - [x] Apply `011_workout_set_rest_and_cover.sql` in Supabase
   - [x] Build a real workout once exercises are uploaded ("Demo Workout")
+  - [x] **Generate with AI** in the builder: optional criteria (blank = Claude's call); Claude drafts from the finished library and the published workouts (the house style) in a JSON schema mirroring the sequence; fills the builder unsaved, with notes, Try again, Change criteria and Undo (`lib/workouts/generate.ts`)
+  - [x] Exercise intensity, 1–4 (`014_exercise_intensity.sql`), set in the exercise form and shown in the library; Generate with AI uses it to vary a workout's rhythm
+  - [ ] Apply `014_exercise_intensity.sql` in Supabase
+  - [ ] Add `ANTHROPIC_API_KEY` to Vercel (and `.env.local` for local use)
 - [ ] **4. Member player (web)** — preview → warm-up → player (reps, timed, sided, groups, rests, tutorial modes) → pause → end → complete. Mobile layout first, then the desktop theater layout
   - [x] Player steps (`workoutSteps`) and state machine (`playerReducer`) in `packages/core`, with tests
   - [x] `/workouts/[id]` preview + player, mobile layout, and the desktop theater layout; a `/workouts` list — admin-only (section lock) until step 6
@@ -230,6 +235,8 @@ Built in vertical slices, so each step leaves something usable and real footage 
 Key product rules from design review:
 - An exercise has a tutorial (with audio) and a looping clip; sided exercises have separate right and left loops. "Reps in clip" gives the pace used for time estimates (blank = timed only)
 - Dumbbells are levels, never pounds: an exercise lists every level that works ("Light / Medium"); a workout's equipment shows one pill per level
+- Intensity is 1 (gentle) to 4 (intense), optional, exercises only; it's for programming (Generate with AI) and isn't shown to members
+- Generate with AI never saves: it fills the builder, and the admin reviews and saves like any edit
 - A workout is a list of blocks: a single exercise (sets, with rest between sets), a rest, or a group (rounds, rest between exercises, rest between rounds; exercises in a group do one set each). Two exercises = "Superset N", three or more = "Circuit N"
 - The warm-up is optional for members and plays once, start to finish; listed workout times exclude it
 - Editing an exercise changes it in every workout that uses it; a replaced clip stays live until the new one finishes processing. Archiving hides an exercise from the library and builder search while existing workouts keep working; delete only when nothing uses it
@@ -279,6 +286,7 @@ Key product rules from design review:
 | Database + storage    | Supabase             | ✅ Tables + RLS live (`us-east-1`) | Free → $25/mo (pro)      |
 | Video files + CDN     | Mux                  | ✅ Player + catalog live        | Pay-per-use                  |
 | Payments/Subs         | RevenueCat + Stripe  | ✅ Web Billing live             | RevenueCat free → $25/mo; Stripe 2.9% + 30¢ |
+| AI (admin only)       | Anthropic API        | ⬜ Needs `ANTHROPIC_API_KEY`    | Pay-per-use: a few cents per generated workout |
 | iOS app distribution  | Apple App Store      | ⬜ Not yet set up               | $99/year                     |
 
 ### Estimated Monthly Costs by Stage

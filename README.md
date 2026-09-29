@@ -71,8 +71,9 @@ A video fitness platform: on-demand classes, exercise-by-exercise workouts, live
 
 **Admin CMS** (`/admin`, admin-only — opens on Exercises)
 
-- **Exercises** (`/admin/exercises`) — the library of short vertical clips workouts are built from. Upload an exercise (tutorial + loop, or right and left loops when it's done on each side, with reps-in-clip for the pace) or a warm-up (one video); each clip is a Mux direct upload with 1080p/720p MP4 static renditions. Clip status is synced from Mux on page load (no webhooks), and a replaced clip stays live until its replacement is ready. Archive/restore, and delete once no workout uses it ("used in N workouts"). Equipment, dumbbell levels, and admin-only exercise tags (a flat list, separate from class tags) with a manage-tags panel.
+- **Exercises** (`/admin/exercises`) — the library of short vertical clips workouts are built from. Upload an exercise (tutorial + loop, or right and left loops when it's done on each side, with reps-in-clip for the pace) or a warm-up (one video); each clip is a Mux direct upload with 1080p/720p MP4 static renditions. Clip status is synced from Mux on page load (no webhooks), and a replaced clip stays live until its replacement is ready. Archive/restore, and delete once no workout uses it ("used in N workouts"). Equipment, dumbbell levels, an optional intensity (1 gentle – 4 intense, shown as a four-bar meter on each row), and admin-only exercise tags (a flat list, separate from class tags) with a manage-tags panel. Every row has its own **Edit** link.
 - **Workouts** (`/admin/workouts`) — the builder: an optional warm-up, a cover image (resized in the browser, stored in the public `workout-covers` bucket), then single exercises (sets, rest between sets, reps or time, first side for sided exercises), rests, and supersets/circuits (rounds, rest between exercises and between rounds; auto-labelled Superset N / Circuit N). A live time estimate from each clip's pace, a clip preview, and publish checks (every exercise needs its clips ready). The sequence saves atomically through the `save_workout_sequence` database function.
+  - **Generate with AI** — a window of optional criteria (length, level, focus tags, equipment on hand, style, warm-up, anything else; blank fields are Claude's call). An admin-only server action sends Claude (`claude-opus-5-5`, via `ANTHROPIC_API_KEY`) the finished exercise library with each exercise's tags, equipment, pace and intensity, plus the published workouts written out as the house style, and gets back a JSON-schema answer shaped like the builder's sequence — exercises named from an enum, so it can only pick real ones. It goes through the same cleaning as a save (`lib/workouts/clean.ts`), gets one retry if it misses the target length by much, and fills the builder **unsaved**, with Claude's notes, Try again, Change criteria and Undo. Code: `lib/workouts/generate.ts`.
 - **Classes** (`/admin/classes`) — **Upload** (batch direct-upload to Mux via signed upload URLs + `@mux/upchunk`, with per-file progress and a small concurrency cap; assets surface in Import once Mux finishes encoding); **Import** (list Mux assets → import, or **Trim & import** to clip dead air into a new Mux asset, or delete unwanted assets; live recordings stay visible but wait until Mux finalizes them); create/edit with a full player for review; a temporary Mux master MP4 download for offline editing; publish/unpublish; delete (with optional Mux asset deletion); one-click "delete raw recording" on trimmed clips once the clip is ready; instructor; an admin display date; an **Access** picker (which entitlement a class requires — `required_entitlement`, migration 008); and the collections a class belongs to, right from the form. Title edits sync back to the Mux asset's `meta.title`, so videos are searchable in the Mux dashboard.
 - **Instructors** — teachers with an uploaded profile photo (square-cropped in the browser, stored in the public `instructor-avatars` bucket), one per class.
 - **Tags** — tag groups + tags (create/rename/delete, cascade-safe).
@@ -133,6 +134,7 @@ Tracked here so it doesn't get lost. None of these affect current functionality 
 | Video | Mux |
 | Database | Supabase (Postgres) |
 | Marketing | Mailchimp, ManyChat |
+| AI | Claude API (admin: Generate with AI in the workout builder) |
 | Push Notifications | Expo Notifications (planned) |
 
 ## Project Structure
@@ -168,7 +170,7 @@ move-mindful/
 │       ├── workouts.ts, workout-player.ts, workout-progress.ts   # + *.test.ts
 │       ├── types.ts, access.ts # Original access model (unused)
 │       └── index.ts            # Re-exports
-├── supabase/migrations/        # Numbered SQL, applied by hand in the Supabase SQL Editor (001 → 013)
+├── supabase/migrations/        # Numbered SQL, applied by hand in the Supabase SQL Editor (001 → 014)
 ├── design/                     # Design canvas mirrors; each folder's README links its online canvas
 ├── plan.md                     # Architecture, build order, hosting, security guidelines
 ├── postureproject.md           # The pivot to one-time products: decisions, launch to-dos, flagged risks
@@ -182,7 +184,7 @@ move-mindful/
 └── package.json                # Root workspace config
 ```
 
-Migrations: 001 schema · 002 media organization · 003 drop legacy class columns · 004 instructors · 005 collection auto-add + limit · 006 clip source tracking · 007 class date · 008 class access · 009 exercises · 010 workouts · 011 set rest + workout cover · 012 member preferences · 013 workout sessions.
+Migrations: 001 schema · 002 media organization · 003 drop legacy class columns · 004 instructors · 005 collection auto-add + limit · 006 clip source tracking · 007 class date · 008 class access · 009 exercises · 010 workouts · 011 set rest + workout cover · 012 member preferences · 013 workout sessions · 014 exercise intensity.
 
 ## Getting Started
 
@@ -199,7 +201,7 @@ npm install
 
 ### Environment variables
 
-The web app needs Clerk, Supabase, RevenueCat, Mux, Mailchimp and ManyChat keys, plus a few shared secrets. `apps/web/.env.example` lists every variable with a note on where it comes from. Copy it and fill in your values:
+The web app needs Clerk, Supabase, RevenueCat, Mux, Mailchimp, ManyChat and Anthropic keys, plus a few shared secrets. `apps/web/.env.example` lists every variable with a note on where it comes from. Copy it and fill in your values:
 
 ```bash
 cp apps/web/.env.example apps/web/.env.local
