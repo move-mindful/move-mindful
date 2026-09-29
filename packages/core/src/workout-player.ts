@@ -50,7 +50,7 @@ export interface PlayerState {
   activeSince: number | null;
   /** Bumped whenever a clip should start from the beginning (a new step, a restart). */
   take: number;
-  /** Show the gesture guide as the first exercise comes up (after any warm-up). */
+  /** Show the gesture guide as the first exercise comes up (a workout begun without a warm-up, or resumed). */
   guidePending: boolean;
   /**
    * Rep sets move on by themselves after their estimated time (the step's
@@ -60,7 +60,10 @@ export interface PlayerState {
 }
 
 export type PlayerAction =
-  /** `guide`: open the gesture guide when the first exercise comes up (a first-time member). */
+  /**
+   * `guide`: open the gesture guide (a first-time member) — straight away, over
+   * the warm-up (held until it closes), or else as the first exercise comes up.
+   */
   | {
       type: "begin";
       warmup: boolean;
@@ -223,7 +226,12 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
         guidePending: !!a.guide,
         autoAdvance: !!a.autoAdvance,
       };
-      if (a.warmup && !from) return { ...started, phase: "warmup", paused: false, sheet: null, timer: null, take: s.take + 1 };
+      if (a.warmup && !from) {
+        // The guide, if it's due, comes first: learned (and settings chosen)
+        // before the warm-up, not after it with the member already warm.
+        const sheet = a.guide ? ("guide" as const) : null;
+        return { ...started, phase: "warmup", paused: false, sheet, guidePending: false, timer: null, take: s.take + 1 };
+      }
       return enter(ctx, started, from, true);
     }
     case "endWarmup":

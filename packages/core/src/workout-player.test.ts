@@ -4,6 +4,7 @@ import { workoutSteps, type EstimateExercise, type WorkoutBlock } from "./workou
 import {
   activeTime,
   initialPlayerState,
+  isRunning,
   playerReducer,
   timerLeft,
   type PlayerAction,
@@ -156,10 +157,17 @@ test("restarting the workout shows the tutorials again", () => {
   assert.equal(s.stage, "exercise");
 });
 
-test("a first-time member's gesture guide opens as the first exercise comes up", () => {
+test("a first-time member's gesture guide opens before the warm-up, and not again after it", () => {
   let s = run([{ type: "begin", warmup: true, mode: "off", guide: true, now: 0 }]);
-  assert.equal(s.sheet, null, "not over the warm-up");
-  s = run([{ type: "endWarmup", now: 1000 }], s);
+  assert.equal(s.phase, "warmup");
+  assert.equal(s.sheet, "guide", "over the warm-up, straight away");
+  assert.equal(isRunning(s), false, "the warm-up waits while it's open");
+  s = run([{ type: "sheet", sheet: null, now: 1000 }, { type: "endWarmup", now: 2000 }], s);
+  assert.equal(s.sheet, null, "not again at the first exercise");
+});
+
+test("without a warm-up, the gesture guide opens as the first exercise comes up", () => {
+  let s = run([{ type: "begin", warmup: false, mode: "off", guide: true, now: 1000 }]);
   assert.equal(s.sheet, "guide");
   s = run([{ type: "jump", step: 3, now: 2000 }], s); // the plank, 45 s — held while the guide is open
   assert.equal(s.sheet, null, "moving on closes it");

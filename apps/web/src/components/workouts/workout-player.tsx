@@ -118,6 +118,7 @@ export function WorkoutPlayer({
   preferences,
   progress,
   signedIn,
+  guideEveryTime = false,
 }: {
   workout: PlayerWorkout;
   backHref: string;
@@ -126,6 +127,8 @@ export function WorkoutPlayer({
   /** Where the member left off in this workout, if they saved it (null signed out). */
   progress: SavedProgress | null;
   signedIn: boolean;
+  /** Show the gesture guide on every Begin, not just a member's first (signed-out /demo1 visitors). */
+  guideEveryTime?: boolean;
 }) {
   const router = useRouter();
 
@@ -413,12 +416,13 @@ export function WorkoutPlayer({
     setMuted(!prefs.instructorAudio);
     // Inside the tap, so every clip may play with sound later (see video-pool.tsx).
     pool.unlock();
-    // First time on a phone: the gesture guide opens as the first exercise comes up.
+    // First time on a phone (or every time, on the demo): the gesture guide
+    // opens before the warm-up, or as the first exercise comes up without one.
     act({
       type: "begin",
       warmup,
       mode: prefs.tutorialMode,
-      guide: !theater && !prefs.seenGestureGuide,
+      guide: !theater && (guideEveryTime || !prefs.seenGestureGuide),
       autoAdvance: prefs.autoAdvance,
       from,
       activeMs,

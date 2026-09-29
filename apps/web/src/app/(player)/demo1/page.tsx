@@ -40,6 +40,15 @@ export default async function DemoWorkoutPage() {
   ]);
   if (!workout) notFound();
   return (
-    <WorkoutPlayer workout={workout} backHref="/" preferences={preferences} progress={progress} signedIn={!!userId} />
+    <WorkoutPlayer
+      workout={workout}
+      backHref="/"
+      preferences={preferences}
+      progress={progress}
+      signedIn={!!userId}
+      // Every signed-out visitor is someone new being shown the player, so
+      // the guide opens each time they begin (signed in, it's once, as usual).
+      guideEveryTime={!userId}
+    />
   );
 }

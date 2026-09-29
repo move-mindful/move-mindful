@@ -23,9 +23,10 @@ import { TAP_ZONES } from "./player-screens";
  * three zones drawn over the video), swiping, watching a tutorial from the
  * pause screen, Settings and the tutorial mode, auto-advance, and last how the
  * member's tutorials and auto-advance are set right now, with a way into
- * Settings. Shown once, as the first exercise comes up (see guidePending in
- * the core reducer), and again from Settings. The workout waits while it's
- * open.
+ * Settings. Shown once — right after Begin, over the warm-up, or as the first
+ * exercise comes up when there's no warm-up (see `begin` in the core reducer)
+ * — and again from Settings; signed-out /demo1 visitors get it every time.
+ * The workout waits while it's open.
  */
 
 interface Page {
