@@ -217,6 +217,8 @@ Built in vertical slices, so each step leaves something usable and real footage 
   - [x] Add `ANTHROPIC_API_KEY` to Vercel (and `.env.local` for local use)
   - [x] Editable instructions for Generate with AI ("Edit instructions" in the window; default in `lib/workouts/generator-prompt.ts`, saved copy in `app_settings` via `015_app_settings.sql`); the technical rules stay fixed
   - [ ] Apply `015_app_settings.sql` in Supabase
+  - [x] "Pairs well with" on exercises (`016_exercise_pairings.sql`, both ways): Generate with AI reaches for them first when grouping, and the builder suggests them when adding to a superset or circuit
+  - [ ] Apply `016_exercise_pairings.sql` in Supabase
 - [ ] **4. Member player (web)** — preview → warm-up → player (reps, timed, sided, groups, rests, tutorial modes) → pause → end → complete. Mobile layout first, then the desktop theater layout
   - [x] Player steps (`workoutSteps`) and state machine (`playerReducer`) in `packages/core`, with tests
   - [x] `/workouts/[id]` preview + player, mobile layout, and the desktop theater layout; a `/workouts` list — admin-only (section lock) until step 6
@@ -238,6 +240,7 @@ Key product rules from design review:
 - An exercise has a tutorial (with audio) and a looping clip; sided exercises have separate right and left loops. "Reps in clip" gives the pace used for time estimates (blank = timed only)
 - Dumbbells are levels, never pounds: an exercise lists every level that works ("Light / Medium"); a workout's equipment shows one pill per level
 - Intensity is 1 (gentle) to 4 (intense), optional, exercises only; it's for programming (Generate with AI) and isn't shown to members
+- "Pairs well with" goes both ways and is a preference, not a limit: Generate with AI favours pairings but may group other exercises
 - Generate with AI never saves: it fills the builder, and the admin reviews and saves like any edit
 - A workout is a list of blocks: a single exercise (sets, with rest between sets), a rest, or a group (rounds, rest between exercises, rest between rounds; exercises in a group do one set each). Two exercises = "Superset N", three or more = "Circuit N"
 - The warm-up is optional for members and plays once, start to finish; listed workout times exclude it
