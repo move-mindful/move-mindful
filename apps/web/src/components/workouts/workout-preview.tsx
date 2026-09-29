@@ -66,9 +66,19 @@ export function WorkoutPreview({
     // pinned Begin bar keeps so it matches Safari's toolbar and reads as its
     // own panel over the list.
     <div className="min-h-dvh bg-[#1F1F3E] text-white">
+      {/* Back floats over everything, so it stays in reach as the page scrolls. */}
+      <Link
+        href={backHref}
+        aria-label="Back"
+        className="fixed left-4 top-5 z-20 flex size-11 items-center justify-center rounded-full bg-[#0E0E20]/50 backdrop-blur-md theater:left-12 theater:top-8 theater:w-auto theater:gap-1 theater:pl-3 theater:pr-[18px]"
+      >
+        <ChevronLeft />
+        <span className="hidden text-[15px] font-semibold theater:inline">Back</span>
+      </Link>
       <div className="mx-auto max-w-[560px] pb-32 theater:max-w-none theater:pb-0">
-        {/* The cover — on desktop, the whole left half, with the details over it. */}
-        <div className="relative h-[330px] overflow-hidden theater:fixed theater:inset-y-0 theater:left-0 theater:h-auto theater:w-1/2">
+        {/* The cover — on phones pinned at the top while the page scrolls up
+            over it; on desktop, the whole left half, with the details over it. */}
+        <div className="sticky top-0 h-[330px] overflow-hidden theater:fixed theater:inset-y-0 theater:left-0 theater:h-auto theater:w-1/2">
           {cover && (
             <Image
               src={cover}
@@ -94,14 +104,6 @@ export function WorkoutPreview({
                 "linear-gradient(180deg, rgba(31,31,62,0.45) 0%, rgba(31,31,62,0) 16%, rgba(31,31,62,0.2) 34%, rgba(31,31,62,0.86) 56%, #1F1F3E 72%), linear-gradient(90deg, rgba(31,31,62,0) 72%, #1F1F3E 100%)",
             }}
           />
-          <Link
-            href={backHref}
-            aria-label="Back"
-            className="absolute left-4 top-5 flex size-11 items-center justify-center rounded-full bg-[#0E0E20]/50 backdrop-blur-md theater:left-12 theater:top-8 theater:w-auto theater:gap-1 theater:pl-3 theater:pr-[18px]"
-          >
-            <ChevronLeft />
-            <span className="hidden text-[15px] font-semibold theater:inline">Back</span>
-          </Link>
 
           <div className="hidden theater:absolute theater:bottom-[72px] theater:left-20 theater:right-16 theater:flex theater:max-w-[576px] theater:flex-col theater:gap-[26px]">
             <Details workout={workout} level={level} pills={pills} totalSeconds={totalSeconds} exerciseCount={exerciseCount} />
@@ -109,7 +111,12 @@ export function WorkoutPreview({
           </div>
         </div>
 
-        <div className="relative -mt-12 flex flex-col gap-6 px-5 theater:ml-[50%] theater:mt-0 theater:min-h-dvh theater:px-20 theater:pb-16 theater:pt-[88px]">
+        {/* Solid, so it covers the pinned cover as it scrolls up — but for a
+            faded top edge, so the title still sits in the photo's fade. */}
+        <div
+          className="relative z-10 -mt-12 flex flex-col gap-6 px-5 theater:ml-[50%] theater:mt-0 theater:min-h-dvh theater:px-20 theater:pb-16 theater:pt-[88px]"
+          style={{ background: "linear-gradient(180deg, rgba(31,31,62,0) 0px, #1F1F3E 48px)" }}
+        >
           <div className="flex flex-col gap-6 theater:hidden">
             <Details workout={workout} level={level} pills={pills} totalSeconds={totalSeconds} exerciseCount={exerciseCount} />
           </div>
@@ -133,7 +140,7 @@ export function WorkoutPreview({
           hairline edge so the list visibly slides under it.
           Its background also carries on below it, behind a floating Safari
           toolbar, so nothing scrolls into view underneath. */}
-      <div className="fixed inset-x-0 bottom-0 border-t border-white/10 bg-[#14142B] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-40 after:bg-[#14142B] theater:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-white/10 bg-[#14142B] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-40 after:bg-[#14142B] theater:hidden">
         <div className="mx-auto max-w-[560px] px-5 pb-[max(20px,calc(env(safe-area-inset-bottom)+8px))] pt-4">{begin}</div>
       </div>
     </div>
