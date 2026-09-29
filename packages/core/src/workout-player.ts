@@ -57,8 +57,8 @@ export interface PlayerState {
   /** Show the gesture guide as the first exercise comes up (a workout begun without a warm-up, or resumed). */
   guidePending: boolean;
   /**
-   * Rep sets move on by themselves after their estimated time (the step's
-   * `seconds`: reps at the clip's pace, plus getting into position).
+   * Rep sets move on by themselves after the time the reps take (the step's
+   * `workSeconds`: reps at the clip's pace; getting ready comes before it).
    */
   autoAdvance: boolean;
 }
@@ -165,7 +165,7 @@ function timerFor(step: WorkoutStep, stage: PlayerState["stage"], autoAdvance: b
   if (stage !== "exercise") return null;
   if (step.measure === "time") return { leftMs: step.amount * 1000, since: null };
   // Reps, with auto-advance: the set's estimated length.
-  return autoAdvance ? { leftMs: step.seconds * 1000, since: null } : null;
+  return autoAdvance ? { leftMs: step.workSeconds * 1000, since: null } : null;
 }
 
 /** Start the countdown and the workout clock while running; freeze them otherwise. */

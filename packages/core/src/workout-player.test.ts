@@ -192,14 +192,14 @@ test("ending the workout goes back to the preview", () => {
   assert.equal(s.mode, "once", "the tutorial setting carries over");
 });
 
-test("auto-advance moves a rep set on after its estimated time", () => {
-  // Row set 1: 10 reps × 2.5 s + 5 s to get into position = 30 s.
+test("auto-advance moves a rep set on after the time the reps take", () => {
+  // Row set 1: 10 reps × 2.5 s = 25 s (getting into position is the get-ready countdown's job).
   let s = run([{ type: "begin", warmup: false, mode: "off", autoAdvance: true, now: 0 }]);
   assert.equal(s.step, 0);
-  assert.equal(timerLeft(s, 0), 30_000);
-  s = run([{ type: "tick", now: 29_000 }], s);
+  assert.equal(timerLeft(s, 0), 25_000);
+  s = run([{ type: "tick", now: 24_000 }], s);
   assert.equal(s.step, 0, "not yet");
-  s = run([{ type: "tick", now: 30_000 }], s);
+  s = run([{ type: "tick", now: 25_000 }], s);
   assert.equal(steps[s.step].kind, "rest", "on to the rest after it");
 });
 
@@ -208,7 +208,7 @@ test("without auto-advance a rep set waits for a tap; turning it on starts the c
   assert.equal(s.step, 0);
   assert.equal(s.timer, null);
   s = run([{ type: "autoAdvance", on: true, now: 600_000 }], s);
-  assert.equal(timerLeft(s, 600_000), 30_000);
+  assert.equal(timerLeft(s, 600_000), 25_000);
   s = run([{ type: "autoAdvance", on: false, now: 610_000 }], s);
   assert.equal(s.timer, null);
 });

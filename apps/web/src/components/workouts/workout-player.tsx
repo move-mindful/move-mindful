@@ -99,7 +99,7 @@ function useCanMixAudio(): boolean {
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** The get-ready countdown before an exercise starts (see readyMs in core). */
-const GET_READY_MS = 3000;
+const GET_READY_MS = 6000;
 
 /** A random (v4) UUID — randomUUID is only there on https pages, so build one otherwise. */
 function newId(): string {
@@ -548,7 +548,7 @@ export function WorkoutPlayer({
           ? { kind: "set", fraction: 0 }
           : state.timer
           ? // A countdown — a timed set, or a rep set on auto-advance — fills the segment as it runs.
-            { kind: "set", fraction: 1 - leftMs / ((set.measure === "time" ? set.amount : set.seconds) * 1000) }
+            { kind: "set", fraction: 1 - leftMs / ((set.measure === "time" ? set.amount : set.workSeconds) * 1000) }
           : { kind: "set", fraction: 1 };
 
   const bar = (

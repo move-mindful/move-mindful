@@ -206,6 +206,12 @@ export interface SetStep {
   firstOfExercise: boolean;
   /** Estimated length, including getting into position or switching sides. */
   seconds: number;
+  /**
+   * Just the work: the reps at the clip's pace, or the hold — without getting
+   * into position. What an auto-advancing rep set counts down, since the
+   * player's get-ready countdown covers getting into position.
+   */
+  workSeconds: number;
 }
 
 export interface RestStep {
@@ -269,6 +275,7 @@ export function workoutSteps(
         parts: sides.length as 1 | 2,
         firstOfExercise: part === 0 && !seen.has(move.exerciseId),
         seconds: perSide + (part === 0 ? opts.secondsPerSet : opts.secondsPerSideSwitch),
+        workSeconds: perSide,
       });
     });
     seen.add(move.exerciseId);
