@@ -24,8 +24,11 @@ export function fitTutorialMode(mode: TutorialMode, autoAdvance: boolean): Tutor
 
 export type PlayerPhase = "preview" | "warmup" | "workout" | "complete";
 
-/** What's open over the player. "guide" is the first-run gesture guide. */
-export type PlayerSheet = "overview" | "settings" | "end" | "guide" | null;
+/**
+ * What's open over the player. "guide" is the first-run gesture guide;
+ * "restartWarmup" asks whether to start the warm-up over (a tap on its left).
+ */
+export type PlayerSheet = "overview" | "settings" | "end" | "guide" | "restartWarmup" | null;
 
 export interface PlayerState {
   phase: PlayerPhase;
@@ -97,6 +100,8 @@ export type PlayerAction =
   /** Turn auto-advance on or off; applies to the set on screen too. */
   | { type: "autoAdvance"; on: boolean; now: number }
   | { type: "restartSet"; now: number }
+  /** Start the warm-up video over. */
+  | { type: "restartWarmup"; now: number }
   | { type: "restartWorkout"; now: number }
   | { type: "watchTutorial"; now: number }
   | { type: "jump"; step: number; now: number }
@@ -320,6 +325,8 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
       const i = setStepFor(ctx.steps, s.step);
       return s.phase === "workout" && i !== null ? enter(ctx, s, i, false) : s;
     }
+    case "restartWarmup":
+      return s.phase === "warmup" ? { ...s, paused: false, sheet: null, take: s.take + 1 } : s;
     case "restartWorkout":
       // A fresh start: tutorials come up again before each exercise (per the
       // member's setting), and the clock starts over.

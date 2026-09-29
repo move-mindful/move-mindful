@@ -68,12 +68,22 @@ export function TheaterButtons({ buttons }: { buttons: TheaterButton[] }) {
 }
 
 /** Back and next, level with the middle of the video. */
-export function TheaterArrows({ onBack, onNext, nextLabel }: { onBack: () => void; onNext: () => void; nextLabel: string }) {
+export function TheaterArrows({
+  onBack,
+  onNext,
+  nextLabel,
+  backLabel = "Previous set",
+}: {
+  onBack: () => void;
+  onNext: () => void;
+  nextLabel: string;
+  backLabel?: string;
+}) {
   const arrow =
     "absolute top-1/2 -mt-[26px] flex size-[52px] items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20";
   return (
     <>
-      <button type="button" aria-label="Previous set" onClick={onBack} className={arrow} style={{ right: beside }}>
+      <button type="button" aria-label={backLabel} onClick={onBack} className={arrow} style={{ right: beside }}>
         <ChevronLeft />
       </button>
       <button type="button" aria-label={nextLabel} onClick={onNext} className={arrow} style={{ left: beside }}>

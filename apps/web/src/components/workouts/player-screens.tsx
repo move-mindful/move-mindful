@@ -256,8 +256,9 @@ export function TapZones({
   onPullMove,
   onPullEnd,
   nextLabel = "Next",
+  backLabel = "Previous set",
 }: {
-  /** Left and right taps; left out (the warm-up), those sides do nothing. */
+  /** Left and right taps; left out, those sides do nothing. */
   onBack?: () => void;
   onNext?: () => void;
   onMiddle: () => void;
@@ -270,6 +271,7 @@ export function TapZones({
   /** `velocity` is upward, in px per ms. */
   onPullEnd?: (distance: number, velocity: number) => void;
   nextLabel?: string;
+  backLabel?: string;
 }) {
   const press = useRef<{
     x: number;
@@ -363,7 +365,7 @@ export function TapZones({
       {/* Back and next for keyboards and screen readers (Pause is a real button). */}
       {onBack && (
         <button type="button" className="sr-only" onClick={onBack}>
-          Previous set
+          {backLabel}
         </button>
       )}
       {onNext && (
@@ -1000,6 +1002,47 @@ export function ReadyScreen({
           goLabel="Start now"
           onGo={onStart}
         />
+      </div>
+    </div>
+  );
+}
+
+// ── Restart the warm-up? ──────────────────────────────
+
+/**
+ * A tap on the warm-up's left side: a small card over the held warm-up asking
+ * whether to start it over. Keep going (or a tap outside, or Esc) carries on.
+ */
+export function RestartWarmupPrompt({ onRestart, onCancel }: { onRestart: () => void; onCancel: () => void }) {
+  return (
+    <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#0A0A1A]/50 px-6">
+      <button type="button" aria-label="Keep going" onClick={onCancel} className="absolute inset-0 cursor-default" />
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="restart-warmup-title"
+        className="relative w-full max-w-[320px] rounded-[24px] bg-[#1A1A34] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.45)] ring-1 ring-white/10"
+      >
+        <h2 id="restart-warmup-title" className="text-center text-xl font-semibold">
+          Restart the warm-up?
+        </h2>
+        <div className="mt-5 flex gap-3">
+          <button
+            type="button"
+            autoFocus
+            onClick={onCancel}
+            className="h-12 flex-1 rounded-full bg-white/[0.12] text-base font-semibold"
+          >
+            Keep going
+          </button>
+          <button
+            type="button"
+            onClick={onRestart}
+            className="h-12 flex-1 rounded-full bg-white text-base font-semibold text-[#14142B]"
+          >
+            Restart
+          </button>
+        </div>
       </div>
     </div>
   );

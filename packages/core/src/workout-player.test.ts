@@ -54,6 +54,21 @@ test("the warm-up comes first when chosen", () => {
   assert.equal(s.step, 0);
 });
 
+test("the warm-up can start over: asking holds it, restarting plays it from the top", () => {
+  let s = run([{ type: "begin", warmup: true, mode: "off", now: 0 }]);
+  const take = s.take;
+  s = run([{ type: "sheet", sheet: "restartWarmup", now: 5000 }], s);
+  assert.equal(isRunning(s), false, "held while asking");
+  s = run([{ type: "restartWarmup", now: 6000 }], s);
+  assert.equal(s.phase, "warmup");
+  assert.equal(s.sheet, null);
+  assert.equal(isRunning(s), true);
+  assert.equal(s.take, take + 1, "the clip starts over");
+  // Only during the warm-up.
+  s = run([{ type: "endWarmup", now: 7000 }, { type: "restartWarmup", now: 8000 }], s);
+  assert.equal(s.phase, "workout");
+});
+
 test("the warm-up video ending starts the workout", () => {
   const s = run([
     { type: "begin", warmup: true, mode: "loop", now: 0 },

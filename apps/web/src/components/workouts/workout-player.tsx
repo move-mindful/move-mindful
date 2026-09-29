@@ -41,6 +41,7 @@ import {
   EndSheet,
   PausedScreen,
   ReadyScreen,
+  RestartWarmupPrompt,
   RestScreen,
   SetScreen,
   TopShade,
@@ -256,6 +257,10 @@ export function WorkoutPlayer({
     setHoldInPlace(false);
     act({ type: "resume" });
   }
+  /** Back on the warm-up (a left tap, the left arrow): ask whether to start it over. */
+  function askRestartWarmup() {
+    act({ type: "sheet", sheet: "restartWarmup" });
+  }
   const active = state.phase === "warmup" || state.phase === "workout";
   const step: WorkoutStep | undefined = steps[state.step];
   const set = step?.kind === "set" ? step : null;
@@ -410,6 +415,7 @@ export function WorkoutPlayer({
     else pause();
   });
   const onSpace = useEffectEvent(() => (state.paused ? resumePlay() : pause()));
+  const onBackKey = useEffectEvent(() => (state.phase === "warmup" ? askRestartWarmup() : act({ type: "back" })));
 
   // Keyboard: arrows move between sets, space pauses, Escape closes a sheet.
 
@@ -427,7 +433,7 @@ export function WorkoutPlayer({
       } else if (running && e.key === "ArrowRight") {
         act({ type: "next" });
       } else if (running && e.key === "ArrowLeft") {
-        act({ type: "back" });
+        onBackKey();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -622,13 +628,21 @@ export function WorkoutPlayer({
         <>
           <TopShade tall />
           <WarmupProgress seconds={clip.time} duration={duration} />
-          {/* Tap the middle (or hold) to pause; the sides do nothing on the warm-up. */}
-          <TapZones onMiddle={pause} onHold={pause} />
+          {/* As on a set: the right skips ahead, the left offers to start over, the middle pauses. */}
+          <TapZones
+            onBack={askRestartWarmup}
+            onNext={skip}
+            onMiddle={pause}
+            onHold={pause}
+            backLabel="Restart the warm-up"
+            nextLabel="Skip warm-up"
+          />
         </>
       );
       beside = (
         <>
           <TheaterWarmupInfo name={workout.warmup.name} fraction={duration ? clip.time / duration : 0} onSkip={skip} />
+          <TheaterArrows onBack={askRestartWarmup} onNext={skip} backLabel="Restart the warm-up" nextLabel="Skip warm-up" />
           <TheaterButtons buttons={sideButtons()} />
         </>
       );
@@ -637,10 +651,14 @@ export function WorkoutPlayer({
         <>
           <TopShade tall />
           <TapZones
+            onBack={askRestartWarmup}
+            onNext={skip}
             onMiddle={pause}
             onHold={pause}
             onSwipeDown={() => setChromeHidden(true)}
             onSwipeUp={() => setChromeHidden(false)}
+            backLabel="Restart the warm-up"
+            nextLabel="Skip warm-up"
           />
           <WarmupScreen
             name={workout.warmup.name}
@@ -1012,6 +1030,12 @@ export function WorkoutPlayer({
           {!theater && overview}
           {!theater && settings}
           {!theater && end}
+          {state.sheet === "restartWarmup" && (
+            <RestartWarmupPrompt
+              onRestart={() => act({ type: "restartWarmup" })}
+              onCancel={() => act({ type: "sheet", sheet: null })}
+            />
+          )}
           {!theater && state.sheet === "guide" && (
             <GestureGuide
               settings={{ mode: state.mode, autoAdvance: state.autoAdvance }}
