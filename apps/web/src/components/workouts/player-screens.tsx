@@ -406,12 +406,24 @@ function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
  * it names, trimmed to fit.
  */
 /** A bold capitals pill ("Up next", "Tutorial") and a line of text beside it — phones' minimised views and desktop's info. */
-export function LabelLine({ label, text, className = "" }: { label: string; text: string; className?: string }) {
+export function LabelLine({
+  label,
+  text,
+  fill = null,
+  className = "",
+}: {
+  label: string;
+  text: string;
+  /** Fill the label pill with a countdown's progress (Up next, moving on by itself). */
+  fill?: number | null;
+  className?: string;
+}) {
   return (
     <p className={`flex min-w-0 items-center gap-2 ${className}`}>
       {/* As tall as the chips below it, a shade brighter and in bold capitals. */}
-      <span className="flex h-[30px] shrink-0 items-center rounded-full bg-white/[0.24] px-3 text-[13px] font-bold uppercase tracking-[0.08em]">
-        {label}
+      <span className="relative flex h-[30px] shrink-0 items-center overflow-hidden rounded-full bg-white/[0.24] px-3 text-[13px] font-bold uppercase tracking-[0.08em]">
+        {fill !== null && <ProgressFill fraction={fill} />}
+        <span className="relative">{label}</span>
       </span>
       <span className="min-w-0 truncate text-[15px] font-medium">{text}</span>
     </p>
@@ -479,7 +491,7 @@ export function SetScreen({
       </div>
       {/* Controls swiped away: what's next, under the reps. */}
       <Collapse open={hidden}>
-        <LabelLine label={pill.label} text={pill.text} className="mt-2" />
+        <LabelLine label={pill.label} text={pill.text} fill={fill} className="mt-2" />
       </Collapse>
       <Collapse open={!hidden}>
         <h1 className="mt-1 truncate text-xl font-semibold leading-tight">{name}</h1>
