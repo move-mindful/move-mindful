@@ -654,21 +654,18 @@ const RING = 2 * Math.PI * 116;
 /**
  * The buttons under a countdown (rest, get ready): Pause — which holds the
  * countdown right there and turns into Resume — beside the way on (Continue,
- * Start now). Held, a small More options opens the full pause screen
- * (settings, restarting, ending the workout).
+ * Start now).
  */
 function CountdownControls({
   paused,
   onPause,
   onResume,
-  onMore,
   goLabel,
   onGo,
 }: {
   paused: boolean;
   onPause: () => void;
   onResume: () => void;
-  onMore: () => void;
   goLabel: string;
   onGo: () => void;
 }) {
@@ -692,12 +689,24 @@ function CountdownControls({
           <ArrowRight />
         </button>
       </div>
-      {paused && (
-        <button type="button" onClick={onMore} className="-mb-2 h-10 self-center px-3 text-[15px] font-semibold text-white/75">
-          More options
-        </button>
-      )}
     </>
+  );
+}
+
+/**
+ * While a countdown is held: More options, top right under the progress bar
+ * (where the pause screen keeps its gear), opening the full pause screen —
+ * settings, restarting, ending the workout. Floats, so nothing else moves.
+ */
+function MoreOptions({ onMore }: { onMore: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onMore}
+      className="absolute right-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] z-10 flex h-10 items-center rounded-full bg-white/[0.14] px-4 text-[15px] font-semibold backdrop-blur-md"
+    >
+      More options
+    </button>
   );
 }
 
@@ -733,6 +742,7 @@ export function RestScreen({
     <div
       className={`pointer-events-none [&_button]:pointer-events-auto ${theater ? centered : "absolute inset-0 flex flex-col"}`}
     >
+      {paused && <MoreOptions onMore={onMore} />}
       <div className={`flex flex-col items-center gap-[18px] ${theater ? "" : "flex-1 justify-center pt-12"}`}>
         <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.16em] text-[#A99CFF]">
           {round && <Loop size={16} />}
@@ -789,7 +799,6 @@ export function RestScreen({
           paused={paused}
           onPause={onPause}
           onResume={onResume}
-          onMore={onMore}
           goLabel="Continue"
           onGo={onContinue}
         />
@@ -948,6 +957,7 @@ export function ReadyScreen({
     <div
       className={`pointer-events-none [&_button]:pointer-events-auto ${theater ? centered : "absolute inset-0 flex flex-col"}`}
     >
+      {paused && <MoreOptions onMore={onMore} />}
       <div className={`flex flex-col items-center gap-[22px] px-6 text-center ${theater ? "" : "flex-1 justify-center pt-10"}`}>
         <div className="flex items-center gap-2 text-xl font-bold uppercase tracking-[0.16em] text-[#A99CFF]">
           Get ready
@@ -1009,7 +1019,6 @@ export function ReadyScreen({
           paused={paused}
           onPause={onPause}
           onResume={onResume}
-          onMore={onMore}
           goLabel="Start now"
           onGo={onStart}
         />
