@@ -397,7 +397,8 @@ function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
  * A minimised view's one line: a label pill ("Up next", "Tutorial") and what
  * it names, trimmed to fit.
  */
-function LabelLine({ label, text, className = "" }: { label: string; text: string; className?: string }) {
+/** A bold capitals pill ("Up next", "Tutorial") and a line of text beside it — phones' minimised views and desktop's info. */
+export function LabelLine({ label, text, className = "" }: { label: string; text: string; className?: string }) {
   return (
     <p className={`flex min-w-0 items-center gap-2 ${className}`}>
       {/* As tall as the chips below it, a shade brighter and in bold capitals. */}

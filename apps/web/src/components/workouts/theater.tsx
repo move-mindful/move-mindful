@@ -3,7 +3,7 @@
 import { useSyncExternalStore, type ReactNode } from "react";
 import { clock } from "@/lib/workouts/player";
 import { ArrowRight, ChevronLeft, ChevronRight, Dumbbell, Loop, Sun } from "./icons";
-import { BeginButton, Chip, ProgressFill, type TutorialProgress } from "./player-screens";
+import { BeginButton, Chip, LabelLine, ProgressFill, type TutorialProgress } from "./player-screens";
 
 // The player's desktop ("theater") layout, from the desktop frames of the
 // player design canvas: the 9:16 video in the middle, what's on to its left,
@@ -122,7 +122,8 @@ export function TheaterSetInfo({
         )}
       </div>
       <h1 className="text-[28px] font-semibold leading-tight">{name}</h1>
-      <div className="mt-3 text-[15px] text-white/65">Up next · {upNext}</div>
+      {/* The same Up next pill as the phone's minimised view. */}
+      <LabelLine label="Up next" text={upNext} className="mt-3 max-w-full" />
     </Info>
   );
 }
