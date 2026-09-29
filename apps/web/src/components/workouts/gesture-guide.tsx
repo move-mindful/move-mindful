@@ -8,6 +8,7 @@ import {
   ArrowDown,
   ArrowUp,
   ChevronLeft,
+  Close,
   ChevronRight,
   Loop,
   Pause,
@@ -233,11 +234,23 @@ export function GestureGuide({
       </div>
 
       <section className="relative flex flex-col gap-4 rounded-t-[28px] bg-[#1A1A34] px-5 pb-[max(28px,calc(env(safe-area-inset-bottom)+12px))] pt-6">
-        <div className="flex flex-col gap-1">
-          <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/60">
-            How it works · {page + 1} of {pages.length}
-          </span>
-          <h2 className="text-[22px] font-semibold tracking-[-0.01em]">{current.title}</h2>
+        {/* ✕ closes the guide from any page — in the panel's corner, clear of
+            the pictures above (page 4's gear sits in the screen's corner). */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/60">
+              How it works · {page + 1} of {pages.length}
+            </span>
+            <h2 className="text-[22px] font-semibold tracking-[-0.01em]">{current.title}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onDone}
+            aria-label="Close the guide"
+            className="-mr-1 -mt-1 flex size-10 shrink-0 items-center justify-center rounded-full bg-white/[0.12] text-white/85"
+          >
+            <Close size={18} />
+          </button>
         </div>
         <div className="flex flex-col gap-3.5">
           {current.rows.map((r) => (
@@ -255,11 +268,9 @@ export function GestureGuide({
           </button>
         )}
         <div className={`flex items-center gap-3 ${last ? "" : "mt-1"}`}>
-          {/* Skipping the how-to still lands on the settings, so everyone
-              sees how their tutorials and auto-advance are set. */}
           <button
             type="button"
-            onClick={() => setPage(page === 0 ? pages.length - 1 : page - 1)}
+            onClick={() => (page === 0 ? onDone() : setPage(page - 1))}
             className="h-[54px] px-4 text-base font-semibold text-white/75"
           >
             {page === 0 ? "Skip" : "Back"}

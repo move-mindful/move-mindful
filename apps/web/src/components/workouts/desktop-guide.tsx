@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import type { TutorialMode } from "@move-mindful/core";
-import { ChevronLeft, ChevronRight, List, Pause, Settings, WatchTutorial } from "./icons";
+import { ChevronLeft, ChevronRight, Close, List, Pause, Settings, WatchTutorial } from "./icons";
 import { PausedPicture, Row, settingsPage, type Page } from "./gesture-guide";
 import { TAP_ZONES } from "./player-screens";
 
@@ -98,7 +98,16 @@ export function DesktopGuide({
       aria-modal="true"
       aria-label="How to use the player"
     >
-      <div className="flex w-full max-w-[560px] flex-col overflow-hidden rounded-[28px] bg-[#1A1A34] shadow-[0_24px_80px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
+      <div className="relative flex w-full max-w-[560px] flex-col overflow-hidden rounded-[28px] bg-[#1A1A34] shadow-[0_24px_80px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
+        {/* ✕ closes the guide from any page. */}
+        <button
+          type="button"
+          onClick={onDone}
+          aria-label="Close the guide"
+          className="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full bg-white/[0.12] text-white/85 transition hover:bg-white/20 hover:text-white"
+        >
+          <Close size={18} />
+        </button>
         <div className="flex h-[240px] shrink-0 items-center justify-center bg-white/[0.04]" aria-hidden="true">
           {current.picture}
         </div>
@@ -115,10 +124,9 @@ export function DesktopGuide({
             ))}
           </div>
           <div className="mt-2 flex items-center gap-3">
-            {/* Skipping still lands on the settings, as on phones. */}
             <button
               type="button"
-              onClick={() => setPage(page === 0 ? count - 1 : page - 1)}
+              onClick={() => (page === 0 ? onDone() : setPage(page - 1))}
               className="h-12 px-2 text-base font-semibold text-white/75 transition hover:text-white"
             >
               {page === 0 ? "Skip" : "Back"}
