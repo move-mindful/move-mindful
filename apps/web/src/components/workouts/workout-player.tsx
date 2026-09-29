@@ -1034,6 +1034,8 @@ export function WorkoutPlayer({
             <RestartWarmupPrompt
               onRestart={() => act({ type: "restartWarmup" })}
               onCancel={() => act({ type: "sheet", sheet: null })}
+              // Nothing to save during the warm-up, so no second question.
+              onEnd={() => endWorkout(false)}
             />
           )}
           {!theater && state.sheet === "guide" && (
