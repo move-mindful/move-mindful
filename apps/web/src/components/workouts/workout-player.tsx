@@ -229,8 +229,7 @@ export function WorkoutPlayer({
   // Settings goes back to that page rather than into the workout.
   const [settingsFromGuide, setSettingsFromGuide] = useState(false);
   // Paused on a rest or get-ready screen: it stays on that screen, its
-  // countdown held, rather than switching to the pause screen (More options
-  // gets there).
+  // countdown held, rather than switching to the pause screen.
   const [holdInPlace, setHoldInPlace] = useState(false);
   const theater = useTheater();
   // Controls swiped away (phones): just the reps over the video, until a swipe up.
@@ -740,7 +739,6 @@ export function WorkoutPlayer({
             paused={state.paused}
             onPause={pause}
             onResume={resumePlay}
-            onMore={() => setHoldInPlace(false)}
             onContinue={goOn}
             theater={theater}
           />
@@ -770,7 +768,6 @@ export function WorkoutPlayer({
             paused={state.paused}
             onPause={pause}
             onResume={resumePlay}
-            onMore={() => setHoldInPlace(false)}
             onStart={goOn}
             theater={theater}
           />

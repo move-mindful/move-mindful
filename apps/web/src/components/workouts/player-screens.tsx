@@ -693,22 +693,6 @@ function CountdownControls({
   );
 }
 
-/**
- * While a countdown is held: More options, top right under the progress bar
- * (where the pause screen keeps its gear), opening the full pause screen —
- * settings, restarting, ending the workout. Floats, so nothing else moves.
- */
-function MoreOptions({ onMore }: { onMore: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onMore}
-      className="absolute right-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] z-10 flex h-10 items-center rounded-full bg-white/[0.14] px-4 text-[15px] font-semibold backdrop-blur-md"
-    >
-      More options
-    </button>
-  );
-}
 
 export function RestScreen({
   round,
@@ -719,7 +703,6 @@ export function RestScreen({
   paused,
   onPause,
   onResume,
-  onMore,
   onContinue,
   theater = false,
 }: {
@@ -733,7 +716,6 @@ export function RestScreen({
   paused: boolean;
   onPause: () => void;
   onResume: () => void;
-  onMore: () => void;
   onContinue: () => void;
   theater?: boolean;
 }) {
@@ -742,7 +724,6 @@ export function RestScreen({
     <div
       className={`pointer-events-none [&_button]:pointer-events-auto ${theater ? centered : "absolute inset-0 flex flex-col"}`}
     >
-      {paused && <MoreOptions onMore={onMore} />}
       <div className={`flex flex-col items-center gap-[18px] ${theater ? "" : "flex-1 justify-center pt-12"}`}>
         <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.16em] text-[#A99CFF]">
           {round && <Loop size={16} />}
@@ -924,7 +905,6 @@ export function ReadyScreen({
   paused,
   onPause,
   onResume,
-  onMore,
   onStart,
   theater = false,
 }: {
@@ -941,7 +921,6 @@ export function ReadyScreen({
   paused: boolean;
   onPause: () => void;
   onResume: () => void;
-  onMore: () => void;
   onStart: () => void;
   theater?: boolean;
 }) {
@@ -957,7 +936,6 @@ export function ReadyScreen({
     <div
       className={`pointer-events-none [&_button]:pointer-events-auto ${theater ? centered : "absolute inset-0 flex flex-col"}`}
     >
-      {paused && <MoreOptions onMore={onMore} />}
       <div className={`flex flex-col items-center gap-[22px] px-6 text-center ${theater ? "" : "flex-1 justify-center pt-10"}`}>
         <div className="flex items-center gap-2 text-xl font-bold uppercase tracking-[0.16em] text-[#A99CFF]">
           Get ready
