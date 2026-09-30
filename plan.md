@@ -255,6 +255,7 @@ Key product rules from design review:
 - [x] Phone navigation: a floating iOS-style tab bar replaces the header links below tablet width
 - [x] Loading states (`loading.tsx`) for every signed-in, player and admin page, so taps respond at once and Next.js can prefetch; pages that only need the admin role no longer call RevenueCat
 - [x] Account deletion cleanup: Clerk's `user.deleted` webhook removes the member's rows (`lib/member/delete-server.ts`)
+- [ ] **Time from account creation to first paid purchase** (any product or the membership). Account created = the Clerk user's creation date; first paid = their earliest real purchase in RevenueCat — not a promotional grant (like the `/join` free membership) or a sandbox purchase. Store both per member (first paid set by the RevenueCat webhook the first time it sees a paid purchase; existing members backfilled from Clerk and RevenueCat), then report days to first purchase — median and spread, which product came first, and by how they signed up (the free class via ManyChat vs. straight to a product page). Unlike the workout metrics, this one *does* start at account creation, so the free-class signups are exactly who it measures. A new member-keyed table goes in `deleteMemberData()`
 - [ ] Deleting an account doesn't cancel a paid subscription or remove Mailchimp/ManyChat/RevenueCat copies — decide how to handle before promoting self-service deletion (and before the iOS app, which Apple requires to offer it)
 
 ### Phase 5 — iOS app
