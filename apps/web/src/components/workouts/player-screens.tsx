@@ -855,7 +855,8 @@ export function RestScreen({
         {roundLine && <div className="text-base text-white/80">{roundLine}</div>}
         {!theater && card && <div className="mt-2 w-full px-5">{card}</div>}
       </div>
-      <div className={`relative gap-4 ${bottomGroup(theater)}`}>
+      {/* Desktop: as far from the card to the buttons as from the ring to the card (the stack's gap-9). */}
+      <div className={`relative ${theater ? "gap-9" : "gap-4"} ${bottomGroup(theater)}`}>
         {theater && card}
         <CountdownControls
           paused={paused}
