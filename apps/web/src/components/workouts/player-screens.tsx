@@ -138,6 +138,18 @@ function SettingsButton({ onClick }: { onClick: () => void }) {
 }
 
 /** Instructor audio on or off — the same setting as in Settings, a tap away. */
+/**
+ * Settings, top right under the progress bar: on the pause screens, and on
+ * phones on a rest or get-ready screen while its countdown is held.
+ */
+export function CornerSettings({ onClick }: { onClick: () => void }) {
+  return (
+    <div className="absolute right-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] z-10">
+      <SettingsButton onClick={onClick} />
+    </div>
+  );
+}
+
 function SoundButton({ muted, onToggle }: { muted: boolean; onToggle: () => void }) {
   return (
     <RoundButton label={muted ? "Turn instructor audio on" : "Turn instructor audio off"} onClick={onToggle}>
@@ -1210,12 +1222,7 @@ export function PausedScreen({
           </button>
         </div>
       </div>
-      {/* Settings, top right under the progress bar. */}
-      {onSettings && (
-        <div className="absolute right-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] z-10">
-          <SettingsButton onClick={onSettings} />
-        </div>
-      )}
+      {onSettings && <CornerSettings onClick={onSettings} />}
     </>
   );
 }

@@ -48,6 +48,7 @@ import {
   LoadingSpinner,
   TapZones,
   TopBar,
+  CornerSettings,
   TutorialScreen,
   SettingsSheet,
   WarmupProgress,
@@ -779,6 +780,8 @@ export function WorkoutPlayer({
             onContinue={goOn}
             theater={theater}
           />
+          {/* Phones: Settings while the countdown is held, as on the pause screen. */}
+          {!theater && state.paused && <CornerSettings onClick={openSettings} />}
         </>
       );
       // Desktop: the arrows and the button column beside the video, as on every other screen.
@@ -817,6 +820,7 @@ export function WorkoutPlayer({
             onStart={goOn}
             theater={theater}
           />
+          {!theater && state.paused && <CornerSettings onClick={openSettings} />}
         </>
       );
       if (theater) {
