@@ -30,6 +30,7 @@ import {
   type AdminWorkout,
   type CatalogExercise,
   type GenerateCriteria,
+  type RatingSummary,
   type WorkoutLevel,
 } from "@/lib/workouts/shared";
 import { ClipPreview } from "@/components/admin/exercises/clip-preview";
@@ -37,6 +38,7 @@ import { Flag, Section } from "@/components/admin/exercises/ui";
 import { DurationInput, ExerciseSearch, Segmented, Stepper, Thumb } from "@/components/admin/workouts/fields";
 import { CoverField, resizeCover } from "@/components/admin/workouts/cover-field";
 import { GenerateDialog } from "@/components/admin/workouts/generate-dialog";
+import { RatingDetails } from "@/components/admin/workouts/rating";
 
 // The builder keeps a stable key on every block and move so React can track
 // rows as they're reordered; keys are stripped before saving.
@@ -94,6 +96,7 @@ export function WorkoutBuilder({
   instructors,
   tags,
   aiInstructions,
+  rating = null,
 }: {
   workout: AdminWorkout | null;
   catalog: CatalogExercise[];
@@ -102,6 +105,8 @@ export function WorkoutBuilder({
   tags: ExerciseTag[];
   /** The instructions Claude gets in "Generate with AI", as saved now. */
   aiInstructions: string;
+  /** Members' ratings of this workout (null before any, or while it's new). */
+  rating?: RatingSummary | null;
 }) {
   const router = useRouter();
   const [title, setTitle] = useState(workout?.title ?? "");
@@ -699,6 +704,12 @@ export function WorkoutBuilder({
               </p>
             )}
           </Section>
+
+          {workout && (
+            <Section title="Rating">
+              <RatingDetails rating={rating} />
+            </Section>
+          )}
 
           {!published && problems.length > 0 && (
             <section className="space-y-1.5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">

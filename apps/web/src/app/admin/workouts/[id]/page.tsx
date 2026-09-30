@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getInstructorOptions } from "@/lib/admin/queries";
 import { getExerciseTags } from "@/lib/exercises/server";
+import { getRatingSummary } from "@/lib/member/ratings-server";
 import { getGeneratorInstructions } from "@/lib/workouts/generate";
 import { getCatalog, getWorkout } from "@/lib/workouts/server";
 import { WorkoutBuilder } from "@/components/admin/workouts/workout-builder";
@@ -11,12 +12,13 @@ export const maxDuration = 60;
 
 export default async function EditWorkoutPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [workout, catalog, instructors, tags, aiInstructions] = await Promise.all([
+  const [workout, catalog, instructors, tags, aiInstructions, rating] = await Promise.all([
     getWorkout(id),
     getCatalog(),
     getInstructorOptions(),
     getExerciseTags(),
     getGeneratorInstructions(),
+    getRatingSummary(id),
   ]);
   if (!workout) notFound();
   return (
@@ -27,6 +29,7 @@ export default async function EditWorkoutPage({ params }: { params: Promise<{ id
       instructors={instructors}
       tags={tags}
       aiInstructions={aiInstructions}
+      rating={rating}
     />
   );
 }

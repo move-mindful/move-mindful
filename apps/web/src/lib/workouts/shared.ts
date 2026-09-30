@@ -61,6 +61,13 @@ export interface WorkoutInput {
   blocks: WorkoutBlock[];
 }
 
+/** A workout's member ratings (017_workout_ratings.sql): the average, how many, and how many of each (index 0 = 1 star). */
+export interface RatingSummary {
+  average: number;
+  count: number;
+  byStars: [number, number, number, number, number];
+}
+
 export interface WorkoutListRow {
   id: string;
   title: string;
@@ -71,6 +78,8 @@ export interface WorkoutListRow {
   totalSeconds: number;
   hasWarmup: boolean;
   coverImageUrl: string | null;
+  /** Null until a member rates it. */
+  rating: RatingSummary | null;
 }
 
 // ── Generate with AI ──────────────────────────────────

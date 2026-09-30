@@ -5,6 +5,7 @@ import { requireSectionUnlocked } from "@/lib/auth/locked-sections";
 import { isAdmin } from "@/lib/auth/admin";
 import { getPlayerWorkout } from "@/lib/workouts/member";
 import { getPlayerPreferences } from "@/lib/member/preferences-server";
+import { getMyRating } from "@/lib/member/ratings-server";
 import { getLastCompleted, getSavedProgress } from "@/lib/member/sessions-server";
 import { WorkoutPlayer } from "@/components/workouts/workout-player";
 
@@ -33,11 +34,12 @@ export default async function WorkoutPage({ params }: Props) {
   await requireSectionUnlocked();
   const { id } = await params;
   const [admin, { userId }] = await Promise.all([isAdmin(), auth()]);
-  const [workout, preferences, progress, lastDone] = await Promise.all([
+  const [workout, preferences, progress, lastDone, myRating] = await Promise.all([
     getPlayerWorkout(id, admin),
     userId ? getPlayerPreferences(userId) : null,
     userId ? getSavedProgress(userId, id) : null,
     userId ? getLastCompleted(userId, id) : null,
+    userId ? getMyRating(userId, id) : null,
   ]);
   if (!workout) notFound();
   return (
@@ -47,6 +49,7 @@ export default async function WorkoutPage({ params }: Props) {
       preferences={preferences}
       progress={progress}
       lastDone={lastDone}
+      myRating={myRating}
       signedIn={!!userId}
     />
   );

@@ -9,6 +9,7 @@ import {
 } from "@move-mindful/core";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getExercises } from "@/lib/exercises/server";
+import { getRatingSummaries } from "@/lib/member/ratings-server";
 import { paceSeconds, rolesFor, slotFor, type AdminExercise, type VideoRole } from "@/lib/exercises/shared";
 import type { AdminWorkout, CatalogExercise, WorkoutLevel, WorkoutListRow } from "@/lib/workouts/shared";
 
@@ -140,10 +141,11 @@ export async function getWorkout(id: string): Promise<AdminWorkout | null> {
 /** Every workout for the admin list, newest edits first, with its estimate. */
 export async function getWorkouts(): Promise<WorkoutListRow[]> {
   const supabase = createAdminClient();
-  const [{ data: workouts }, { data: rows }, catalog] = await Promise.all([
+  const [{ data: workouts }, { data: rows }, catalog, ratings] = await Promise.all([
     supabase.from("workouts").select("*").order("updated_at", { ascending: false }),
     supabase.from("workout_blocks").select("*"),
     getCatalog(),
+    getRatingSummaries(),
   ]);
   const estimates = Object.fromEntries(catalog.map((c) => [c.id, c.estimate]));
   return ((workouts ?? []) as WorkoutRow[]).map((w) => {
@@ -163,6 +165,7 @@ export async function getWorkouts(): Promise<WorkoutListRow[]> {
       totalSeconds: estimateWorkout(blocks, estimates).totalSeconds,
       hasWarmup: !!w.warmup_exercise_id,
       coverImageUrl: w.cover_image_url ?? null,
+      rating: ratings.get(w.id) ?? null,
     };
   });
 }

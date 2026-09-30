@@ -32,6 +32,7 @@ import {
 } from "@move-mindful/core";
 import { levelsLabel } from "@/lib/exercises/shared";
 import { amountLabel, clock, equipmentText, loopFor, type PlayerClip, type PlayerWorkout } from "@/lib/workouts/player";
+import { rateWorkout } from "@/app/actions/workout-ratings";
 import { OverviewSheet } from "./overview-sheet";
 import { ProgressBar } from "./progress-bar";
 import {
@@ -125,6 +126,7 @@ export function WorkoutPlayer({
   preferences,
   progress,
   lastDone = null,
+  myRating = null,
   signedIn,
   guideEveryTime = false,
 }: {
@@ -136,6 +138,8 @@ export function WorkoutPlayer({
   progress: SavedProgress | null;
   /** When the member last finished this workout (null if never, or signed out). */
   lastDone?: string | null;
+  /** The member's own rating of this workout, 1–5 (null if they haven't, or signed out). */
+  myRating?: number | null;
   signedIn: boolean;
   /** Show the gesture guide on every Begin, not just a member's first (signed-out /demo1 visitors). */
   guideEveryTime?: boolean;
@@ -174,6 +178,14 @@ export function WorkoutPlayer({
   // creates the row the rest update.
   const session = useRef<{ id: string; withWarmup: boolean } | null>(null);
   const [doneAt, setDoneAt] = useState<string | null>(lastDone);
+  // Their stars for this workout: shown at once, reverted if the save fails.
+  const [stars, setStars] = useState<number | null>(myRating);
+  async function rate(value: number) {
+    const before = stars;
+    setStars(value);
+    const res = await rateWorkout(workout.id, value).catch(() => ({ saved: false }));
+    if (!res.saved) setStars(before);
+  }
   const saving = useRef<Promise<unknown>>(Promise.resolve());
   function record(event: SessionEvent, at: number, activeMs = activeTime(state, performance.now())) {
     const current = session.current;
@@ -1011,6 +1023,7 @@ export function WorkoutPlayer({
           exercises={exerciseCount}
           sets={setCount}
           onDone={done}
+          rating={signedIn ? { stars, onRate: rate } : null}
           onRestart={() => restartWorkout(true)}
           theater={theater}
         />

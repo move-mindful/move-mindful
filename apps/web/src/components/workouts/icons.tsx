@@ -55,6 +55,22 @@ export const Check = ({ size = 16, width = 2.8 }: P & { width?: number }) => (
   <Stroke size={size} width={width}><path d="M20 6 9 17l-5-5" /></Stroke>
 );
 
+export const Star = ({ size = 36, filled = false }: P & { filled?: boolean }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill={filled ? "currentColor" : "none"}
+    stroke="currentColor"
+    strokeWidth={1.6}
+    strokeLinejoin="round"
+    aria-hidden="true"
+    className="shrink-0"
+  >
+    <path d="M12 2.8l2.83 5.73 6.33.92-4.58 4.46 1.08 6.3L12 17.24l-5.66 2.97 1.08-6.3-4.58-4.46 6.33-.92z" />
+  </svg>
+);
+
 export const Pause = ({ size = 20 }: P) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="shrink-0">
     <rect x="6" y="4.5" width="4" height="15" rx="1.2" />

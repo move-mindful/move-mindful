@@ -7,6 +7,7 @@ import {
   useEffect,
   useLayoutEffect,
   useRef,
+  useState,
   type ComponentProps,
   type ReactNode,
   type RefObject,
@@ -17,6 +18,7 @@ import {
   ArrowRight,
   Check,
   ChevronRight,
+  Star,
   ChevronUp,
   Close,
   Dumbbell,
@@ -1283,6 +1285,7 @@ export function CompleteScreen({
   sets,
   onDone,
   onRestart,
+  rating = null,
   theater = false,
 }: {
   title: string;
@@ -1291,6 +1294,8 @@ export function CompleteScreen({
   sets: number;
   onDone: () => void;
   onRestart: () => void;
+  /** Signed in: the member's stars for this workout (null until they rate) and how to rate. */
+  rating?: { stars: number | null; onRate: (stars: number) => void } | null;
   theater?: boolean;
 }) {
   return (
@@ -1308,6 +1313,7 @@ export function CompleteScreen({
           <Stat big value={String(exercises)} label={exercises === 1 ? "Exercise" : "Exercises"} />
           <Stat big value={String(sets)} label={sets === 1 ? "Set" : "Sets"} />
         </div>
+        {rating && <RateStars stars={rating.stars} onRate={rating.onRate} />}
       </div>
       <div className={`flex flex-col gap-3 ${theater ? "w-[380px] max-w-[calc(100%-40px)]" : ""}`}>
         <button
@@ -1326,6 +1332,38 @@ export function CompleteScreen({
           <RestartWorkout />
           Restart workout
         </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Rate the workout out of five: tap a star (again to change it). Saved as
+ * soon as it's tapped; hovering previews on desktop.
+ */
+function RateStars({ stars, onRate }: { stars: number | null; onRate: (stars: number) => void }) {
+  const [hover, setHover] = useState<number | null>(null);
+  const shown = hover ?? stars ?? 0;
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="text-[15px] font-medium text-white/75">Rate this workout</div>
+      <div role="radiogroup" aria-label="Rate this workout" className="flex gap-1" onMouseLeave={() => setHover(null)}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            type="button"
+            role="radio"
+            aria-checked={stars === n}
+            aria-label={`${n} ${n === 1 ? "star" : "stars"}`}
+            onClick={() => onRate(n)}
+            onMouseEnter={() => setHover(n)}
+            className={`flex size-12 items-center justify-center rounded-full transition ${
+              n <= shown ? "text-[#A99CFF]" : "text-white/40 hover:text-white/60"
+            }`}
+          >
+            <Star filled={n <= shown} />
+          </button>
+        ))}
       </div>
     </div>
   );

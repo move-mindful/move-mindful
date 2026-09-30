@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { isAdmin } from "@/lib/auth/admin";
 import { getPlayerWorkout } from "@/lib/workouts/member";
 import { getPlayerPreferences } from "@/lib/member/preferences-server";
+import { getMyRating } from "@/lib/member/ratings-server";
 import { getLastCompleted, getSavedProgress } from "@/lib/member/sessions-server";
 import { WorkoutPlayer } from "@/components/workouts/workout-player";
 
@@ -31,13 +32,14 @@ export const viewport: Viewport = {
 
 export default async function DemoWorkoutPage() {
   const [admin, { userId }] = await Promise.all([isAdmin(), auth()]);
-  const [workout, preferences, progress, lastDone] = await Promise.all([
+  const [workout, preferences, progress, lastDone, myRating] = await Promise.all([
     getPlayerWorkout(DEMO_WORKOUT_ID, admin),
     // Signed-out visitors keep their settings on the device only, and their
     // progress isn't saved.
     userId ? getPlayerPreferences(userId) : null,
     userId ? getSavedProgress(userId, DEMO_WORKOUT_ID) : null,
     userId ? getLastCompleted(userId, DEMO_WORKOUT_ID) : null,
+    userId ? getMyRating(userId, DEMO_WORKOUT_ID) : null,
   ]);
   if (!workout) notFound();
   return (
@@ -47,6 +49,7 @@ export default async function DemoWorkoutPage() {
       preferences={preferences}
       progress={progress}
       lastDone={lastDone}
+      myRating={myRating}
       signedIn={!!userId}
       // Every signed-out visitor is someone new being shown the player, so
       // the guide opens each time they begin (signed in, it's once, as usual).
