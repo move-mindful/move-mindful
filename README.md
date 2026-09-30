@@ -137,6 +137,17 @@ Tracked here so it doesn't get lost. None of these affect current functionality 
 | AI | Claude API (admin: Generate with AI in the workout builder) |
 | Push Notifications | Expo Notifications (planned) |
 
+## Building AI features
+
+Generate with AI (`apps/web/src/lib/workouts/generate.ts`) is the reference. Any new Claude feature follows the same conventions:
+
+- **Prompt caching, always.** Order every request from stable to changing: the system prompt first, then any long context that repeats between calls (a library, examples), and the part that changes per call (the user's request) last. Mark the end of the system prompt and the end of the stable context with `cache_control: { type: "ephemeral" }`. The cache lasts 5 minutes; reads cost about a tenth of normal input, writes about a quarter more. Keep anything that varies per call (timestamps, ids, random or unstable ordering) out of the cached part: one changed character invalidates everything after it, so build cached text from deterministically ordered data.
+- **Log token use** on every request, cache reads and writes included (like `[generate-workout] tokens: …`), so cost shows up in Vercel's logs.
+- **Server-only, behind auth.** Claude is called from server actions or route handlers after the right check (`requireAdmin()` for admin tools, the Clerk session for members). `ANTHROPIC_API_KEY` never gets a `NEXT_PUBLIC_` prefix.
+- **Structured output when the answer drives the UI:** a JSON schema in `output_config.format`, with enums for anything that must match real data (like exercise keys), and the result re-validated on the server like any other input.
+- **Bounded time.** `maxDuration` on the page, a `timeout` on each request inside it, and plain-language errors for timeouts, rate limits and overload.
+- **One model constant per feature** (currently `claude-opus-5-5`), so switching models is a one-line change.
+
 ## Project Structure
 
 ```
