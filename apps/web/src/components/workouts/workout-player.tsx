@@ -777,6 +777,8 @@ export function WorkoutPlayer({
           />
         </>
       );
+      // Desktop: the back and next arrows beside the video, as on every other screen.
+      if (theater) beside = <TheaterArrows onBack={back} onNext={goOn} nextLabel="Skip the rest" />;
     } else if (set && state.stage === "ready") {
       softBlur = true;
       const readyLine =
@@ -806,6 +808,7 @@ export function WorkoutPlayer({
           />
         </>
       );
+      if (theater) beside = <TheaterArrows onBack={back} onNext={goOn} nextLabel="Start now" />;
     } else if (set && state.stage === "tutorial") {
       const amount = amountLabel(set.measure, set.amount, exercise?.sided);
       const duration = clip.duration || exercise?.tutorial?.durationSeconds || 0;
