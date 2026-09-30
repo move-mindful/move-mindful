@@ -34,7 +34,7 @@ import {
 import { levelsLabel } from "@/lib/exercises/shared";
 import { amountLabel, clock, equipmentText, loopFor, type PlayerClip, type PlayerWorkout } from "@/lib/workouts/player";
 import { OverviewSheet } from "./overview-sheet";
-import { ProgressBar, type SegmentFill } from "./progress-bar";
+import { ProgressBar } from "./progress-bar";
 import {
   CompleteScreen,
   Dim,
@@ -578,21 +578,22 @@ export function WorkoutPlayer({
     return `${name} · ${s.groupLabel ? "Round" : "Set"} ${s.round} of ${s.rounds}`;
   }
 
-  const fill: SegmentFill | null =
+  // How far the set on screen has got, for its segment of the top bar. A
+  // tutorial and Get ready leave it empty (the tutorial shows its own progress
+  // on Skip), so the segment only ever fills forwards, once.
+  const fill: number | null =
     state.phase !== "workout" || !set
       ? null
-      : state.stage === "tutorial"
-        ? { kind: "tutorial", fraction: state.tutorialPlay === "once" && clip.duration ? clip.time / clip.duration : 1 }
-        : state.stage === "ready"
-          ? { kind: "set", fraction: 0 }
-          : state.timer
+      : state.stage === "tutorial" || state.stage === "ready"
+        ? 0
+        : state.timer
           ? // A countdown — a timed set, or a rep set on auto-advance — fills the segment as it runs.
-            { kind: "set", fraction: 1 - leftMs / ((set.measure === "time" ? set.amount : set.workSeconds) * 1000) }
-          : { kind: "set", fraction: 1 };
+            1 - leftMs / ((set.measure === "time" ? set.amount : set.workSeconds) * 1000)
+          : 1;
 
   const bar = (
     <TopBar>
-      <ProgressBar steps={steps} current={state.step} fill={fill} complete={state.phase === "complete"} />
+      <ProgressBar steps={steps} current={state.step} fraction={fill} complete={state.phase === "complete"} />
     </TopBar>
   );
 
@@ -889,7 +890,7 @@ export function WorkoutPlayer({
               side={set.side}
               groupLine={groupLine}
               upNext={pill.text}
-              fill={state.timer && fill?.kind === "set" ? fill.fraction : null}
+              fill={state.timer && state.stage === "exercise" ? fill : null}
             />
             <TheaterArrows onBack={back} onNext={next} nextLabel="Next set" />
             <TheaterButtons buttons={sideButtons()} />
@@ -908,7 +909,7 @@ export function WorkoutPlayer({
               groupLine={groupLine}
               pill={pill}
               // Moving on by itself (auto-advance, or a timed set): Up next fills as it counts down.
-              fill={state.timer && fill?.kind === "set" ? fill.fraction : null}
+              fill={state.timer && state.stage === "exercise" ? fill : null}
               hidden={chromeHidden}
               onPause={pause}
               onOverview={openOverview}
