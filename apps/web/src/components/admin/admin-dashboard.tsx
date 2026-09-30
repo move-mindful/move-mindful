@@ -1,5 +1,5 @@
 // Temporarily unused. The admin dashboard route (/admin) is hidden — it now
-// redirects to /admin/exercises (see app/admin/page.tsx), and Exercises is the
+// redirects to /admin/workouts (see app/admin/page.tsx), and Workouts is the
 // default admin landing page. This component preserves the original dashboard
 // UI so it can be brought back (re-route it from app/admin/page.tsx) or the
 // /admin slot can be repurposed later.
