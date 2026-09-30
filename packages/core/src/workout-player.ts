@@ -203,8 +203,9 @@ function readyTimer(ctx: PlayerContext): PlayerState["timer"] {
 /**
  * Go to step `index`. Moving forward onto an exercise's first set shows its
  * tutorial (unless tutorials are off or it has none); going back never does.
- * Otherwise a set gets ready first — unless a rest has just counted down
- * into it (see `readyMs`).
+ * Otherwise a set gets ready first — unless a rest has just counted down into
+ * another set of the same exercise (see `readyMs`). A rest into a different
+ * exercise still gets ready, so the member sees what's coming.
  */
 function enter(ctx: PlayerContext, s: PlayerState, index: number, forward: boolean): PlayerState {
   // The gesture guide, if it's waiting, opens over the first step (holding the clock).
@@ -225,7 +226,9 @@ function enter(ctx: PlayerContext, s: PlayerState, index: number, forward: boole
     seen = [...seen, step.exerciseId];
   }
   const afterRest = forward && s.phase === "workout" && ctx.steps[s.step]?.kind === "rest" && index === s.step + 1;
-  if (stage === "exercise" && step.kind === "set" && ctx.readyMs && !afterRest) stage = "ready";
+  if (stage === "exercise" && step.kind === "set" && ctx.readyMs && !(afterRest && sameAsBefore(ctx.steps, index))) {
+    stage = "ready";
+  }
   return {
     ...base,
     phase: "workout",
@@ -235,6 +238,16 @@ function enter(ctx: PlayerContext, s: PlayerState, index: number, forward: boole
     seen,
     timer: stage === "ready" ? readyTimer(ctx) : timerFor(step, stage, s.autoAdvance),
   };
+}
+
+/** Whether the set at `index` is the same exercise as the last set before it (across any rest). */
+function sameAsBefore(steps: WorkoutStep[], index: number): boolean {
+  const step = steps[index];
+  for (let i = index - 1; i >= 0; i--) {
+    const before = steps[i];
+    if (before.kind === "set") return step.kind === "set" && before.exerciseId === step.exerciseId;
+  }
+  return false;
 }
 
 function startExercise(ctx: PlayerContext, s: PlayerState): PlayerState {

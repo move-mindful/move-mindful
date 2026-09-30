@@ -391,6 +391,29 @@ test("after a rest there's no get ready — the rest was the countdown", () => {
   assert.equal(s.stage, "exercise");
 });
 
+test("a rest into a different exercise still gets ready, tutorials off", () => {
+  // Plank 45 s · rest 30 s · row 10 reps.
+  const between = workoutSteps(
+    [
+      { kind: "exercise", move: { exerciseId: "plank", measure: "time", amount: 45, firstSide: "right" }, sets: 1, restBetweenSets: 0 },
+      { kind: "rest", seconds: 30 },
+      { kind: "exercise", move: { exerciseId: "row", measure: "reps", amount: 10, firstSide: "right" }, sets: 1, restBetweenSets: 0 },
+    ],
+    exercises,
+  );
+  const r = playerReducer({ steps: between, hasTutorial: () => false, readyMs: 3000 });
+  const actions: PlayerAction[] = [
+    { type: "begin", warmup: false, mode: "off", now: 0 },
+    { type: "next", now: 1000 }, // Start now
+    { type: "next", now: 2000 }, // on to the rest
+  ];
+  let s = actions.reduce(r, initialPlayerState);
+  assert.equal(between[s.step].kind, "rest");
+  s = r(s, { type: "tick", now: 32_000 });
+  assert.equal(s.step, 2);
+  assert.equal(s.stage, "ready", "the row is new: get ready for it");
+});
+
 test("a timed set's clock starts after get ready, and it gets ready between sides", () => {
   // Plank (45 s) follows row set 2 with no rest.
   let s = runReady([{ type: "begin", warmup: false, mode: "off", now: 0 }, { type: "jump", step: 3, now: 0 }]);
