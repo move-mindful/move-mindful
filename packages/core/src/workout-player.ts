@@ -370,9 +370,10 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
       };
     }
     case "jump":
-      return s.phase === "workout" && a.step >= 0 && a.step < ctx.steps.length
-        ? enter(ctx, s, a.step, a.step > s.step)
-        : s;
+      if (a.step < 0 || a.step >= ctx.steps.length) return s;
+      // From the warm-up (its overview): on to that step, as if the warm-up had ended there.
+      if (s.phase === "warmup") return enter(ctx, s, a.step, true);
+      return s.phase === "workout" ? enter(ctx, s, a.step, a.step > s.step) : s;
     case "exit":
       return { ...initialPlayerState, mode: s.mode, autoAdvance: s.autoAdvance, take: s.take + 1 };
   }

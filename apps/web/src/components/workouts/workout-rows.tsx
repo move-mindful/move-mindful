@@ -38,7 +38,8 @@ export function WorkoutRows({
   warmupOff?: boolean;
 }) {
   const labels = groupLabels(workout.blocks);
-  const cur = position && !position.complete ? position.step : null;
+  // During the warm-up no exercise is on yet: only its row is current.
+  const cur = position && !position.complete && position.warmup !== "now" ? position.step : null;
   const curStep = cur !== null ? steps[cur] : null;
   // The set on screen, or — during a rest — the one coming up.
   const curSetIndex = cur !== null ? setStepFor(steps, cur) : null;

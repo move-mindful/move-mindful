@@ -207,6 +207,21 @@ test("restarting the workout starts with the warm-up when it's on", () => {
   assert.equal(s.step, 0);
 });
 
+test("jumping from the warm-up (its overview) goes straight to that step", () => {
+  let s = run([
+    { type: "begin", warmup: true, mode: "loop", now: 0 },
+    { type: "sheet", sheet: "overview", now: 1000 },
+    { type: "jump", step: 3, now: 2000 },
+  ]);
+  assert.equal(s.phase, "workout");
+  assert.equal(s.step, 3);
+  assert.equal(s.sheet, null, "the overview closes");
+  assert.equal(isRunning(s), true);
+  // Back from the first exercise still returns to the warm-up afterwards.
+  s = run([{ type: "jump", step: 0, now: 3000 }, { type: "back", now: 4000 }], s);
+  assert.equal(s.phase, "warmup");
+});
+
 test("restarting during a tutorial plays the tutorial again", () => {
   let s = run([{ type: "begin", warmup: false, mode: "loop", now: 0 }, { type: "pause", now: 5000 }]);
   assert.equal(s.stage, "tutorial");

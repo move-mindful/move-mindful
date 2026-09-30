@@ -608,9 +608,7 @@ export function WorkoutPlayer({
 
   const sideButtons = (): TheaterButton[] => [
     { label: "Settings", aria: "Settings", icon: <Settings />, onClick: openSettings },
-    ...(state.phase === "workout"
-      ? [{ label: "Workout", aria: "Open workout overview", icon: <List />, onClick: openOverview }]
-      : []),
+    { label: "Workout", aria: "Open workout overview", icon: <List />, onClick: openOverview },
     // Held on a rest or get-ready screen, Pause is Resume — like the button under the countdown.
     state.paused
       ? { label: "Resume", aria: "Resume", icon: <Play size={20} />, onClick: resumePlay }
@@ -684,7 +682,16 @@ export function WorkoutPlayer({
             onMiddle={pause}
             onHold={pause}
             onSwipeDown={() => setChromeHidden(true)}
-            onSwipeUp={() => setChromeHidden(false)}
+            // As on the exercises: bring hidden controls back, or else pull up the overview.
+            onSwipeUp={() => (chromeHidden ? setChromeHidden(false) : openOverview())}
+            pullUp={!chromeHidden}
+            onPullMove={(distance) => {
+              if (!pull.active) pull.start();
+              pull.move(distance);
+            }}
+            onPullEnd={(distance, velocity) => {
+              if (pull.active) pull.end(distance, velocity);
+            }}
             backLabel="Restart the warm-up"
             nextLabel="Skip warm-up"
           />
@@ -993,17 +1000,21 @@ export function WorkoutPlayer({
   // The overview: on phones a drawer that stays mounted all workout (parked
   // below the screen, see Drawer); on desktop a side panel while open.
   const overview =
-    state.phase === "workout" && (!theater || state.sheet === "overview") ? (
+    (state.phase === "workout" || state.phase === "warmup") && (!theater || state.sheet === "overview") ? (
       <OverviewSheet
         workout={workout}
         steps={steps}
         subtitle={`About ${minutes} min${equipment ? ` · ${equipment}` : ""}`}
         progress={{
-          label: set ? setLine(set) : "Resting",
+          label: state.phase === "warmup" ? "Warm-up" : set ? setLine(set) : "Resting",
           left: `About ${aboutMinutes(leftNow)} min left`,
           fraction: totalSeconds ? Math.min(1, Math.max(0, 1 - leftNow / secondsLeft(steps, 0))) : 0,
         }}
-        position={{ step: state.step, complete: false, warmup: warmedUp ? "done" : "skipped" }}
+        position={{
+          step: state.step,
+          complete: false,
+          warmup: state.phase === "warmup" ? "now" : warmedUp ? "done" : "skipped",
+        }}
         onJump={(i) => act({ type: "jump", step: i })}
         onClose={() => act({ type: "sheet", sheet: null })}
         drawer={theater ? undefined : { open: state.sheet === "overview", pull, onOpen: openOverview }}
