@@ -52,7 +52,8 @@ function Segment({ state, fraction, radius }: { state: "done" | "now" | "todo"; 
     state === "now" && fraction !== null ? Math.round(Math.min(1, Math.max(0, fraction)) * 1000) / 10 : null;
   let inner: React.CSSProperties = { width: "0%" };
   if (state === "done") inner = { width: "100%", background: "#ffffff" };
-  if (percent !== null) inner = { width: `${percent}%`, background: ACCENT, transition: "width 250ms linear" };
+  // White like the finished segments: it reads better over the video than the accent did.
+  if (percent !== null) inner = { width: `${percent}%`, background: "#ffffff", transition: "width 250ms linear" };
   return (
     <div className="h-1 min-w-0 flex-1 overflow-hidden bg-white/30" style={{ borderRadius: radius }}>
       <div className="h-full" style={inner} />
