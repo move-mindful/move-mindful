@@ -41,6 +41,12 @@ import {
  * window, saved in `app_settings`; see generator-prompt.ts) followed by the
  * fixed rules.
  *
+ * Prompt caching: the system prompt and the library + published workouts
+ * (everything before the brief) are marked for Anthropic's 5-minute cache, so
+ * Try again, Change criteria and the length retry reuse them at about a tenth
+ * of the price. Below the model's minimum cacheable size nothing is cached,
+ * which is harmless. Token use, cache included, is logged per request.
+ *
  * Needs ANTHROPIC_API_KEY (server-only). The builder pages allow 60 s
  * (`maxDuration`), which bounds the timeouts below.
  */
@@ -323,7 +329,7 @@ class GenerateError extends Error {}
 
 async function ask(
   client: Anthropic,
-  system: string,
+  system: Anthropic.TextBlockParam[],
   messages: Anthropic.MessageParam[],
   schema: Record<string, unknown>,
   timeout: number,
@@ -337,6 +343,12 @@ async function ask(
       output_config: { format: { type: "json_schema", schema } },
     },
     { timeout, maxRetries: 0 },
+  );
+  const u = res.usage;
+  console.info(
+    `[generate-workout] tokens: ${u.input_tokens} in (+${u.cache_read_input_tokens ?? 0} cached, +${
+      u.cache_creation_input_tokens ?? 0
+    } written to cache), ${u.output_tokens} out`,
   );
   if (res.stop_reason === "refusal") throw new GenerateError("Claude wouldn't draft that one. Try rewording the brief.");
   if (res.stop_reason === "max_tokens") {
@@ -378,7 +390,9 @@ export async function generateWorkoutDraft(input: GenerateCriteria, workoutId: s
     publishedWorkouts(workoutId),
     getGeneratorInstructions(),
   ]);
-  const system = `${instructions}\n\n${FIXED_RULES}`;
+  const system: Anthropic.TextBlockParam[] = [
+    { type: "text", text: `${instructions}\n\n${FIXED_RULES}`, cache_control: { type: "ephemeral" } },
+  ];
   const tagNames = new Map(tags.map((t) => [t.id, t.name]));
   const entries = exercises.map((e) => ({ catalog: toCatalog(e), tags: e.tagIds.map((id) => tagNames.get(id)).filter((t): t is string => !!t) }));
   const catalog = entries.map((x) => x.catalog);
@@ -411,7 +425,8 @@ export async function generateWorkoutDraft(input: GenerateCriteria, workoutId: s
   // Blank fields are left to Claude.
   const call = (hint = "") => (hint ? `your call ${hint}` : "your call");
   const chosenWarmup = keyOfWarmup.get(criteria.warmup);
-  const brief = [
+  // Everything before the brief: the same across tries, so it's cached.
+  const context = [
     "## Exercise library",
     criteria.equipment.length
       ? "Only the exercises that fit the equipment on hand are listed."
@@ -427,6 +442,8 @@ export async function generateWorkoutDraft(input: GenerateCriteria, workoutId: s
     ...(examples.length
       ? examples.map((w) => describeWorkout(w, byId, estimates) + "\n")
       : ["None published yet, so there's no house style to match: keep the tone warm and plain.", ""]),
+  ].join("\n");
+  const brief = [
     "## The brief",
     `- Length: ${criteria.minutes ? `about ${criteria.minutes} min, by the builder's estimate` : call()}`,
     `- Level: ${criteria.level ?? call()}`,
@@ -454,7 +471,15 @@ export async function generateWorkoutDraft(input: GenerateCriteria, workoutId: s
   ].join("\n");
 
   const schema = outputSchema([...byKey.keys()], [...warmupByKey.keys()]);
-  const messages: Anthropic.MessageParam[] = [{ role: "user", content: brief }];
+  const messages: Anthropic.MessageParam[] = [
+    {
+      role: "user",
+      content: [
+        { type: "text", text: context, cache_control: { type: "ephemeral" } },
+        { type: "text", text: brief },
+      ],
+    },
+  ];
   const client = new Anthropic();
 
   const finish = (raw: RawWorkout): GeneratedWorkout => {
