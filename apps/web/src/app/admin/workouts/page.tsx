@@ -3,6 +3,7 @@ import Link from "next/link";
 import { aboutMinutes } from "@move-mindful/core";
 import { getWorkouts } from "@/lib/workouts/server";
 import { LEVELS } from "@/lib/workouts/shared";
+import { DeleteWorkoutButton } from "@/components/admin/workouts/delete-workout-button";
 
 export const dynamic = "force-dynamic";
 
@@ -36,34 +37,51 @@ export default async function WorkoutsPage() {
       ) : (
         <div className="mt-8 divide-y divide-zinc-200 rounded-xl border border-zinc-200">
           {workouts.map((w) => (
-            <Link key={w.id} href={`/admin/workouts/${w.id}`} className="flex items-center gap-4 p-4 transition hover:bg-zinc-50">
-              <div className="relative h-14 w-11 shrink-0 overflow-hidden rounded bg-zinc-100">
-                {w.coverImageUrl && <Image src={w.coverImageUrl} alt="" fill unoptimized className="object-cover" />}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="truncate font-medium">{w.title}</span>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      w.publishedAt ? "bg-emerald-100 text-emerald-700" : "bg-zinc-100 text-zinc-600"
-                    }`}
-                  >
-                    {w.publishedAt ? "Published" : "Draft"}
-                  </span>
+            // The thumbnail and title open the builder; Preview, Edit and Delete sit on the right.
+            <div key={w.id} className="flex items-center gap-4 p-4 transition hover:bg-zinc-50">
+              <Link href={`/admin/workouts/${w.id}`} className="flex min-w-0 flex-1 items-center gap-4">
+                <div className="relative h-14 w-11 shrink-0 overflow-hidden rounded bg-zinc-100">
+                  {w.coverImageUrl && <Image src={w.coverImageUrl} alt="" fill unoptimized className="object-cover" />}
                 </div>
-                <p className="truncate text-sm text-zinc-500">
-                  {[
-                    w.totalSeconds ? `About ${aboutMinutes(w.totalSeconds)} min` : "Empty",
-                    `${w.exerciseCount} exercise${w.exerciseCount === 1 ? "" : "s"}`,
-                    w.hasWarmup && "warm-up",
-                    LEVELS.find((l) => l.id === w.level)?.label,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate font-medium">{w.title}</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        w.publishedAt ? "bg-emerald-100 text-emerald-700" : "bg-zinc-100 text-zinc-600"
+                      }`}
+                    >
+                      {w.publishedAt ? "Published" : "Draft"}
+                    </span>
+                  </div>
+                  <p className="truncate text-sm text-zinc-500">
+                    {[
+                      w.totalSeconds ? `About ${aboutMinutes(w.totalSeconds)} min` : "Empty",
+                      `${w.exerciseCount} exercise${w.exerciseCount === 1 ? "" : "s"}`,
+                      w.hasWarmup && "warm-up",
+                      LEVELS.find((l) => l.id === w.level)?.label,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                </div>
+              </Link>
+              <div className="flex shrink-0 items-center gap-5 text-sm font-medium">
+                {/* The member view of the saved version (drafts show to admins only). */}
+                <a
+                  href={`/workouts/${w.id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-zinc-500 transition hover:text-zinc-900"
+                >
+                  Preview ↗
+                </a>
+                <Link href={`/admin/workouts/${w.id}`} className="text-zinc-500 transition hover:text-zinc-900">
+                  Edit
+                </Link>
+                <DeleteWorkoutButton id={w.id} title={w.title} />
               </div>
-              <span className="text-sm text-zinc-500">Edit</span>
-            </Link>
+            </div>
           ))}
         </div>
       )}
