@@ -17,7 +17,7 @@ export default async function ExercisesPage() {
           href="/admin/exercises/new"
           className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700"
         >
-          Upload
+          Add exercise
         </Link>
       </div>
       <ExerciseLibrary exercises={exercises} tags={tags} />
