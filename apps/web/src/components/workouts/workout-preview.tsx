@@ -91,8 +91,12 @@ export function WorkoutPreview({
               style={{ objectPosition: "50% 28%" }}
             />
           )}
-          {/* Phones: the photo, unshaded — its fade into the page travels
-              with the content below, so it stays soft as it scrolls. */}
+          {/* Phones: just a light shade at the top (the fade into the page
+              travels with the content below, so it stays soft as it scrolls). */}
+          <div
+            className="absolute inset-0 theater:hidden"
+            style={{ background: "linear-gradient(180deg, rgba(31,31,62,0.25) 0%, rgba(31,31,62,0) 22%)" }}
+          />
           <div
             className="absolute inset-0 hidden theater:block"
             style={{
