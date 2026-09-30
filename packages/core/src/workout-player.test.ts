@@ -188,6 +188,36 @@ test("restarting the workout shows the tutorials again", () => {
   assert.equal(s.stage, "exercise");
 });
 
+test("restarting the workout starts with the warm-up when it's on", () => {
+  let s = run([
+    { type: "begin", warmup: true, mode: "off", now: 0 },
+    { type: "endWarmup", now: 1000 },
+    { type: "jump", step: 3, now: 2000 },
+    { type: "restartWorkout", warmup: true, now: 60_000 },
+  ]);
+  assert.equal(s.phase, "warmup");
+  assert.equal(s.step, 0);
+  assert.equal(activeTime(s, 60_000), 0, "the clock starts over");
+  // Then the first exercise, and back from it returns to the warm-up.
+  s = run([{ type: "endWarmup", now: 61_000 }, { type: "back", now: 62_000 }], s);
+  assert.equal(s.phase, "warmup");
+  // Without the warm-up: straight to the first exercise, and back stays there.
+  s = run([{ type: "restartWorkout", now: 63_000 }, { type: "back", now: 64_000 }], s);
+  assert.equal(s.phase, "workout");
+  assert.equal(s.step, 0);
+});
+
+test("restarting during a tutorial plays the tutorial again", () => {
+  let s = run([{ type: "begin", warmup: false, mode: "loop", now: 0 }, { type: "pause", now: 5000 }]);
+  assert.equal(s.stage, "tutorial");
+  const take = s.take;
+  s = run([{ type: "restartSet", now: 6000 }], s);
+  assert.equal(s.stage, "tutorial", "still the tutorial, not the set");
+  assert.equal(s.step, 0);
+  assert.equal(s.take, take + 1, "from its start");
+  assert.equal(isRunning(s), true);
+});
+
 test("a first-time member's gesture guide opens before the warm-up, and not again after it", () => {
   let s = run([{ type: "begin", warmup: true, mode: "off", guide: true, now: 0 }]);
   assert.equal(s.phase, "warmup");

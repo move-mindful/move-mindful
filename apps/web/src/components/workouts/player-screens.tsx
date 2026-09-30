@@ -1095,6 +1095,7 @@ export function PausedScreen({
   stats,
   onResume,
   onRestartSet,
+  restartSetLabel = "Restart this set",
   onRestartWorkout,
   onWatchTutorial,
   onSkipWarmup,
@@ -1107,6 +1108,8 @@ export function PausedScreen({
   stats: { elapsed: string; setsDone: string; left: string } | null;
   onResume: () => void;
   onRestartSet: (() => void) | null;
+  /** "Restart tutorial" while a tutorial is on screen. */
+  restartSetLabel?: string;
   onRestartWorkout: (() => void) | null;
   onWatchTutorial: (() => void) | null;
   onSkipWarmup: (() => void) | null;
@@ -1148,7 +1151,7 @@ export function PausedScreen({
           {onRestartSet && (
             <button type="button" onClick={onRestartSet} className={secondary}>
               <RestartSet />
-              Restart this set
+              {restartSetLabel}
             </button>
           )}
           {onRestartWorkout && (

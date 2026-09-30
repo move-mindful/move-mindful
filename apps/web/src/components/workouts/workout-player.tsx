@@ -480,6 +480,18 @@ export function WorkoutPlayer({
     start({ warmup });
   }
 
+  /**
+   * Restart workout (the pause screen, or once more from the finish): from the
+   * warm-up when the workout has one and the Warm-up setting is on. `fresh`
+   * starts a new session (the finished one stays finished).
+   */
+  function restartWorkout(fresh = false) {
+    const warmup = prefs.warmup && !!workout.warmup;
+    if (fresh) startSession(warmup);
+    setWarmedUp(warmup);
+    act({ type: "restartWorkout", warmup });
+  }
+
   /** Pick up saved progress: its session, from the set it was on, without the warm-up. */
   function resume() {
     if (!saved || resumeAt === null) return;
@@ -719,8 +731,10 @@ export function WorkoutPlayer({
             }}
             onResume={resumePlay}
             onRestartSet={() => act({ type: "restartSet" })}
-            onRestartWorkout={() => act({ type: "restartWorkout" })}
-            onWatchTutorial={canWatch ? () => act({ type: "watchTutorial" }) : null}
+            restartSetLabel={state.stage === "tutorial" ? "Restart tutorial" : "Restart this set"}
+            onRestartWorkout={() => restartWorkout()}
+            // During a tutorial, Restart tutorial already covers it.
+            onWatchTutorial={canWatch && state.stage !== "tutorial" ? () => act({ type: "watchTutorial" }) : null}
             onSkipWarmup={null}
             onEnd={() => act({ type: "sheet", sheet: "end" })}
             onSettings={openSettings}
@@ -917,11 +931,7 @@ export function WorkoutPlayer({
           exercises={exerciseCount}
           sets={setCount}
           onDone={leave}
-          onRestart={() => {
-            // Once more from the top: a new session (the finished one stays finished).
-            startSession(false);
-            act({ type: "restartWorkout" });
-          }}
+          onRestart={() => restartWorkout(true)}
           theater={theater}
         />
       </>

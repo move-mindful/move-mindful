@@ -101,10 +101,12 @@ export type PlayerAction =
   | { type: "mode"; mode: TutorialMode; now: number }
   /** Turn auto-advance on or off; applies to the set on screen too. */
   | { type: "autoAdvance"; on: boolean; now: number }
+  /** Start the set on screen again — or, during a tutorial, that tutorial ("Restart tutorial"). */
   | { type: "restartSet"; now: number }
   /** Start the warm-up video over. */
   | { type: "restartWarmup"; now: number }
-  | { type: "restartWorkout"; now: number }
+  /** From the top, with the warm-up first when `warmup` (the workout has one and the member's setting is on). */
+  | { type: "restartWorkout"; warmup?: boolean; now: number }
   | { type: "watchTutorial"; now: number }
   | { type: "jump"; step: number; now: number }
   /** End the workout: back to the preview, as if it hadn't started. */
@@ -331,14 +333,24 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
     }
     case "restartSet": {
       const i = setStepFor(ctx.steps, s.step);
-      return s.phase === "workout" && i !== null ? enter(ctx, s, i, false) : s;
+      if (s.phase !== "workout" || i === null) return s;
+      // A tutorial on screen plays again from its start.
+      if (s.stage === "tutorial" && i === s.step) {
+        return { ...s, paused: false, sheet: null, timer: null, take: s.take + 1 };
+      }
+      return enter(ctx, s, i, false);
     }
     case "restartWarmup":
       return s.phase === "warmup" ? { ...s, paused: false, sheet: null, take: s.take + 1 } : s;
-    case "restartWorkout":
-      // A fresh start: tutorials come up again before each exercise (per the
-      // member's setting), and the clock starts over.
-      return enter(ctx, { ...s, activeMs: 0, activeSince: null, seen: [] }, 0, true);
+    case "restartWorkout": {
+      // A fresh start: the warm-up first when it's on, tutorials again before
+      // each exercise (per the member's setting), and the clock from zero.
+      const fresh = { ...s, activeMs: 0, activeSince: null, seen: [], withWarmup: !!a.warmup };
+      if (a.warmup) {
+        return { ...fresh, phase: "warmup", step: 0, stage: "exercise", paused: false, sheet: null, timer: null, take: s.take + 1 };
+      }
+      return enter(ctx, fresh, 0, true);
+    }
     case "watchTutorial": {
       const i = setStepFor(ctx.steps, s.step);
       if (s.phase !== "workout" || i === null) return s;
