@@ -822,7 +822,8 @@ export function RestScreen({
             aria-label={`${shown} seconds of rest left`}
             className="absolute inset-0 flex items-center justify-center text-[72px] font-semibold tracking-[-0.03em] tabular-nums"
           >
-            {clock(shown)}
+            {/* Under a minute, just the seconds (45 … 9 … 1), like Get ready; 1:30 above that. */}
+            {shown >= 60 ? clock(shown) : shown}
           </div>
         </div>
         {roundLine && <div className="text-base text-white/80">{roundLine}</div>}
