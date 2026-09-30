@@ -33,6 +33,21 @@ export async function getSavedProgress(userId: string, workoutId: string): Promi
   };
 }
 
+/** When the member last finished this workout (an ISO time), or null — for the preview's "Done" pill. */
+export async function getLastCompleted(userId: string, workoutId: string): Promise<string | null> {
+  const { data } = await createAdminClient()
+    .from("workout_sessions")
+    .select("completed_at")
+    .eq("clerk_user_id", userId)
+    .eq("workout_id", workoutId)
+    .eq("status", "completed")
+    .not("completed_at", "is", null)
+    .order("completed_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data?.completed_at as string | undefined) ?? null;
+}
+
 /** A member's resumable and finished sessions, for their workout cards (see workoutStatuses). */
 export interface SessionSummaries {
   inProgress: Array<{ workout_id: string | null; resume_step: number; percent_complete: number; sequence_key: string }>;

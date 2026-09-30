@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { aboutMinutes, type WorkoutStep } from "@move-mindful/core";
 import { equipmentPills, levelLabel, type PlayerWorkout } from "@/lib/workouts/player";
-import { ArrowRight, ChevronLeft, EQUIPMENT_ICONS, RestartWorkout } from "./icons";
+import { DoneLabel } from "./done-label";
+import { ArrowRight, Check, ChevronLeft, EQUIPMENT_ICONS, RestartWorkout } from "./icons";
 import { Switch } from "./player-screens";
 import { WorkoutRows } from "./workout-rows";
 
@@ -25,6 +26,7 @@ export function WorkoutPreview({
   onBegin,
   resume,
   onResume,
+  doneAt = null,
 }: {
   workout: PlayerWorkout;
   steps: WorkoutStep[];
@@ -38,6 +40,8 @@ export function WorkoutPreview({
   /** Saved progress to pick up: the set it resumes at, how far along, and whether it began with the warm-up. */
   resume: { step: number; percent: number; warmedUp: boolean } | null;
   onResume: () => void;
+  /** When the member last finished it, for the "Done · 3 days ago" pill; null if never. */
+  doneAt?: string | null;
 }) {
   const level = levelLabel(workout.level);
   const pills = equipmentPills(workout);
@@ -106,7 +110,7 @@ export function WorkoutPreview({
           />
 
           <div className="hidden theater:absolute theater:bottom-[72px] theater:left-20 theater:right-16 theater:flex theater:max-w-[576px] theater:flex-col theater:gap-[26px]">
-            <Details workout={workout} level={level} pills={pills} totalSeconds={totalSeconds} exerciseCount={exerciseCount} />
+            <Details workout={workout} level={level} pills={pills} totalSeconds={totalSeconds} exerciseCount={exerciseCount} doneAt={doneAt} />
             <div className="mt-1.5">{begin}</div>
           </div>
         </div>
@@ -128,7 +132,7 @@ export function WorkoutPreview({
             }}
           />
           <div className="flex flex-col gap-6 theater:hidden">
-            <Details workout={workout} level={level} pills={pills} totalSeconds={totalSeconds} exerciseCount={exerciseCount} />
+            <Details workout={workout} level={level} pills={pills} totalSeconds={totalSeconds} exerciseCount={exerciseCount} doneAt={doneAt} />
           </div>
           <section className="flex flex-col gap-2.5 theater:gap-3.5">
             <h2 className="text-[13px] font-bold uppercase tracking-[0.12em] text-white/65">The workout</h2>
@@ -164,20 +168,33 @@ function Details({
   pills,
   totalSeconds,
   exerciseCount,
+  doneAt,
 }: {
   workout: PlayerWorkout;
   level: string | null;
   pills: ReturnType<typeof equipmentPills>;
   totalSeconds: number;
   exerciseCount: number;
+  doneAt: string | null;
 }) {
   return (
     <>
       <div className="flex flex-col gap-2.5 theater:gap-3">
-        {!workout.published && (
-          <span className="flex h-[26px] items-center self-start rounded-full bg-amber-300/20 px-2.5 text-xs font-semibold text-amber-200">
-            Draft · only admins can see this
-          </span>
+        {(!workout.published || doneAt) && (
+          <div className="flex flex-wrap gap-2">
+            {!workout.published && (
+              <span className="flex h-[26px] items-center rounded-full bg-amber-300/20 px-2.5 text-xs font-semibold text-amber-200">
+                Draft · only admins can see this
+              </span>
+            )}
+            {/* Finished before: when, like the workout cards. */}
+            {doneAt && (
+              <span className="flex h-[26px] items-center gap-1 rounded-full bg-emerald-400/15 pl-2 pr-2.5 text-xs font-semibold text-emerald-300">
+                <Check size={14} />
+                <DoneLabel at={doneAt} />
+              </span>
+            )}
+          </div>
         )}
         <h1 className="text-[34px] font-semibold leading-[1.05] tracking-[-0.015em] theater:text-[56px] theater:leading-[1.02] theater:tracking-[-0.02em]">
           {workout.title}

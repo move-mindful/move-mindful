@@ -124,6 +124,7 @@ export function WorkoutPlayer({
   backHref,
   preferences,
   progress,
+  lastDone = null,
   signedIn,
   guideEveryTime = false,
 }: {
@@ -133,6 +134,8 @@ export function WorkoutPlayer({
   preferences: Partial<PlayerPreferences> | null;
   /** Where the member left off in this workout, if they saved it (null signed out). */
   progress: SavedProgress | null;
+  /** When the member last finished this workout (null if never, or signed out). */
+  lastDone?: string | null;
   signedIn: boolean;
   /** Show the gesture guide on every Begin, not just a member's first (signed-out /demo1 visitors). */
   guideEveryTime?: boolean;
@@ -170,6 +173,7 @@ export function WorkoutPlayer({
   // even if the page is closed. Saves go one at a time, in order — the first
   // creates the row the rest update.
   const session = useRef<{ id: string; withWarmup: boolean } | null>(null);
+  const [doneAt, setDoneAt] = useState<string | null>(lastDone);
   const saving = useRef<Promise<unknown>>(Promise.resolve());
   function record(event: SessionEvent, at: number, activeMs = activeTime(state, performance.now())) {
     const current = session.current;
@@ -198,6 +202,8 @@ export function WorkoutPlayer({
     if (state.phase === "complete" && session.current) {
       record("complete", steps.length);
       session.current = null;
+      // The preview's "Done" pill, up to date without a reload.
+      setDoneAt(new Date().toISOString());
     }
   });
   useEffect(() => {
@@ -1094,6 +1100,7 @@ export function WorkoutPlayer({
               : null
           }
           onResume={resume}
+          doneAt={doneAt}
         />
       )}
       {/* The stage. During the preview it's invisible but mounted, so the
