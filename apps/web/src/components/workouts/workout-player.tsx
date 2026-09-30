@@ -633,7 +633,7 @@ export function WorkoutPlayer({
             onWatchTutorial={null}
             onSkipWarmup={skip}
             onEnd={() => act({ type: "sheet", sheet: "end" })}
-            onSettings={null}
+            onSettings={openSettings}
             autoAdvance={null}
             theater={theater}
           />

@@ -1210,7 +1210,7 @@ export function PausedScreen({
           </button>
         </div>
       </div>
-      {/* Settings, top right under the progress bar (not on the warm-up's). */}
+      {/* Settings, top right under the progress bar. */}
       {onSettings && (
         <div className="absolute right-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] z-10">
           <SettingsButton onClick={onSettings} />
