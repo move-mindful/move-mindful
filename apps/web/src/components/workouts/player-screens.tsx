@@ -837,14 +837,14 @@ export function RestScreen({
           <div
             role="timer"
             aria-label={`${shown} seconds of rest left`}
-            // Growing as the digits drop: 1:30 at 72px, 59–10 at 84px (a hair
-            // more letter-spacing so the pair doesn't touch), and the last nine
+            // Growing as the digits drop: 1:30 at 72px, 59–10 at 84px (opened up
+            // a little so wide pairs like 44 don't touch), and the last nine
             // at 120px — Get ready's digit scaled to this larger ring.
             className={`absolute inset-0 flex items-center justify-center font-semibold tabular-nums ${
               shown >= 60
                 ? "text-[72px] tracking-[-0.03em]"
                 : shown >= 10
-                  ? "text-[84px] tracking-[-0.01em]"
+                  ? "text-[84px] tracking-[0.03em]"
                   : "text-[120px] tracking-[-0.04em]"
             }`}
           >
