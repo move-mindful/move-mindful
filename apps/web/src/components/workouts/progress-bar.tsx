@@ -49,11 +49,14 @@ export function ProgressBar({
 }
 
 function Segment({ state, fill, radius }: { state: "done" | "now" | "todo"; fill: SegmentFill | null; radius: string }) {
+  // How far the segment on screen has filled, as a percentage (null otherwise).
+  const percent =
+    state === "now" && fill ? Math.round(Math.min(1, Math.max(0, fill.fraction)) * 1000) / 10 : null;
   let inner: React.CSSProperties = { width: "0%" };
   if (state === "done") inner = { width: "100%", background: "#ffffff" };
-  if (state === "now" && fill) {
+  if (percent !== null && fill) {
     inner = {
-      width: `${Math.round(Math.min(1, Math.max(0, fill.fraction)) * 1000) / 10}%`,
+      width: `${percent}%`,
       background:
         fill.kind === "tutorial"
           ? `repeating-linear-gradient(-45deg, ${ACCENT} 0px 3px, rgba(169,156,255,0.35) 3px 6px)`
@@ -62,8 +65,25 @@ function Segment({ state, fill, radius }: { state: "done" | "now" | "todo"; fill
     };
   }
   return (
-    <div className="h-1 min-w-0 flex-1 overflow-hidden bg-white/30" style={{ borderRadius: radius }}>
-      <div className="h-full" style={inner} />
+    <div className="relative h-1 min-w-0 flex-1">
+      <div className="h-1 overflow-hidden bg-white/30" style={{ borderRadius: radius }}>
+        <div className="h-full" style={inner} />
+      </div>
+      {/* A dot riding the fill's leading edge — outside the clipped track, so
+          it can stand taller than the bar. */}
+      {percent !== null && percent > 0 && (
+        <div
+          aria-hidden="true"
+          className="absolute top-1/2 z-10 size-2 rounded-full"
+          style={{
+            left: `${percent}%`,
+            transform: "translate(-50%, -50%)",
+            background: ACCENT,
+            boxShadow: "0 0 6px rgba(169,156,255,0.8)",
+            transition: "left 250ms linear",
+          }}
+        />
+      )}
     </div>
   );
 }
