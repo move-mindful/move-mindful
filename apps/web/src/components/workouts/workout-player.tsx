@@ -633,7 +633,8 @@ export function WorkoutPlayer({
             onWatchTutorial={null}
             onSkipWarmup={skip}
             onEnd={() => act({ type: "sheet", sheet: "end" })}
-            onSettings={openSettings}
+            // Phones only: Settings, top right, as on the regular pause screen.
+            onSettings={theater ? null : openSettings}
             autoAdvance={null}
             theater={theater}
           />
