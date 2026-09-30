@@ -12,7 +12,6 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { useRouter } from "next/navigation";
 import {
   aboutMinutes,
   activeTime,
@@ -138,7 +137,6 @@ export function WorkoutPlayer({
   /** Show the gesture guide on every Begin, not just a member's first (signed-out /demo1 visitors). */
   guideEveryTime?: boolean;
 }) {
-  const router = useRouter();
 
   const estimates = useMemo(
     () => Object.fromEntries(Object.values(workout.exercises).map((e) => [e.id, e.estimate])),
@@ -529,7 +527,6 @@ export function WorkoutPlayer({
     act({ type: "exit" });
   }
 
-  // Let the last save land first (a moment at most), so the list shows it.
   /** The guide's Close (or Esc): remembered as seen, in this layout; on with the workout. */
   function finishGuide() {
     setSettingsFromGuide(false);
@@ -542,10 +539,16 @@ export function WorkoutPlayer({
     updatePrefs(theater ? { seenDesktopGuide: true } : { seenGestureGuide: true });
     act({ type: "sheet", sheet: "settings" });
   }
-  const leave = () => {
-    const wait = new Promise((resolve) => setTimeout(resolve, 1500));
-    void Promise.race([saving.current, wait]).then(() => router.push(backHref));
-  };
+  /**
+   * Done, on the summary: back to this workout's preview, like End workout.
+   * The finished session was recorded as it completed; any earlier saved spot
+   * (a resumed workout) is spent, so the preview offers a fresh Begin.
+   */
+  function done() {
+    setSaved(null);
+    setChromeHidden(false);
+    act({ type: "exit" });
+  }
   const setSound = (on: boolean) => {
     updatePrefs({ instructorAudio: on });
     setMuted(!on);
@@ -1001,7 +1004,7 @@ export function WorkoutPlayer({
           time={clock(activeTime(state, 0) / 1000)}
           exercises={exerciseCount}
           sets={setCount}
-          onDone={leave}
+          onDone={done}
           onRestart={() => restartWorkout(true)}
           theater={theater}
         />
