@@ -786,6 +786,23 @@ export function RestScreen({
   theater?: boolean;
 }) {
   const shown = Math.ceil(secondsLeft);
+  // What's up next. On phones it sits right under the ring; on desktop, with
+  // everything centred, above the buttons.
+  const card = next && (
+    <div className="flex items-center gap-3.5 rounded-[18px] bg-white/[0.08] py-2.5 pl-2.5 pr-4">
+      <span className="h-[72px] w-14 shrink-0 overflow-hidden rounded-xl bg-white/10">
+        {next.thumbnail && (
+          // eslint-disable-next-line @next/next/no-img-element -- a tiny Mux still; nothing to optimize
+          <img src={next.thumbnail} alt="" className="size-full object-cover" />
+        )}
+      </span>
+      <span className="flex min-w-0 flex-col gap-0.5">
+        <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/70">{next.label}</span>
+        <span className="truncate text-lg font-semibold">{next.name}</span>
+        <span className="text-sm text-white/70">{next.detail}</span>
+      </span>
+    </div>
+  );
   return (
     <div
       className={`pointer-events-none [&_button]:pointer-events-auto ${theater ? centered : "absolute inset-0 flex flex-col"}`}
@@ -835,23 +852,10 @@ export function RestScreen({
           </div>
         </div>
         {roundLine && <div className="text-base text-white/80">{roundLine}</div>}
+        {!theater && card && <div className="mt-2 w-full px-5">{card}</div>}
       </div>
       <div className={`relative gap-4 ${bottomGroup(theater)}`}>
-        {next && (
-          <div className="flex items-center gap-3.5 rounded-[18px] bg-white/[0.08] py-2.5 pl-2.5 pr-4">
-            <span className="h-[72px] w-14 shrink-0 overflow-hidden rounded-xl bg-white/10">
-              {next.thumbnail && (
-                // eslint-disable-next-line @next/next/no-img-element -- a tiny Mux still; nothing to optimize
-                <img src={next.thumbnail} alt="" className="size-full object-cover" />
-              )}
-            </span>
-            <span className="flex min-w-0 flex-col gap-0.5">
-              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/70">{next.label}</span>
-              <span className="truncate text-lg font-semibold">{next.name}</span>
-              <span className="text-sm text-white/70">{next.detail}</span>
-            </span>
-          </div>
-        )}
+        {theater && card}
         <CountdownControls
           paused={paused}
           onPause={onPause}
