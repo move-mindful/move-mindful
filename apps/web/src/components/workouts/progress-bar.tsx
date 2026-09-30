@@ -54,24 +54,8 @@ function Segment({ state, fraction, radius }: { state: "done" | "now" | "todo"; 
   if (state === "done") inner = { width: "100%", background: "#ffffff" };
   if (percent !== null) inner = { width: `${percent}%`, background: ACCENT, transition: "width 250ms linear" };
   return (
-    <div className="relative h-1 min-w-0 flex-1">
-      <div className="h-1 overflow-hidden bg-white/30" style={{ borderRadius: radius }}>
-        <div className="h-full" style={inner} />
-      </div>
-      {/* A dot riding the fill's leading edge while it moves — outside the
-          clipped track, so it can stand taller than the bar. */}
-      {percent !== null && percent > 0 && percent < 100 && (
-        <div
-          aria-hidden="true"
-          className="absolute top-1/2 z-10 size-2 rounded-full"
-          style={{
-            left: `${percent}%`,
-            transform: "translate(-50%, -50%)",
-            background: ACCENT,
-            transition: "left 250ms linear",
-          }}
-        />
-      )}
+    <div className="h-1 min-w-0 flex-1 overflow-hidden bg-white/30" style={{ borderRadius: radius }}>
+      <div className="h-full" style={inner} />
     </div>
   );
 }
