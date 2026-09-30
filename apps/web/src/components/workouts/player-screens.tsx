@@ -820,7 +820,15 @@ export function RestScreen({
           <div
             role="timer"
             aria-label={`${shown} seconds of rest left`}
-            className="absolute inset-0 flex items-center justify-center text-[72px] font-semibold tracking-[-0.03em] tabular-nums"
+            // Growing as the digits drop: 1:30 at 72px, 59–10 at 84px, and the
+            // last nine at Get ready's 96px.
+            className={`absolute inset-0 flex items-center justify-center font-semibold tabular-nums ${
+              shown >= 60
+                ? "text-[72px] tracking-[-0.03em]"
+                : shown >= 10
+                  ? "text-[84px] tracking-[-0.04em]"
+                  : "text-[96px] tracking-[-0.04em]"
+            }`}
           >
             {/* Under a minute, just the seconds (45 … 9 … 1), like Get ready; 1:30 above that. */}
             {shown >= 60 ? clock(shown) : shown}
