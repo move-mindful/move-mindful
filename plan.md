@@ -260,6 +260,7 @@ Key product rules from design review:
 - [ ] Expo + React Native app — screens rebuilt with native components (NativeWind can keep Tailwind-style classes) to the settled designs
 - [ ] Clerk login (`@clerk/clerk-expo`) — same account as web; identify RevenueCat with the Clerk user ID
 - [ ] Entitlement gate (`react-native-purchases`) — unlock on "Move Mindful Pro", else show "membership required"
+- [ ] Apple Health (iOS app only; browsers can't): at launch, save finished workouts to Health (HealthKit); later, show the watch's heart rate on the summary. A true Apple Watch app (live heart rate, controls on the wrist) needs a separate Swift watchOS app — a future project, not launch
 - [ ] Unpaid-user paywall: **US** — app-to-web checkout button (deep-link to RevenueCat Web Billing, return with entitlement unlocked); **non-US fallback** — generic "membership required" state, no link (anti-steering). Verify App Review + legal status before shipping
 
 ### Phase 6 — Push notifications
