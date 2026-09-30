@@ -422,12 +422,15 @@ export function LabelLine({
   label,
   text,
   fill = null,
+  strong = false,
   className = "",
 }: {
   label: string;
   text: string;
   /** Fill the label pill with a countdown's progress (Up next, moving on by itself). */
   fill?: number | null;
+  /** The text a size up and bolder — the exercise's name on the minimised tutorial. */
+  strong?: boolean;
   className?: string;
 }) {
   return (
@@ -437,7 +440,7 @@ export function LabelLine({
         {fill !== null && <ProgressFill fraction={fill} />}
         <span className="relative">{label}</span>
       </span>
-      <span className="min-w-0 truncate text-[15px] font-medium">{text}</span>
+      <span className={`min-w-0 truncate ${strong ? "text-[17px] font-semibold" : "text-[15px] font-medium"}`}>{text}</span>
     </p>
   );
 }
@@ -557,7 +560,7 @@ export function TutorialScreen({
       {/* Minimised: "Tutorial:" and the exercise above the pills, and a small
           Skip at the end of their row. */}
       <Collapse open={hidden}>
-        <LabelLine label="Tutorial" text={name} className="mb-2.5" />
+        <LabelLine label="Tutorial" text={name} strong className="mb-2.5" />
       </Collapse>
       <div className={`flex gap-2 ${hidden ? "flex-nowrap items-center" : "flex-wrap"}`}>
         {chips.map((c) => (
