@@ -1727,8 +1727,8 @@ export function SettingsSheet({
               <span className="flex min-w-0 flex-col gap-[3px]">
                 <span className="text-[17px] font-semibold">Keep my music playing</span>
                 <span className="text-sm leading-snug text-white/75">
-                  Audio instructions will play without pausing music from other apps. Note: Phone silent mode must be
-                  off.
+                  Audio instructions will play without pausing music from other apps.
+                  <span className="mt-1 block font-semibold">Phone silent mode must be OFF.</span>
                 </span>
               </span>
               <Switch on={mix.on} onChange={mix.onChange} label="Keep my music playing" />
