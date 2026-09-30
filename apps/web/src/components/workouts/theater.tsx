@@ -67,6 +67,19 @@ export function TheaterButtons({ buttons }: { buttons: TheaterButton[] }) {
   );
 }
 
+/**
+ * Paused: what's on (the info left of the video) stays in place, dimmed and
+ * out of reach — the pause screen has the controls. The wrapper covers the
+ * whole stage, so the info's own positions don't move.
+ */
+export function Dimmed({ children }: { children: ReactNode }) {
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-60">
+      {children}
+    </div>
+  );
+}
+
 /** Back and next, level with the middle of the video. */
 export function TheaterArrows({
   onBack,

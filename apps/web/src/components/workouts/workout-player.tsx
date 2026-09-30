@@ -57,6 +57,7 @@ import {
 } from "./player-screens";
 import { List, Pause, Play, Settings } from "./icons";
 import {
+  Dimmed,
   TheaterArrows,
   TheaterButtons,
   TheaterSetInfo,
@@ -645,10 +646,14 @@ export function WorkoutPlayer({
           />
         </>
       );
-      // Desktop: the warm-up's arrows (back offers to start it over) and the button column.
+      // Desktop: the warm-up's info stays, dimmed; its arrows (back offers to
+      // start it over) and the button column.
       if (theater) {
         beside = (
           <>
+            <Dimmed>
+              <TheaterWarmupInfo name={workout.warmup.name} fraction={duration ? clip.time / duration : 0} onSkip={skip} />
+            </Dimmed>
             <TheaterArrows onBack={askRestartWarmup} onNext={skip} backLabel="Restart the warm-up" nextLabel="Skip warm-up" />
             <TheaterButtons buttons={sideButtons()} />
           </>
@@ -743,54 +748,11 @@ export function WorkoutPlayer({
       />
     );
 
-    if (state.paused && !(holdInPlace && onCountdown)) {
-      blurred = true;
-      const canWatch = !!targetExercise?.tutorial;
-      screen = (
-        <>
-          <Dim />
-          {bar}
-          <PausedScreen
-            subtitle={set ? setLine(set) : "Rest"}
-            stats={{
-              elapsed: clock(activeTime(state, 0) / 1000),
-              setsDone: `${setsDone} / ${setCount}`,
-              left: `~${aboutMinutes(secondsLeft(steps, state.step))} min`,
-            }}
-            onResume={resumePlay}
-            onRestartSet={() => act({ type: "restartSet" })}
-            restartSetLabel={state.stage === "tutorial" ? "Restart tutorial" : "Restart this set"}
-            onRestartWorkout={() => restartWorkout()}
-            // During a tutorial, Restart tutorial already covers it.
-            onWatchTutorial={canWatch && state.stage !== "tutorial" ? () => act({ type: "watchTutorial" }) : null}
-            onSkipWarmup={null}
-            onEnd={() => act({ type: "sheet", sheet: "end" })}
-            // Desktop has Settings in the column beside the video instead.
-            onSettings={theater ? null : openSettings}
-            autoAdvance={{ on: state.autoAdvance, onChange: setAutoAdvance }}
-            theater={theater}
-          />
-        </>
-      );
-      // Desktop: the arrows and the button column beside the video, as on a
-      // held rest or get-ready screen (Pause reads Resume while paused).
-      if (theater) {
-        const nextLabel =
-          step.kind === "rest"
-            ? "Skip the rest"
-            : state.stage === "tutorial"
-              ? "Start the exercise"
-              : state.stage === "ready"
-                ? "Start now"
-                : "Next set";
-        beside = (
-          <>
-            <TheaterArrows onBack={back} onNext={goOn} nextLabel={nextLabel} />
-            <TheaterButtons buttons={sideButtons()} />
-          </>
-        );
-      }
-    } else if (step.kind === "rest") {
+    // What's on screen, then — paused (other than a held rest or get-ready
+    // countdown) — the pause screen over it. On desktop the info left of the
+    // video stays, dimmed.
+    let info: ReactNode = null;
+    if (step.kind === "rest") {
       blurred = true;
       const t = target;
       const tName = t ? (workout.exercises[t.exerciseId]?.name ?? "Next exercise") : "";
@@ -894,15 +856,10 @@ export function WorkoutPlayer({
             {zones("Start the exercise")}
           </>
         );
+        info = <TheaterTutorialInfo name={name} chips={chips} levels={levels} progress={progress} onBegin={next} />;
         beside = (
           <>
-            <TheaterTutorialInfo
-              name={name}
-              chips={chips}
-              levels={levels}
-              progress={progress}
-              onBegin={next}
-            />
+            {info}
             <TheaterArrows onBack={back} onNext={next} nextLabel="Start the exercise" />
             <TheaterButtons buttons={sideButtons()} />
           </>
@@ -943,16 +900,19 @@ export function WorkoutPlayer({
             {zones("Next set")}
           </>
         );
+        info = (
+          <TheaterSetInfo
+            name={name}
+            metric={metric}
+            side={set.side}
+            groupLine={groupLine}
+            upNext={pill.text}
+            fill={state.timer && state.stage === "exercise" ? fill : null}
+          />
+        );
         beside = (
           <>
-            <TheaterSetInfo
-              name={name}
-              metric={metric}
-              side={set.side}
-              groupLine={groupLine}
-              upNext={pill.text}
-              fill={state.timer && state.stage === "exercise" ? fill : null}
-            />
+            {info}
             <TheaterArrows onBack={back} onNext={next} nextLabel="Next set" />
             <TheaterButtons buttons={sideButtons()} />
           </>
@@ -977,6 +937,55 @@ export function WorkoutPlayer({
               muted={muted}
               onToggleSound={() => setSound(muted)}
             />
+          </>
+        );
+      }
+    }
+    if (state.paused && !(holdInPlace && onCountdown)) {
+      blurred = true;
+      const canWatch = !!targetExercise?.tutorial;
+      screen = (
+        <>
+          <Dim />
+          {bar}
+          <PausedScreen
+            subtitle={set ? setLine(set) : "Rest"}
+            stats={{
+              elapsed: clock(activeTime(state, 0) / 1000),
+              setsDone: `${setsDone} / ${setCount}`,
+              left: `~${aboutMinutes(secondsLeft(steps, state.step))} min`,
+            }}
+            onResume={resumePlay}
+            onRestartSet={() => act({ type: "restartSet" })}
+            restartSetLabel={state.stage === "tutorial" ? "Restart tutorial" : "Restart this set"}
+            onRestartWorkout={() => restartWorkout()}
+            // During a tutorial, Restart tutorial already covers it.
+            onWatchTutorial={canWatch && state.stage !== "tutorial" ? () => act({ type: "watchTutorial" }) : null}
+            onSkipWarmup={null}
+            onEnd={() => act({ type: "sheet", sheet: "end" })}
+            // Desktop has Settings in the column beside the video instead.
+            onSettings={theater ? null : openSettings}
+            autoAdvance={{ on: state.autoAdvance, onChange: setAutoAdvance }}
+            theater={theater}
+          />
+        </>
+      );
+      // Desktop: the arrows and the button column beside the video, as on a
+      // held rest or get-ready screen (Pause reads Resume while paused).
+      if (theater) {
+        const nextLabel =
+          step.kind === "rest"
+            ? "Skip the rest"
+            : state.stage === "tutorial"
+              ? "Start the exercise"
+              : state.stage === "ready"
+                ? "Start now"
+                : "Next set";
+        beside = (
+          <>
+            {info && <Dimmed>{info}</Dimmed>}
+            <TheaterArrows onBack={back} onNext={goOn} nextLabel={nextLabel} />
+            <TheaterButtons buttons={sideButtons()} />
           </>
         );
       }
