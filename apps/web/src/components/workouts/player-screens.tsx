@@ -515,11 +515,9 @@ export function TutorialScreen({
   chips,
   levels,
   progress,
-  pill,
   hidden,
   onBegin,
   onPause,
-  onOverview,
   muted,
   onToggleSound,
 }: {
@@ -528,12 +526,10 @@ export function TutorialScreen({
   levels: string | null;
   /** How far through the tutorial is, and the seconds left of it. */
   progress: TutorialProgress;
-  pill: { label: string; text: string };
   /** Controls swiped away: just the sets and reps left over the video. */
   hidden: boolean;
   onBegin: () => void;
   onPause: () => void;
-  onOverview: () => void;
   muted: boolean;
   onToggleSound: () => void;
 }) {
@@ -572,9 +568,14 @@ export function TutorialScreen({
         )}
       </div>
       <Collapse open={!hidden}>
-        <div className="mt-[18px] flex flex-col gap-[18px]">
-          <BeginButton progress={progress} onBegin={onBegin} />
-          <ControlsRow pill={pill} muted={muted} onPause={onPause} onOverview={onOverview} onToggleSound={onToggleSound} />
+        {/* Sound · Skip tutorial (filling as it plays) · Pause — Skip takes the
+            workout pill's place; the overview is a swipe up away. */}
+        <div className="mt-[18px] flex items-center gap-3">
+          <SoundButton muted={muted} onToggle={onToggleSound} />
+          <BeginButton progress={progress} onBegin={onBegin} compact className="min-w-0 flex-1" />
+          <RoundButton label="Pause" onClick={onPause}>
+            <Pause />
+          </RoundButton>
         </div>
       </Collapse>
     </div>
@@ -609,16 +610,20 @@ export interface TutorialProgress {
 /**
  * Starts the exercise from its tutorial: "Skip tutorial", filling up as the
  * tutorial plays with the time left of it on the right. A tutorial playing once
- * starts the exercise when that runs out; a looping one starts over.
+ * starts the exercise when that runs out; a looping one starts over. `compact`
+ * is the phone's, between the sound and pause buttons: their height, with the
+ * label to the left of the time rather than centred over it.
  */
 export function BeginButton({
   progress,
   onBegin,
   className = "",
+  compact = false,
 }: {
   progress: TutorialProgress;
   onBegin: () => void;
   className?: string;
+  compact?: boolean;
 }) {
   return (
     <button
@@ -629,16 +634,32 @@ export function BeginButton({
           ? "Skip tutorial and start the exercise"
           : `Skip tutorial. The exercise starts on its own in ${Math.ceil(progress.secondsLeft)} seconds`
       }
-      className={`relative flex h-[58px] items-center justify-center gap-2.5 overflow-hidden rounded-full border-[1.5px] border-white/55 bg-white/[0.08] text-[17px] font-semibold ${className}`}
+      className={`relative flex items-center overflow-hidden rounded-full border-[1.5px] border-white/55 bg-white/[0.08] font-semibold ${
+        compact ? "h-[52px] justify-between gap-2 px-4 text-base" : "h-[58px] justify-center gap-2.5 text-[17px]"
+      } ${className}`}
     >
       <ProgressFill fraction={progress.fraction} restartKey={progress.cycle} />
-      <span className="relative">Skip tutorial</span>
-      <span className="relative">
-        <ArrowRight />
-      </span>
-      <span className="absolute inset-y-0 right-[22px] flex items-center text-[15px] font-medium tabular-nums text-white/80">
-        {clock(Math.ceil(progress.secondsLeft))}
-      </span>
+      {compact ? (
+        <>
+          <span className="relative flex min-w-0 items-center gap-1.5">
+            <span className="truncate">Skip tutorial</span>
+            <ArrowRight size={18} />
+          </span>
+          <span className="relative shrink-0 text-[15px] font-medium tabular-nums text-white/80">
+            {clock(Math.ceil(progress.secondsLeft))}
+          </span>
+        </>
+      ) : (
+        <>
+          <span className="relative">Skip tutorial</span>
+          <span className="relative">
+            <ArrowRight />
+          </span>
+          <span className="absolute inset-y-0 right-[22px] flex items-center text-[15px] font-medium tabular-nums text-white/80">
+            {clock(Math.ceil(progress.secondsLeft))}
+          </span>
+        </>
+      )}
     </button>
   );
 }

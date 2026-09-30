@@ -852,14 +852,9 @@ export function WorkoutPlayer({
               chips={chips}
               levels={levels}
               progress={progress}
-              pill={{
-                label: "Workout",
-                text: `${exerciseCount} ${exerciseCount === 1 ? "exercise" : "exercises"} · ${minutes} min`,
-              }}
               hidden={chromeHidden}
               onBegin={next}
               onPause={pause}
-              onOverview={openOverview}
               muted={muted}
               onToggleSound={() => setSound(muted)}
             />
