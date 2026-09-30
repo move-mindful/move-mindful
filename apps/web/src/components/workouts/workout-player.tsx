@@ -54,7 +54,7 @@ import {
   createSheetPull,
   WarmupScreen,
 } from "./player-screens";
-import { List, Pause, Settings } from "./icons";
+import { List, Pause, Play, Settings } from "./icons";
 import {
   TheaterArrows,
   TheaterButtons,
@@ -610,7 +610,10 @@ export function WorkoutPlayer({
     ...(state.phase === "workout"
       ? [{ label: "Workout", aria: "Open workout overview", icon: <List />, onClick: openOverview }]
       : []),
-    { label: "Pause", aria: "Pause", icon: <Pause />, onClick: pause },
+    // Held on a rest or get-ready screen, Pause is Resume — like the button under the countdown.
+    state.paused
+      ? { label: "Resume", aria: "Resume", icon: <Play size={20} />, onClick: resumePlay }
+      : { label: "Pause", aria: "Pause", icon: <Pause />, onClick: pause },
   ];
 
   if (state.phase === "warmup" && workout.warmup) {
@@ -777,8 +780,15 @@ export function WorkoutPlayer({
           />
         </>
       );
-      // Desktop: the back and next arrows beside the video, as on every other screen.
-      if (theater) beside = <TheaterArrows onBack={back} onNext={goOn} nextLabel="Skip the rest" />;
+      // Desktop: the arrows and the button column beside the video, as on every other screen.
+      if (theater) {
+        beside = (
+          <>
+            <TheaterArrows onBack={back} onNext={goOn} nextLabel="Skip the rest" />
+            <TheaterButtons buttons={sideButtons()} />
+          </>
+        );
+      }
     } else if (set && state.stage === "ready") {
       softBlur = true;
       const readyLine =
@@ -808,7 +818,14 @@ export function WorkoutPlayer({
           />
         </>
       );
-      if (theater) beside = <TheaterArrows onBack={back} onNext={goOn} nextLabel="Start now" />;
+      if (theater) {
+        beside = (
+          <>
+            <TheaterArrows onBack={back} onNext={goOn} nextLabel="Start now" />
+            <TheaterButtons buttons={sideButtons()} />
+          </>
+        );
+      }
     } else if (set && state.stage === "tutorial") {
       const amount = amountLabel(set.measure, set.amount, exercise?.sided);
       const duration = clip.duration || exercise?.tutorial?.durationSeconds || 0;
