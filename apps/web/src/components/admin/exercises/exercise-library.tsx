@@ -193,8 +193,12 @@ export function ExerciseLibrary({ exercises, tags }: { exercises: AdminExercise[
                 return (
                   <li
                     key={e.id}
-                    className={`flex items-center transition ${
-                      on ? "bg-zinc-50 shadow-[inset_3px_0_0_#18181b]" : "hover:bg-zinc-50"
+                    // The selected row's marker: a short rounded bar inset from the
+                    // edges, so the list's rounded corners never clip it.
+                    className={`relative flex items-center transition ${
+                      on
+                        ? "bg-zinc-50 before:absolute before:inset-y-2.5 before:left-1.5 before:w-[3px] before:rounded-full before:bg-zinc-900"
+                        : "hover:bg-zinc-50"
                     }`}
                   >
                     <button
