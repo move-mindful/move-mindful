@@ -634,13 +634,23 @@ export function WorkoutPlayer({
             onWatchTutorial={null}
             onSkipWarmup={skip}
             onEnd={() => act({ type: "sheet", sheet: "end" })}
-            // Phones only: Settings, top right, as on the regular pause screen.
+            // Phones only: Settings, top right, as on the regular pause screen
+            // (desktop has it in the column beside the video).
             onSettings={theater ? null : openSettings}
             autoAdvance={null}
             theater={theater}
           />
         </>
       );
+      // Desktop: the warm-up's arrows (back offers to start it over) and the button column.
+      if (theater) {
+        beside = (
+          <>
+            <TheaterArrows onBack={askRestartWarmup} onNext={skip} backLabel="Restart the warm-up" nextLabel="Skip warm-up" />
+            <TheaterButtons buttons={sideButtons()} />
+          </>
+        );
+      }
     } else if (theater) {
       screen = (
         <>
@@ -743,12 +753,31 @@ export function WorkoutPlayer({
             onWatchTutorial={canWatch && state.stage !== "tutorial" ? () => act({ type: "watchTutorial" }) : null}
             onSkipWarmup={null}
             onEnd={() => act({ type: "sheet", sheet: "end" })}
-            onSettings={openSettings}
+            // Desktop has Settings in the column beside the video instead.
+            onSettings={theater ? null : openSettings}
             autoAdvance={{ on: state.autoAdvance, onChange: setAutoAdvance }}
             theater={theater}
           />
         </>
       );
+      // Desktop: the arrows and the button column beside the video, as on a
+      // held rest or get-ready screen (Pause reads Resume while paused).
+      if (theater) {
+        const nextLabel =
+          step.kind === "rest"
+            ? "Skip the rest"
+            : state.stage === "tutorial"
+              ? "Start the exercise"
+              : state.stage === "ready"
+                ? "Start now"
+                : "Next set";
+        beside = (
+          <>
+            <TheaterArrows onBack={back} onNext={goOn} nextLabel={nextLabel} />
+            <TheaterButtons buttons={sideButtons()} />
+          </>
+        );
+      }
     } else if (step.kind === "rest") {
       blurred = true;
       const t = target;
