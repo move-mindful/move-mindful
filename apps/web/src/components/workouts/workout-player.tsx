@@ -313,10 +313,15 @@ export function WorkoutPlayer({
   }, [shown, state.phase, state.step, state.stage, state.mode, state.seen, steps, workout]);
 
   // Sheets stop the clock. The video keeps playing behind the overview (so
-  // pulling it up doesn't stutter) but pauses under Settings and End workout.
-  // Getting ready, the exercise already plays behind the blur; it starts over
-  // from the top as the countdown ends (a new take), in step with the member.
-  const playing = running || (state.phase === "workout" && !state.paused && state.sheet === "overview");
+  // pulling it up doesn't stutter) — the warm-up's too, sound and all; if it
+  // ends meanwhile, the first exercise comes up as usual, closing the overview —
+  // but pauses under
+  // Settings and End workout. Getting ready, the exercise already plays behind
+  // the blur; it starts over from the top as the countdown ends (a new take),
+  // in step with the member.
+  const playing =
+    running ||
+    ((state.phase === "workout" || state.phase === "warmup") && !state.paused && state.sheet === "overview");
   useEffect(() => {
     pool.sync(upcoming, shown, { playing, muted, take: state.take });
   }, [pool, upcoming, shown, playing, muted, state.take]);
