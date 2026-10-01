@@ -77,7 +77,8 @@ import { WorkoutPreview } from "./workout-preview";
 import { GestureGuide } from "./gesture-guide";
 import { DesktopGuide } from "./desktop-guide";
 import { usePlayerPreferences } from "./preferences";
-import { CoachTip, useTipAudio } from "./coach-tip";
+import { CoachTip } from "./coach-tip";
+import { COUNTDOWN, useCueAudio } from "./cue-audio";
 import { MUSIC, useWorkoutMusic } from "./music";
 import { TIP_DELAY_SECONDS, tipUrl } from "@/lib/workouts/shared";
 import { saveWorkoutSession } from "@/app/actions/workout-sessions";
@@ -343,11 +344,11 @@ export function WorkoutPlayer({
 
   // The instructor's audio tip for the step on screen: a rest's, or a set's
   // once the exercise itself is on (after the tutorial and Get ready). It
-  // plays a moment in, with their photo on screen — see useTipAudio.
+  // plays a moment in, with their photo on screen — see useCueAudio.
   const tipStep =
     state.phase === "workout" && step && (step.kind === "rest" || state.stage === "exercise") ? step : null;
-  const tips = useTipAudio({
-    tip: tipStep?.tip
+  const tips = useCueAudio({
+    clip: tipStep?.tip
       ? { url: tipUrl(tipStep.tip.id), start: tipStep.tip.start ?? 0, end: tipStep.tip.end ?? null }
       : null,
     take: state.take,
@@ -356,13 +357,25 @@ export function WorkoutPlayer({
     // Mute all, or just the tips switched off in the Audio card.
     muted: muted || !prefs.audioTips,
   });
-  const coach = (large = false) => <CoachTip show={tips.speaking} instructor={workout.instructor} large={large} />;
+  const coach = (large = false) => <CoachTip show={tips.playing} instructor={workout.instructor} large={large} />;
+
+  // The countdown over a rest's last seconds: a sound effect, off with the
+  // Audio card's Sound effects (or Mute all). Timed to end as the rest does.
+  const rest = state.phase === "workout" && step?.kind === "rest" ? step : null;
+  const countdownFrom = COUNTDOWN.seconds + COUNTDOWN.lead;
+  const countdown = useCueAudio({
+    clip: rest ? { url: COUNTDOWN.src, start: Math.max(0, countdownFrom - rest.seconds), end: null } : null,
+    take: state.take,
+    running: running && !!rest,
+    delayMs: rest ? Math.max(0, rest.seconds - countdownFrom) * 1000 : 0,
+    muted: muted || !prefs.soundEffects,
+  });
 
   // Music under the workout (the Audio card's Music switch). It plays while the
   // workout runs — the overview and the Audio card leave it going — and on
   // through the summary until Done; it dips under a voice and through the
   // warm-up and cool-down. The levels are in MUSIC.
-  const duckTo = tips.speaking
+  const duckTo = tips.playing
     ? MUSIC.duckTo.tip
     : state.phase === "workout" && step?.kind === "set" && state.stage === "tutorial"
       ? MUSIC.duckTo.tutorial
@@ -591,6 +604,7 @@ export function WorkoutPlayer({
     // Inside the tap, so every clip — and every audio tip — may play with sound later (see video-pool.tsx).
     pool.unlock();
     tips.unlock();
+    countdown.unlock();
     // The music from the top — only when it's on, so a muted member never downloads it.
     if (prefs.music && prefs.instructorAudio) music.begin();
     // First time in this layout (or every time, on the demo): the guide opens

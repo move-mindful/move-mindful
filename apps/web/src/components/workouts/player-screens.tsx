@@ -1923,10 +1923,9 @@ type Toggle = { on: boolean; onChange: (on: boolean) => void };
 
 /**
  * The Audio card, from the audio button: what plays — music, the instructor's
- * audio tips, sound effects, other apps' music alongside — and, at the
- * bottom, Mute all, which silences everything (the switches above dim while
- * it's on, and keep their settings for when it's off). Music and sound
- * effects aren't built yet: their switches are kept but don't do anything.
+ * audio tips, sound effects (the rest countdown), other apps' music alongside
+ * — and, at the bottom, Mute all, which silences everything (the switches
+ * above dim while it's on, and keep their settings for when it's off).
  */
 export function AudioSheet({
   muteAll,

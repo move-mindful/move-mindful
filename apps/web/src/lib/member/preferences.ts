@@ -18,9 +18,9 @@ export interface PlayerPreferences {
   instructorAudio: boolean;
   /** The instructor's audio tips during sets and rests. */
   audioTips: boolean;
-  /** Music during the workout — a placeholder in the Audio card; nothing plays yet. */
+  /** Music under the workout (components/workouts/music.ts). */
   music: boolean;
-  /** Sound effects — a placeholder in the Audio card; there are none yet. */
+  /** Sound effects: the countdown over a rest's last seconds. */
   soundEffects: boolean;
   /**
    * Play instructor audio over music from other apps instead of pausing it.
