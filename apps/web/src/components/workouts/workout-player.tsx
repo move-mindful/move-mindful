@@ -77,6 +77,7 @@ import { GestureGuide } from "./gesture-guide";
 import { DesktopGuide } from "./desktop-guide";
 import { usePlayerPreferences } from "./preferences";
 import { CoachTip, useTipAudio } from "./coach-tip";
+import { MUSIC, useWorkoutMusic } from "./music";
 import { TIP_DELAY_SECONDS, tipUrl } from "@/lib/workouts/shared";
 import { saveWorkoutSession } from "@/app/actions/workout-sessions";
 import type { PlayerPreferences } from "@/lib/member/preferences";
@@ -321,6 +322,8 @@ export function WorkoutPlayer({
   }
   function resumePlay() {
     setHoldInPlace(false);
+    // A tap: on an iPhone the music may need it to start again.
+    wakeMusic();
     act({ type: "resume" });
   }
   /** Back on the intro, warm-up, cool-down or outro (a left tap, the left arrow): ask whether to start it over. */
@@ -351,6 +354,32 @@ export function WorkoutPlayer({
     muted: muted || !prefs.audioTips,
   });
   const coach = (large = false) => <CoachTip show={tips.speaking} instructor={workout.instructor} large={large} />;
+
+  // Music under the workout (the Audio card's Music switch). It plays while the
+  // workout runs — the overview and the Audio card leave it going — and dips
+  // under a voice and through the warm-up and cool-down; the levels are in MUSIC.
+  const duckTo = tips.speaking
+    ? MUSIC.duckTo.tip
+    : state.phase === "workout" && step?.kind === "set" && state.stage === "tutorial"
+      ? MUSIC.duckTo.tutorial
+      : state.phase === "intro"
+        ? MUSIC.duckTo.intro
+        : state.phase === "outro"
+          ? MUSIC.duckTo.outro
+          : state.phase === "warmup"
+            ? MUSIC.duckTo.warmup
+            : state.phase === "cooldown"
+              ? MUSIC.duckTo.cooldown
+              : 100;
+  const music = useWorkoutMusic({
+    on: prefs.music && !muted,
+    playing: active && !state.paused && (state.sheet === null || state.sheet === "overview" || state.sheet === "audio"),
+    level: (MUSIC.volume / 100) * (duckTo / 100),
+  });
+  /** In a tap that should get the music going, if it's meant to be on. */
+  function wakeMusic() {
+    if (prefs.music && !muted) music.wake();
+  }
 
   // ── Videos ──────────────────────────────────────────
 
@@ -554,6 +583,8 @@ export function WorkoutPlayer({
     // Inside the tap, so every clip — and every audio tip — may play with sound later (see video-pool.tsx).
     pool.unlock();
     tips.unlock();
+    // The music from the top — only when it's on, so a muted member never downloads it.
+    if (prefs.music && prefs.instructorAudio) music.begin();
     // First time in this layout (or every time, on the demo): the guide opens
     // before the warm-up, or as the first exercise comes up without one. The
     // phone and desktop guides are remembered separately.
@@ -644,6 +675,7 @@ export function WorkoutPlayer({
   const setMuteAll = (on: boolean) => {
     updatePrefs({ instructorAudio: !on });
     setMuted(on);
+    if (!on && prefs.music) music.wake();
   };
   // Auto-advance, from Settings or the pause screen's AUTO pill. Hands-free, a
   // looping tutorial would wait for a tap, so turning it on moves Loop to Play
@@ -1215,7 +1247,13 @@ export function WorkoutPlayer({
     active && (!theater || state.sheet === "audio") ? (
       <AudioSheet
         muteAll={{ on: muted, onChange: setMuteAll }}
-        music={{ on: prefs.music, onChange: (on) => updatePrefs({ music: on }) }}
+        music={{
+          on: prefs.music,
+          onChange: (on) => {
+            updatePrefs({ music: on });
+            if (on && !muted) music.wake();
+          },
+        }}
         tips={{ on: prefs.audioTips, onChange: (on) => updatePrefs({ audioTips: on }) }}
         effects={{ on: prefs.soundEffects, onChange: (on) => updatePrefs({ soundEffects: on }) }}
         mix={canMix ? { on: prefs.mixAudio, onChange: (on) => updatePrefs({ mixAudio: on }) } : null}
