@@ -14,6 +14,9 @@ export const TIP_BUCKET = "workout-tips";
 /** The longest recording the builder takes. A tip still stops when its set or rest ends. */
 export const TIP_MAX_SECONDS = 60;
 
+/** How far into its set (once the exercise starts, after Get ready) or rest a tip begins. */
+export const TIP_DELAY_SECONDS = { set: 3, rest: 1 } as const;
+
 /** Where a tip's file is served from. */
 export function tipUrl(id: string): string {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${TIP_BUCKET}/${id}`;

@@ -7,9 +7,13 @@ import {
   aboutMinutes,
   estimateWorkout,
   groupLabels,
+  keepStepTips,
+  withTip,
+  workoutSteps,
   type EstimateExercise,
   type Measure,
   type Side,
+  type TipMap,
   type WorkoutBlock,
   type WorkoutMove,
 } from "@move-mindful/core";
@@ -42,14 +46,24 @@ import { CoverField, resizeCover } from "@/components/admin/workouts/cover-field
 import { GenerateDialog } from "@/components/admin/workouts/generate-dialog";
 import { RatingDetails } from "@/components/admin/workouts/rating";
 import { WorkoutVideoField } from "@/components/admin/workouts/workout-video-field";
+import { TipsView } from "@/components/admin/workouts/tips-view";
 
 // The builder keeps a stable key on every block and move so React can track
-// rows as they're reordered; keys are stripped before saving.
+// rows as they're reordered; keys are stripped before saving. Audio tips ride
+// along on the moves and blocks (see TipMap in core), so they move with them.
 type KMove = WorkoutMove & { key: string };
 type KBlock =
-  | { key: string; kind: "exercise"; move: KMove; sets: number; restBetweenSets: number }
-  | { key: string; kind: "rest"; seconds: number }
-  | { key: string; kind: "group"; rounds: number; restBetweenExercises: number; restBetweenRounds: number; moves: KMove[] };
+  | { key: string; kind: "exercise"; move: KMove; sets: number; restBetweenSets: number; restTips?: TipMap }
+  | { key: string; kind: "rest"; seconds: number; restTips?: TipMap }
+  | {
+      key: string;
+      kind: "group";
+      rounds: number;
+      restBetweenExercises: number;
+      restBetweenRounds: number;
+      moves: KMove[];
+      restTips?: TipMap;
+    };
 
 let keySeed = 0;
 const newKey = () => `k${++keySeed}`;
@@ -63,13 +77,29 @@ function withKeys(blocks: WorkoutBlock[]): KBlock[] {
 }
 
 function stripKeys(blocks: KBlock[]): WorkoutBlock[] {
-  const move = ({ exerciseId, measure, amount, firstSide }: KMove): WorkoutMove => ({ exerciseId, measure, amount, firstSide });
+  const move = ({ exerciseId, measure, amount, firstSide, tips }: KMove): WorkoutMove => ({
+    exerciseId,
+    measure,
+    amount,
+    firstSide,
+    ...(tips && { tips }),
+  });
   return blocks.map((b): WorkoutBlock => {
-    if (b.kind === "exercise") return { kind: "exercise", move: move(b.move), sets: b.sets, restBetweenSets: b.restBetweenSets };
-    if (b.kind === "group") {
-      return { kind: "group", rounds: b.rounds, restBetweenExercises: b.restBetweenExercises, restBetweenRounds: b.restBetweenRounds, moves: b.moves.map(move) };
+    const restTips = b.restTips ? { restTips: b.restTips } : {};
+    if (b.kind === "exercise") {
+      return { kind: "exercise", move: move(b.move), sets: b.sets, restBetweenSets: b.restBetweenSets, ...restTips };
     }
-    return { kind: "rest", seconds: b.seconds };
+    if (b.kind === "group") {
+      return {
+        kind: "group",
+        rounds: b.rounds,
+        restBetweenExercises: b.restBetweenExercises,
+        restBetweenRounds: b.restBetweenRounds,
+        moves: b.moves.map(move),
+        ...restTips,
+      };
+    }
+    return { kind: "rest", seconds: b.seconds, ...restTips };
   });
 }
 
@@ -123,6 +153,8 @@ export function WorkoutBuilder({
   // A new workout, once saved here (a video upload saves it first): later saves update it.
   const createdId = useRef<string | null>(null);
   const [blocks, setBlocks] = useState<KBlock[]>(() => withKeys(workout?.blocks ?? []));
+  // The sequence's two views: editing it, or recording its audio tips.
+  const [view, setView] = useState<"edit" | "tips">("edit");
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [busy, setBusy] = useState<null | "save" | "publish">(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(workout?.coverImageUrl ?? null);
@@ -201,7 +233,8 @@ export function WorkoutBuilder({
       instructorId,
       warmupExerciseId: warmupId,
       cooldownExerciseId: cooldownId,
-      blocks: plain,
+      // Tips whose set, side or rest has gone (fewer sets, say) aren't saved.
+      blocks: keepStepTips(plain, workoutSteps(plain, estimates)),
     });
     if (res.id && !workout) createdId.current = res.id;
     if (res.error) setError(res.error);
@@ -515,216 +548,245 @@ export function WorkoutBuilder({
             </div>
           </Section>
 
-          <Section title="Sequence" aside="Rests only happen where you add them">
-            {/* Intro: this workout's own video, optional, before everything */}
-            <WorkoutVideoField
-              role="intro"
-              label="Intro"
-              hint="Optional · plays first, before the warm-up"
-              videos={videos}
-              ensureSaved={ensureSaved}
-              onChanged={onVideosChanged}
-            />
-
-            {/* Warm-up: optional, pinned first */}
-            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-zinc-300 bg-zinc-50 p-3">
-              <Flag>Warm-up</Flag>
-              <select
-                aria-label="Warm-up"
-                value={warmupId ?? ""}
-                onChange={(e) => setWarmupId(e.target.value || null)}
-                className="h-9 min-w-48 flex-1 rounded-lg border border-zinc-300 bg-white px-2.5 text-sm"
-              >
-                <option value="">No warm-up</option>
-                {catalog
-                  .filter((c) => c.kind === "warmup" && (!c.archived || c.id === warmupId))
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} · {formatDuration(c.durationSeconds)}
-                    </option>
-                  ))}
-              </select>
-              <span className="text-xs text-zinc-500">Optional for members · not counted in the workout time</span>
-            </div>
-
-            {blocks.length === 0 && (
-              <p className="rounded-lg border border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500">
-                Search below to add the first exercise, or{" "}
-                <button type="button" onClick={() => setAiOpen(true)} className="font-semibold text-violet-700 hover:underline">
-                  generate a workout with AI
-                </button>
-                .
-              </p>
-            )}
-
-            <ol className="space-y-2">
-              {blocks.map((b, i) => (
-                <li key={b.key}>
-                  <BlockFrame
-                    tone={b.kind}
-                    onUp={() => moveRow(i, i - 1)}
-                    onDown={() => moveRow(i, i + 1)}
-                    onRemove={() => remove(b.key)}
-                    first={i === 0}
-                    last={i === blocks.length - 1}
-                    seconds={estimateWorkout([plain[i]], estimates).totalSeconds}
-                  >
-                    {b.kind === "rest" ? (
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-semibold">Rest</span>
-                        <DurationInput
-                          label="Rest length"
-                          seconds={b.seconds}
-                          onChange={(seconds) => update(b.key, (x) => ({ ...x, seconds }) as KBlock)}
-                        />
-                        <span className="text-xs text-zinc-500">Countdown with Pause and Continue</span>
-                      </div>
-                    ) : b.kind === "exercise" ? (
-                      <MoveFields
-                        move={b.move}
-                        exercise={byId.get(b.move.exerciseId)}
-                        onPreview={() => setPreviewId(b.move.exerciseId)}
-                        onChange={(change) => updateMove(b.key, b.move.key, change)}
-                        sets={{
-                          value: b.sets,
-                          onChange: (sets) => update(b.key, (x) => ({ ...x, sets }) as KBlock),
-                          rest: b.restBetweenSets,
-                          onRest: (restBetweenSets) => update(b.key, (x) => ({ ...x, restBetweenSets }) as KBlock),
-                        }}
-                      />
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                          <span className="font-semibold">{labels[i]}</span>
-                          <Labelled label="Rounds">
-                            <Stepper
-                              label="Rounds"
-                              value={b.rounds}
-                              onChange={(rounds) => update(b.key, (x) => ({ ...x, rounds }) as KBlock)}
-                            />
-                          </Labelled>
-                          <Labelled label="Between exercises">
-                            <DurationInput
-                              label="Rest between exercises"
-                              seconds={b.restBetweenExercises}
-                              onChange={(s) => update(b.key, (x) => ({ ...x, restBetweenExercises: s }) as KBlock)}
-                            />
-                          </Labelled>
-                          <Labelled label="Between rounds">
-                            <DurationInput
-                              label="Rest between rounds"
-                              seconds={b.restBetweenRounds}
-                              onChange={(s) => update(b.key, (x) => ({ ...x, restBetweenRounds: s }) as KBlock)}
-                            />
-                          </Labelled>
-                        </div>
-                        <ol className="space-y-1.5 border-l-2 border-zinc-200 pl-3">
-                          {b.moves.map((m, j) => (
-                            <li key={m.key} className="flex items-center gap-2">
-                              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-zinc-100 text-xs font-bold">
-                                {String.fromCharCode(65 + j)}
-                              </span>
-                              <div className="min-w-0 flex-1">
-                                <MoveFields
-                                  move={m}
-                                  exercise={byId.get(m.exerciseId)}
-                                  onPreview={() => setPreviewId(m.exerciseId)}
-                                  onChange={(change) => updateMove(b.key, m.key, change)}
-                                />
-                              </div>
-                              <span className="flex shrink-0">
-                                <button type="button" aria-label="Move up" disabled={j === 0} className={iconBtn}
-                                  onClick={() => update(b.key, (x) => (x.kind === "group" ? { ...x, moves: move(x.moves, j, j - 1) } : x))}>↑</button>
-                                <button type="button" aria-label="Move down" disabled={j === b.moves.length - 1} className={iconBtn}
-                                  onClick={() => update(b.key, (x) => (x.kind === "group" ? { ...x, moves: move(x.moves, j, j + 1) } : x))}>↓</button>
-                                <button type="button" aria-label="Remove from group" className={iconBtn}
-                                  onClick={() => update(b.key, (x) => (x.kind === "group" ? { ...x, moves: x.moves.filter((y) => y.key !== m.key) } : x))}>×</button>
-                              </span>
-                            </li>
-                          ))}
-                          <li className="max-w-sm">
-                            <ExerciseSearch
-                              compact
-                              catalog={catalog}
-                              suggested={pairSuggestions(b.moves)}
-                              placeholder={b.moves.length < 2 ? "Add an exercise to this group…" : "Add another exercise…"}
-                              onPick={(e) => update(b.key, (x) => (x.kind === "group" ? { ...x, moves: [...x.moves, newMove(e)] } : x))}
-                            />
-                          </li>
-                        </ol>
-                      </div>
-                    )}
-                  </BlockFrame>
-                </li>
-              ))}
-            </ol>
-
-            {/* Cool-down and outro: optional, pinned last */}
-            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-zinc-300 bg-zinc-50 p-3">
-              <Flag>Cool-down</Flag>
-              <select
-                aria-label="Cool-down"
-                value={cooldownId ?? ""}
-                onChange={(e) => setCooldownId(e.target.value || null)}
-                className="h-9 min-w-48 flex-1 rounded-lg border border-zinc-300 bg-white px-2.5 text-sm"
-              >
-                <option value="">No cool-down</option>
-                {catalog
-                  .filter((c) => c.kind === "cooldown" && (!c.archived || c.id === cooldownId))
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} · {formatDuration(c.durationSeconds)}
-                    </option>
-                  ))}
-              </select>
-              <span className="text-xs text-zinc-500">Members are asked “Cool down?” after the last exercise</span>
-            </div>
-            <WorkoutVideoField
-              role="outro"
-              label="Outro"
-              hint="Optional · plays last, before Workout complete"
-              videos={videos}
-              ensureSaved={ensureSaved}
-              onChanged={onVideosChanged}
-            />
-
-            <div className="flex flex-wrap gap-2 border-t border-zinc-100 pt-4">
-              <div className="min-w-64 flex-1">
-                <ExerciseSearch
-                  catalog={catalog}
-                  placeholder="Add an exercise — type to search"
-                  onPick={(e) =>
-                    setBlocks((prev) => [...prev, { key: newKey(), kind: "exercise", move: newMove(e), sets: 1, restBetweenSets: 30 }])
-                  }
+          <Section
+            title="Sequence"
+            aside={
+              <span className="flex items-center gap-3">
+                {view === "edit" && "Rests only happen where you add them"}
+                <Segmented<"edit" | "tips">
+                  label="Sequence view"
+                  value={view}
+                  onChange={setView}
+                  options={[
+                    { id: "edit", label: "Edit" },
+                    { id: "tips", label: "Audio tips" },
+                  ]}
                 />
-              </div>
-              <button
-                type="button"
-                onClick={() => setBlocks((prev) => [...prev, { key: newKey(), kind: "rest", seconds: 60 }])}
-                className="h-11 rounded-lg border border-zinc-300 px-4 text-sm font-medium hover:bg-zinc-50"
-              >
-                + Rest
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setBlocks((prev) => [
-                    ...prev,
-                    { key: newKey(), kind: "group", rounds: 3, restBetweenExercises: 15, restBetweenRounds: 45, moves: [] },
-                  ])
-                }
-                className="h-11 rounded-lg border border-zinc-300 px-4 text-sm font-medium hover:bg-zinc-50"
-              >
-                + Superset / circuit
-              </button>
-              <button
-                type="button"
-                onClick={() => setAiOpen(true)}
-                className="h-11 rounded-lg border border-violet-300 px-4 text-sm font-medium text-violet-700 hover:bg-violet-50"
-              >
-                ✦ Generate with AI
-              </button>
-            </div>
+              </span>
+            }
+          >
+            {view === "tips" ? (
+              <TipsView
+                blocks={plain}
+                estimates={estimates}
+                byId={byId}
+                instructorName={instructors.find((i) => i.id === instructorId)?.name ?? null}
+                ensureSaved={ensureSaved}
+                onTip={(slot, tip) => setBlocks((prev) => withTip(prev, slot, tip))}
+              />
+            ) : (
+              <>
+                {/* Intro: this workout's own video, optional, before everything */}
+                <WorkoutVideoField
+                  role="intro"
+                  label="Intro"
+                  hint="Optional · plays first, before the warm-up"
+                  videos={videos}
+                  ensureSaved={ensureSaved}
+                  onChanged={onVideosChanged}
+                />
+
+                {/* Warm-up: optional, pinned first */}
+                <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-zinc-300 bg-zinc-50 p-3">
+                  <Flag>Warm-up</Flag>
+                  <select
+                    aria-label="Warm-up"
+                    value={warmupId ?? ""}
+                    onChange={(e) => setWarmupId(e.target.value || null)}
+                    className="h-9 min-w-48 flex-1 rounded-lg border border-zinc-300 bg-white px-2.5 text-sm"
+                  >
+                    <option value="">No warm-up</option>
+                    {catalog
+                      .filter((c) => c.kind === "warmup" && (!c.archived || c.id === warmupId))
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} · {formatDuration(c.durationSeconds)}
+                        </option>
+                      ))}
+                  </select>
+                  <span className="text-xs text-zinc-500">Optional for members · not counted in the workout time</span>
+                </div>
+
+                {blocks.length === 0 && (
+                  <p className="rounded-lg border border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500">
+                    Search below to add the first exercise, or{" "}
+                    <button type="button" onClick={() => setAiOpen(true)} className="font-semibold text-violet-700 hover:underline">
+                      generate a workout with AI
+                    </button>
+                    .
+                  </p>
+                )}
+
+                <ol className="space-y-2">
+                  {blocks.map((b, i) => (
+                    <li key={b.key}>
+                      <BlockFrame
+                        tone={b.kind}
+                        onUp={() => moveRow(i, i - 1)}
+                        onDown={() => moveRow(i, i + 1)}
+                        onRemove={() => remove(b.key)}
+                        first={i === 0}
+                        last={i === blocks.length - 1}
+                        seconds={estimateWorkout([plain[i]], estimates).totalSeconds}
+                      >
+                        {b.kind === "rest" ? (
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm font-semibold">Rest</span>
+                            <DurationInput
+                              label="Rest length"
+                              seconds={b.seconds}
+                              onChange={(seconds) => update(b.key, (x) => ({ ...x, seconds }) as KBlock)}
+                            />
+                            <span className="text-xs text-zinc-500">Countdown with Pause and Continue</span>
+                          </div>
+                        ) : b.kind === "exercise" ? (
+                          <MoveFields
+                            move={b.move}
+                            exercise={byId.get(b.move.exerciseId)}
+                            onPreview={() => setPreviewId(b.move.exerciseId)}
+                            onChange={(change) => updateMove(b.key, b.move.key, change)}
+                            sets={{
+                              value: b.sets,
+                              onChange: (sets) => update(b.key, (x) => ({ ...x, sets }) as KBlock),
+                              rest: b.restBetweenSets,
+                              onRest: (restBetweenSets) => update(b.key, (x) => ({ ...x, restBetweenSets }) as KBlock),
+                            }}
+                          />
+                        ) : (
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                              <span className="font-semibold">{labels[i]}</span>
+                              <Labelled label="Rounds">
+                                <Stepper
+                                  label="Rounds"
+                                  value={b.rounds}
+                                  onChange={(rounds) => update(b.key, (x) => ({ ...x, rounds }) as KBlock)}
+                                />
+                              </Labelled>
+                              <Labelled label="Between exercises">
+                                <DurationInput
+                                  label="Rest between exercises"
+                                  seconds={b.restBetweenExercises}
+                                  onChange={(s) => update(b.key, (x) => ({ ...x, restBetweenExercises: s }) as KBlock)}
+                                />
+                              </Labelled>
+                              <Labelled label="Between rounds">
+                                <DurationInput
+                                  label="Rest between rounds"
+                                  seconds={b.restBetweenRounds}
+                                  onChange={(s) => update(b.key, (x) => ({ ...x, restBetweenRounds: s }) as KBlock)}
+                                />
+                              </Labelled>
+                            </div>
+                            <ol className="space-y-1.5 border-l-2 border-zinc-200 pl-3">
+                              {b.moves.map((m, j) => (
+                                <li key={m.key} className="flex items-center gap-2">
+                                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-zinc-100 text-xs font-bold">
+                                    {String.fromCharCode(65 + j)}
+                                  </span>
+                                  <div className="min-w-0 flex-1">
+                                    <MoveFields
+                                      move={m}
+                                      exercise={byId.get(m.exerciseId)}
+                                      onPreview={() => setPreviewId(m.exerciseId)}
+                                      onChange={(change) => updateMove(b.key, m.key, change)}
+                                    />
+                                  </div>
+                                  <span className="flex shrink-0">
+                                    <button type="button" aria-label="Move up" disabled={j === 0} className={iconBtn}
+                                      onClick={() => update(b.key, (x) => (x.kind === "group" ? { ...x, moves: move(x.moves, j, j - 1) } : x))}>↑</button>
+                                    <button type="button" aria-label="Move down" disabled={j === b.moves.length - 1} className={iconBtn}
+                                      onClick={() => update(b.key, (x) => (x.kind === "group" ? { ...x, moves: move(x.moves, j, j + 1) } : x))}>↓</button>
+                                    <button type="button" aria-label="Remove from group" className={iconBtn}
+                                      onClick={() => update(b.key, (x) => (x.kind === "group" ? { ...x, moves: x.moves.filter((y) => y.key !== m.key) } : x))}>×</button>
+                                  </span>
+                                </li>
+                              ))}
+                              <li className="max-w-sm">
+                                <ExerciseSearch
+                                  compact
+                                  catalog={catalog}
+                                  suggested={pairSuggestions(b.moves)}
+                                  placeholder={b.moves.length < 2 ? "Add an exercise to this group…" : "Add another exercise…"}
+                                  onPick={(e) => update(b.key, (x) => (x.kind === "group" ? { ...x, moves: [...x.moves, newMove(e)] } : x))}
+                                />
+                              </li>
+                            </ol>
+                          </div>
+                        )}
+                      </BlockFrame>
+                    </li>
+                  ))}
+                </ol>
+
+                {/* Cool-down and outro: optional, pinned last */}
+                <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-zinc-300 bg-zinc-50 p-3">
+                  <Flag>Cool-down</Flag>
+                  <select
+                    aria-label="Cool-down"
+                    value={cooldownId ?? ""}
+                    onChange={(e) => setCooldownId(e.target.value || null)}
+                    className="h-9 min-w-48 flex-1 rounded-lg border border-zinc-300 bg-white px-2.5 text-sm"
+                  >
+                    <option value="">No cool-down</option>
+                    {catalog
+                      .filter((c) => c.kind === "cooldown" && (!c.archived || c.id === cooldownId))
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} · {formatDuration(c.durationSeconds)}
+                        </option>
+                      ))}
+                  </select>
+                  <span className="text-xs text-zinc-500">Members are asked “Cool down?” after the last exercise</span>
+                </div>
+                <WorkoutVideoField
+                  role="outro"
+                  label="Outro"
+                  hint="Optional · plays last, before Workout complete"
+                  videos={videos}
+                  ensureSaved={ensureSaved}
+                  onChanged={onVideosChanged}
+                />
+
+                <div className="flex flex-wrap gap-2 border-t border-zinc-100 pt-4">
+                  <div className="min-w-64 flex-1">
+                    <ExerciseSearch
+                      catalog={catalog}
+                      placeholder="Add an exercise — type to search"
+                      onPick={(e) =>
+                        setBlocks((prev) => [...prev, { key: newKey(), kind: "exercise", move: newMove(e), sets: 1, restBetweenSets: 30 }])
+                      }
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setBlocks((prev) => [...prev, { key: newKey(), kind: "rest", seconds: 60 }])}
+                    className="h-11 rounded-lg border border-zinc-300 px-4 text-sm font-medium hover:bg-zinc-50"
+                  >
+                    + Rest
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setBlocks((prev) => [
+                        ...prev,
+                        { key: newKey(), kind: "group", rounds: 3, restBetweenExercises: 15, restBetweenRounds: 45, moves: [] },
+                      ])
+                    }
+                    className="h-11 rounded-lg border border-zinc-300 px-4 text-sm font-medium hover:bg-zinc-50"
+                  >
+                    + Superset / circuit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAiOpen(true)}
+                    className="h-11 rounded-lg border border-violet-300 px-4 text-sm font-medium text-violet-700 hover:bg-violet-50"
+                  >
+                    ✦ Generate with AI
+                  </button>
+                </div>
+              </>
+            )}
           </Section>
 
           {workout && (
