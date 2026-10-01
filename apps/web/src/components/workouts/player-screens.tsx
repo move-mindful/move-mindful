@@ -138,7 +138,6 @@ function SettingsButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-/** Instructor audio on or off — the same setting as in Settings, a tap away. */
 /**
  * Settings, top right under the progress bar: on the pause screens, and on
  * phones on a rest or get-ready screen while its countdown is held.
@@ -157,6 +156,15 @@ function AudioButton({ muted, onClick }: { muted: boolean; onClick: () => void }
     <RoundButton label={muted ? "Audio settings (muted)" : "Audio settings"} onClick={onClick}>
       {muted ? <Muted /> : <Sound />}
     </RoundButton>
+  );
+}
+
+/** The audio button, top left — Settings' partner on the phone's pause screens (see CornerSettings). */
+export function CornerAudio({ muted, onClick }: { muted: boolean; onClick: () => void }) {
+  return (
+    <div className="absolute left-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] z-10">
+      <AudioButton muted={muted} onClick={onClick} />
+    </div>
   );
 }
 
@@ -1252,6 +1260,7 @@ export function PausedScreen({
   skip,
   onEnd,
   onSettings,
+  audio = null,
   autoAdvance,
   theater = false,
 }: {
@@ -1267,6 +1276,8 @@ export function PausedScreen({
   skip: { label: string; onClick: () => void } | null;
   onEnd: () => void;
   onSettings: (() => void) | null;
+  /** Phones: the audio button, top left (desktop has it in the column beside the video). */
+  audio?: { muted: boolean; onClick: () => void } | null;
   /** The AUTO › ON/OFF pill above "Paused", a quick switch for auto-advance (not on a video's). */
   autoAdvance: { on: boolean; onChange: (on: boolean) => void } | null;
   theater?: boolean;
@@ -1341,6 +1352,7 @@ export function PausedScreen({
           </button>
         </div>
       </div>
+      {audio && <CornerAudio muted={audio.muted} onClick={audio.onClick} />}
       {onSettings && <CornerSettings onClick={onSettings} />}
     </>
   );

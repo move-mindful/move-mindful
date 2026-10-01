@@ -53,6 +53,7 @@ import {
   TapZones,
   TopBar,
   CornerSettings,
+  CornerAudio,
   TutorialScreen,
   SettingsSheet,
   AudioSheet,
@@ -796,6 +797,7 @@ export function WorkoutPlayer({
             // Phones only: Settings, top right, as on the regular pause screen
             // (desktop has it in the column beside the video).
             onSettings={theater ? null : openSettings}
+            audio={theater ? null : { muted, onClick: openAudio }}
             autoAdvance={null}
             theater={theater}
           />
@@ -958,8 +960,9 @@ export function WorkoutPlayer({
           />
           {/* Desktop: the tip's photo in the video's corner, as on a set. */}
           {theater && step.tip && <div className="pointer-events-none absolute bottom-8 right-8">{coach(true)}</div>}
-          {/* Phones: Settings while the countdown is held, as on the pause screen. */}
+          {/* Phones: Settings (top right) and audio (top left) while the countdown is held, as on the pause screen. */}
           {!theater && state.paused && <CornerSettings onClick={openSettings} />}
+          {!theater && state.paused && <CornerAudio muted={muted} onClick={openAudio} />}
         </>
       );
       // Desktop: the arrows and the button column beside the video, as on every other screen.
@@ -999,6 +1002,7 @@ export function WorkoutPlayer({
             theater={theater}
           />
           {!theater && state.paused && <CornerSettings onClick={openSettings} />}
+          {!theater && state.paused && <CornerAudio muted={muted} onClick={openAudio} />}
         </>
       );
       if (theater) {
@@ -1144,6 +1148,7 @@ export function WorkoutPlayer({
             onEnd={() => act({ type: "sheet", sheet: "end" })}
             // Desktop has Settings in the column beside the video instead.
             onSettings={theater ? null : openSettings}
+            audio={theater ? null : { muted, onClick: openAudio }}
             autoAdvance={{ on: state.autoAdvance, onChange: setAutoAdvance }}
             theater={theater}
           />

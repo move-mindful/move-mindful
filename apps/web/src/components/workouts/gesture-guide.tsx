@@ -100,7 +100,7 @@ const PAGES: Page[] = [
         icon: <Sound size={18} />,
         tint: "bg-[#A99CFF]/25 text-[#C9C0FF]",
         title: "Audio",
-        text: "The speaker button, bottom left.",
+        text: "The speaker button: bottom left, or top left when paused.",
       },
       { icon: <Music size={18} />, title: "Music and audio tips", text: "Turn each on or off." },
       { icon: <Muted size={18} />, title: "Mute all", text: "Turn off all sound at once." },
