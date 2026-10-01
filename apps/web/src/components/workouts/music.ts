@@ -55,6 +55,9 @@ export function useWorkoutMusic({ on, playing, level }: { on: boolean; playing: 
   const graph = useRef<Graph | null>(null);
   // Mid-start inside a tap: pausing before its play() settles would undo it.
   const unlocking = useRef(false);
+  // Restarting after iOS paused it (see `restart`): the pending try, and the recent ones.
+  const restartTimer = useRef(0);
+  const restarts = useRef<number[]>([]);
   const want = on && playing && !!MUSIC.src;
   const wantNow = useRef(want);
 
@@ -94,11 +97,34 @@ export function useWorkoutMusic({ on, playing, level }: { on: boolean; playing: 
   // Leaving the player.
   useEffect(
     () => () => {
+      window.clearTimeout(restartTimer.current);
       audio.current?.pause();
       graph.current?.ctx.close().catch(() => {});
     },
     [],
   );
+
+  /**
+   * iOS pauses whatever else a page is playing when a video with sound starts
+   * — the intro, the warm-up, a tutorial — this music included (or suspends
+   * its Web Audio). While the workout still wants it, start it again, once
+   * the video's start has settled; music starting doesn't stop the video in
+   * turn. Never more than a few times in a few seconds, in case iOS keeps
+   * refusing.
+   */
+  function restart() {
+    window.clearTimeout(restartTimer.current);
+    restartTimer.current = window.setTimeout(() => {
+      if (!wantNow.current) return;
+      const now = Date.now();
+      restarts.current = restarts.current.filter((t) => now - t < 5000);
+      if (restarts.current.length >= 4) return;
+      restarts.current.push(now);
+      const g = graph.current;
+      if (g && g.ctx.state !== "running") g.ctx.resume().catch(() => {});
+      audio.current?.play().catch(() => {});
+    }, 150);
+  }
 
   /** The element (and its route through Web Audio), made the first time it's needed. */
   function element(): HTMLAudioElement | null {
@@ -108,6 +134,11 @@ export function useWorkoutMusic({ on, playing, level }: { on: boolean; playing: 
     a.src = MUSIC.src;
     a.loop = true;
     a.preload = "auto";
+    // Paused while it's still wanted: not by us (we only pause it when it
+    // isn't) — iOS, for a video with sound. Carry on.
+    a.onpause = () => {
+      if (wantNow.current) restart();
+    };
     audio.current = a;
     try {
       const Context = window.AudioContext ?? (window as AudioContextWindow).webkitAudioContext;
@@ -116,6 +147,10 @@ export function useWorkoutMusic({ on, playing, level }: { on: boolean; playing: 
         const gain = ctx.createGain();
         gain.gain.value = 0;
         ctx.createMediaElementSource(a).connect(gain).connect(ctx.destination);
+        // The same, for its Web Audio being suspended or interrupted.
+        ctx.onstatechange = () => {
+          if (wantNow.current && ctx.state !== "running" && ctx.state !== "closed") restart();
+        };
         graph.current = { ctx, gain };
       }
     } catch {
