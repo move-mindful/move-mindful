@@ -23,8 +23,8 @@ export const MUSIC = {
     tip: 10,
     intro: 25,
     outro: 25,
-    warmup: 50,
-    cooldown: 50,
+    warmup: 40,
+    cooldown: 40,
   },
   /** Seconds to dip down, and to come back up. */
   fadeDown: 0.4,
