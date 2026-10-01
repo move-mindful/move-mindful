@@ -803,10 +803,10 @@ export function RestScreen({
   onResume: () => void;
   onContinue: () => void;
   /**
-   * Phones, a rest with an audio tip: its CoachTip, floating at the right a
-   * bubble's height above where it would sit on top of Continue — over the
-   * screen rather than in the layout, so nothing moves when it slides in.
-   * (Desktop places it in the video's corner.)
+   * Phones, a rest with an audio tip: its CoachTip, in a row of its own between
+   * Up next and Continue — not raised like a set's, since the card is just
+   * above. Its room is kept for the whole rest, so it never covers the card
+   * and nothing moves when it slides in. (Desktop places it by the video's corner.)
    */
   tip?: ReactNode;
   theater?: boolean;
@@ -884,8 +884,7 @@ export function RestScreen({
       {/* Desktop: as far from the card to the buttons as from the ring to the card (the stack's gap-9). */}
       <div className={`relative ${theater ? "gap-9" : "gap-4"} ${bottomGroup(theater)}`}>
         {theater && card}
-        {/* In line with the Continue button's right edge, as on a set (the ring is 22px wider than a button). */}
-        {tip && <div className="absolute bottom-[calc(100%+16px)] right-[9px] -translate-y-full">{tip}</div>}
+        {tip && <div className="-mr-[11px] flex justify-end">{tip}</div>}
         <CountdownControls
           paused={paused}
           onPause={onPause}
