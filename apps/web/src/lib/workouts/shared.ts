@@ -4,6 +4,21 @@
 import type { EstimateExercise, WorkoutBlock } from "@move-mindful/core";
 import type { ExerciseKind, ExerciseVideo } from "@/lib/exercises/shared";
 
+// ── Audio tips ────────────────────────────────────────
+// The instructor's recordings for a workout's sets and rests (019_workout_audio_tips.sql):
+// files in the public `workout-tips` bucket, named "<workout id>/<uuid>.m4a" —
+// that path is the tip's id in the sequence (AudioTip in core).
+
+export const TIP_BUCKET = "workout-tips";
+
+/** The longest recording the builder takes. A tip still stops when its set or rest ends. */
+export const TIP_MAX_SECONDS = 60;
+
+/** Where a tip's file is served from. */
+export function tipUrl(id: string): string {
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${TIP_BUCKET}/${id}`;
+}
+
 /** A workout's own videos (workout_videos): the intro before it, the outro after it. */
 export type WorkoutVideoRole = "intro" | "outro";
 

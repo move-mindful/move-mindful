@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { WorkoutBlock } from "@move-mindful/core";
+import { allTips, type AudioTip, type TipMap, type WorkoutBlock } from "@move-mindful/core";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mux } from "@/lib/mux/client";
@@ -12,6 +12,8 @@ import { generateWorkoutDraft, setGeneratorInstructions } from "@/lib/workouts/g
 import { getCatalog, getWorkout, getWorkoutVideoRows, toWorkoutVideo } from "@/lib/workouts/server";
 import {
   LEVELS,
+  TIP_BUCKET,
+  TIP_MAX_SECONDS,
   publishProblems,
   type GenerateCriteria,
   type GenerateResult,
@@ -22,14 +24,27 @@ import {
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
-// save_workout_sequence (011_workout_set_rest_and_cover.sql) takes an exercise
-// block flat — { kind, exerciseId, measure, amount, firstSide, sets,
-// restBetweenSets } — rather than with the exercise nested under `move`.
-// Rests and groups already match its shape.
+// save_workout_sequence (019_workout_audio_tips.sql) takes an exercise block
+// flat — { kind, exerciseId, measure, amount, firstSide, sets,
+// restBetweenSets } — rather than with the exercise nested under `move`, and
+// each row's audio tips as its `tips` column holds them: { sets, rests }.
+// Before 019 has run, the old function ignores `tips`.
+function rowTips(sets: TipMap | undefined, rests: TipMap | undefined) {
+  return sets || rests ? { ...(sets && { sets }), ...(rests && { rests }) } : null;
+}
+
 function toSequencePayload(blocks: WorkoutBlock[]) {
-  return blocks.map((b) =>
-    b.kind === "exercise" ? { kind: b.kind, ...b.move, sets: b.sets, restBetweenSets: b.restBetweenSets } : b,
-  );
+  return blocks.map((b) => {
+    if (b.kind === "exercise") {
+      const { tips, ...move } = b.move;
+      return { kind: b.kind, ...move, sets: b.sets, restBetweenSets: b.restBetweenSets, tips: rowTips(tips, b.restTips) };
+    }
+    if (b.kind === "group") {
+      const { restTips, moves, ...group } = b;
+      return { ...group, moves: moves.map(({ tips, ...m }) => ({ ...m, tips: rowTips(tips, undefined) })), tips: rowTips(undefined, restTips) };
+    }
+    return { kind: b.kind, seconds: b.seconds, tips: rowTips(undefined, b.restTips) };
+  });
 }
 
 // Before 018_intro_outro_cooldown.sql has run, PostgREST rejects the unknown
@@ -99,12 +114,15 @@ export async function saveWorkout(input: WorkoutInput): Promise<{ id?: string; e
   if (written.error || !written.id) return { error: written.error?.message ?? "Couldn't save the workout." };
   const id = written.id;
 
+  const blocks = cleanBlocks(input.blocks, info, { tipFolder: id });
   const { error } = await supabase.rpc("save_workout_sequence", {
     p_workout_id: id,
     p_warmup_exercise_id: warmup,
-    p_blocks: toSequencePayload(cleanBlocks(input.blocks, info)),
+    p_blocks: toSequencePayload(blocks),
   });
   if (error) return { id, error: `The sequence didn't save: ${error.message}` };
+  // Recordings the saved sequence no longer uses (redone, removed, or never saved) go.
+  await removeTipFiles(supabase, id, new Set(allTips(blocks).map((t) => t.id)));
 
   revalidateWorkouts(id);
   return { id };
@@ -162,6 +180,7 @@ export async function deleteWorkout(id: string): Promise<{ error?: string }> {
   // The intro and outro rows went with it; their Mux assets go too.
   await Promise.all((videos ?? []).map((v) => deleteMuxVideo(v)));
   await removeCoverFile(supabase, existing?.cover_image_url ?? null);
+  await removeTipFiles(supabase, id, new Set(), true);
   revalidateWorkouts();
   return {};
 }
@@ -330,4 +349,64 @@ export async function removeWorkoutVideo(workoutId: string, role: WorkoutVideoRo
       rows.map((r) => r.id),
     );
   revalidateWorkouts(workoutId);
+}
+
+// ── Audio tips ────────────────────────────────────────
+// The instructor's recordings for sets and rests, made in the builder's
+// "Audio tips" view (019_workout_audio_tips.sql). Each one is uploaded as soon
+// as it's recorded; the sequence only points at it once the workout is saved,
+// and saving clears out the files it doesn't point at.
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Delete this workout's tip files except `keep`. Saving passes what the saved
+ * sequence uses, and leaves anything from the last hour: a recording still on
+ * its way to the builder when Save was pressed isn't in the sequence yet.
+ * Deleting the workout passes `everything`.
+ */
+async function removeTipFiles(supabase: AdminClient, workoutId: string, keep: Set<string>, everything = false) {
+  // Before 019 has run there's no bucket: nothing to clear.
+  const { data: files, error } = await supabase.storage.from(TIP_BUCKET).list(workoutId, { limit: 1000 });
+  if (error || !files?.length) return;
+  const hourAgo = Date.now() - 60 * 60 * 1000;
+  const stale = files
+    .filter((f) => everything || !f.created_at || Date.parse(f.created_at) < hourAgo)
+    .map((f) => `${workoutId}/${f.name}`)
+    .filter((path) => !keep.has(path));
+  if (stale.length) await supabase.storage.from(TIP_BUCKET).remove(stale);
+}
+
+/**
+ * Store one recording (form fields `workoutId`, `seconds`, `audio` — AAC in
+ * an MP4 container, as Chrome and Safari record it). Returns the tip to put
+ * in a slot; it's kept once the workout is saved with it.
+ */
+export async function uploadWorkoutTip(formData: FormData): Promise<{ tip?: AudioTip; error?: string }> {
+  await requireAdmin();
+  const supabase = createAdminClient();
+  const workoutId = String(formData.get("workoutId") ?? "");
+  const audio = formData.get("audio") as File | null;
+  const seconds = Number(formData.get("seconds"));
+  if (!UUID.test(workoutId)) return { error: "Save the workout first." };
+  if (!audio || audio.size === 0 || !Number.isFinite(seconds) || seconds <= 0) return { error: "Nothing was recorded." };
+  // A minute of AAC is well under 2 MB.
+  if (audio.size > 4_000_000 || seconds > TIP_MAX_SECONDS + 5) return { error: "That recording is too long." };
+
+  const { data: workout } = await supabase.from("workouts").select("id").eq("id", workoutId).maybeSingle();
+  if (!workout) return { error: "Save the workout first." };
+
+  const id = `${workoutId}/${crypto.randomUUID()}.m4a`;
+  const { error } = await supabase.storage
+    .from(TIP_BUCKET)
+    // A new name every time, so it can be cached for good.
+    .upload(id, audio, { contentType: "audio/mp4", cacheControl: "31536000", upsert: false });
+  if (error) {
+    return {
+      error: /bucket not found/i.test(error.message)
+        ? "Audio tips can’t be saved until migration 019_workout_audio_tips.sql has run."
+        : `Upload failed: ${error.message}`,
+    };
+  }
+  return { tip: { id, seconds: Math.round(seconds * 10) / 10 } };
 }

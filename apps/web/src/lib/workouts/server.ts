@@ -8,6 +8,7 @@ import {
   type WorkoutMove,
 } from "@move-mindful/core";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { readTips } from "@/lib/workouts/clean";
 import { WORKOUT_CLIPS, getExercises, syncPendingClips } from "@/lib/exercises/server";
 import { getRatingSummaries } from "@/lib/member/ratings-server";
 import { isSingleVideo, paceSeconds, rolesFor, slotFor, type AdminExercise, type VideoRole, type VideoStatus } from "@/lib/exercises/shared";
@@ -36,6 +37,8 @@ export interface BlockRow {
   rounds: number | null;
   rest_between_exercises: number | null;
   rest_between_rounds: number | null;
+  /** Audio tips, { sets, rests } — missing until 019_workout_audio_tips.sql has run. */
+  tips?: { sets?: unknown; rests?: unknown } | null;
 }
 
 export interface WorkoutRow {
@@ -123,11 +126,13 @@ export async function getCatalog(): Promise<CatalogExercise[]> {
 }
 
 function toMove(r: BlockRow): WorkoutMove {
+  const tips = readTips(r.tips?.sets);
   return {
     exerciseId: r.exercise_id ?? "",
     measure: (r.measure === "time" ? "time" : "reps") as Measure,
     amount: r.amount ?? 1,
     firstSide: (r.first_side === "left" ? "left" : "right") as Side,
+    ...(tips && { tips }),
   };
 }
 
@@ -137,7 +142,9 @@ function toBlocks(rows: BlockRow[]): WorkoutBlock[] {
     .filter((r) => !r.parent_id)
     .sort(byPosition)
     .map((r): WorkoutBlock => {
-      if (r.kind === "rest") return { kind: "rest", seconds: r.rest_seconds ?? 0 };
+      const restTips = readTips(r.tips?.rests);
+      const withRestTips = restTips ? { restTips } : {};
+      if (r.kind === "rest") return { kind: "rest", seconds: r.rest_seconds ?? 0, ...withRestTips };
       if (r.kind === "group") {
         return {
           kind: "group",
@@ -145,9 +152,10 @@ function toBlocks(rows: BlockRow[]): WorkoutBlock[] {
           restBetweenExercises: r.rest_between_exercises ?? 0,
           restBetweenRounds: r.rest_between_rounds ?? 0,
           moves: rows.filter((c) => c.parent_id === r.id).sort(byPosition).map(toMove),
+          ...withRestTips,
         };
       }
-      return { kind: "exercise", move: toMove(r), sets: r.sets ?? 1, restBetweenSets: r.rest_between_sets ?? 0 };
+      return { kind: "exercise", move: toMove(r), sets: r.sets ?? 1, restBetweenSets: r.rest_between_sets ?? 0, ...withRestTips };
     });
 }
 
