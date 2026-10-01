@@ -14,7 +14,7 @@
 -- rows, one per rest ("rest" on a rest block, "n" before a single
 -- exercise's set n, "r:m" before move m of a group's round r). See TipMap in
 -- packages/core/src/workouts.ts. Null when the row has none.
-alter table public.workout_blocks add column tips jsonb;
+alter table public.workout_blocks add column if not exists tips jsonb;
 
 -- ── The recordings ────────────────────────────────────
 -- Public bucket, like the covers: files are served by their (unguessable)
