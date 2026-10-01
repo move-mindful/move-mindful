@@ -90,6 +90,14 @@ export const Sound = ({ size }: P) => (
     <path d="M18.5 5.5a9 9 0 0 1 0 13" />
   </Stroke>
 );
+/** Music (two notes): the Audio card's Music. */
+export const Music = ({ size }: P) => (
+  <Stroke size={size}>
+    <path d="M9 18V5l11-2v13" />
+    <circle cx="6.5" cy="18" r="2.5" />
+    <circle cx="17.5" cy="16" r="2.5" />
+  </Stroke>
+);
 export const Muted = ({ size }: P) => (
   <Stroke size={size}>
     <path d="M11 4.7 6.3 8.5H3.5a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h2.8l4.7 3.8a.6.6 0 0 0 1-.5V5.2a.6.6 0 0 0-1-.5z" />

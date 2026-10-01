@@ -11,9 +11,12 @@ import {
   Close,
   ChevronRight,
   Loop,
+  Music,
+  Muted,
   Pause,
   Play,
   Settings,
+  Sound,
   Timer,
   WatchTutorial,
 } from "./icons";
@@ -22,9 +25,9 @@ import { TAP_ZONES } from "./player-screens";
 /**
  * The first-run guide to the player, over the stage on phones: tapping (the
  * three zones drawn over the video), swiping, watching a tutorial from the
- * pause screen, Settings and the tutorial mode, auto-advance, and last how the
- * member's tutorials and auto-advance are set right now, with a way into
- * Settings. Shown once — right after Begin, over the warm-up, or as the first
+ * pause screen, the audio button and its card, Settings and the tutorial
+ * mode, auto-advance, and last how the member's tutorials and auto-advance
+ * are set right now, with a way into Settings. Shown once — right after Begin, over the warm-up, or as the first
  * exercise comes up when there's no warm-up (see `begin` in the core reducer)
  * — and again from Settings; signed-out /demo1 visitors get it every time.
  * The workout waits while it's open.
@@ -87,6 +90,20 @@ const PAGES: Page[] = [
         title: "Watch the tutorial",
         text: "From the pause screen, any time.",
       },
+    ],
+  },
+  {
+    title: "Adjust audio",
+    picture: <AudioPicture />,
+    rows: [
+      {
+        icon: <Sound size={18} />,
+        tint: "bg-[#A99CFF]/25 text-[#C9C0FF]",
+        title: "Audio",
+        text: "The speaker button, bottom left.",
+      },
+      { icon: <Music size={18} />, title: "Music and audio tips", text: "Turn each on or off." },
+      { icon: <Muted size={18} />, title: "Mute all", text: "Turn off all sound at once." },
     ],
   },
   {
@@ -235,7 +252,7 @@ export function GestureGuide({
 
       <section className="relative flex flex-col gap-4 rounded-t-[28px] bg-[#1A1A34] px-5 pb-[max(28px,calc(env(safe-area-inset-bottom)+12px))] pt-6">
         {/* ✕ closes the guide from any page — in the panel's corner, clear of
-            the pictures above (page 4's gear sits in the screen's corner). */}
+            the pictures above (the Adjust settings page's gear sits in the screen's corner). */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/60">
@@ -324,19 +341,58 @@ function SettingsPicture({ mode, autoAdvance }: { mode: TutorialMode; autoAdvanc
       </div>
       <span className="mt-1 flex items-center justify-between text-[15px] font-semibold">
         Auto-advance
-        <span className={`relative h-[26px] w-[44px] rounded-full ${autoAdvance ? "bg-[#A99CFF]" : "bg-white/25"}`}>
-          <span
-            className={`absolute top-0.5 size-[22px] rounded-full bg-white ${autoAdvance ? "right-0.5" : "left-0.5"}`}
-          />
-        </span>
+        <MiniSwitch on={autoAdvance} />
       </span>
     </div>
   );
 }
 
 /**
+ * The audio page's picture: the Audio card in miniature (as it starts out),
+ * over the bottom row of controls with its speaker button picked out — on a
+ * real set that row sits under this panel, so it's drawn here instead.
+ */
+function AudioPicture() {
+  return (
+    <div className="flex w-[270px] flex-col gap-4">
+      <div className="flex flex-col gap-2.5 rounded-[20px] bg-[#1A1A34]/85 p-4 ring-1 ring-white/10">
+        <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/60">Audio</span>
+        {["Music", "Audio tips", "Sound effects"].map((label) => (
+          <span key={label} className="flex items-center justify-between text-[15px] font-semibold">
+            {label}
+            <MiniSwitch on />
+          </span>
+        ))}
+        <span className="mt-1 flex items-center justify-between border-t border-white/10 pt-3 text-[15px] font-semibold">
+          Mute all
+          <MiniSwitch on={false} />
+        </span>
+      </div>
+      <div className="flex items-center gap-2.5">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white/[0.14] ring-2 ring-[#A99CFF]">
+          <Sound size={20} />
+        </span>
+        <span className="h-11 flex-1 rounded-full border border-white/15 bg-white/[0.06]" />
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-white/50">
+          <Pause size={18} />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** A small switch for the guide's pictures. */
+function MiniSwitch({ on }: { on: boolean }) {
+  return (
+    <span className={`relative h-[26px] w-[44px] shrink-0 rounded-full ${on ? "bg-[#A99CFF]" : "bg-white/25"}`}>
+      <span className={`absolute top-0.5 size-[22px] rounded-full bg-white ${on ? "right-0.5" : "left-0.5"}`} />
+    </span>
+  );
+}
+
+/**
  * A studio photo, darkened and blurred — the guide's background. `soft`
- * (pages 2–6) blurs and darkens it less.
+ * (every page after the first) blurs and darkens it less.
  */
 function PhotoBackdrop({ soft }: { soft: boolean }) {
   return (

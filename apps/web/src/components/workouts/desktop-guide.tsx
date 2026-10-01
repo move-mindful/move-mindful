@@ -10,7 +10,7 @@ import { TAP_ZONES } from "./player-screens";
  * The first-run guide for the desktop "theater" layout (wide landscape
  * screens, iPads held sideways included): a dialog over the dimmed player
  * rather than the phone guide's full-screen card, and four pages instead of
- * six — the controls here are labelled buttons and keys, not taps and swipes.
+ * seven — the controls here are labelled buttons and keys, not taps and swipes.
  * Moving around, the buttons beside the video, watching a tutorial, and last
  * how tutorials and auto-advance are set, shared with the phone guide.
  *
@@ -41,7 +41,7 @@ const PAGES: Page[] = [
     picture: <LayoutDiagram focus="buttons" />,
     rows: [
       { icon: <Settings size={18} />, tint: LIT, title: "Settings", text: "Tutorials and auto-advance." },
-      { icon: <Sound size={18} />, title: "Audio", text: "Audio tips, music and sound effects — or mute it all." },
+      { icon: <Sound size={18} />, title: "Audio", text: "Music, audio tips and sound effects — or mute it all." },
       { icon: <List size={18} />, title: "Workout", text: "Every exercise and where you are. Jump to any of them." },
       { icon: <Pause size={18} />, title: "Pause", text: "Restart a set, watch the tutorial, or end the workout." },
     ],
