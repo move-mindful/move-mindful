@@ -9,8 +9,19 @@ import type { TutorialMode } from "@move-mindful/core";
 export interface PlayerPreferences {
   /** What plays before each new exercise. */
   tutorialMode: TutorialMode;
-  /** Tutorials and the warm-up with sound (exercise loops are always silent). */
+  /**
+   * The player's sound at all — off is the Audio card's "Mute all". On, the
+   * tutorials, intro, warm-up, cool-down and outro play with sound (exercise
+   * loops are always silent), and so do audio tips unless `audioTips` is off.
+   * (Named for what it first switched; kept so saved settings carry over.)
+   */
   instructorAudio: boolean;
+  /** The instructor's audio tips during sets and rests. */
+  audioTips: boolean;
+  /** Music during the workout — a placeholder in the Audio card; nothing plays yet. */
+  music: boolean;
+  /** Sound effects — a placeholder in the Audio card; there are none yet. */
+  soundEffects: boolean;
   /**
    * Play instructor audio over music from other apps instead of pausing it.
    * Only where the browser can (navigator.audioSession: Safari, Firefox).
@@ -34,6 +45,9 @@ export interface PlayerPreferences {
 export const DEFAULT_PLAYER_PREFERENCES: PlayerPreferences = {
   tutorialMode: "once",
   instructorAudio: true,
+  audioTips: true,
+  music: true,
+  soundEffects: true,
   mixAudio: false,
   warmup: true,
   autoAdvance: true,
@@ -48,6 +62,9 @@ export function cleanPlayerPreferences(raw: unknown): Partial<PlayerPreferences>
   const r = raw as Record<string, unknown>;
   if (r.tutorialMode === "loop" || r.tutorialMode === "once" || r.tutorialMode === "off") out.tutorialMode = r.tutorialMode;
   if (typeof r.instructorAudio === "boolean") out.instructorAudio = r.instructorAudio;
+  if (typeof r.audioTips === "boolean") out.audioTips = r.audioTips;
+  if (typeof r.music === "boolean") out.music = r.music;
+  if (typeof r.soundEffects === "boolean") out.soundEffects = r.soundEffects;
   if (typeof r.mixAudio === "boolean") out.mixAudio = r.mixAudio;
   if (typeof r.warmup === "boolean") out.warmup = r.warmup;
   if (typeof r.autoAdvance === "boolean") out.autoAdvance = r.autoAdvance;

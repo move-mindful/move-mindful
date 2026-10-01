@@ -58,7 +58,7 @@ export function isFinished(phase: PlayerPhase): boolean {
  * "restartVideo" asks whether to start the video on screen over — the intro,
  * warm-up, cool-down or outro (a tap on its left).
  */
-export type PlayerSheet = "overview" | "settings" | "end" | "guide" | "restartVideo" | null;
+export type PlayerSheet = "overview" | "settings" | "audio" | "end" | "guide" | "restartVideo" | null;
 
 export interface PlayerState {
   phase: PlayerPhase;

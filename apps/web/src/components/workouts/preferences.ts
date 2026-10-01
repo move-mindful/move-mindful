@@ -5,8 +5,9 @@ import { fitTutorialMode } from "@move-mindful/core";
 import { savePlayerPreferences } from "@/app/actions/preferences";
 import { DEFAULT_PLAYER_PREFERENCES, type PlayerPreferences } from "@/lib/member/preferences";
 
-// The member's workout player settings — tutorial mode and instructor audio
-// (Settings), and whether to begin with the warm-up (the preview's switch).
+// The member's workout player settings — tutorial mode and auto-advance
+// (Settings), sound (the Audio card), and whether to begin with the warm-up
+// (the preview's switch).
 //
 // Signed in, they're kept on the account (member_preferences, loaded with the
 // page and saved by a server action), so they follow the member everywhere.
@@ -18,6 +19,9 @@ import { DEFAULT_PLAYER_PREFERENCES, type PlayerPreferences } from "@/lib/member
 const KEYS = {
   tutorialMode: "movemindful.tutorialMode",
   instructorAudio: "movemindful.sound",
+  audioTips: "movemindful.audioTips",
+  music: "movemindful.music",
+  soundEffects: "movemindful.soundEffects",
   mixAudio: "movemindful.mixAudio",
   warmup: "movemindful.warmup",
   autoAdvance: "movemindful.autoAdvance",
@@ -42,14 +46,10 @@ function readDevice(): Partial<PlayerPreferences> {
   const out: Partial<PlayerPreferences> = {};
   const mode = readItem(KEYS.tutorialMode);
   if (mode === "loop" || mode === "once" || mode === "off") out.tutorialMode = mode;
-  const audio = readItem(KEYS.instructorAudio);
-  if (audio === "on" || audio === "off") out.instructorAudio = audio === "on";
-  const mix = readItem(KEYS.mixAudio);
-  if (mix === "on" || mix === "off") out.mixAudio = mix === "on";
-  const warmup = readItem(KEYS.warmup);
-  if (warmup === "on" || warmup === "off") out.warmup = warmup === "on";
-  const auto = readItem(KEYS.autoAdvance);
-  if (auto === "on" || auto === "off") out.autoAdvance = auto === "on";
+  for (const key of ["instructorAudio", "audioTips", "music", "soundEffects", "mixAudio", "warmup", "autoAdvance"] as const) {
+    const value = readItem(KEYS[key]);
+    if (value === "on" || value === "off") out[key] = value === "on";
+  }
   if (readItem(KEYS.seenGestureGuide) === "yes") out.seenGestureGuide = true;
   if (readItem(KEYS.seenDesktopGuide) === "yes") out.seenDesktopGuide = true;
   return { ...out, ...memory };
@@ -59,12 +59,10 @@ function writeDevice(changes: Partial<PlayerPreferences>) {
   Object.assign(memory, changes);
   try {
     if (changes.tutorialMode) window.localStorage.setItem(KEYS.tutorialMode, changes.tutorialMode);
-    if (changes.instructorAudio !== undefined) {
-      window.localStorage.setItem(KEYS.instructorAudio, changes.instructorAudio ? "on" : "off");
+    for (const key of ["instructorAudio", "audioTips", "music", "soundEffects", "mixAudio", "warmup", "autoAdvance"] as const) {
+      const value = changes[key];
+      if (value !== undefined) window.localStorage.setItem(KEYS[key], value ? "on" : "off");
     }
-    if (changes.mixAudio !== undefined) window.localStorage.setItem(KEYS.mixAudio, changes.mixAudio ? "on" : "off");
-    if (changes.warmup !== undefined) window.localStorage.setItem(KEYS.warmup, changes.warmup ? "on" : "off");
-    if (changes.autoAdvance !== undefined) window.localStorage.setItem(KEYS.autoAdvance, changes.autoAdvance ? "on" : "off");
     if (changes.seenGestureGuide) window.localStorage.setItem(KEYS.seenGestureGuide, "yes");
     if (changes.seenDesktopGuide) window.localStorage.setItem(KEYS.seenDesktopGuide, "yes");
   } catch {

@@ -55,11 +55,12 @@ import {
   CornerSettings,
   TutorialScreen,
   SettingsSheet,
+  AudioSheet,
   VideoProgress,
   createSheetPull,
   VideoScreen,
 } from "./player-screens";
-import { List, Moon, Pause, Play, Settings, Sun } from "./icons";
+import { List, Moon, Muted, Pause, Play, Settings, Sound, Sun } from "./icons";
 import {
   Dimmed,
   TheaterArrows,
@@ -337,7 +338,8 @@ export function WorkoutPlayer({
     take: state.take,
     running: running && !!tipStep,
     delayMs: (step?.kind === "rest" ? TIP_DELAY_SECONDS.rest : TIP_DELAY_SECONDS.set) * 1000,
-    muted,
+    // Mute all, or just the tips switched off in the Audio card.
+    muted: muted || !prefs.audioTips,
   });
   const coach = (large = false) => <CoachTip show={tips.speaking} instructor={workout.instructor} large={large} />;
 
@@ -629,9 +631,10 @@ export function WorkoutPlayer({
     setChromeHidden(false);
     act({ type: "exit" });
   }
-  const setSound = (on: boolean) => {
-    updatePrefs({ instructorAudio: on });
-    setMuted(!on);
+  // The Audio card's Mute all (stored as instructor audio off, its old name).
+  const setMuteAll = (on: boolean) => {
+    updatePrefs({ instructorAudio: !on });
+    setMuted(on);
   };
   // Auto-advance, from Settings or the pause screen's AUTO pill. Hands-free, a
   // looping tutorial would wait for a tap, so turning it on moves Loop to Play
@@ -642,6 +645,7 @@ export function WorkoutPlayer({
   };
   const openOverview = () => act({ type: "sheet", sheet: "overview" });
   const openSettings = () => act({ type: "sheet", sheet: "settings" });
+  const openAudio = () => act({ type: "sheet", sheet: "audio" });
 
   // ── What to show ────────────────────────────────────
 
@@ -698,6 +702,8 @@ export function WorkoutPlayer({
   // `overview`: the Workout button — not on the intro or outro, which the overview doesn't list.
   const sideButtons = (overview = true): TheaterButton[] => [
     { label: "Settings", aria: "Settings", icon: <Settings />, onClick: openSettings },
+    // The audio button from the phone's bottom row, opening the same Audio card.
+    { label: "Audio", aria: muted ? "Audio settings (muted)" : "Audio settings", icon: muted ? <Muted /> : <Sound />, onClick: openAudio },
     ...(overview ? [{ label: "Workout", aria: "Open workout overview", icon: <List />, onClick: openOverview }] : []),
     // Held on a rest or get-ready screen, Pause is Resume — like the button under the countdown.
     state.paused
@@ -819,7 +825,7 @@ export function WorkoutPlayer({
             onPause={pause}
             onSkip={skip}
             muted={muted}
-            onToggleSound={() => setSound(muted)}
+            onAudio={openAudio}
             hidden={chromeHidden}
           />
         </>
@@ -1006,7 +1012,7 @@ export function WorkoutPlayer({
               onBegin={next}
               onPause={pause}
               muted={muted}
-              onToggleSound={() => setSound(muted)}
+              onAudio={openAudio}
             />
           </>
         );
@@ -1065,7 +1071,7 @@ export function WorkoutPlayer({
               onPause={pause}
               onOverview={openOverview}
               muted={muted}
-              onToggleSound={() => setSound(muted)}
+              onAudio={openAudio}
               tip={coach()}
             />
           </>
@@ -1180,13 +1186,10 @@ export function WorkoutPlayer({
     active && (!theater || state.sheet === "settings") ? (
       <SettingsSheet
         mode={state.mode}
-        soundOn={!muted}
-        mix={canMix ? { on: prefs.mixAudio, onChange: (on) => updatePrefs({ mixAudio: on }) } : null}
         onMode={(mode) => {
           updatePrefs({ tutorialMode: mode });
           act({ type: "mode", mode });
         }}
-        onSound={setSound}
         autoAdvance={{ on: state.autoAdvance, onChange: setAutoAdvance }}
         onGuide={() => {
           // "How to use the player": this layout's guide, from the start.
@@ -1196,6 +1199,20 @@ export function WorkoutPlayer({
         onClose={() => act({ type: "sheet", sheet: settingsFromGuide ? "guide" : null })}
         variant={theater ? "side" : "bottom"}
         drawerOpen={theater ? undefined : state.sheet === "settings"}
+      />
+    ) : null;
+  // The Audio card (the audio button): a drawer on phones, a side panel on desktop, like Settings.
+  const audio =
+    active && (!theater || state.sheet === "audio") ? (
+      <AudioSheet
+        muteAll={{ on: muted, onChange: setMuteAll }}
+        music={{ on: prefs.music, onChange: (on) => updatePrefs({ music: on }) }}
+        tips={{ on: prefs.audioTips, onChange: (on) => updatePrefs({ audioTips: on }) }}
+        effects={{ on: prefs.soundEffects, onChange: (on) => updatePrefs({ soundEffects: on }) }}
+        mix={canMix ? { on: prefs.mixAudio, onChange: (on) => updatePrefs({ mixAudio: on }) } : null}
+        onClose={() => act({ type: "sheet", sheet: null })}
+        variant={theater ? "side" : "bottom"}
+        drawerOpen={theater ? undefined : state.sheet === "audio"}
       />
     ) : null;
   const end =
@@ -1257,6 +1274,7 @@ export function WorkoutPlayer({
           {screen}
           {!theater && overview}
           {!theater && settings}
+          {!theater && audio}
           {!theater && end}
           {state.sheet === "restartVideo" && videoNow && (
             <RestartVideoPrompt
@@ -1280,6 +1298,7 @@ export function WorkoutPlayer({
         {theater && beside}
         {theater && overview}
         {theater && settings}
+        {theater && audio}
         {theater && end}
         {theater && state.sheet === "guide" && (
           <DesktopGuide

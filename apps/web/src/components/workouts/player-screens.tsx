@@ -151,22 +151,23 @@ export function CornerSettings({ onClick }: { onClick: () => void }) {
   );
 }
 
-function SoundButton({ muted, onToggle }: { muted: boolean; onToggle: () => void }) {
+/** Opens the Audio card; crossed out while everything's muted. */
+function AudioButton({ muted, onClick }: { muted: boolean; onClick: () => void }) {
   return (
-    <RoundButton label={muted ? "Turn instructor audio on" : "Turn instructor audio off"} onClick={onToggle}>
+    <RoundButton label={muted ? "Audio settings (muted)" : "Audio settings"} onClick={onClick}>
       {muted ? <Muted /> : <Sound />}
     </RoundButton>
   );
 }
 
-/** Sound · Up next (opens the overview) · Pause. */
+/** Audio · Up next (opens the overview) · Pause. */
 function ControlsRow({
   pill,
   fill = null,
   muted,
   onPause,
   onOverview,
-  onToggleSound,
+  onAudio,
 }: {
   pill: { label: string; text: string };
   /** How far until the set moves on by itself (auto-advance, a timed set): Up next fills with it. */
@@ -174,11 +175,11 @@ function ControlsRow({
   muted: boolean;
   onPause: () => void;
   onOverview: () => void;
-  onToggleSound: () => void;
+  onAudio: () => void;
 }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <SoundButton muted={muted} onToggle={onToggleSound} />
+      <AudioButton muted={muted} onClick={onAudio} />
       <button
         type="button"
         aria-label={`Open workout overview. ${pill.label}: ${pill.text}`}
@@ -459,7 +460,7 @@ export function SetScreen({
   onPause,
   onOverview,
   muted,
-  onToggleSound,
+  onAudio,
   tip = null,
 }: {
   name: string;
@@ -476,7 +477,8 @@ export function SetScreen({
   onPause: () => void;
   onOverview: () => void;
   muted: boolean;
-  onToggleSound: () => void;
+  /** Open the Audio card. */
+  onAudio: () => void;
   /** The instructor's audio tip (CoachTip): at the right end of the reps, over the Pause button. */
   tip?: ReactNode;
 }) {
@@ -524,7 +526,7 @@ export function SetScreen({
             muted={muted}
             onPause={onPause}
             onOverview={onOverview}
-            onToggleSound={onToggleSound}
+            onAudio={onAudio}
           />
         </div>
       </Collapse>
@@ -541,7 +543,7 @@ export function TutorialScreen({
   onBegin,
   onPause,
   muted,
-  onToggleSound,
+  onAudio,
 }: {
   name: string;
   chips: string[];
@@ -553,7 +555,7 @@ export function TutorialScreen({
   onBegin: () => void;
   onPause: () => void;
   muted: boolean;
-  onToggleSound: () => void;
+  onAudio: () => void;
 }) {
   return (
     <div className={`absolute inset-x-0 bottom-0 isolate flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
@@ -590,10 +592,10 @@ export function TutorialScreen({
         )}
       </div>
       <Collapse open={!hidden}>
-        {/* Sound · Skip tutorial (filling as it plays) · Pause — Skip takes the
+        {/* Audio · Skip tutorial (filling as it plays) · Pause — Skip takes the
             workout pill's place; the overview is a swipe up away. */}
         <div className="mt-[18px] flex items-center gap-3">
-          <SoundButton muted={muted} onToggle={onToggleSound} />
+          <AudioButton muted={muted} onClick={onAudio} />
           <BeginButton progress={progress} onBegin={onBegin} compact className="min-w-0 flex-1" />
           <RoundButton label="Pause" onClick={onPause}>
             <Pause />
@@ -930,7 +932,7 @@ export function VideoScreen({
   onPause,
   onSkip,
   muted,
-  onToggleSound,
+  onAudio,
   hidden,
 }: {
   chip: VideoChip;
@@ -942,7 +944,7 @@ export function VideoScreen({
   onPause: () => void;
   onSkip: () => void;
   muted: boolean;
-  onToggleSound: () => void;
+  onAudio: () => void;
   /** Controls swiped away: just the label, the name and a small Skip. */
   hidden: boolean;
 }) {
@@ -971,7 +973,7 @@ export function VideoScreen({
         </div>
         <Collapse open={!hidden}>
           <div className="mt-[18px] flex items-center justify-between gap-3">
-            <SoundButton muted={muted} onToggle={onToggleSound} />
+            <AudioButton muted={muted} onClick={onAudio} />
             {/* Fills as the video plays, like Skip tutorial. */}
             <button
               type="button"
@@ -1785,15 +1787,26 @@ export function Drawer({
 }
 
 /** An on/off switch in the style of the phone's own settings. */
-export function Switch({ on, onChange, label }: { on: boolean; onChange: (on: boolean) => void; label: string }) {
+export function Switch({
+  on,
+  onChange,
+  label,
+  disabled = false,
+}: {
+  on: boolean;
+  onChange: (on: boolean) => void;
+  label: string;
+  disabled?: boolean;
+}) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={on}
       aria-label={label}
+      disabled={disabled}
       onClick={() => onChange(!on)}
-      className={`relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200 ${on ? "bg-[#A99CFF]" : "bg-white/20"}`}
+      className={`relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200 disabled:cursor-not-allowed ${on ? "bg-[#A99CFF]" : "bg-white/20"}`}
     >
       <span
         className={`absolute left-0.5 top-0.5 size-[27px] rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.3)] transition-transform duration-200 ${
@@ -1863,12 +1876,101 @@ function SheetFrame({
   );
 }
 
+/** A card with a title, an optional line under it, and a switch — Settings and the Audio card. */
+function SwitchRow({
+  title,
+  text,
+  on,
+  onChange,
+  disabled = false,
+}: {
+  title: string;
+  text?: ReactNode;
+  on: boolean;
+  onChange: (on: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-center justify-between gap-4 rounded-2xl border-[1.5px] border-white/[0.12] bg-white/[0.04] px-4 py-3.5 transition-opacity ${
+        disabled ? "opacity-45" : ""
+      }`}
+    >
+      <span className="flex min-w-0 flex-col gap-[3px]">
+        <span className="text-[17px] font-semibold">{title}</span>
+        {text && <span className="text-sm leading-snug text-white/75">{text}</span>}
+      </span>
+      <Switch on={on} onChange={onChange} label={title} disabled={disabled} />
+    </div>
+  );
+}
+
+type Toggle = { on: boolean; onChange: (on: boolean) => void };
+
+/**
+ * The Audio card, from the audio button: what plays — music, the instructor's
+ * audio tips, sound effects, other apps' music alongside — and, at the
+ * bottom, Mute all, which silences everything (the switches above dim while
+ * it's on, and keep their settings for when it's off). Music and sound
+ * effects aren't built yet: their switches are kept but don't do anything.
+ */
+export function AudioSheet({
+  muteAll,
+  music,
+  tips,
+  effects,
+  mix,
+  onClose,
+  variant = "bottom",
+  drawerOpen,
+}: {
+  muteAll: Toggle;
+  music: Toggle;
+  tips: Toggle;
+  effects: Toggle;
+  /** "Keep my music playing" — null where the browser can't (the switch is hidden). */
+  mix: Toggle | null;
+  onClose: () => void;
+  variant?: SheetVariant;
+  /** Phones: always mounted as a drawer that slides open and shut — pass whether it's open. */
+  drawerOpen?: boolean;
+}) {
+  const pad = variant === "side" ? "px-7" : "px-5";
+  const off = muteAll.on;
+  return (
+    <SheetFrame label="Audio" onClose={onClose} variant={variant} drawerOpen={drawerOpen}>
+      <div className={`flex items-center justify-between gap-3 ${pad}`}>
+        <h2 className="text-[22px] font-semibold tracking-[-0.01em]">Audio</h2>
+        <SheetClose label="Close audio settings" />
+      </div>
+      <div data-sheet-scroll className={`flex min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain ${pad}`}>
+        <SwitchRow title="Music" {...music} disabled={off} />
+        <SwitchRow title="Audio tips" text="From your instructor, during sets and rests." {...tips} disabled={off} />
+        <SwitchRow title="Sound effects" {...effects} disabled={off} />
+        {mix && (
+          <SwitchRow
+            title="Keep my music playing"
+            text={
+              <>
+                Audio instructions will play without pausing music from other apps.
+                <span className="mt-1 block font-semibold">Phone silent mode must be OFF.</span>
+              </>
+            }
+            {...mix}
+            disabled={off}
+          />
+        )}
+        <div className="mt-3">
+          <SwitchRow title="Mute all" text="No sound from the workout at all." {...muteAll} />
+        </div>
+      </div>
+    </SheetFrame>
+  );
+}
+
 export function SettingsSheet({
   mode,
-  soundOn,
-  mix,
   onMode,
-  onSound,
   autoAdvance,
   onGuide,
   onClose,
@@ -1876,12 +1978,8 @@ export function SettingsSheet({
   drawerOpen,
 }: {
   mode: TutorialMode;
-  soundOn: boolean;
-  /** "Keep my music playing" — null where the browser can't (the switch is hidden). */
-  mix: { on: boolean; onChange: (on: boolean) => void } | null;
   onMode: (mode: TutorialMode) => void;
-  onSound: (on: boolean) => void;
-  autoAdvance: { on: boolean; onChange: (on: boolean) => void };
+  autoAdvance: Toggle;
   /** Show the gesture guide again (phones only; null on desktop). */
   onGuide: (() => void) | null;
   onClose: () => void;
@@ -1899,43 +1997,16 @@ export function SettingsSheet({
         data-sheet-scroll
         className={`flex min-h-0 flex-col gap-[18px] overflow-y-auto overscroll-contain ${variant === "side" ? "px-7" : "px-5"}`}
       >
-        <section aria-labelledby="settings-sound" className="flex flex-col gap-3">
-          <h3 id="settings-sound" className="text-base font-semibold">
-            Sound
-          </h3>
-          <div className="flex items-center justify-between gap-4 rounded-2xl border-[1.5px] border-white/[0.12] bg-white/[0.04] px-4 py-3.5">
-            <span className="flex min-w-0 flex-col gap-[3px]">
-              <span className="text-[17px] font-semibold">Instructor audio</span>
-              <span className="text-sm leading-snug text-white/75">Turn instructor audio on or off.</span>
-            </span>
-            <Switch on={soundOn} onChange={onSound} label="Instructor audio" />
-          </div>
-          {mix && (
-            <div className="flex items-center justify-between gap-4 rounded-2xl border-[1.5px] border-white/[0.12] bg-white/[0.04] px-4 py-3.5">
-              <span className="flex min-w-0 flex-col gap-[3px]">
-                <span className="text-[17px] font-semibold">Keep my music playing</span>
-                <span className="text-sm leading-snug text-white/75">
-                  Audio instructions will play without pausing music from other apps.
-                  <span className="mt-1 block font-semibold">Phone silent mode must be OFF.</span>
-                </span>
-              </span>
-              <Switch on={mix.on} onChange={mix.onChange} label="Keep my music playing" />
-            </div>
-          )}
-        </section>
+        {/* Sound has its own card now: the audio button's. */}
         <section aria-labelledby="settings-exercises" className="flex flex-col gap-3">
           <h3 id="settings-exercises" className="text-base font-semibold">
             Exercises
           </h3>
-          <div className="flex items-center justify-between gap-4 rounded-2xl border-[1.5px] border-white/[0.12] bg-white/[0.04] px-4 py-3.5">
-            <span className="flex min-w-0 flex-col gap-[3px]">
-              <span className="text-[17px] font-semibold">Auto-advance</span>
-              <span className="text-sm leading-snug text-white/75">
-                Rep sets move on by themselves after the time the reps usually take. Tap to move on sooner.
-              </span>
-            </span>
-            <Switch on={autoAdvance.on} onChange={autoAdvance.onChange} label="Auto-advance" />
-          </div>
+          <SwitchRow
+            title="Auto-advance"
+            text="Rep sets move on by themselves after the time the reps usually take. Tap to move on sooner."
+            {...autoAdvance}
+          />
         </section>
         <section aria-labelledby="settings-tutorials" className="flex flex-col gap-3">
           <h3 id="settings-tutorials" className="text-base font-semibold">

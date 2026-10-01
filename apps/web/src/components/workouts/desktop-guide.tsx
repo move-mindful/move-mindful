@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import type { TutorialMode } from "@move-mindful/core";
-import { ChevronLeft, ChevronRight, Close, List, Pause, Settings, WatchTutorial } from "./icons";
+import { ChevronLeft, ChevronRight, Close, List, Pause, Settings, Sound, WatchTutorial } from "./icons";
 import { PausedPicture, Row, settingsPage, type Page } from "./gesture-guide";
 import { TAP_ZONES } from "./player-screens";
 
@@ -40,7 +40,8 @@ const PAGES: Page[] = [
     title: "Your buttons",
     picture: <LayoutDiagram focus="buttons" />,
     rows: [
-      { icon: <Settings size={18} />, tint: LIT, title: "Settings", text: "Tutorials, instructor audio and auto-advance." },
+      { icon: <Settings size={18} />, tint: LIT, title: "Settings", text: "Tutorials and auto-advance." },
+      { icon: <Sound size={18} />, title: "Audio", text: "Audio tips, music and sound effects — or mute it all." },
       { icon: <List size={18} />, title: "Workout", text: "Every exercise and where you are. Jump to any of them." },
       { icon: <Pause size={18} />, title: "Pause", text: "Restart a set, watch the tutorial, or end the workout." },
     ],
@@ -194,10 +195,11 @@ function LayoutDiagram({ focus }: { focus: "move" | "buttons" }) {
         <ChevronRight size={16} />
       </span>
       {/* The buttons column. */}
-      <div className="ml-1 flex flex-col items-center gap-2">
+      <div className="ml-1 flex flex-col items-center gap-1.5">
         {(
           [
             ["Settings", <Settings key="s" size={14} />],
+            ["Audio", <Sound key="a" size={14} />],
             ["Workout", <List key="w" size={14} />],
             ["Pause", <Pause key="p" size={12} />],
           ] as const
