@@ -21,8 +21,8 @@ export const MUSIC = {
     // Aggressive under the instructor's voice: about 20 dB down.
     tutorial: 10,
     tip: 10,
-    intro: 25,
-    outro: 25,
+    intro: 20,
+    outro: 20,
     warmup: 35,
     cooldown: 35,
   },
