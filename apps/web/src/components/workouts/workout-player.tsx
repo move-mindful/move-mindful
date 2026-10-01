@@ -428,9 +428,10 @@ export function WorkoutPlayer({
   // through the summary until Done; it dips under a voice, through the
   // warm-up and cool-down, and on the summary. Held in the workout — paused
   // (a rest or Get ready held right there included), or Settings, End
-  // workout or the guide over it — it keeps playing quietly instead of
-  // stopping. The levels are in MUSIC.
+  // workout or the guide over it — it stops, unless MUSIC.whilePaused keeps
+  // it playing quietly. The levels are in MUSIC.
   const musicHeld =
+    MUSIC.whilePaused &&
     state.phase === "workout" &&
     (state.paused || state.sheet === "settings" || state.sheet === "end" || state.sheet === "guide");
   const duckTo = (() => {

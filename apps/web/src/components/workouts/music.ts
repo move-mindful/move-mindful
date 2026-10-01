@@ -18,6 +18,11 @@ export const MUSIC = {
   src: "/audio/workout-music.m4a" as string | null,
   /** Its normal level — exercises, rests, Get ready — as a % of the file's own loudness. */
   volume: 60,
+  /**
+   * Keep playing (at duckTo.paused) while the workout's paused, instead of
+   * stopping. Off for now — the user's call, 2026-10-01; flip to bring it back.
+   */
+  whilePaused: false,
   /** While each of these is on, the music drops to this % of its normal level (100 = no dip). */
   duckTo: {
     // Aggressive under the instructor's voice: about 20 dB down.
@@ -27,7 +32,7 @@ export const MUSIC = {
     outro: 20,
     warmup: 35,
     cooldown: 35,
-    /** Paused in the workout (a set, a tutorial, a held rest or Get ready): it keeps playing, quietly. */
+    /** Paused in the workout (a set, a tutorial, a held rest or Get ready), when `whilePaused` is on. */
     paused: 10,
     /** The summary (Workout complete), level with the outro before it. */
     done: 20,
