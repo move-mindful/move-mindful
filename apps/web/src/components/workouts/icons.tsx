@@ -166,6 +166,12 @@ export const Sun = ({ size = 16 }: P) => (
     <path d="m19.07 4.93-1.41 1.41" />
   </Stroke>
 );
+/** The cool-down: the warm-up's sun, set. */
+export const Moon = ({ size = 16 }: P) => (
+  <Stroke size={size}>
+    <path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z" />
+  </Stroke>
+);
 /** A rest. */
 export const Timer = ({ size = 14 }: P) => (
   <Stroke size={size}>

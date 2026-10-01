@@ -29,7 +29,8 @@ export function OverviewSheet({
   subtitle: string;
   progress: { label: string; left: string; fraction: number };
   position: RowsPosition;
-  onJump: (step: number) => void;
+  /** Tapping an exercise jumps there; none during the cool-down. */
+  onJump?: (step: number) => void;
   onClose: () => void;
   /** Phones: open or parked, the pull it follows, and what to do once a pull opens it. */
   drawer?: { open: boolean; pull: SheetPull; onOpen: () => void };

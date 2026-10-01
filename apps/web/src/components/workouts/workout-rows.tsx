@@ -3,7 +3,7 @@
 import { groupLabels, setStepFor, type WorkoutStep } from "@move-mindful/core";
 import { amountLabel, clock, type PlayerWorkout } from "@/lib/workouts/player";
 import { ACCENT } from "./progress-bar";
-import { Check, Loop, Sun, Timer } from "./icons";
+import { Check, Loop, Moon, Sun, Timer } from "./icons";
 
 type Status = "todo" | "now" | "done";
 
@@ -16,11 +16,13 @@ export interface RowsPosition {
   complete: boolean;
   /** How the warm-up went: played, skipped, or playing now. */
   warmup: "done" | "skipped" | "now";
+  /** The cool-down, after the exercises: playing now, or not yet (the default). */
+  cooldown?: "todo" | "now";
 }
 
 /**
  * The workout as a list: the warm-up, single exercises, rests and supersets /
- * circuits. Every row leads with one status circle — an empty ring before it
+ * circuits, and the cool-down. Every row leads with one status circle — an empty ring before it
  * starts, solid accent while it's on, white with a check once done.
  */
 export function WorkoutRows({
@@ -222,6 +224,33 @@ export function WorkoutRows({
           </div>
         );
       })}
+
+      {workout.cooldown && (
+        <div role="listitem">
+          {position ? (
+            <div className="flex items-center gap-3 px-2.5 py-2">
+              <Circle status={position.cooldown === "now" ? "now" : "todo"} icon="moon" />
+              <RowText
+                name="Cool-down"
+                detail={clock(workout.cooldown.clip.durationSeconds ?? 0)}
+                dim={position.cooldown !== "now"}
+              />
+            </div>
+          ) : (
+            // Offered after the last exercise ("Cool down?"), so there's no switch for it here.
+            <div className="flex items-center gap-3 rounded-[14px] border border-dashed border-white/[0.22] bg-white/5 px-3 py-2.5">
+              <Circle status="todo" icon="moon" />
+              <RowText
+                name="Cool-down"
+                detail={`${clock(workout.cooldown.clip.durationSeconds ?? 0)} · ${workout.cooldown.name}`}
+              />
+              <span className="flex h-[22px] shrink-0 items-center rounded-full bg-white/[0.12] px-2 text-[11px] font-bold uppercase tracking-[0.06em]">
+                Optional
+              </span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -241,8 +270,8 @@ function Pip({ status, radius }: { status: Status; radius: string }) {
 }
 
 /** The status circle every row leads with. */
-function Circle({ status, icon }: { status: Status; icon?: "loop" | "sun" }) {
-  const Icon = icon === "loop" ? Loop : icon === "sun" ? Sun : null;
+function Circle({ status, icon }: { status: Status; icon?: "loop" | "sun" | "moon" }) {
+  const Icon = icon === "loop" ? Loop : icon === "sun" ? Sun : icon === "moon" ? Moon : null;
   if (status === "done") {
     return (
       <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/90 text-[#14142B]">

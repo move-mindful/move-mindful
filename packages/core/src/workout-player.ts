@@ -22,13 +22,43 @@ export function fitTutorialMode(mode: TutorialMode, autoAdvance: boolean): Tutor
   return autoAdvance && mode === "loop" ? "once" : mode;
 }
 
-export type PlayerPhase = "preview" | "warmup" | "workout" | "complete";
+/**
+ * Where the member is, in order: the preview, the workout's intro video (if
+ * it has one), the warm-up (if taken), the exercises, then — when it has a
+ * cool-down — "Cool down?", the cool-down if they say yes, the outro video
+ * (if it has one) and the summary.
+ */
+export type PlayerPhase =
+  | "preview"
+  | "intro"
+  | "warmup"
+  | "workout"
+  | "cooldownPrompt"
+  | "cooldown"
+  | "outro"
+  | "complete";
+
+/** The phases that are one video, played start to finish: skippable, no sets or timers. */
+export type VideoPhase = "intro" | "warmup" | "cooldown" | "outro";
+
+export function isVideoPhase(phase: PlayerPhase): phase is VideoPhase {
+  return phase === "intro" || phase === "warmup" || phase === "cooldown" || phase === "outro";
+}
+
+/**
+ * The exercises are done: what comes after them (the cool-down question, the
+ * cool-down, the outro) or the summary. The workout counts as finished here.
+ */
+export function isFinished(phase: PlayerPhase): boolean {
+  return phase === "cooldownPrompt" || phase === "cooldown" || phase === "outro" || phase === "complete";
+}
 
 /**
  * What's open over the player. "guide" is the first-run gesture guide;
- * "restartWarmup" asks whether to start the warm-up over (a tap on its left).
+ * "restartVideo" asks whether to start the video on screen over — the intro,
+ * warm-up, cool-down or outro (a tap on its left).
  */
-export type PlayerSheet = "overview" | "settings" | "end" | "guide" | "restartWarmup" | null;
+export type PlayerSheet = "overview" | "settings" | "end" | "guide" | "restartVideo" | null;
 
 export interface PlayerState {
   phase: PlayerPhase;
@@ -57,7 +87,7 @@ export interface PlayerState {
   activeSince: number | null;
   /** Bumped whenever a clip should start from the beginning (a new step, a restart). */
   take: number;
-  /** Show the gesture guide as the first exercise comes up (a workout begun without a warm-up, or resumed). */
+  /** Show the gesture guide as the first exercise comes up (a workout begun without an intro or warm-up, or resumed). */
   guidePending: boolean;
   /** Begun with the warm-up: going back from the first exercise returns to it. */
   withWarmup: boolean;
@@ -71,7 +101,9 @@ export interface PlayerState {
 export type PlayerAction =
   /**
    * `guide`: open the gesture guide (a first-time member) — straight away, over
-   * the warm-up (held until it closes), or else as the first exercise comes up.
+   * the intro or warm-up (held until it closes), or else as the first exercise
+   * comes up. The intro plays first whenever the workout has one (see
+   * `hasIntro`), except on a resume.
    */
   | {
       type: "begin";
@@ -89,11 +121,15 @@ export type PlayerAction =
     }
   /** The warm-up finished or was skipped. */
   | { type: "endWarmup"; now: number }
+  /** The answer to "Cool down?" after the last exercise. */
+  | { type: "chooseCooldown"; yes: boolean; now: number }
+  /** Straight to the summary from what comes after the exercises (End workout there). */
+  | { type: "finish"; now: number }
   | { type: "next"; now: number }
   | { type: "back"; now: number }
   /** Check the countdown; moves on once it has run out. */
   | { type: "tick"; now: number }
-  /** The clip on screen reached its end: the warm-up, or a tutorial playing once. */
+  /** The clip on screen reached its end: a video phase's, or a tutorial playing once. */
   | { type: "clipEnded"; now: number }
   | { type: "pause"; now: number }
   | { type: "resume"; now: number }
@@ -103,8 +139,8 @@ export type PlayerAction =
   | { type: "autoAdvance"; on: boolean; now: number }
   /** Start the set on screen again — or, during a tutorial, that tutorial ("Restart tutorial"). */
   | { type: "restartSet"; now: number }
-  /** Start the warm-up video over. */
-  | { type: "restartWarmup"; now: number }
+  /** Start the video on screen over: the intro, warm-up, cool-down or outro. */
+  | { type: "restartVideo"; now: number }
   /** From the top, with the warm-up first when `warmup` (the workout has one and the member's setting is on). */
   | { type: "restartWorkout"; warmup?: boolean; now: number }
   | { type: "watchTutorial"; now: number }
@@ -124,6 +160,12 @@ export interface PlayerContext {
    * rest was the countdown.
    */
   readyMs?: number;
+  /** The workout has an intro video: it plays first on Begin (not on a resume or a restart). */
+  hasIntro?: boolean;
+  /** The workout has a cool-down: "Cool down?" comes after the last exercise. */
+  hasCooldown?: boolean;
+  /** The workout has an outro video: it plays after the exercises (and the cool-down), before the summary. */
+  hasOutro?: boolean;
 }
 
 export const initialPlayerState: PlayerState = {
@@ -144,9 +186,9 @@ export const initialPlayerState: PlayerState = {
   autoAdvance: false,
 };
 
-/** Playing right now: not paused, no sheet over it, and past the preview. */
+/** Playing right now: a video or the exercises, not paused, no sheet over it. */
 export function isRunning(s: PlayerState): boolean {
-  return (s.phase === "warmup" || s.phase === "workout") && !s.paused && s.sheet === null;
+  return (isVideoPhase(s.phase) || s.phase === "workout") && !s.paused && s.sheet === null;
 }
 
 /** Milliseconds left on the countdown at `now`, or null when there isn't one. */
@@ -210,7 +252,7 @@ function readyTimer(ctx: PlayerContext): PlayerState["timer"] {
 function enter(ctx: PlayerContext, s: PlayerState, index: number, forward: boolean): PlayerState {
   // The gesture guide, if it's waiting, opens over the first step (holding the clock).
   const base = { ...s, paused: false, sheet: s.guidePending ? ("guide" as const) : null, guidePending: false, take: s.take + 1 };
-  if (index >= ctx.steps.length) return { ...base, phase: "complete", timer: null };
+  if (index >= ctx.steps.length) return afterWorkout(ctx, { ...base, timer: null });
   const step = ctx.steps[index];
   let stage: PlayerState["stage"] = "exercise";
   let seen = s.seen;
@@ -250,6 +292,52 @@ function sameAsBefore(steps: WorkoutStep[], index: number): boolean {
   return false;
 }
 
+/** Play a video phase from its start. */
+function playVideo(s: PlayerState, phase: VideoPhase): PlayerState {
+  return { ...s, phase, paused: false, sheet: null, timer: null, take: s.take + 1 };
+}
+
+/** The warm-up from the top. */
+function playWarmup(s: PlayerState): PlayerState {
+  return { ...playVideo(s, "warmup"), step: 0, stage: "exercise" };
+}
+
+/** The intro done with: the warm-up if they're taking it, else the first exercise. */
+function afterIntro(ctx: PlayerContext, s: PlayerState): PlayerState {
+  return s.withWarmup ? playWarmup(s) : enter(ctx, s, 0, true);
+}
+
+/** The last exercise done: "Cool down?" when there's a cool-down, otherwise on past it. */
+function afterWorkout(ctx: PlayerContext, s: PlayerState): PlayerState {
+  if (ctx.hasCooldown) return { ...s, phase: "cooldownPrompt", paused: false, timer: null };
+  return afterCooldown(ctx, s);
+}
+
+/** The cool-down done with (taken or not): the outro, if there is one, then the summary. */
+function afterCooldown(ctx: PlayerContext, s: PlayerState): PlayerState {
+  return ctx.hasOutro ? playVideo(s, "outro") : finish(s);
+}
+
+function finish(s: PlayerState): PlayerState {
+  return { ...s, phase: "complete", paused: false, sheet: null, timer: null, take: s.take + 1 };
+}
+
+/** A video phase's clip finished, or was skipped: on to what follows it. */
+function afterVideo(ctx: PlayerContext, s: PlayerState): PlayerState {
+  switch (s.phase) {
+    case "intro":
+      return afterIntro(ctx, s);
+    case "warmup":
+      return enter(ctx, s, 0, true);
+    case "cooldown":
+      return afterCooldown(ctx, s);
+    case "outro":
+      return finish(s);
+    default:
+      return s;
+  }
+}
+
 function startExercise(ctx: PlayerContext, s: PlayerState): PlayerState {
   const step = ctx.steps[s.step];
   return { ...s, stage: "exercise", timer: timerFor(step, "exercise", s.autoAdvance), take: s.take + 1 };
@@ -276,18 +364,23 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
         autoAdvance: !!a.autoAdvance,
         withWarmup: a.warmup && !from,
       };
-      if (a.warmup && !from) {
-        // The guide, if it's due, comes first: learned (and settings chosen)
-        // before the warm-up, not after it with the member already warm.
-        const sheet = a.guide ? ("guide" as const) : null;
-        return { ...started, phase: "warmup", paused: false, sheet, guidePending: false, timer: null, take: s.take + 1 };
-      }
+      // The guide, if it's due, comes first: learned (and settings chosen)
+      // before the intro or warm-up, not after it with the member already warm.
+      const sheet = a.guide ? ("guide" as const) : null;
+      if (ctx.hasIntro && !from) return { ...playVideo(started, "intro"), step: 0, stage: "exercise", sheet, guidePending: false };
+      if (a.warmup && !from) return { ...playWarmup(started), sheet, guidePending: false };
       return enter(ctx, started, from, true);
     }
     case "endWarmup":
       return s.phase === "warmup" ? enter(ctx, s, 0, true) : s;
+    case "chooseCooldown":
+      if (s.phase !== "cooldownPrompt") return s;
+      return a.yes ? playVideo(s, "cooldown") : afterCooldown(ctx, s);
+    case "finish":
+      return isFinished(s.phase) && s.phase !== "complete" ? finish(s) : s;
     case "next":
-      if (s.phase === "warmup") return enter(ctx, s, 0, true);
+      // A video: skip it.
+      if (isVideoPhase(s.phase)) return afterVideo(ctx, s);
       if (s.phase !== "workout") return s;
       if (step?.kind === "set" && s.stage === "tutorial") return afterTutorial(ctx, s);
       // "Start now" while getting ready.
@@ -299,9 +392,7 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
       while (i >= 0 && ctx.steps[i].kind === "rest") i--;
       // Nothing before it: back to the warm-up from the top, if the workout
       // began with it; otherwise start this set again.
-      if (i < 0 && s.withWarmup) {
-        return { ...s, phase: "warmup", step: 0, stage: "exercise", paused: false, sheet: null, timer: null, take: s.take + 1 };
-      }
+      if (i < 0 && s.withWarmup) return playWarmup(s);
       return enter(ctx, s, i >= 0 ? i : s.step, false);
     }
     case "tick": {
@@ -311,10 +402,10 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
       return s.stage === "ready" ? startExercise(ctx, s) : enter(ctx, s, s.step + 1, true);
     }
     case "clipEnded":
-      if (s.phase === "warmup") return enter(ctx, s, 0, true);
+      if (isVideoPhase(s.phase)) return afterVideo(ctx, s);
       return s.phase === "workout" && s.stage === "tutorial" && s.tutorialPlay === "once" ? afterTutorial(ctx, s) : s;
     case "pause":
-      return s.phase === "warmup" || s.phase === "workout" ? { ...s, paused: true } : s;
+      return isVideoPhase(s.phase) || s.phase === "workout" ? { ...s, paused: true } : s;
     case "resume":
       return { ...s, paused: false, sheet: null };
     case "sheet":
@@ -353,16 +444,14 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
       }
       return enter(ctx, s, i, false);
     }
-    case "restartWarmup":
-      return s.phase === "warmup" ? { ...s, paused: false, sheet: null, take: s.take + 1 } : s;
+    case "restartVideo":
+      return isVideoPhase(s.phase) ? { ...s, paused: false, sheet: null, take: s.take + 1 } : s;
     case "restartWorkout": {
       // A fresh start: the warm-up first when it's on, tutorials again before
-      // each exercise (per the member's setting), and the clock from zero.
+      // each exercise (per the member's setting), and the clock from zero. The
+      // intro isn't replayed — they've just heard it.
       const fresh = { ...s, activeMs: 0, activeSince: null, seen: [], withWarmup: !!a.warmup };
-      if (a.warmup) {
-        return { ...fresh, phase: "warmup", step: 0, stage: "exercise", paused: false, sheet: null, timer: null, take: s.take + 1 };
-      }
-      return enter(ctx, fresh, 0, true);
+      return a.warmup ? playWarmup(fresh) : enter(ctx, fresh, 0, true);
     }
     case "watchTutorial": {
       const i = setStepFor(ctx.steps, s.step);

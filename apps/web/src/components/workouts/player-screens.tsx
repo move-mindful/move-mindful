@@ -28,7 +28,6 @@ import {
   Play,
   RestartSet,
   RestartWorkout,
-  Sun,
   Settings,
   Sound,
   Muted,
@@ -878,15 +877,18 @@ export function RestScreen({
   );
 }
 
-// ── Warm-up ───────────────────────────────────────────
+// ── Intro, warm-up, cool-down, outro ──────────────────
+// The videos that play once, start to finish, around the exercises. Each shows
+// the same way: its chip and name, a plain video bar and a Skip that fills as
+// it plays.
 
-/** The warm-up's own progress bar: a plain video bar, not the story segments. */
-export function WarmupProgress({ seconds, duration }: { seconds: number; duration: number }) {
+/** A video's own progress bar: a plain video bar, not the story segments. */
+export function VideoProgress({ seconds, duration, label }: { seconds: number; duration: number; label: string }) {
   return (
     <TopBar>
       <div
         role="progressbar"
-        aria-label="Warm-up progress"
+        aria-label={`${label} progress`}
         aria-valuemin={0}
         aria-valuemax={Math.round(duration)}
         aria-valuenow={Math.round(seconds)}
@@ -905,19 +907,30 @@ export function WarmupProgress({ seconds, duration }: { seconds: number; duratio
   );
 }
 
-export function WarmupScreen({
+/** A video's chip: "Warm-up" with its sun, "Cool-down" with its moon, "Intro", "Outro". */
+export interface VideoChip {
+  label: string;
+  icon: ReactNode;
+}
+
+export function VideoScreen({
+  chip,
   name,
   seconds,
   duration,
+  skipLabel,
   onPause,
   onSkip,
   muted,
   onToggleSound,
   hidden,
 }: {
+  chip: VideoChip;
   name: string;
   seconds: number;
   duration: number;
+  /** "Skip warm-up", "Skip intro"… */
+  skipLabel: string;
   onPause: () => void;
   onSkip: () => void;
   muted: boolean;
@@ -927,13 +940,13 @@ export function WarmupScreen({
 }) {
   return (
     <>
-      <WarmupProgress seconds={seconds} duration={duration} />
+      <VideoProgress seconds={seconds} duration={duration} label={chip.label} />
       <div className={`absolute inset-x-0 bottom-0 isolate flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
         <BottomShade />
         <div className="flex flex-col gap-2">
           <span className="flex h-[26px] items-center gap-1.5 self-start rounded-full bg-white/[0.16] pl-[9px] pr-[11px] text-xs font-bold uppercase tracking-[0.08em]">
-            <Sun size={14} />
-            Warm-up
+            {chip.icon}
+            {chip.label}
           </span>
           <div className="flex items-center gap-3">
             <h1 className="min-w-0 flex-1 truncate text-[22px] font-semibold leading-tight">{name}</h1>
@@ -942,8 +955,8 @@ export function WarmupScreen({
               <MiniSkipButton
                 progress={{ fraction: duration ? seconds / duration : 0, cycle: 0 }}
                 onBegin={onSkip}
-                label="Skip warm-up"
-                aria="Skip warm-up"
+                label={skipLabel}
+                aria={skipLabel}
               />
             )}
           </div>
@@ -951,14 +964,14 @@ export function WarmupScreen({
         <Collapse open={!hidden}>
           <div className="mt-[18px] flex items-center justify-between gap-3">
             <SoundButton muted={muted} onToggle={onToggleSound} />
-            {/* Fills as the warm-up plays, like Skip tutorial. */}
+            {/* Fills as the video plays, like Skip tutorial. */}
             <button
               type="button"
               onClick={onSkip}
               className="relative flex h-[52px] min-w-0 flex-1 items-center justify-center gap-2 overflow-hidden rounded-full border-[1.5px] border-white/55 bg-white/[0.08] text-base font-semibold backdrop-blur-md"
             >
               <ProgressFill fraction={duration ? seconds / duration : 0} />
-              <span className="relative">Skip warm-up</span>
+              <span className="relative">{skipLabel}</span>
               <span className="relative">
                 <ArrowRight size={18} />
               </span>
@@ -1095,18 +1108,22 @@ export function ReadyScreen({
   );
 }
 
-// ── Restart the warm-up? ──────────────────────────────
+// ── Restart the video? ────────────────────────────────
 
 /**
- * A tap on the warm-up's left side: a small card over the held warm-up asking
- * whether to start it over, with the buttons stacked — Restart, Keep going
- * (as is a tap outside, or Esc), and End workout at the bottom.
+ * A tap on the left side of the intro, warm-up, cool-down or outro: a small
+ * card over the held video asking whether to start it over, with the buttons
+ * stacked — Restart, Keep going (as is a tap outside, or Esc), and End workout
+ * at the bottom.
  */
-export function RestartWarmupPrompt({
+export function RestartVideoPrompt({
+  title,
   onRestart,
   onCancel,
   onEnd,
 }: {
+  /** "Restart the warm-up?" */
+  title: string;
   onRestart: () => void;
   onCancel: () => void;
   onEnd: () => void;
@@ -1117,11 +1134,11 @@ export function RestartWarmupPrompt({
       <div
         role="alertdialog"
         aria-modal="true"
-        aria-labelledby="restart-warmup-title"
+        aria-labelledby="restart-video-title"
         className="relative w-full max-w-[320px] rounded-[24px] bg-[#1A1A34] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.45)] ring-1 ring-white/10"
       >
-        <h2 id="restart-warmup-title" className="text-center text-xl font-semibold">
-          Restart the warm-up?
+        <h2 id="restart-video-title" className="text-center text-xl font-semibold">
+          {title}
         </h2>
         <div className="mt-5 flex flex-col gap-2.5">
           <button
@@ -1147,6 +1164,71 @@ export function RestartWarmupPrompt({
   );
 }
 
+// ── Cool down? ────────────────────────────────────────
+
+/**
+ * After the last exercise, when the workout has a cool-down: the workout's
+ * done (the check, as on the summary) and a small card asks whether to cool
+ * down — Yes plays it, No thanks moves on (to the outro, or the summary). Only
+ * an answer moves it on; nothing plays meanwhile.
+ */
+export function CooldownPrompt({
+  name,
+  duration,
+  onYes,
+  onNo,
+}: {
+  name: string;
+  /** The cool-down's length in seconds, if known. */
+  duration: number | null;
+  onYes: () => void;
+  onNo: () => void;
+}) {
+  return (
+    <div className="absolute inset-0 z-20 flex items-center justify-center px-6">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cooldown-title"
+        aria-describedby="cooldown-detail"
+        className="flex w-full max-w-[340px] flex-col items-center gap-5 rounded-[28px] bg-[#1A1A34] p-6 text-center shadow-[0_18px_50px_rgba(0,0,0,0.45)] ring-1 ring-white/10"
+      >
+        <div className="flex size-16 items-center justify-center rounded-full bg-[#A99CFF] text-[#14142B] shadow-[0_0_0_9px_rgba(169,156,255,0.2)]">
+          <Check size={30} width={2.6} />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <div className="text-[13px] font-bold uppercase tracking-[0.12em] text-[#A99CFF]">Workout complete</div>
+          <h2 id="cooldown-title" className="text-[28px] font-semibold leading-tight tracking-[-0.01em]">
+            Cool down?
+          </h2>
+          <p id="cooldown-detail" className="text-[15px] text-white/75">
+            {name}
+            {duration ? ` · ${aboutMinutesLabel(duration)}` : ""}
+          </p>
+        </div>
+        <div className="flex w-full flex-col gap-2.5">
+          <button
+            type="button"
+            autoFocus
+            onClick={onYes}
+            className="flex h-[54px] items-center justify-center gap-2 rounded-full bg-white text-[17px] font-semibold text-[#14142B]"
+          >
+            Yes, cool down
+          </button>
+          <button type="button" onClick={onNo} className="h-[54px] rounded-full bg-white/[0.12] text-base font-semibold">
+            No thanks
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** "5 min" — or "45 sec" for a short one. */
+function aboutMinutesLabel(seconds: number): string {
+  return seconds < 60 ? `${Math.round(seconds)} sec` : `${Math.max(1, Math.round(seconds / 60))} min`;
+}
+
 // ── Paused ────────────────────────────────────────────
 
 export function PausedScreen({
@@ -1157,7 +1239,7 @@ export function PausedScreen({
   restartSetLabel = "Restart this set",
   onRestartWorkout,
   onWatchTutorial,
-  onSkipWarmup,
+  skip,
   onEnd,
   onSettings,
   autoAdvance,
@@ -1171,16 +1253,17 @@ export function PausedScreen({
   restartSetLabel?: string;
   onRestartWorkout: (() => void) | null;
   onWatchTutorial: (() => void) | null;
-  onSkipWarmup: (() => void) | null;
+  /** On a video's pause screen: skip it ("Skip warm-up", "Skip intro"…). */
+  skip: { label: string; onClick: () => void } | null;
   onEnd: () => void;
   onSettings: (() => void) | null;
-  /** The AUTO › ON/OFF pill above "Paused", a quick switch for auto-advance (not on the warm-up's). */
+  /** The AUTO › ON/OFF pill above "Paused", a quick switch for auto-advance (not on a video's). */
   autoAdvance: { on: boolean; onChange: (on: boolean) => void } | null;
   theater?: boolean;
 }) {
   const secondary =
     "flex h-[54px] shrink-0 items-center justify-center gap-2.5 rounded-full bg-white/[0.12] text-base font-semibold";
-  // The warm-up's pause (no stats, two buttons) is short: on a phone the whole
+  // A video's pause (no stats, two buttons) is short: on a phone the whole
   // stack sits in the middle of the screen, rather than down by the buttons.
   const compact = !theater && !stats;
   return (
@@ -1232,9 +1315,9 @@ export function PausedScreen({
               Watch the tutorial
             </button>
           )}
-          {onSkipWarmup && (
-            <button type="button" onClick={onSkipWarmup} className={secondary}>
-              Skip warm-up
+          {skip && (
+            <button type="button" onClick={skip.onClick} className={secondary}>
+              {skip.label}
               <ArrowRight size={18} />
             </button>
           )}

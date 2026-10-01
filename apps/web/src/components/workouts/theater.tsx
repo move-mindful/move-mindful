@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore, type ReactNode } from "react";
 import { clock } from "@/lib/workouts/player";
-import { ArrowRight, ChevronLeft, ChevronRight, Dumbbell, Loop, Sun } from "./icons";
+import { ArrowRight, ChevronLeft, ChevronRight, Dumbbell, Loop } from "./icons";
 import { BeginButton, Chip, LabelLine, ProgressFill, type TutorialProgress } from "./player-screens";
 
 // The player's desktop ("theater") layout, from the desktop frames of the
@@ -190,21 +190,27 @@ export function TheaterTutorialInfo({
   );
 }
 
-export function TheaterWarmupInfo({
+export function TheaterVideoInfo({
+  chip,
   name,
   fraction,
+  skipLabel,
   onSkip,
 }: {
+  /** "Warm-up" with its sun, "Cool-down" with its moon, "Intro", "Outro". */
+  chip: { label: string; icon: ReactNode };
   name: string;
-  /** How far through the warm-up it is — Skip warm-up fills with it. */
+  /** How far through the video it is — Skip fills with it. */
   fraction: number;
+  /** "Skip warm-up", "Skip intro"… */
+  skipLabel: string;
   onSkip: () => void;
 }) {
   return (
     <Info gap={14}>
       <span className="flex h-[30px] items-center gap-[7px] rounded-full bg-white/[0.14] pl-2.5 pr-[13px] text-[13px] font-bold uppercase tracking-[0.08em]">
-        <Sun size={15} />
-        Warm-up
+        {chip.icon}
+        {chip.label}
       </span>
       <h1 className="text-[44px] font-semibold leading-[1.05] tracking-[-0.015em]">{name}</h1>
       <button
@@ -213,7 +219,7 @@ export function TheaterWarmupInfo({
         className="relative mt-2.5 flex h-14 w-60 items-center justify-center gap-2.5 overflow-hidden rounded-full border-[1.5px] border-white/55 bg-white/[0.08] text-[17px] font-semibold"
       >
         <ProgressFill fraction={fraction} />
-        <span className="relative">Skip warm-up</span>
+        <span className="relative">{skipLabel}</span>
         <span className="relative">
           <ArrowRight />
         </span>

@@ -4,6 +4,7 @@ import { workoutSteps, type EstimateExercise, type WorkoutBlock } from "./workou
 import {
   activeTime,
   initialPlayerState,
+  isFinished,
   isRunning,
   playerReducer,
   timerLeft,
@@ -73,15 +74,15 @@ test("back from the first exercise returns to the warm-up, if the workout began 
 test("the warm-up can start over: asking holds it, restarting plays it from the top", () => {
   let s = run([{ type: "begin", warmup: true, mode: "off", now: 0 }]);
   const take = s.take;
-  s = run([{ type: "sheet", sheet: "restartWarmup", now: 5000 }], s);
+  s = run([{ type: "sheet", sheet: "restartVideo", now: 5000 }], s);
   assert.equal(isRunning(s), false, "held while asking");
-  s = run([{ type: "restartWarmup", now: 6000 }], s);
+  s = run([{ type: "restartVideo", now: 6000 }], s);
   assert.equal(s.phase, "warmup");
   assert.equal(s.sheet, null);
   assert.equal(isRunning(s), true);
   assert.equal(s.take, take + 1, "the clip starts over");
   // Only during the warm-up.
-  s = run([{ type: "endWarmup", now: 7000 }, { type: "restartWarmup", now: 8000 }], s);
+  s = run([{ type: "endWarmup", now: 7000 }, { type: "restartVideo", now: 8000 }], s);
   assert.equal(s.phase, "workout");
 });
 
@@ -437,3 +438,107 @@ test("pausing holds the get-ready countdown; going back gets ready again", () =>
   assert.equal(s.stage, "ready");
 });
 
+
+// ── Intro, cool-down and outro ────────────────────────
+
+// The same workout with an intro, a cool-down and an outro.
+const extras = playerReducer({ steps, hasTutorial: () => false, hasIntro: true, hasCooldown: true, hasOutro: true });
+function runExtras(actions: PlayerAction[], from: PlayerState = initialPlayerState): PlayerState {
+  return actions.reduce(extras, from);
+}
+// To the last step (the lunge's left side, 20 s) and through it.
+const toTheEnd: PlayerAction[] = [
+  { type: "jump", step: 5, now: 1000 },
+  { type: "tick", now: 21_000 },
+];
+
+test("the intro plays first, then the warm-up when it's on, then the exercises", () => {
+  let s = runExtras([{ type: "begin", warmup: true, mode: "off", now: 0 }]);
+  assert.equal(s.phase, "intro");
+  assert.equal(isRunning(s), true);
+  s = runExtras([{ type: "clipEnded", now: 30_000 }], s);
+  assert.equal(s.phase, "warmup");
+  s = runExtras([{ type: "next", now: 31_000 }], s);
+  assert.equal(s.phase, "workout");
+  assert.equal(s.step, 0);
+  // Without the warm-up, Skip intro goes straight to the first exercise.
+  s = runExtras([{ type: "begin", warmup: false, mode: "off", now: 0 }, { type: "next", now: 1000 }]);
+  assert.equal(s.phase, "workout");
+  assert.equal(activeTime(s, 1000), 0, "the intro isn't workout time");
+});
+
+test("the guide opens over the intro; a resume or a restart skips the intro", () => {
+  let s = runExtras([{ type: "begin", warmup: true, mode: "off", guide: true, now: 0 }]);
+  assert.equal(s.phase, "intro");
+  assert.equal(s.sheet, "guide");
+  assert.equal(isRunning(s), false, "the intro waits while it's open");
+  s = runExtras([{ type: "begin", warmup: true, mode: "off", from: 3, now: 0 }]);
+  assert.equal(s.phase, "workout");
+  assert.equal(s.step, 3);
+  s = runExtras([{ type: "restartWorkout", warmup: true, now: 5000 }], s);
+  assert.equal(s.phase, "warmup");
+  s = runExtras([{ type: "restartWorkout", now: 6000 }], s);
+  assert.equal(s.phase, "workout");
+});
+
+test("after the last exercise it asks about the cool-down; yes plays it, then the outro, then the summary", () => {
+  let s = runExtras([{ type: "begin", warmup: false, mode: "off", from: 3, now: 0 }, ...toTheEnd]);
+  assert.equal(s.phase, "cooldownPrompt");
+  assert.equal(isFinished(s.phase), true, "the workout counts as done here");
+  assert.equal(isRunning(s), false, "nothing plays while it asks");
+  const time = activeTime(s, 21_000);
+  s = runExtras([{ type: "next", now: 22_000 }, { type: "tick", now: 99_000 }], s);
+  assert.equal(s.phase, "cooldownPrompt", "only an answer moves it on");
+  s = runExtras([{ type: "chooseCooldown", yes: true, now: 25_000 }], s);
+  assert.equal(s.phase, "cooldown");
+  assert.equal(isRunning(s), true);
+  s = runExtras([{ type: "clipEnded", now: 325_000 }], s);
+  assert.equal(s.phase, "outro");
+  s = runExtras([{ type: "clipEnded", now: 355_000 }], s);
+  assert.equal(s.phase, "complete");
+  assert.equal(activeTime(s, 400_000), time, "the cool-down and outro aren't workout time");
+});
+
+test("no to the cool-down goes to the outro; without one, it's the summary", () => {
+  let s = runExtras([{ type: "begin", warmup: false, mode: "off", from: 3, now: 0 }, ...toTheEnd]);
+  s = runExtras([{ type: "chooseCooldown", yes: false, now: 22_000 }], s);
+  assert.equal(s.phase, "outro");
+  s = runExtras([{ type: "next", now: 23_000 }], s);
+  assert.equal(s.phase, "complete", "Skip outro");
+  const noOutro = playerReducer({ steps, hasTutorial: () => false, hasCooldown: true });
+  const actions: PlayerAction[] = [
+    { type: "begin", warmup: false, mode: "off", from: 3, now: 0 },
+    ...toTheEnd,
+    { type: "chooseCooldown", yes: false, now: 22_000 },
+  ];
+  assert.equal(actions.reduce(noOutro, initialPlayerState).phase, "complete");
+});
+
+test("without a cool-down the outro follows the last exercise straight away", () => {
+  const outroOnly = playerReducer({ steps, hasTutorial: () => false, hasOutro: true });
+  const actions: PlayerAction[] = [{ type: "begin", warmup: false, mode: "off", from: 3, now: 0 }, ...toTheEnd];
+  const s = actions.reduce(outroOnly, initialPlayerState);
+  assert.equal(s.phase, "outro");
+});
+
+test("the cool-down and outro can be paused, restarted, skipped, or finished early", () => {
+  let s = runExtras([
+    { type: "begin", warmup: false, mode: "off", from: 3, now: 0 },
+    ...toTheEnd,
+    { type: "chooseCooldown", yes: true, now: 22_000 },
+    { type: "pause", now: 30_000 },
+  ]);
+  assert.equal(s.paused, true);
+  const take = s.take;
+  s = runExtras([{ type: "restartVideo", now: 31_000 }], s);
+  assert.equal(s.phase, "cooldown");
+  assert.equal(s.take, take + 1, "from the top");
+  assert.equal(isRunning(s), true);
+  s = runExtras([{ type: "next", now: 32_000 }], s);
+  assert.equal(s.phase, "outro", "Skip cool-down");
+  s = runExtras([{ type: "finish", now: 33_000 }], s);
+  assert.equal(s.phase, "complete", "End workout goes to the summary");
+  // Finish does nothing before the exercises are done.
+  s = runExtras([{ type: "begin", warmup: false, mode: "off", now: 0 }, { type: "finish", now: 1000 }]);
+  assert.equal(s.phase, "intro");
+});

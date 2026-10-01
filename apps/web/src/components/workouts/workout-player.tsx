@@ -18,7 +18,9 @@ import {
   estimateWorkout,
   fitTutorialMode,
   initialPlayerState,
+  isFinished,
   isRunning,
+  isVideoPhase,
   playerReducer,
   resumeFrom,
   secondsLeft,
@@ -28,6 +30,7 @@ import {
   workoutSteps,
   type PlayerAction,
   type SetStep,
+  type VideoPhase,
   type WorkoutStep,
 } from "@move-mindful/core";
 import { levelsLabel } from "@/lib/exercises/shared";
@@ -37,11 +40,12 @@ import { OverviewSheet } from "./overview-sheet";
 import { ProgressBar } from "./progress-bar";
 import {
   CompleteScreen,
+  CooldownPrompt,
   Dim,
   EndSheet,
   PausedScreen,
   ReadyScreen,
-  RestartWarmupPrompt,
+  RestartVideoPrompt,
   RestScreen,
   SetScreen,
   TopShade,
@@ -51,18 +55,18 @@ import {
   CornerSettings,
   TutorialScreen,
   SettingsSheet,
-  WarmupProgress,
+  VideoProgress,
   createSheetPull,
-  WarmupScreen,
+  VideoScreen,
 } from "./player-screens";
-import { List, Pause, Play, Settings } from "./icons";
+import { List, Moon, Pause, Play, Settings, Sun } from "./icons";
 import {
   Dimmed,
   TheaterArrows,
   TheaterButtons,
   TheaterSetInfo,
   TheaterTutorialInfo,
-  TheaterWarmupInfo,
+  TheaterVideoInfo,
   useTheater,
   type TheaterButton,
 } from "./theater";
@@ -115,10 +119,32 @@ function newId(): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-// Only tutorials and the warm-up are heard: an exercise's loop always plays
-// muted, even if its file has sound.
+// Only tutorials and the videos around the exercises (intro, warm-up,
+// cool-down, outro) are heard: an exercise's loop always plays muted, even if
+// its file has sound.
 function shownOf(clip: PlayerClip | null | undefined, loop: boolean, silent = false): ShownClip | null {
   return clip ? { url: clip.url, poster: clip.poster, loop, silent } : null;
+}
+
+// The videos that play once, start to finish, around the exercises: what each
+// is called ("Skip the cool-down"…) and its chip's icon.
+const VIDEO_TEXT: Record<VideoPhase, { label: string; noun: string; icon: (size: number) => ReactNode }> = {
+  intro: { label: "Intro", noun: "intro", icon: () => null },
+  warmup: { label: "Warm-up", noun: "warm-up", icon: (size) => <Sun size={size} /> },
+  cooldown: { label: "Cool-down", noun: "cool-down", icon: (size) => <Moon size={size} /> },
+  outro: { label: "Outro", noun: "outro", icon: () => null },
+};
+
+function videoClip(workout: PlayerWorkout, phase: VideoPhase): PlayerClip | null {
+  if (phase === "intro") return workout.intro;
+  if (phase === "outro") return workout.outro;
+  return workout[phase]?.clip ?? null;
+}
+
+/** The name under the chip: the workout's own title for its intro and outro. */
+function videoName(workout: PlayerWorkout, phase: VideoPhase): string {
+  if (phase === "intro" || phase === "outro") return workout.title;
+  return workout[phase]?.name ?? VIDEO_TEXT[phase].label;
 }
 
 export function WorkoutPlayer({
@@ -158,8 +184,16 @@ export function WorkoutPlayer({
   const key = useMemo(() => sequenceKey(steps), [steps]);
 
   const reducer = useMemo(
-    () => playerReducer({ steps, hasTutorial: (id) => !!workout.exercises[id]?.tutorial, readyMs: GET_READY_MS }),
-    [steps, workout.exercises],
+    () =>
+      playerReducer({
+        steps,
+        hasTutorial: (id) => !!workout.exercises[id]?.tutorial,
+        readyMs: GET_READY_MS,
+        hasIntro: !!workout.intro,
+        hasCooldown: !!workout.cooldown,
+        hasOutro: !!workout.outro,
+      }),
+    [steps, workout.exercises, workout.intro, workout.cooldown, workout.outro],
   );
   const [state, dispatch] = useReducer(reducer, initialPlayerState);
   const act = useCallback((a: WithoutNow<PlayerAction>) => dispatch({ ...a, now: performance.now() } as PlayerAction), []);
@@ -212,7 +246,9 @@ export function WorkoutPlayer({
   }
   const onStep = useEffectEvent(() => {
     if (state.phase === "workout") record("progress", setStepFor(steps, state.step) ?? state.step);
-    if (state.phase === "complete" && session.current) {
+    // Done once the exercises are: the cool-down and outro are extras, so
+    // leaving during them still counts.
+    if (isFinished(state.phase) && session.current) {
       record("complete", steps.length);
       session.current = null;
       // The preview's "Done" pill, up to date without a reload.
@@ -276,11 +312,12 @@ export function WorkoutPlayer({
     setHoldInPlace(false);
     act({ type: "resume" });
   }
-  /** Back on the warm-up (a left tap, the left arrow): ask whether to start it over. */
-  function askRestartWarmup() {
-    act({ type: "sheet", sheet: "restartWarmup" });
+  /** Back on the intro, warm-up, cool-down or outro (a left tap, the left arrow): ask whether to start it over. */
+  function askRestartVideo() {
+    act({ type: "sheet", sheet: "restartVideo" });
   }
-  const active = state.phase === "warmup" || state.phase === "workout";
+  // Under way: past the preview, short of the summary.
+  const active = state.phase !== "preview" && state.phase !== "complete";
   const step: WorkoutStep | undefined = steps[state.step];
   const set = step?.kind === "set" ? step : null;
   const exercise = set ? workout.exercises[set.exerciseId] : undefined;
@@ -299,11 +336,11 @@ export function WorkoutPlayer({
 
   const shown = useMemo<ShownClip | null>(() => {
     if (state.phase === "preview") return null;
-    if (state.phase === "warmup") return shownOf(workout.warmup?.clip, false);
+    if (isVideoPhase(state.phase)) return shownOf(videoClip(workout, state.phase), false);
     const st = steps[state.step];
     if (!st) return null;
-    // A rest shows the next exercise (blurred); the summary, the last one.
-    if (st.kind === "rest" || state.phase === "complete") {
+    // A rest shows the next exercise (blurred); "Cool down?" and the summary, the last one.
+    if (st.kind === "rest" || state.phase === "complete" || state.phase === "cooldownPrompt") {
       const i = setStepFor(steps, state.step);
       const s = i !== null ? steps[i] : null;
       return s?.kind === "set" ? shownOf(loopFor(workout.exercises[s.exerciseId], s.side), true, true) : null;
@@ -320,9 +357,13 @@ export function WorkoutPlayer({
       if (c && list.length < POOL_SIZE && !list.some((x) => x.url === c.url)) list.push({ url: c.url, poster: c.poster });
     };
     add(shown);
-    const started = state.phase === "workout" || state.phase === "complete";
-    if (!started) add(workout.warmup?.clip);
-    for (let i = started ? state.step : 0; i < steps.length && list.length < POOL_SIZE; i++) {
+    const p = state.phase;
+    if (p === "preview") add(workout.intro);
+    if (p === "preview" || p === "intro") add(workout.warmup?.clip);
+    const started = p === "workout";
+    // After the exercises, only what follows them.
+    const ahead = isFinished(p) ? 0 : steps.length;
+    for (let i = started ? state.step : 0; i < ahead && list.length < POOL_SIZE; i++) {
       const st = steps[i];
       if (st.kind !== "set") continue;
       const e = workout.exercises[st.exerciseId];
@@ -333,19 +374,23 @@ export function WorkoutPlayer({
       if (tutorial) add(e?.tutorial);
       add(loopFor(e, st.side));
     }
+    if (p !== "cooldown" && p !== "outro" && p !== "complete") add(workout.cooldown?.clip);
+    if (p !== "outro" && p !== "complete") add(workout.outro);
     return list;
   }, [shown, state.phase, state.step, state.stage, state.mode, state.seen, steps, workout]);
 
   // Sheets stop the clock. The video keeps playing behind the overview (so
-  // pulling it up doesn't stutter) — the warm-up's too, sound and all; if it
-  // ends meanwhile, the first exercise comes up as usual, closing the overview —
+  // pulling it up doesn't stutter) — the warm-up's and cool-down's too, sound
+  // and all; if one ends meanwhile, what follows comes up as usual, closing the overview —
   // but pauses under
   // Settings and End workout. Getting ready, the exercise already plays behind
   // the blur; it starts over from the top as the countdown ends (a new take),
   // in step with the member.
   const playing =
     running ||
-    ((state.phase === "workout" || state.phase === "warmup") && !state.paused && state.sheet === "overview");
+    ((state.phase === "workout" || state.phase === "warmup" || state.phase === "cooldown") &&
+      !state.paused &&
+      state.sheet === "overview");
   useEffect(() => {
     pool.sync(upcoming, shown, { playing, muted, take: state.take });
   }, [pool, upcoming, shown, playing, muted, state.take]);
@@ -370,9 +415,9 @@ export function WorkoutPlayer({
     ? Math.max(0, Math.min(timer.leftMs, timer.since === null ? timer.leftMs : timer.leftMs - (now - timer.since)))
     : 0;
 
-  // How far the warm-up or a tutorial has got. `cycle` counts a looping
+  // How far a video (the intro, warm-up, cool-down, outro) or a tutorial has got. `cycle` counts a looping
   // tutorial's trips round, so its progress can restart without sliding back.
-  const clipTimed = state.phase === "warmup" || (state.phase === "workout" && state.stage === "tutorial");
+  const clipTimed = isVideoPhase(state.phase) || (state.phase === "workout" && state.stage === "tutorial");
   const [clipTime, setClipTime] = useState({ take: -1, time: 0, duration: 0, cycle: 0 });
   // A tutorial playing once should end (and start the exercise) on the
   // video's "ended" event; if it ever wraps round to the start instead, treat
@@ -445,7 +490,7 @@ export function WorkoutPlayer({
     else pause();
   });
   const onSpace = useEffectEvent(() => (state.paused ? resumePlay() : pause()));
-  const onBackKey = useEffectEvent(() => (state.phase === "warmup" ? askRestartWarmup() : act({ type: "back" })));
+  const onBackKey = useEffectEvent(() => (isVideoPhase(state.phase) ? askRestartVideo() : act({ type: "back" })));
 
   // Keyboard: arrows move between sets, space pauses, Escape closes a sheet.
 
@@ -628,7 +673,7 @@ export function WorkoutPlayer({
 
   const bar = (
     <TopBar>
-      <ProgressBar steps={steps} current={state.step} fraction={fill} complete={state.phase === "complete"} />
+      <ProgressBar steps={steps} current={state.step} fraction={fill} complete={isFinished(state.phase)} />
     </TopBar>
   );
 
@@ -640,32 +685,56 @@ export function WorkoutPlayer({
   // Lighter than `blurred`: the get-ready screen, where the starting position should show through.
   let softBlur = false;
 
-  const sideButtons = (): TheaterButton[] => [
+  // `overview`: the Workout button — not on the intro or outro, which the overview doesn't list.
+  const sideButtons = (overview = true): TheaterButton[] => [
     { label: "Settings", aria: "Settings", icon: <Settings />, onClick: openSettings },
-    { label: "Workout", aria: "Open workout overview", icon: <List />, onClick: openOverview },
+    ...(overview ? [{ label: "Workout", aria: "Open workout overview", icon: <List />, onClick: openOverview }] : []),
     // Held on a rest or get-ready screen, Pause is Resume — like the button under the countdown.
     state.paused
       ? { label: "Resume", aria: "Resume", icon: <Play size={20} />, onClick: resumePlay }
       : { label: "Pause", aria: "Pause", icon: <Pause />, onClick: pause },
   ];
 
-  if (state.phase === "warmup" && workout.warmup) {
-    const duration = clip.duration || workout.warmup.clip.durationSeconds || 0;
-    const skip = () => act({ type: "endWarmup" });
+  const videoNow = isVideoPhase(state.phase) ? state.phase : null;
+  const videoNowClip = videoNow ? videoClip(workout, videoNow) : null;
+  if (videoNow && videoNowClip) {
+    // The intro, warm-up, cool-down or outro: one video, start to finish.
+    const text = VIDEO_TEXT[videoNow];
+    const name = videoName(workout, videoNow);
+    const duration = clip.duration || videoNowClip.durationSeconds || 0;
+    const fraction = duration ? clip.time / duration : 0;
+    const skip = () => act({ type: "next" });
+    const skipLabel = `Skip ${text.noun}`;
+    const restartLabel = `Restart the ${text.noun}`;
+    // The overview lists the warm-up and cool-down, not the intro or outro.
+    const withOverview = videoNow === "warmup" || videoNow === "cooldown";
+    // Before the exercises, End workout asks what to keep (nothing, yet); after
+    // them it's done already, so End goes to the summary.
+    const end = isFinished(videoNow) ? () => act({ type: "finish" }) : () => act({ type: "sheet", sheet: "end" });
+    const theaterInfo = (
+      <TheaterVideoInfo
+        chip={{ label: text.label, icon: text.icon(15) }}
+        name={name}
+        fraction={fraction}
+        skipLabel={skipLabel}
+        onSkip={skip}
+      />
+    );
+    const arrows = <TheaterArrows onBack={askRestartVideo} onNext={skip} backLabel={restartLabel} nextLabel={skipLabel} />;
     if (state.paused) {
       blurred = true;
       screen = (
         <>
           <Dim />
           <PausedScreen
-            subtitle="Warm-up"
+            subtitle={text.label}
             stats={null}
             onResume={resumePlay}
             onRestartSet={null}
             onRestartWorkout={null}
             onWatchTutorial={null}
-            onSkipWarmup={skip}
-            onEnd={() => act({ type: "sheet", sheet: "end" })}
+            skip={{ label: skipLabel, onClick: skip }}
+            onEnd={end}
             // Phones only: Settings, top right, as on the regular pause screen
             // (desktop has it in the column beside the video).
             onSettings={theater ? null : openSettings}
@@ -674,16 +743,14 @@ export function WorkoutPlayer({
           />
         </>
       );
-      // Desktop: the warm-up's info stays, dimmed; its arrows (back offers to
+      // Desktop: the video's info stays, dimmed; its arrows (back offers to
       // start it over) and the button column.
       if (theater) {
         beside = (
           <>
-            <Dimmed>
-              <TheaterWarmupInfo name={workout.warmup.name} fraction={duration ? clip.time / duration : 0} onSkip={skip} />
-            </Dimmed>
-            <TheaterArrows onBack={askRestartWarmup} onNext={skip} backLabel="Restart the warm-up" nextLabel="Skip warm-up" />
-            <TheaterButtons buttons={sideButtons()} />
+            <Dimmed>{theaterInfo}</Dimmed>
+            {arrows}
+            <TheaterButtons buttons={sideButtons(withOverview)} />
           </>
         );
       }
@@ -691,23 +758,23 @@ export function WorkoutPlayer({
       screen = (
         <>
           <TopShade tall />
-          <WarmupProgress seconds={clip.time} duration={duration} />
+          <VideoProgress seconds={clip.time} duration={duration} label={text.label} />
           {/* As on a set: the right skips ahead, the left offers to start over, the middle pauses. */}
           <TapZones
-            onBack={askRestartWarmup}
+            onBack={askRestartVideo}
             onNext={skip}
             onMiddle={pause}
             onHold={pause}
-            backLabel="Restart the warm-up"
-            nextLabel="Skip warm-up"
+            backLabel={restartLabel}
+            nextLabel={skipLabel}
           />
         </>
       );
       beside = (
         <>
-          <TheaterWarmupInfo name={workout.warmup.name} fraction={duration ? clip.time / duration : 0} onSkip={skip} />
-          <TheaterArrows onBack={askRestartWarmup} onNext={skip} backLabel="Restart the warm-up" nextLabel="Skip warm-up" />
-          <TheaterButtons buttons={sideButtons()} />
+          {theaterInfo}
+          {arrows}
+          <TheaterButtons buttons={sideButtons(withOverview)} />
         </>
       );
     } else {
@@ -715,14 +782,14 @@ export function WorkoutPlayer({
         <>
           <TopShade tall />
           <TapZones
-            onBack={askRestartWarmup}
+            onBack={askRestartVideo}
             onNext={skip}
             onMiddle={pause}
             onHold={pause}
             onSwipeDown={() => setChromeHidden(true)}
             // As on the exercises: bring hidden controls back, or else pull up the overview.
-            onSwipeUp={() => (chromeHidden ? setChromeHidden(false) : openOverview())}
-            pullUp={!chromeHidden}
+            onSwipeUp={() => (chromeHidden ? setChromeHidden(false) : withOverview ? openOverview() : undefined)}
+            pullUp={!chromeHidden && withOverview}
             onPullMove={(distance) => {
               if (!pull.active) pull.start();
               pull.move(distance);
@@ -730,13 +797,15 @@ export function WorkoutPlayer({
             onPullEnd={(distance, velocity) => {
               if (pull.active) pull.end(distance, velocity);
             }}
-            backLabel="Restart the warm-up"
-            nextLabel="Skip warm-up"
+            backLabel={restartLabel}
+            nextLabel={skipLabel}
           />
-          <WarmupScreen
-            name={workout.warmup.name}
+          <VideoScreen
+            chip={{ label: text.label, icon: text.icon(14) }}
+            name={name}
             seconds={clip.time}
             duration={duration}
+            skipLabel={skipLabel}
             onPause={pause}
             onSkip={skip}
             muted={muted}
@@ -746,6 +815,23 @@ export function WorkoutPlayer({
         </>
       );
     }
+  } else if (state.phase === "cooldownPrompt" && workout.cooldown) {
+    // The exercises are done: offer the cool-down. Only an answer moves on.
+    blurred = true;
+    const yes = () => act({ type: "chooseCooldown", yes: true });
+    const no = () => act({ type: "chooseCooldown", yes: false });
+    screen = (
+      <>
+        <Dim strength={0.74} />
+        {bar}
+        <CooldownPrompt
+          name={workout.cooldown.name}
+          duration={workout.cooldown.clip.durationSeconds}
+          onYes={yes}
+          onNo={no}
+        />
+      </>
+    );
   } else if (state.phase === "workout" && step) {
     const back = () => act({ type: "back" });
     const next = () => act({ type: "next" });
@@ -993,7 +1079,7 @@ export function WorkoutPlayer({
             onRestartWorkout={() => restartWorkout()}
             // During a tutorial, Restart tutorial already covers it.
             onWatchTutorial={canWatch && state.stage !== "tutorial" ? () => act({ type: "watchTutorial" }) : null}
-            onSkipWarmup={null}
+            skip={null}
             onEnd={() => act({ type: "sheet", sheet: "end" })}
             // Desktop has Settings in the column beside the video instead.
             onSettings={theater ? null : openSettings}
@@ -1047,22 +1133,29 @@ export function WorkoutPlayer({
   // The overview: on phones a drawer that stays mounted all workout (parked
   // below the screen, see Drawer); on desktop a side panel while open.
   const overview =
-    (state.phase === "workout" || state.phase === "warmup") && (!theater || state.sheet === "overview") ? (
+    (state.phase === "workout" || state.phase === "warmup" || state.phase === "cooldown") &&
+    (!theater || state.sheet === "overview") ? (
       <OverviewSheet
         workout={workout}
         steps={steps}
         subtitle={`About ${minutes} min${equipment ? ` · ${equipment}` : ""}`}
-        progress={{
-          label: state.phase === "warmup" ? "Warm-up" : set ? setLine(set) : "Resting",
-          left: `About ${aboutMinutes(leftNow)} min left`,
-          fraction: totalSeconds ? Math.min(1, Math.max(0, 1 - leftNow / secondsLeft(steps, 0))) : 0,
-        }}
+        progress={
+          state.phase === "cooldown"
+            ? { label: "Cool-down", left: "Exercises done", fraction: 1 }
+            : {
+                label: state.phase === "warmup" ? "Warm-up" : set ? setLine(set) : "Resting",
+                left: `About ${aboutMinutes(leftNow)} min left`,
+                fraction: totalSeconds ? Math.min(1, Math.max(0, 1 - leftNow / secondsLeft(steps, 0))) : 0,
+              }
+        }
         position={{
           step: state.step,
-          complete: false,
+          complete: state.phase === "cooldown",
           warmup: state.phase === "warmup" ? "now" : warmedUp ? "done" : "skipped",
+          cooldown: state.phase === "cooldown" ? "now" : "todo",
         }}
-        onJump={(i) => act({ type: "jump", step: i })}
+        // The exercises are behind them in the cool-down: nothing to jump to.
+        onJump={state.phase === "cooldown" ? undefined : (i) => act({ type: "jump", step: i })}
         onClose={() => act({ type: "sheet", sheet: null })}
         drawer={theater ? undefined : { open: state.sheet === "overview", pull, onOpen: openOverview }}
       />
@@ -1146,18 +1239,20 @@ export function WorkoutPlayer({
             }`}
           />
           <LoadingSpinner
-            show={buffering && running && (state.phase === "warmup" || (state.phase === "workout" && step?.kind === "set"))}
+            show={buffering && running && (isVideoPhase(state.phase) || (state.phase === "workout" && step?.kind === "set"))}
           />
           {screen}
           {!theater && overview}
           {!theater && settings}
           {!theater && end}
-          {state.sheet === "restartWarmup" && (
-            <RestartWarmupPrompt
-              onRestart={() => act({ type: "restartWarmup" })}
+          {state.sheet === "restartVideo" && videoNow && (
+            <RestartVideoPrompt
+              title={`Restart the ${VIDEO_TEXT[videoNow].noun}?`}
+              onRestart={() => act({ type: "restartVideo" })}
               onCancel={() => act({ type: "sheet", sheet: null })}
-              // Nothing to save during the warm-up, so no second question.
-              onEnd={() => endWorkout(false)}
+              // Before the exercises there's nothing to save, so no second
+              // question; after them the workout's done, so it's the summary.
+              onEnd={isFinished(videoNow) ? () => act({ type: "finish" }) : () => endWorkout(false)}
             />
           )}
           {!theater && state.sheet === "guide" && (
