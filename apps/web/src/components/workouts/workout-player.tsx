@@ -1163,16 +1163,10 @@ export function WorkoutPlayer({
           : ({ kind: "reps", amount: set.amount } as const);
       const groupLine = set.groupLabel ? `${set.groupLabel} · Round ${set.round} of ${set.rounds}` : null;
       const pill = upNext();
-      // Ten seconds out on a set that ends by itself: what's next slides in at
-      // the top right, under the progress bar (clear of the tip bubble below).
+      // Ten seconds out on a set that ends by itself: what's next slides in,
+      // in the tip bubble's place (the set's tip has long finished by then).
       const upNextCard = upNextDue && (
-        <div className="pointer-events-none absolute right-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] z-10">
-          <UpNextCard
-            show={running && leftMs > 0 && leftMs <= UP_NEXT.before * 1000}
-            {...nextCard()}
-            large={theater}
-          />
-        </div>
+        <UpNextCard show={running && leftMs > 0 && leftMs <= UP_NEXT.before * 1000} {...nextCard()} large={theater} />
       );
       if (theater) {
         screen = (
@@ -1183,7 +1177,8 @@ export function WorkoutPlayer({
             <div className="pointer-events-none absolute bottom-8 right-8 -translate-y-full">
               {coach(true)}
             </div>
-            {upNextCard}
+            {/* Its bottom on the bubble's: a bubble's height (98px) up from the corner. */}
+            {upNextCard && <div className="pointer-events-none absolute bottom-[calc(2rem+98px)] right-8">{upNextCard}</div>}
           </>
         );
         info = (
@@ -1223,8 +1218,8 @@ export function WorkoutPlayer({
               muted={muted}
               onAudio={openAudio}
               tip={coach()}
+              upNext={upNextCard}
             />
-            {upNextCard}
           </>
         );
       }

@@ -3,11 +3,13 @@
 import { PHONE_SHOW_DELAY_MS } from "./coach-tip";
 
 /**
- * What's next, sliding in at the top right of the video as a set nears its
- * end — ten seconds out, on a set that ends by itself (timed, or reps on
- * auto-advance) — with its chime (UP_NEXT in cue-audio.ts), and staying until
- * the set ends. The same slide as the tip bubble, and on phones the same
- * wait, so it lands with its sound. The screen places it; `large` on desktop.
+ * What's next, sliding in as a set nears its end — ten seconds out, on a set
+ * that ends by itself (timed, or reps on auto-advance) — with its chime
+ * (UP_NEXT in cue-audio.ts), and staying until the set ends. It takes the tip
+ * bubble's place (a set's tip comes early, so they don't meet), with the same
+ * slide and, on phones, the same wait, so it lands with its sound; and the
+ * frosted grey of the player's other controls (the Up next pill). The screen
+ * places it; `large` on desktop.
  */
 export function UpNextCard({
   show,
@@ -30,7 +32,7 @@ export function UpNextCard({
       </span>
       <div
         aria-hidden="true"
-        className={`pointer-events-none flex items-center rounded-2xl bg-[#14142B]/75 ring-1 ring-white/10 backdrop-blur-md transition-[translate,opacity] motion-reduce:translate-x-0 motion-reduce:transition-opacity ${
+        className={`pointer-events-none flex items-center rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md transition-[translate,opacity] motion-reduce:translate-x-0 motion-reduce:transition-opacity ${
           large ? "max-w-[340px] gap-3.5 p-2.5 pr-5" : "max-w-[min(300px,calc(100vw-32px))] gap-3 p-2 pr-4"
         } ${
           show

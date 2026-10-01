@@ -470,6 +470,7 @@ export function SetScreen({
   muted,
   onAudio,
   tip = null,
+  upNext = null,
 }: {
   name: string;
   /** Reps to do, or the seconds left on a timed set. */
@@ -489,6 +490,8 @@ export function SetScreen({
   onAudio: () => void;
   /** The instructor's audio tip (CoachTip): at the right end of the reps, over the Pause button. */
   tip?: ReactNode;
+  /** The Up next card (UpNextCard), in the tip's place near the set's end, right-aligned with the Pause button. */
+  upNext?: ReactNode;
 }) {
   return (
     <div className={`absolute inset-x-0 bottom-0 isolate flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
@@ -506,6 +509,8 @@ export function SetScreen({
             sitting on them), over the video; centred on the Pause button (the
             ring is 22px wider than it). */}
         {tip && <div className="absolute bottom-0 right-[-11px] -translate-y-full">{tip}</div>}
+        {/* Its bottom on the bubble's (a bubble's height, 74px, above the reps' bottom). */}
+        {upNext && <div className="absolute bottom-[74px] right-0">{upNext}</div>}
         {metric.kind === "reps" ? (
           <span className="flex items-baseline gap-1.5">
             <span className="text-[56px] font-semibold leading-none tracking-[-0.03em] tabular-nums">{metric.amount}</span>
