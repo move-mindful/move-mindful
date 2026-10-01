@@ -274,11 +274,14 @@ export function WorkoutPlayer({
     onStep();
   }, [state.phase, state.step]);
 
-  // On a phone, the bar around the notch goes black while the player is up —
-  // iOS (and Android's browser bar) colours it from the page's theme-color,
-  // the player pages' purple — and back to purple on the workout preview. The
-  // strip at the bottom comes from the page's background, so it stays purple.
-  // Touch screens only: desktop Safari would tint its tab bar too.
+  // On a phone, the bar around the notch goes black while the player is up,
+  // and back to purple on the workout preview. iOS colours it from the page's
+  // theme-color in some setups and from the page's background in others (the
+  // home-screen app, it seems: the theme-color alone didn't do it), so both go
+  // black — the background by `data-player-up` on <html> (globals.css). The
+  // player covers the whole screen, so neither shows anywhere else, and the
+  // strip at the bottom shows the player's own purple. Touch screens only:
+  // desktop Safari would tint its tab bar too.
   const inPlayer = state.phase !== "preview";
   useEffect(() => {
     if (!inPlayer || !window.matchMedia("(hover: none) and (pointer: coarse)").matches) return;
@@ -292,7 +295,9 @@ export function WorkoutPlayer({
     }
     const before = metas.map((m) => m.content);
     metas.forEach((m) => (m.content = "#000000"));
+    document.documentElement.dataset.playerUp = "";
     return () => {
+      delete document.documentElement.dataset.playerUp;
       if (added) metas.forEach((m) => m.remove());
       else metas.forEach((m, i) => (m.content = before[i]));
     };
