@@ -18,8 +18,9 @@ export const MUSIC = {
   volume: 60,
   /** While each of these plays, the music drops to this % of its normal level (100 = no dip). */
   duckTo: {
-    tutorial: 25,
-    tip: 30,
+    // Aggressive under the instructor's voice: about 20 dB down.
+    tutorial: 10,
+    tip: 10,
     intro: 25,
     outro: 25,
     warmup: 50,
