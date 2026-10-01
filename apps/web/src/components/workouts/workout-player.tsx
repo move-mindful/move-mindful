@@ -1172,7 +1172,7 @@ export function WorkoutPlayer({
       // Ten seconds out on a set that ends by itself: what's next slides in,
       // centred, a little above the tip bubble's line (the set's tip has long
       // finished by then).
-      // In ten seconds out; swiped away just before the end, so it's gone before the next screen.
+      // In ten seconds out; slid back out just before the end, so it's gone before the next screen.
       const upNextCard = upNextDue && (
         <UpNextCard
           stage={

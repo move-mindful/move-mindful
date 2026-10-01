@@ -11,8 +11,8 @@
  * controls (the Up next pill). The screen places it, centred in the video
  * column (it uses `--col`); `large` on desktop.
  *
- * `stage`: waiting (off past the right edge), shown, or gone — swiped away
- * past the left edge just before the set ends (UP_NEXT.leaveAt), so it's
+ * `stage`: waiting (off past the right edge), shown, or gone — slid back out
+ * past the right edge just before the set ends (UP_NEXT.leaveAt), so it's
  * cleared before the next screen.
  */
 export function UpNextCard({
@@ -42,10 +42,8 @@ export function UpNextCard({
           stage === "shown"
             ? // From past the video's right edge: half the column, half the card, and a little more.
               "translate-x-0 opacity-100 duration-500 ease-[cubic-bezier(0.22,1.3,0.36,1)] starting:translate-x-[calc(var(--col)/2+50%+8px)] starting:opacity-0"
-            : stage === "gone"
-              ? // Swiped away past the left edge.
-                "-translate-x-[calc(var(--col)/2+50%+8px)] opacity-0 duration-300 ease-in"
-              : "translate-x-[calc(var(--col)/2+50%+8px)] opacity-0 duration-300 ease-in"
+            : // Waiting, or gone: back out past the right edge, the way it came.
+              "translate-x-[calc(var(--col)/2+50%+8px)] opacity-0 duration-300 ease-in"
         }`}
       >
         {thumbnail && (

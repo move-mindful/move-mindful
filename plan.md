@@ -239,6 +239,7 @@ Built in vertical slices, so each step leaves something usable and real footage 
   - [ ] Tune the music levels by ear on iPhone and desktop (`MUSIC` in `components/workouts/music.ts`)
   - [x] Up next card + chime ten seconds before a self-ending set ends (timed, or reps on auto-advance; sets of 10 s or less skip it), sliding in from the right to the centre, a little above the tip bubble's line (a set's tip comes early, so they never meet), in the frosted grey of the other controls
   - [x] Sound effects: a 3-second countdown over the last seconds of every rest and Get ready (`COUNTDOWN` in `cue-audio.ts`, which tips now share: one cue player for anything that plays a set time into a step)
+  - [ ] Black status bar around the notch during the player (phones): theme-color → black and a black page background while the player is up are both in, but the user's iPhone still shows purple — parked 2026-10-01; next, find out whether it's the home-screen app or Safari
   - [ ] Try audio tips on iPhone Safari (a tip starting on its own after the Begin tap's unlock; with "Keep my music playing" on and off)
   - [ ] Remove the playback lab (`/admin/lab/playback`) and its two test clips
   - Not built yet: tutorial captions (Mux auto-generated subtitles were looked at; on hold) and coaching cues (the design shows them; exercises have no caption/cue data yet)

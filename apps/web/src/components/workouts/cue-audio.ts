@@ -31,7 +31,7 @@ export const UP_NEXT = {
   before: 10,
   /** The chime waits this long (seconds) after the card starts sliding in, so it lands as the card does. */
   soundAfter: 0.3,
-  /** With this long (seconds) left, the card swipes away to the left, gone as the set ends. */
+  /** With this long (seconds) left, the card slides back out to the right, gone as the set ends. */
   leaveAt: 0.6,
 };
 
