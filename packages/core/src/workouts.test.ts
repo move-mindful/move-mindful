@@ -2,10 +2,14 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   aboutMinutes,
+  allTips,
   estimateWorkout,
   groupLabels,
+  keepStepTips,
   secondsLeft,
+  withTip,
   workoutSteps,
+  type AudioTip,
   type EstimateExercise,
   type SetStep,
   type WorkoutBlock,
@@ -180,4 +184,73 @@ test("steps drop rests at the edges and merge back-to-back rests", () => {
   ];
   const kinds = workoutSteps(blocks, exercises).map((s) => (s.kind === "rest" ? `rest ${s.seconds}` : "set"));
   assert.deepEqual(kinds, ["set", "rest 45", "set", "set"]);
+});
+
+const tip = (id: string): AudioTip => ({ id, seconds: 6 });
+
+test("each step finds its own tip: per set and side, and per rest", () => {
+  const blocks: WorkoutBlock[] = [
+    {
+      kind: "exercise",
+      move: { ...move("squat", "time", 20), tips: { "1:right": tip("s1R"), "2:left": tip("s2L") } },
+      sets: 2,
+      restBetweenSets: 30,
+      restTips: { "2": tip("rest-before-set-2") },
+    },
+    { kind: "rest", seconds: 60, restTips: { rest: tip("block-rest") } },
+    {
+      kind: "group",
+      rounds: 2,
+      restBetweenExercises: 10,
+      restBetweenRounds: 45,
+      moves: [{ ...move("row", "reps", 8), tips: { "2": tip("row-r2") } }, move("hold", "time", 20)],
+      restTips: { "1:1": tip("r1-between"), "2:0": tip("round-rest") },
+    },
+  ];
+  const steps = workoutSteps(blocks, exercises);
+  const shape = steps.map((s) => `${s.kind === "rest" ? "rest" : s.exerciseId} ${s.tipSlot.key} ${s.tip?.id ?? "-"}`);
+  assert.deepEqual(shape, [
+    "squat 1:right s1R",
+    "squat 1:left -",
+    "rest 2 rest-before-set-2",
+    "squat 2:right -",
+    "squat 2:left s2L",
+    "rest rest block-rest",
+    "row 1 -",
+    "rest 1:1 r1-between",
+    "hold 1 -",
+    "rest 2:0 round-rest",
+    "row 2 row-r2",
+    "rest 2:1 -",
+    "hold 2 -",
+  ]);
+  // A group's move tips live on that move, so they follow it when it's reordered.
+  assert.deepEqual(steps[10].tipSlot, { block: 2, move: 0, key: "2" });
+  assert.deepEqual(steps[5].tipSlot, { block: 1, move: null, key: "rest" });
+});
+
+test("a merged rest keeps the first rest's tip; withTip and keepStepTips edit the slots", () => {
+  let blocks: WorkoutBlock[] = [
+    { kind: "exercise", move: move("hold", "time", 20), sets: 1, restBetweenSets: 0 },
+    { kind: "rest", seconds: 30, restTips: { rest: tip("first") } },
+    { kind: "rest", seconds: 15, restTips: { rest: tip("second") } },
+    { kind: "exercise", move: move("row", "reps", 10), sets: 3, restBetweenSets: 20 },
+  ];
+  const steps = workoutSteps(blocks, exercises);
+  assert.equal(steps[1].kind === "rest" && steps[1].seconds, 45);
+  assert.equal(steps[1].tip?.id, "first");
+
+  // Record a tip on the third set, then clear the first rest's.
+  const third = steps.find((s) => s.kind === "set" && s.exerciseId === "row" && s.round === 3)!;
+  blocks = withTip(blocks, third.tipSlot, tip("row-3"));
+  blocks = withTip(blocks, steps[1].tipSlot, null);
+  let after = workoutSteps(blocks, exercises);
+  assert.equal(after.find((s) => s.kind === "set" && s.round === 3)?.tip?.id, "row-3");
+  assert.equal(after[1].tip, null);
+
+  // Down to two sets: the third set's tip — and the merged-away rest's — are dropped.
+  blocks = blocks.map((b) => (b.kind === "exercise" && b.move.exerciseId === "row" ? { ...b, sets: 2 } : b));
+  after = workoutSteps(blocks, exercises);
+  assert.deepEqual(allTips(keepStepTips(blocks, after)), []);
+  assert.deepEqual(allTips(blocks).map((t) => t.id).sort(), ["row-3", "second"]);
 });

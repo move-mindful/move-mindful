@@ -10,6 +10,22 @@
 export type Side = "right" | "left";
 export type Measure = "reps" | "time";
 
+/** A recorded audio tip from the instructor: the app's id for its file, and its length. */
+export interface AudioTip {
+  id: string;
+  seconds: number;
+}
+
+/**
+ * A move's or block's audio tips, by slot key. On a move, one per set (a
+ * single exercise) or round (a group), and per side for a sided exercise:
+ * "2", "2:left". On a block, one per rest: a rest block's own ("rest"), the
+ * rest before a single exercise's set n ("n"), and in a group the rest before
+ * move m of round r ("r:m" — m = 0 is the rest between rounds). Tips are
+ * optional everywhere; see TipSlot for how a step finds its own.
+ */
+export type TipMap = Record<string, AudioTip>;
+
 /**
  * One exercise as done in a workout. `amount` is reps or seconds — per side
  * for an exercise done on each side.
@@ -20,13 +36,15 @@ export interface WorkoutMove {
   amount: number;
   /** Sided exercises only. */
   firstSide: Side;
+  /** Tips for its sets (or rounds), by side when sided — see TipMap. */
+  tips?: TipMap;
 }
 
 export type WorkoutBlock =
   /** A single exercise, done for `sets` sets with `restBetweenSets` between them. */
-  | { kind: "exercise"; move: WorkoutMove; sets: number; restBetweenSets: number }
+  | { kind: "exercise"; move: WorkoutMove; sets: number; restBetweenSets: number; restTips?: TipMap }
   /** A rest the admin placed between blocks. */
-  | { kind: "rest"; seconds: number }
+  | { kind: "rest"; seconds: number; restTips?: TipMap }
   /**
    * A superset (2 exercises) or circuit (3+): each exercise once per round.
    * `restBetweenExercises` follows every exercise except a round's last;
@@ -38,6 +56,7 @@ export type WorkoutBlock =
       restBetweenExercises: number;
       restBetweenRounds: number;
       moves: WorkoutMove[];
+      restTips?: TipMap;
     };
 
 /** What the estimate needs to know about an exercise. */
@@ -176,6 +195,17 @@ export function groupLabels(blocks: WorkoutBlock[]): (string | null)[] {
  */
 export type WorkoutStep = SetStep | RestStep;
 
+/**
+ * Where a step's audio tip is kept: in block `block` — on its move number
+ * `move` for a set (0 for a single exercise), on the block itself for a rest
+ * (`move` null) — under `key` (see TipMap).
+ */
+export interface TipSlot {
+  block: number;
+  move: number | null;
+  key: string;
+}
+
 export interface SetStep {
   kind: "set";
   /** Index of the block it belongs to. */
@@ -212,6 +242,9 @@ export interface SetStep {
    * player's get-ready countdown covers getting into position.
    */
   workSeconds: number;
+  /** The instructor's audio tip for this set (this side of it), if one was recorded. */
+  tip: AudioTip | null;
+  tipSlot: TipSlot;
 }
 
 export interface RestStep {
@@ -223,6 +256,9 @@ export interface RestStep {
    */
   reason: "set" | "exercise" | "round" | "block";
   seconds: number;
+  /** The instructor's audio tip for this rest, if one was recorded. */
+  tip: AudioTip | null;
+  tipSlot: TipSlot;
 }
 
 export function otherSide(side: Side): Side {
@@ -233,7 +269,7 @@ export function otherSide(side: Side): Side {
  * The workout as the player walks it. Each step's `seconds` follows the same
  * rules as `estimateWorkout`, so they add up to its total — except that rests
  * with nothing to rest before (at the very start or end) are dropped, and
- * back-to-back rests merge into one.
+ * back-to-back rests merge into one (keeping the first one's tip).
  */
 export function workoutSteps(
   blocks: WorkoutBlock[],
@@ -246,11 +282,14 @@ export function workoutSteps(
   const out: WorkoutStep[] = [];
   let setIndex = 0;
 
-  const rest = (block: number, reason: RestStep["reason"], seconds: number) => {
+  const rest = (block: number, reason: RestStep["reason"], seconds: number, key: string) => {
     if (seconds <= 0 || out.length === 0) return;
     const prev = out[out.length - 1];
     if (prev.kind === "rest") prev.seconds += seconds;
-    else out.push({ kind: "rest", block, reason, seconds });
+    else {
+      const tip = blocks[block].restTips?.[key] ?? null;
+      out.push({ kind: "rest", block, reason, seconds, tip, tipSlot: { block, move: null, key } });
+    }
   };
 
   const set = (block: number, move: WorkoutMove, round: number, rounds: number, index: number) => {
@@ -259,6 +298,7 @@ export function workoutSteps(
     const perSide =
       move.measure === "time" ? move.amount : move.amount * (exercise?.paceSeconds || opts.fallbackPaceSeconds);
     sides.forEach((side, part) => {
+      const key = side ? `${round}:${side}` : String(round);
       out.push({
         kind: "set",
         block,
@@ -276,6 +316,8 @@ export function workoutSteps(
         firstOfExercise: part === 0 && !seen.has(move.exerciseId),
         seconds: perSide + (part === 0 ? opts.secondsPerSet : opts.secondsPerSideSwitch),
         workSeconds: perSide,
+        tip: move.tips?.[key] ?? null,
+        tipSlot: { block, move: index, key },
       });
     });
     seen.add(move.exerciseId);
@@ -284,17 +326,17 @@ export function workoutSteps(
 
   blocks.forEach((b, i) => {
     if (b.kind === "rest") {
-      rest(i, "block", b.seconds);
+      rest(i, "block", b.seconds, "rest");
     } else if (b.kind === "exercise") {
       for (let s = 1; s <= b.sets; s++) {
-        if (s > 1) rest(i, "set", b.restBetweenSets);
+        if (s > 1) rest(i, "set", b.restBetweenSets, String(s));
         set(i, b.move, s, b.sets, 0);
       }
     } else if (b.moves.length > 0) {
       for (let r = 1; r <= b.rounds; r++) {
-        if (r > 1) rest(i, "round", b.restBetweenRounds);
+        if (r > 1) rest(i, "round", b.restBetweenRounds, `${r}:0`);
         b.moves.forEach((m, k) => {
-          if (k > 0) rest(i, "exercise", b.restBetweenExercises);
+          if (k > 0) rest(i, "exercise", b.restBetweenExercises, `${r}:${k}`);
           set(i, m, r, b.rounds, k);
         });
       }
@@ -310,4 +352,55 @@ export function secondsLeft(steps: WorkoutStep[], index: number): number {
   let total = 0;
   for (let i = Math.max(0, index); i < steps.length; i++) total += steps[i].seconds;
   return total;
+}
+
+// ── Audio tips ────────────────────────────────────────
+
+/** Put `tip` (or, with null, nothing) in `slot`. Any other fields on the blocks (the builder's keys) are kept. */
+export function withTip<B extends WorkoutBlock>(blocks: B[], slot: TipSlot, tip: AudioTip | null): B[] {
+  const put = (tips: TipMap | undefined): TipMap => {
+    const next = { ...tips };
+    if (tip) next[slot.key] = tip;
+    else delete next[slot.key];
+    return next;
+  };
+  return blocks.map((b, i): B => {
+    if (i !== slot.block) return b;
+    if (slot.move === null) return { ...b, restTips: put(b.restTips) };
+    if (b.kind === "exercise") return { ...b, move: { ...b.move, tips: put(b.move.tips) } };
+    if (b.kind === "group") {
+      return { ...b, moves: b.moves.map((m, k) => (k === slot.move ? { ...m, tips: put(m.tips) } : m)) };
+    }
+    return b;
+  });
+}
+
+/**
+ * The blocks with only the tips their steps play: a tip left behind when its
+ * set, side or rest went away (fewer sets, a rest set to 0) is dropped.
+ */
+export function keepStepTips<B extends WorkoutBlock>(blocks: B[], steps: WorkoutStep[]): B[] {
+  const used = new Set(steps.map((s) => `${s.tipSlot.block}/${s.tipSlot.move ?? "-"}/${s.tipSlot.key}`));
+  const keep = (tips: TipMap | undefined, block: number, move: number | null): TipMap | undefined => {
+    if (!tips) return undefined;
+    const kept = Object.entries(tips).filter(([key]) => used.has(`${block}/${move ?? "-"}/${key}`));
+    return kept.length ? Object.fromEntries(kept) : undefined;
+  };
+  return blocks.map((b, i): B => {
+    const restTips = keep(b.restTips, i, null);
+    if (b.kind === "exercise") return { ...b, restTips, move: { ...b.move, tips: keep(b.move.tips, i, 0) } };
+    if (b.kind === "group") return { ...b, restTips, moves: b.moves.map((m, k) => ({ ...m, tips: keep(m.tips, i, k) })) };
+    return { ...b, restTips };
+  });
+}
+
+/** Every tip the blocks hold. */
+export function allTips(blocks: WorkoutBlock[]): AudioTip[] {
+  const out: AudioTip[] = [];
+  for (const b of blocks) {
+    out.push(...Object.values(b.restTips ?? {}));
+    if (b.kind === "exercise") out.push(...Object.values(b.move.tips ?? {}));
+    if (b.kind === "group") b.moves.forEach((m) => out.push(...Object.values(m.tips ?? {})));
+  }
+  return out;
 }
