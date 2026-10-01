@@ -1,13 +1,14 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import { useMemo } from "react";
 import { aboutMinutes, type WorkoutStep } from "@move-mindful/core";
-import { equipmentPills, levelLabel, type PlayerWorkout } from "@/lib/workouts/player";
+import { equipmentPills, levelLabel, type PlayerClip, type PlayerWorkout } from "@/lib/workouts/player";
 import { DoneLabel } from "./done-label";
 import { ArrowRight, Check, ChevronLeft, EQUIPMENT_ICONS, RestartWorkout } from "./icons";
 import { Switch } from "./player-screens";
 import { WorkoutRows } from "./workout-rows";
+import { WorkoutMontage } from "./workout-montage";
 
 /**
  * The screen before a workout: cover, what it is, what you'll need and the
@@ -45,12 +46,20 @@ export function WorkoutPreview({
 }) {
   const level = levelLabel(workout.level);
   const pills = equipmentPills(workout);
-  const firstSet = steps.find((s) => s.kind === "set");
-  const firstExercise = firstSet?.kind === "set" ? workout.exercises[firstSet.exerciseId] : undefined;
-  const cover =
-    workout.coverImageUrl ??
-    (firstExercise?.loops.main ?? firstExercise?.loops.right ?? firstExercise?.loops.left)?.poster ??
-    null;
+  const clips = useMemo(() => {
+    const seen = new Set<string>();
+    const result: PlayerClip[] = [];
+    for (const step of steps) {
+      if (step.kind !== "set" || seen.has(step.exerciseId)) continue;
+      seen.add(step.exerciseId);
+      const loops = workout.exercises[step.exerciseId]?.loops;
+      // One clip per exercise, even across sets, rounds and left/right sides.
+      const clip = (step.side ? loops?.[step.side] : loops?.main) ?? loops?.main ?? loops?.right ?? loops?.left;
+      if (clip) result.push(clip);
+    }
+    return result;
+  }, [steps, workout.exercises]);
+  const cover = workout.coverImageUrl ?? clips[0]?.poster ?? null;
   const canStart = steps.length > 0;
 
   const begin = (
@@ -84,17 +93,7 @@ export function WorkoutPreview({
         {/* The cover — on phones pinned at the top while the page scrolls up
             over it; on desktop, the whole left half, with the details over it. */}
         <div className="sticky top-0 h-[330px] overflow-hidden theater:fixed theater:inset-y-0 theater:left-0 theater:h-auto theater:w-1/2">
-          {cover && (
-            <Image
-              src={cover}
-              alt=""
-              fill
-              unoptimized
-              priority
-              className="object-cover"
-              style={{ objectPosition: "50% 28%" }}
-            />
-          )}
+          <WorkoutMontage key={workout.id} clips={clips} cover={cover} />
           {/* Phones: just a light shade at the top (the fade into the page
               travels with the content below, so it stays soft as it scrolls). */}
           <div
