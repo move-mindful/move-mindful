@@ -231,7 +231,9 @@ Built in vertical slices, so each step leaves something usable and real footage 
   - [x] Instructor audio tips (`019_workout_audio_tips.sql`): a short recording for any set (each side of a sided one) or rest — the rests between sets and rounds included — recorded from the microphone in the builder's **Audio tips** view (Edit | Audio tips on the Sequence), AAC in the public `workout-tips` bucket, saved with the sequence (`workout_blocks.tips`; core `TipMap` / `TipSlot`, with tests). In the player a set's tip plays 3 s into the exercise (after the tutorial and Get ready) and a rest's 1 s in, with the workout instructor's photo sliding in, ringed by equalizer bars; it stops when the set or rest ends, holds while paused, and is skipped with instructor audio off
   - [ ] Apply `019_workout_audio_tips.sql` in Supabase
   - [x] An Audio card behind the sound button (phones) and a new Audio button in the desktop column: Music and Sound effects (placeholders), Audio tips, and Mute all at the bottom (the old instructor-audio setting); Settings no longer has a Sound section. Keep my music playing is hidden and off for user testing (`KEEP_MY_MUSIC`)
-  - [ ] Build what the Music and Sound effects switches will control
+  - [x] Music for user testing: one sample track looped under the workout (`components/workouts/music.ts`), ducking under tutorials, tips, intro and outro, with its own levels for the warm-up and cool-down — all tunable in `MUSIC`; through Web Audio for iPhone volume control
+  - [ ] Add the sample track (`MUSIC.src`) and tune the levels by ear on iPhone and desktop
+  - [ ] Build what the Sound effects switch will control
   - [ ] Try audio tips on iPhone Safari (a tip starting on its own after the Begin tap's unlock; with "Keep my music playing" on and off)
   - [ ] Remove the playback lab (`/admin/lab/playback`) and its two test clips
   - Not built yet: tutorial captions (Mux auto-generated subtitles were looked at; on hold) and coaching cues (the design shows them; exercises have no caption/cue data yet)
