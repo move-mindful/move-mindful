@@ -1164,7 +1164,8 @@ export function WorkoutPlayer({
       const groupLine = set.groupLabel ? `${set.groupLabel} · Round ${set.round} of ${set.rounds}` : null;
       const pill = upNext();
       // Ten seconds out on a set that ends by itself: what's next slides in,
-      // in the tip bubble's place (the set's tip has long finished by then).
+      // centred, a little above the tip bubble's line (the set's tip has long
+      // finished by then).
       const upNextCard = upNextDue && (
         <UpNextCard show={running && leftMs > 0 && leftMs <= UP_NEXT.before * 1000} {...nextCard()} large={theater} />
       );
@@ -1177,8 +1178,10 @@ export function WorkoutPlayer({
             <div className="pointer-events-none absolute bottom-8 right-8 -translate-y-full">
               {coach(true)}
             </div>
-            {/* Its bottom on the bubble's: a bubble's height (98px) up from the corner. */}
-            {upNextCard && <div className="pointer-events-none absolute bottom-[calc(2rem+98px)] right-8">{upNextCard}</div>}
+            {/* Centred on the video, its bottom 40px above the bubble's (a bubble's height, 98px, up from the corner). */}
+            {upNextCard && (
+              <div className="pointer-events-none absolute inset-x-0 bottom-[calc(2rem+138px)] flex justify-center">{upNextCard}</div>
+            )}
           </>
         );
         info = (

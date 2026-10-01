@@ -237,7 +237,7 @@ Built in vertical slices, so each step leaves something usable and real footage 
   - [x] Music for user testing: one sample track looped under the workout (`components/workouts/music.ts`), ducking under tutorials, tips, intro and outro, with its own levels for the warm-up and cool-down — all tunable in `MUSIC`; through Web Audio for iPhone volume control
   - [x] Add the sample track: `apps/web/public/audio/workout-music.m4a` (30 min, AAC 128 kbps, 30 MB)
   - [ ] Tune the music levels by ear on iPhone and desktop (`MUSIC` in `components/workouts/music.ts`)
-  - [x] Up next card + chime ten seconds before a self-ending set ends (timed, or reps on auto-advance; sets of 10 s or less skip it), sliding in where the tip bubble goes (a set's tip comes early, so they never meet), in the frosted grey of the other controls
+  - [x] Up next card + chime ten seconds before a self-ending set ends (timed, or reps on auto-advance; sets of 10 s or less skip it), sliding in from the right to the centre, a little above the tip bubble's line (a set's tip comes early, so they never meet), in the frosted grey of the other controls
   - [x] Sound effects: a 3-second countdown over the last seconds of every rest and Get ready (`COUNTDOWN` in `cue-audio.ts`, which tips now share: one cue player for anything that plays a set time into a step)
   - [ ] Try audio tips on iPhone Safari (a tip starting on its own after the Begin tap's unlock; with "Keep my music playing" on and off)
   - [ ] Remove the playback lab (`/admin/lab/playback`) and its two test clips
