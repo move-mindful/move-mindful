@@ -37,6 +37,8 @@ export function TipsView({
   instructorName,
   ensureSaved,
   onTip,
+  unsaved,
+  onSave,
 }: {
   blocks: WorkoutBlock[];
   estimates: Record<string, EstimateExercise>;
@@ -46,6 +48,10 @@ export function TipsView({
   /** The workout's id, saving it first if it's new — a recording needs somewhere to go. */
   ensureSaved: () => Promise<string | null>;
   onTip: (slot: TipSlot, tip: AudioTip | null) => void;
+  /** Tips recorded or removed since the last save. */
+  unsaved: boolean;
+  /** Save the workout; false if it didn't. */
+  onSave: () => Promise<boolean>;
 }) {
   const steps = workoutSteps(blocks, estimates);
   const labels = groupLabels(blocks);
@@ -53,6 +59,7 @@ export function TipsView({
   const [error, setError] = useState<string | null>(null);
   const [playing, setPlaying] = useState<string | null>(null);
   const [now, setNow] = useState(0);
+  const [saving, setSaving] = useState(false);
   const recorder = useRef<{ rec: MediaRecorder; discard: boolean } | null>(null);
   const player = useRef<HTMLAudioElement | null>(null);
 
@@ -256,6 +263,23 @@ export function TipsView({
         into its rest, with {instructorName ? `${instructorName}’s` : "the instructor’s"} photo on screen. It stops when the
         set or rest ends, and doesn’t play with instructor audio off. Save the workout to keep new recordings.
       </p>
+      {unsaved && (
+        <div className="sticky top-2 z-10 flex items-center justify-between gap-3 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm text-violet-950">
+          <span>Tips changed — save the workout to keep them.</span>
+          <button
+            type="button"
+            disabled={saving || !!busy}
+            onClick={async () => {
+              setSaving(true);
+              await onSave();
+              setSaving(false);
+            }}
+            className="rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-60"
+          >
+            {saving ? "Saving…" : "Save"}
+          </button>
+        </div>
+      )}
       {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       {groups.length === 0 ? (
         <p className="rounded-lg border border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500">

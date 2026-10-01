@@ -155,6 +155,8 @@ export function WorkoutBuilder({
   const [blocks, setBlocks] = useState<KBlock[]>(() => withKeys(workout?.blocks ?? []));
   // The sequence's two views: editing it, or recording its audio tips.
   const [view, setView] = useState<"edit" | "tips">("edit");
+  // Tips recorded or removed since the last save (a recording is only kept once saved).
+  const [tipChanges, setTipChanges] = useState(0);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [busy, setBusy] = useState<null | "save" | "publish">(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(workout?.coverImageUrl ?? null);
@@ -238,7 +240,10 @@ export function WorkoutBuilder({
     });
     if (res.id && !workout) createdId.current = res.id;
     if (res.error) setError(res.error);
-    else setAiDraft(null); // saved: nothing left to undo
+    else {
+      setAiDraft(null); // saved: nothing left to undo
+      setTipChanges(0);
+    }
     return res.error ? null : (res.id ?? null);
   }
 
@@ -572,7 +577,16 @@ export function WorkoutBuilder({
                 byId={byId}
                 instructorName={instructors.find((i) => i.id === instructorId)?.name ?? null}
                 ensureSaved={ensureSaved}
-                onTip={(slot, tip) => setBlocks((prev) => withTip(prev, slot, tip))}
+                onTip={(slot, tip) => {
+                  setBlocks((prev) => withTip(prev, slot, tip));
+                  setTipChanges((n) => n + 1);
+                }}
+                unsaved={tipChanges > 0}
+                onSave={async () => {
+                  const id = await save();
+                  if (id) router.refresh();
+                  return !!id;
+                }}
               />
             ) : (
               <>
