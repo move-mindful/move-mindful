@@ -98,6 +98,14 @@ type WithoutNow<T> = T extends unknown ? Omit<T, "now"> : never;
 type AudioSessionNavigator = Navigator & { audioSession?: { type: string } };
 const noSubscribe = () => () => {};
 
+/**
+ * "Keep my music playing" is hidden for now: user testing plays our own
+ * sample music instead (the Audio card's Music). While hidden it's off too —
+ * the default "auto" session — so nobody who'd switched it on is left in
+ * "ambient" mode with no switch to leave it. Flip to bring it back.
+ */
+const KEEP_MY_MUSIC = false;
+
 function useCanMixAudio(): boolean {
   return useSyncExternalStore(
     noSubscribe,
@@ -201,7 +209,8 @@ export function WorkoutPlayer({
   const act = useCallback((a: WithoutNow<PlayerAction>) => dispatch({ ...a, now: performance.now() } as PlayerAction), []);
 
   const [prefs, updatePrefs] = usePlayerPreferences({ account: preferences, signedIn });
-  const canMix = useCanMixAudio();
+  const canMix = useCanMixAudio() && KEEP_MY_MUSIC;
+  const mixAudio = canMix && prefs.mixAudio;
 
   // Saved progress, offered on the preview as Resume: the page's, then
   // whatever the last End workout left. Only while it still fits the workout
@@ -269,7 +278,7 @@ export function WorkoutPlayer({
     const session = (navigator as AudioSessionNavigator).audioSession;
     if (!session) return;
     try {
-      session.type = prefs.mixAudio ? "ambient" : "auto";
+      session.type = mixAudio ? "ambient" : "auto";
     } catch {
       // An older implementation that rejects the value: leave it be.
     }
@@ -280,7 +289,7 @@ export function WorkoutPlayer({
         // As above.
       }
     };
-  }, [prefs.mixAudio]);
+  }, [mixAudio]);
   const [muted, setMuted] = useState(false);
   const [warmedUp, setWarmedUp] = useState(false);
   // Settings opened from the guide's last page ("Change settings"): closing
