@@ -78,7 +78,8 @@ import { GestureGuide } from "./gesture-guide";
 import { DesktopGuide } from "./desktop-guide";
 import { usePlayerPreferences } from "./preferences";
 import { CoachTip } from "./coach-tip";
-import { COUNTDOWN, useCueAudio } from "./cue-audio";
+import { COUNTDOWN, UP_NEXT, useCueAudio } from "./cue-audio";
+import { UpNextCard } from "./up-next-card";
 import { MUSIC, useWorkoutMusic } from "./music";
 import { TIP_DELAY_SECONDS, tipUrl } from "@/lib/workouts/shared";
 import { saveWorkoutSession } from "@/app/actions/workout-sessions";
@@ -383,15 +384,42 @@ export function WorkoutPlayer({
   });
   const coach = (large = false) => <CoachTip show={tips.playing} instructor={workout.instructor} large={large} />;
 
-  // The countdown over a rest's last seconds: a sound effect, off with the
-  // Audio card's Sound effects (or Mute all). Timed to end as the rest does.
-  const rest = state.phase === "workout" && step?.kind === "rest" ? step : null;
+  // The countdown over the last seconds of a rest, and of Get ready: a sound
+  // effect, off with the Audio card's Sound effects (or Mute all). Timed to
+  // end as they do. (Both start a new take, so its clock starts with them.)
+  const countdownOver =
+    state.phase !== "workout" || !step
+      ? null
+      : step.kind === "rest"
+        ? step.seconds
+        : state.stage === "ready"
+          ? GET_READY_MS / 1000
+          : null;
   const countdownFrom = COUNTDOWN.seconds + COUNTDOWN.lead;
   const countdown = useCueAudio({
-    clip: rest ? { url: COUNTDOWN.src, start: Math.max(0, countdownFrom - rest.seconds), end: null } : null,
+    clip:
+      countdownOver !== null
+        ? { url: COUNTDOWN.src, start: Math.max(0, countdownFrom - countdownOver), end: null }
+        : null,
     take: state.take,
-    running: running && !!rest,
-    delayMs: rest ? Math.max(0, rest.seconds - countdownFrom) * 1000 : 0,
+    running: running && countdownOver !== null,
+    delayMs: countdownOver !== null ? Math.max(0, countdownOver - countdownFrom) * 1000 : 0,
+    muted: muted || !prefs.soundEffects,
+  });
+
+  // Ten seconds before a set that ends by itself (timed, or reps on
+  // auto-advance) is over: the Up next chime, as the Up next card slides in.
+  // A sound effect, like the countdown; a set no longer than that skips it.
+  const setMs =
+    state.phase === "workout" && set && state.stage === "exercise" && state.timer
+      ? (set.measure === "time" ? set.amount : set.workSeconds) * 1000
+      : 0;
+  const upNextDue = setMs > UP_NEXT.before * 1000;
+  const upNextChime = useCueAudio({
+    clip: upNextDue ? { url: UP_NEXT.src, start: 0, end: null } : null,
+    take: state.take,
+    running: running && upNextDue,
+    delayMs: setMs - UP_NEXT.before * 1000,
     muted: muted || !prefs.soundEffects,
   });
 
@@ -633,6 +661,7 @@ export function WorkoutPlayer({
     pool.unlock();
     tips.unlock();
     countdown.unlock();
+    upNextChime.unlock();
     // The music from the top — only when it's on, so a muted member never downloads it.
     if (prefs.music && prefs.instructorAudio) music.begin();
     // First time in this layout (or every time, on the demo): the guide opens
@@ -742,6 +771,21 @@ export function WorkoutPlayer({
 
   const minutes = aboutMinutes(totalSeconds);
   const setsDone = target?.setIndex ?? setCount;
+
+  /** The Up next card: the set after this one (past any rest), as the rest screen's card shows it. */
+  function nextCard(): { name: string; detail: string | null; thumbnail: string | null } {
+    const j = setStepFor(steps, state.step + 1);
+    if (j === null) return { name: "Finish", detail: null, thumbnail: null };
+    const t = steps[j] as SetStep;
+    const e = workout.exercises[t.exerciseId];
+    const n = e?.name ?? "Next exercise";
+    const amount = amountLabel(t.measure, t.amount);
+    return {
+      name: t.side ? `${n} · ${cap(t.side)} side` : n,
+      detail: !t.groupLabel && t.rounds > 1 ? `Set ${t.round} of ${t.rounds} · ${amount}` : amount,
+      thumbnail: e?.thumbnail ?? null,
+    };
+  }
 
   function upNext(): { label: string; text: string } {
     const j = setStepFor(steps, state.step + 1);
@@ -1119,6 +1163,17 @@ export function WorkoutPlayer({
           : ({ kind: "reps", amount: set.amount } as const);
       const groupLine = set.groupLabel ? `${set.groupLabel} · Round ${set.round} of ${set.rounds}` : null;
       const pill = upNext();
+      // Ten seconds out on a set that ends by itself: what's next slides in at
+      // the top right, under the progress bar (clear of the tip bubble below).
+      const upNextCard = upNextDue && (
+        <div className="pointer-events-none absolute right-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] z-10">
+          <UpNextCard
+            show={running && leftMs > 0 && leftMs <= UP_NEXT.before * 1000}
+            {...nextCard()}
+            large={theater}
+          />
+        </div>
+      );
       if (theater) {
         screen = (
           <>
@@ -1128,6 +1183,7 @@ export function WorkoutPlayer({
             <div className="pointer-events-none absolute bottom-8 right-8 -translate-y-full">
               {coach(true)}
             </div>
+            {upNextCard}
           </>
         );
         info = (
@@ -1168,6 +1224,7 @@ export function WorkoutPlayer({
               onAudio={openAudio}
               tip={coach()}
             />
+            {upNextCard}
           </>
         );
       }

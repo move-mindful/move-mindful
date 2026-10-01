@@ -3,14 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 
 // Cues: short clips the player plays a set time into a step — the
-// instructor's audio tips (with their bubble, coach-tip.tsx), and the
-// countdown over a rest's last seconds.
+// instructor's audio tips (with their bubble, coach-tip.tsx), the countdown
+// over the last seconds of a rest or Get ready, and the Up next chime.
 
 /**
- * The rest countdown — a sound effect (the Audio card's switch): three counts
- * a second apart, each starting 0.1 s into its second, so started with
- * `seconds` of rest left they land on 3, 2, 1 as the timer shows them and
- * finish as the rest ends. A rest shorter than that gets just its end.
+ * The countdown over the last seconds of a rest or Get ready — a sound
+ * effect (the Audio card's switch): three counts a second apart, each
+ * starting 0.1 s into its second, so started with `seconds` left they land on
+ * 3, 2, 1 as the timer shows them and finish as it ends. A shorter one gets
+ * just its end.
  */
 export const COUNTDOWN = {
   src: "/audio/countdown.m4a",
@@ -18,6 +19,16 @@ export const COUNTDOWN = {
   seconds: 3.03,
   /** Start it this much earlier (seconds) if the counts land late on a phone. */
   lead: 0,
+};
+
+/**
+ * The Up next chime — a sound effect — played as the Up next card slides in,
+ * `before` seconds from the end of a set that ends by itself (UpNextCard).
+ * A set no longer than that doesn't get it.
+ */
+export const UP_NEXT = {
+  src: "/audio/upnext.mp3",
+  before: 10,
 };
 
 /** A tenth of a second of silence (8 kHz, 8-bit mono WAV), to unlock an audio element with. */
