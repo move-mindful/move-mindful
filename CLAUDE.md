@@ -37,7 +37,8 @@ A video fitness platform with on-demand classes, exercise-by-exercise workouts, 
 
 ## Local Development
 
-- **Claude Preview (`preview_*` tools) does not work reliably in this environment — don't use it to verify changes.** Navigation/snapshots tend to hang or fail. Verify another way (read the code, run the relevant build/typecheck/tests, or ask the user to check in their own browser).
+- **The built-in browser pane opens the live site fine** — e.g. `https://www.movemindful.com/demo1`, which is public (it worked 2026-10-01). The owner has signed in there, so signed-in pages (`/workouts`, `/admin`) may work too; that session is theirs — never sign out or change account settings. The pane is mostly for the owner's own use: use it when a check genuinely needs it, not by default, and remember the live site only has what's been pushed and deployed. It's a desktop engine, so it can't stand in for iPhone Safari (audio sessions, status bar, autoplay).
+- **Local dev-server previews (`preview_start` with a launch config) have been unreliable here** — navigation and snapshots tended to hang or fail. Verify local changes another way (read the code, run the relevant build/typecheck/tests, or ask the user to check in their own browser).
 - **`apps/web` runs Next.js 16, which has breaking changes from older versions.** Read the relevant guide in `node_modules/next/dist/docs/` before writing Next.js code (see `apps/web/AGENTS.md`); likewise the versioned Expo docs for `apps/mobile`.
 - **Checks:** `npm test -w @move-mindful/core` (unit tests), `npx tsc --noEmit -p apps/web` (typecheck), `npm run lint`, and a production build (`npx next build` in `apps/web`) for changes to routing, server actions or data loading.
 
