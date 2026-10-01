@@ -414,12 +414,13 @@ export function WorkoutPlayer({
 
   // Ten seconds before a set that ends by itself (timed, or reps on
   // auto-advance) is over: the Up next chime, as the Up next card slides in.
-  // A sound effect, like the countdown; a set no longer than that skips it.
+  // A sound effect, like the countdown; a set no longer than that skips it,
+  // and so does the workout's last (nothing's next).
   const setMs =
     state.phase === "workout" && set && state.stage === "exercise" && state.timer
       ? (set.measure === "time" ? set.amount : set.workSeconds) * 1000
       : 0;
-  const upNextDue = setMs > UP_NEXT.before * 1000;
+  const upNextDue = setMs > UP_NEXT.before * 1000 && setStepFor(steps, state.step + 1) !== null;
   const upNextChime = useCueAudio({
     clip: upNextDue ? { url: UP_NEXT.src, start: 0, end: null } : null,
     take: state.take,
@@ -778,10 +779,10 @@ export function WorkoutPlayer({
   const minutes = aboutMinutes(totalSeconds);
   const setsDone = target?.setIndex ?? setCount;
 
-  /** The Up next card: the set after this one (past any rest), as the rest screen's card shows it. */
+  /** The Up next card: the set after this one (past any rest), as the rest screen's card shows it. The last set has none. */
   function nextCard(): { name: string; detail: string | null; thumbnail: string | null } {
     const j = setStepFor(steps, state.step + 1);
-    if (j === null) return { name: "Finish", detail: null, thumbnail: null };
+    if (j === null) return { name: "", detail: null, thumbnail: null };
     const t = steps[j] as SetStep;
     const e = workout.exercises[t.exerciseId];
     const n = e?.name ?? "Next exercise";
