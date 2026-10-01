@@ -29,6 +29,10 @@ export const COUNTDOWN = {
 export const UP_NEXT = {
   src: "/audio/upnext.mp3",
   before: 10,
+  /** The chime waits this long (seconds) after the card starts sliding in, so it lands as the card does. */
+  soundAfter: 0.3,
+  /** With this long (seconds) left, the card swipes away to the left, gone as the set ends. */
+  leaveAt: 0.6,
 };
 
 /** A tenth of a second of silence (8 kHz, 8-bit mono WAV), to unlock an audio element with. */

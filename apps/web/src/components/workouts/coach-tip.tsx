@@ -33,7 +33,7 @@ const RHYTHM = Array.from({ length: BARS }, (_, i) => ({
  * the speaker after it starts (iOS starting its audio). Desktop's sound is
  * near-instant, so there it doesn't wait. Tune by ear.
  */
-export const PHONE_SHOW_DELAY_MS = 500;
+const PHONE_SHOW_DELAY_MS = 500;
 
 /**
  * The instructor's photo in a ring of equalizer bars. Shown, it slides in
