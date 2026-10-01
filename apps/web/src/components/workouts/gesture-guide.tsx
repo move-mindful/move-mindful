@@ -90,7 +90,7 @@ const PAGES: Page[] = [
     ],
   },
   {
-    title: "Settings",
+    title: "Adjust settings",
     picture: (
       <>
         {/* The gear exactly where it sits on the pause screen: top right,
