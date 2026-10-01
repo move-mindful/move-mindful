@@ -9,8 +9,11 @@ import { useEffect, useRef } from "react";
 // to a share of its normal level, then comes back up. Tune these by ear.
 
 export const MUSIC = {
-  /** The track, from apps/web/public (e.g. "/audio/workout-music.m4a"); null until it's added. */
-  src: null as string | null,
+  /**
+   * The track, from apps/web/public: the 30-minute demo music (AAC 128 kbps,
+   * converted from the MP3 the user supplied). Null turns music off entirely.
+   */
+  src: "/audio/workout-music.m4a" as string | null,
   /** Its normal level — exercises, rests, Get ready — as a % of the file's own loudness. */
   volume: 60,
   /** While each of these plays, the music drops to this % of its normal level (100 = no dip). */
