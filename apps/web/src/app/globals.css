@@ -34,30 +34,6 @@ html:has([data-dark-page]) body {
   background: #14142b;
 }
 
-/* Safari samples fixed content at each viewport edge independently. Keep a
-   solid black top edge on iPhone/iPad, while the page and pinned bottom bar
-   retain their purple background. No viewport-fit change: existing controls
-   stay inside Safari's safe area. The 12px minimum covers WebKit's sampling
-   inset and its thin-border threshold even when safe-area-inset-top is zero.
-   Native tinting still needs checking on a physical iPhone after navigation. */
-.player-status-bar {
-  display: none;
-}
-
-@supports (-webkit-touch-callout: none) {
-  @media (hover: none) and (pointer: coarse) {
-    .player-status-bar {
-      display: block;
-      position: fixed;
-      inset: 0 0 auto;
-      height: max(12px, env(safe-area-inset-top, 0px));
-      background: #000;
-      pointer-events: none;
-      z-index: 100;
-    }
-  }
-}
-
 /* The workout player's desktop "theater" layout: a wide enough landscape screen
    to put the exercise info and controls beside the 9:16 video instead of over
    it. Keep in step with THEATER_QUERY in components/workouts/theater.tsx. */
