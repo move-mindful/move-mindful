@@ -77,7 +77,7 @@ const PAGES: Page[] = [
     ],
   },
   {
-    title: "Watch the tutorial any time",
+    title: "View tutorial",
     picture: <PausedPicture />,
     rows: [
       { icon: <Pause size={18} />, title: "Pause", text: "Tap the middle of the screen." },
