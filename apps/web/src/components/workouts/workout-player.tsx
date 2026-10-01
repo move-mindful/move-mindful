@@ -361,32 +361,25 @@ export function WorkoutPlayer({
   // Music under the workout (the Audio card's Music switch). It plays while the
   // workout runs — the overview and the Audio card leave it going — and on
   // through the summary until Done; it dips under a voice and through the
-  // warm-up and cool-down. Exercise/rest/Get ready pauses keep it quietly
-  // playing, with the track continuing from the same position. Levels: MUSIC.
-  const pausedWithMusic =
-    state.paused &&
-    state.phase === "workout" &&
-    (step?.kind === "rest" || state.stage === "ready" || state.stage === "exercise");
-  const duckTo = pausedWithMusic
-    ? MUSIC.duckTo.paused
-    : tips.speaking
-      ? MUSIC.duckTo.tip
-      : state.phase === "workout" && step?.kind === "set" && state.stage === "tutorial"
-        ? MUSIC.duckTo.tutorial
-        : state.phase === "intro"
-          ? MUSIC.duckTo.intro
-          : state.phase === "outro"
-            ? MUSIC.duckTo.outro
-            : state.phase === "warmup"
-              ? MUSIC.duckTo.warmup
-              : state.phase === "cooldown"
-                ? MUSIC.duckTo.cooldown
-                : 100;
+  // warm-up and cool-down. The levels are in MUSIC.
+  const duckTo = tips.speaking
+    ? MUSIC.duckTo.tip
+    : state.phase === "workout" && step?.kind === "set" && state.stage === "tutorial"
+      ? MUSIC.duckTo.tutorial
+      : state.phase === "intro"
+        ? MUSIC.duckTo.intro
+        : state.phase === "outro"
+          ? MUSIC.duckTo.outro
+          : state.phase === "warmup"
+            ? MUSIC.duckTo.warmup
+            : state.phase === "cooldown"
+              ? MUSIC.duckTo.cooldown
+              : 100;
   const music = useWorkoutMusic({
     on: prefs.music && !muted,
     playing:
       (active || state.phase === "complete") &&
-      (!state.paused || pausedWithMusic) &&
+      !state.paused &&
       (state.sheet === null || state.sheet === "overview" || state.sheet === "audio"),
     level: (MUSIC.volume / 100) * (duckTo / 100),
   });
