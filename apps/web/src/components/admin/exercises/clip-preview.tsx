@@ -5,6 +5,7 @@ import {
   ROLE_TAB_LABELS,
   formatDuration,
   isLoopRole,
+  isSingleVideo,
   mp4Url,
   rolesFor,
   slotFor,
@@ -29,7 +30,7 @@ export function ClipPreview({
 }) {
   // Loops first (that's what an admin checks most), the tutorial last.
   const loops: VideoRole[] = rolesFor(kind, sided).filter((r) => r !== "tutorial");
-  const roles: VideoRole[] = kind === "warmup" ? ["warmup"] : [...loops, "tutorial"];
+  const roles: VideoRole[] = isSingleVideo(kind) ? [kind] : [...loops, "tutorial"];
   const [picked, setPicked] = useState<VideoRole>(roles[0]);
   const role = roles.includes(picked) ? picked : roles[0];
   const slot = slotFor(videos, role);

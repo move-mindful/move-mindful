@@ -16,6 +16,7 @@ import {
   EQUIPMENT_OPTIONS,
   ROLE_LABELS,
   isLoopRole,
+  isSingleVideo,
   rolesFor,
   type ExerciseInput,
   type ExerciseKind,
@@ -133,7 +134,7 @@ export async function saveExercise(input: ExerciseInput): Promise<{ id?: string;
   const name = (input.name ?? "").trim();
   if (!name) return { error: "Give it a name." };
 
-  let kind: ExerciseKind = input.kind === "warmup" ? "warmup" : "exercise";
+  let kind: ExerciseKind = input.kind === "warmup" || input.kind === "cooldown" ? input.kind : "exercise";
   if (input.id) {
     // The kind is fixed once saved: switching would break workouts that use it.
     const { data: existing } = await supabase
@@ -170,6 +171,10 @@ export async function saveExercise(input: ExerciseInput): Promise<{ id?: string;
   };
 
   let written = await writeExercise(supabase, input.id, fields);
+  // A cool-down before 018_intro_outro_cooldown.sql has run: the kind check rejects it.
+  if (kind === "cooldown" && written.error?.code === "23514") {
+    return { error: "Cool-downs can’t be saved until migration 018_intro_outro_cooldown.sql has run." };
+  }
   if (missingIntensityColumn(written.error)) {
     if (fields.intensity !== null) {
       return { error: "Intensity can’t be saved until migration 014_exercise_intensity.sql has run. Clear it to save for now." };
@@ -230,8 +235,9 @@ export async function startExerciseVideoUpload(args: {
     .eq("id", args.exerciseId)
     .maybeSingle();
   if (!exercise) return { error: "Save the exercise first." };
-  const allowed: VideoRole[] =
-    exercise.kind === "warmup" ? ["warmup"] : ["tutorial", "loop", "loop_right", "loop_left"];
+  const allowed: VideoRole[] = isSingleVideo(exercise.kind as ExerciseKind)
+    ? [exercise.kind as VideoRole]
+    : ["tutorial", "loop", "loop_right", "loop_left"];
   if (!allowed.includes(args.role)) return { error: "That clip doesn't belong on this exercise." };
 
   const { data: row, error } = await supabase

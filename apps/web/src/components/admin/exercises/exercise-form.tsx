@@ -17,6 +17,7 @@ import {
   DUMBBELL_LEVELS,
   EQUIPMENT_OPTIONS,
   INTENSITY_LEVELS,
+  KIND_NOUNS,
   ROLE_HINTS,
   ROLE_LABELS,
   formatDuration,
@@ -56,7 +57,7 @@ function parseReps(value: string | undefined): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-/** Upload / edit screen for one exercise or warm-up. `exercise` is null when creating. */
+/** Upload / edit screen for one exercise, warm-up or cool-down. `exercise` is null when creating. */
 export function ExerciseForm({
   exercise,
   tags: initialTags,
@@ -97,7 +98,7 @@ export function ExerciseForm({
 
   const roles = rolesFor(kind, sided);
   const slots = roles.map((role) => slotFor(videos, role));
-  const noun = kind === "warmup" ? "warm-up" : "exercise";
+  const noun = KIND_NOUNS[kind];
 
   // Clips that saving would delete, because "done on each side" changed.
   const savedRoles = exercise ? rolesFor(exercise.kind, exercise.sided) : [];
@@ -297,11 +298,12 @@ export function ExerciseForm({
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
           {!editing && (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
               {(
                 [
                   ["exercise", "Exercise", "Tutorial plus a looping clip. Counted by reps or time."],
-                  ["warmup", "Warm-up", "One video that plays once, start to finish."],
+                  ["warmup", "Warm-up", "One video that plays once, start to finish, before the exercises."],
+                  ["cooldown", "Cool-down", "One video, offered after the last exercise. Members choose whether to take it."],
                 ] as const
               ).map(([id, title, text]) => (
                 <button

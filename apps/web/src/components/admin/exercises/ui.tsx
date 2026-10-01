@@ -61,6 +61,7 @@ const flagStyles: Record<string, string> = {
   "Missing clip": "bg-amber-100 text-amber-800",
   "R + L": "bg-violet-100 text-violet-700",
   "Warm-up": "bg-zinc-100 text-zinc-600",
+  "Cool-down": "bg-zinc-100 text-zinc-600",
   Archived: "bg-zinc-100 text-zinc-600",
 };
 

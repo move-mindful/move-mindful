@@ -4,6 +4,12 @@
 import type { EstimateExercise, WorkoutBlock } from "@move-mindful/core";
 import type { ExerciseKind, ExerciseVideo } from "@/lib/exercises/shared";
 
+/** A workout's own videos (workout_videos): the intro before it, the outro after it. */
+export type WorkoutVideoRole = "intro" | "outro";
+
+/** An intro or outro clip — the same lifecycle as an exercise clip (see slotFor). */
+export type WorkoutVideo = Omit<ExerciseVideo, "role" | "repsInClip"> & { role: WorkoutVideoRole };
+
 export type WorkoutLevel = "beginner" | "intermediate" | "advanced";
 
 export const LEVELS: Array<{ id: WorkoutLevel; label: string }> = [
@@ -22,9 +28,9 @@ export interface CatalogExercise {
   archived: boolean;
   /** Every clip it needs is uploaded and processed. */
   playable: boolean;
-  /** For the list thumbnail: the live loop (or warm-up video). */
+  /** For the list thumbnail: the live loop (or warm-up or cool-down video). */
   thumbPlaybackId: string | null;
-  /** Warm-ups: the video's length. */
+  /** Warm-ups and cool-downs: the video's length. */
   durationSeconds: number | null;
   equipment: string[];
   dumbbellLevels: string[];
@@ -44,9 +50,13 @@ export interface AdminWorkout {
   level: WorkoutLevel | null;
   instructorId: string | null;
   warmupExerciseId: string | null;
+  /** Offered after the last exercise ("Cool down?"); a library item of kind "cooldown". */
+  cooldownExerciseId: string | null;
   coverImageUrl: string | null;
   publishedAt: string | null;
   blocks: WorkoutBlock[];
+  /** Its intro and outro clips, every row (see slotFor). */
+  videos: WorkoutVideo[];
 }
 
 /** What the builder sends to `saveWorkout`. */
@@ -58,6 +68,7 @@ export interface WorkoutInput {
   level: WorkoutLevel | null;
   instructorId: string | null;
   warmupExerciseId: string | null;
+  cooldownExerciseId: string | null;
   blocks: WorkoutBlock[];
 }
 
@@ -77,6 +88,7 @@ export interface WorkoutListRow {
   exerciseCount: number;
   totalSeconds: number;
   hasWarmup: boolean;
+  hasCooldown: boolean;
   coverImageUrl: string | null;
   /** Null until a member rates it. */
   rating: RatingSummary | null;
@@ -143,6 +155,7 @@ export function publishProblems(
   blocks: WorkoutBlock[],
   catalog: Map<string, Pick<CatalogExercise, "name" | "playable">>,
   warmupExerciseId: string | null,
+  cooldownExerciseId: string | null = null,
 ): string[] {
   const problems: string[] = [];
   if (!blocks.some((b) => b.kind !== "rest")) problems.push("Add at least one exercise.");
@@ -155,6 +168,7 @@ export function publishProblems(
     if (b.kind === "group") b.moves.forEach((m) => ids.add(m.exerciseId));
   }
   if (warmupExerciseId) ids.add(warmupExerciseId);
+  if (cooldownExerciseId) ids.add(cooldownExerciseId);
   const notReady = [...ids].filter((id) => !catalog.get(id)?.playable).map((id) => catalog.get(id)?.name ?? "An exercise");
   if (notReady.length) problems.push(`Still missing clips: ${notReady.join(", ")}.`);
   return problems;

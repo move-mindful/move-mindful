@@ -8,10 +8,17 @@ import {
   type WorkoutMove,
 } from "@move-mindful/core";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getExercises } from "@/lib/exercises/server";
+import { WORKOUT_CLIPS, getExercises, syncPendingClips } from "@/lib/exercises/server";
 import { getRatingSummaries } from "@/lib/member/ratings-server";
-import { paceSeconds, rolesFor, slotFor, type AdminExercise, type VideoRole } from "@/lib/exercises/shared";
-import type { AdminWorkout, CatalogExercise, WorkoutLevel, WorkoutListRow } from "@/lib/workouts/shared";
+import { isSingleVideo, paceSeconds, rolesFor, slotFor, type AdminExercise, type VideoRole, type VideoStatus } from "@/lib/exercises/shared";
+import type {
+  AdminWorkout,
+  CatalogExercise,
+  WorkoutLevel,
+  WorkoutListRow,
+  WorkoutVideo,
+  WorkoutVideoRole,
+} from "@/lib/workouts/shared";
 
 export interface BlockRow {
   id: string;
@@ -38,15 +45,45 @@ export interface WorkoutRow {
   level: WorkoutLevel | null;
   instructor_id: string | null;
   warmup_exercise_id: string | null;
+  /** Missing until 018_intro_outro_cooldown.sql has run. */
+  cooldown_exercise_id?: string | null;
   cover_image_url?: string | null;
   published_at: string | null;
   updated_at: string;
 }
 
+/** A row of workout_videos (018_intro_outro_cooldown.sql). */
+export interface WorkoutVideoRow {
+  id: string;
+  workout_id: string;
+  role: WorkoutVideoRole;
+  status: VideoStatus;
+  mux_playback_id: string | null;
+  mp4_file: string | null;
+  duration_seconds: number | string | null;
+  original_filename: string | null;
+  error: string | null;
+  created_at: string;
+}
+
+export function toWorkoutVideo(r: WorkoutVideoRow): WorkoutVideo {
+  return {
+    id: r.id,
+    role: r.role,
+    status: r.status,
+    playbackId: r.mux_playback_id,
+    mp4File: r.mp4_file,
+    durationSeconds: r.duration_seconds == null ? null : Number(r.duration_seconds),
+    originalFilename: r.original_filename,
+    error: r.error,
+    createdAt: r.created_at,
+  };
+}
+
 /** An exercise as the builder needs it, including what the estimate uses. */
 export function toCatalog(e: AdminExercise): CatalogExercise {
   const loopRoles: VideoRole[] = e.sided ? ["loop_right", "loop_left"] : ["loop"];
-  const main = slotFor(e.videos, e.kind === "warmup" ? "warmup" : loopRoles[0]).current;
+  const main = slotFor(e.videos, isSingleVideo(e.kind) ? e.kind : loopRoles[0]).current;
   const tutorial = slotFor(e.videos, "tutorial").current;
   // A sided exercise's pace: the average of the sides whose pace is known.
   const paces = loopRoles
@@ -61,7 +98,7 @@ export function toCatalog(e: AdminExercise): CatalogExercise {
     timedOnly: e.timedOnly,
     archived: !!e.archivedAt,
     // The tutorial is optional (members skip straight to the exercise without
-    // one); every loop — or the warm-up video — has to be ready.
+    // one); every loop — or the warm-up or cool-down video — has to be ready.
     playable: rolesFor(e.kind, e.sided)
       .filter((r) => r !== "tutorial")
       .every((r) => !!slotFor(e.videos, r).current),
@@ -80,7 +117,7 @@ export function toCatalog(e: AdminExercise): CatalogExercise {
   };
 }
 
-/** Every exercise and warm-up, archived included (existing workouts may use them). */
+/** Every exercise, warm-up and cool-down, archived included (existing workouts may use them). */
 export async function getCatalog(): Promise<CatalogExercise[]> {
   return (await getExercises()).map(toCatalog);
 }
@@ -114,7 +151,7 @@ function toBlocks(rows: BlockRow[]): WorkoutBlock[] {
     });
 }
 
-export function toWorkout(w: WorkoutRow, rows: BlockRow[]): AdminWorkout {
+export function toWorkout(w: WorkoutRow, rows: BlockRow[], videos: WorkoutVideoRow[] = []): AdminWorkout {
   return {
     id: w.id,
     title: w.title,
@@ -122,20 +159,38 @@ export function toWorkout(w: WorkoutRow, rows: BlockRow[]): AdminWorkout {
     level: w.level,
     instructorId: w.instructor_id,
     warmupExerciseId: w.warmup_exercise_id,
+    cooldownExerciseId: w.cooldown_exercise_id ?? null,
     coverImageUrl: w.cover_image_url ?? null,
     publishedAt: w.published_at,
     blocks: toBlocks(rows),
+    videos: videos.map(toWorkoutVideo),
   };
 }
 
+/**
+ * A workout's intro and outro clips — every row (the builder shows ones still
+ * processing), or only ready ones for the player. Empty until
+ * 018_intro_outro_cooldown.sql has run.
+ */
+export async function getWorkoutVideoRows(id: string, readyOnly: boolean): Promise<WorkoutVideoRow[]> {
+  const supabase = createAdminClient();
+  let query = supabase.from("workout_videos").select("*").eq("workout_id", id);
+  if (readyOnly) query = query.eq("status", "ready");
+  const { data } = await query;
+  return (data ?? []) as WorkoutVideoRow[];
+}
+
+/** One workout for the builder, its intro and outro brought up to date with Mux first. */
 export async function getWorkout(id: string): Promise<AdminWorkout | null> {
   const supabase = createAdminClient();
-  const [{ data: w }, { data: rows }] = await Promise.all([
+  await syncPendingClips(supabase, WORKOUT_CLIPS, id);
+  const [{ data: w }, { data: rows }, videos] = await Promise.all([
     supabase.from("workouts").select("*").eq("id", id).maybeSingle(),
     supabase.from("workout_blocks").select("*").eq("workout_id", id),
+    getWorkoutVideoRows(id, false),
   ]);
   if (!w) return null;
-  return toWorkout(w as WorkoutRow, (rows ?? []) as BlockRow[]);
+  return toWorkout(w as WorkoutRow, (rows ?? []) as BlockRow[], videos);
 }
 
 /** Every workout for the admin list, newest edits first, with its estimate. */
@@ -164,6 +219,7 @@ export async function getWorkouts(): Promise<WorkoutListRow[]> {
       exerciseCount: exerciseIds.size,
       totalSeconds: estimateWorkout(blocks, estimates).totalSeconds,
       hasWarmup: !!w.warmup_exercise_id,
+      hasCooldown: !!w.cooldown_exercise_id,
       coverImageUrl: w.cover_image_url ?? null,
       rating: ratings.get(w.id) ?? null,
     };

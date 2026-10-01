@@ -89,18 +89,45 @@ export async function deleteMuxVideo(row: {
   }
 }
 
+/**
+ * The tables of Mux clips, which share a lifecycle: an exercise's clips, and a
+ * workout's own intro and outro (018_intro_outro_cooldown.sql). `owner` is the
+ * column naming what the clip belongs to.
+ */
+export type ClipTable =
+  | { name: "exercise_videos"; owner: "exercise_id" }
+  | { name: "workout_videos"; owner: "workout_id" };
+const EXERCISE_CLIPS: ClipTable = { name: "exercise_videos", owner: "exercise_id" };
+export const WORKOUT_CLIPS: ClipTable = { name: "workout_videos", owner: "workout_id" };
+
+/** The columns every clip table has (plus its owner column). */
+interface ClipRow {
+  id: string;
+  role: string;
+  status: VideoStatus;
+  mux_upload_id: string | null;
+  mux_asset_id: string | null;
+  mux_playback_id: string | null;
+  mp4_file: string | null;
+  duration_seconds: number | string | null;
+  error: string | null;
+  created_at: string;
+  exercise_id?: string;
+  workout_id?: string;
+}
+
 // Once a replacement is ready, the clips it replaced go (rows and Mux assets).
-async function retireOlder(supabase: AdminClient, row: VideoRow): Promise<void> {
+async function retireOlder(supabase: AdminClient, table: ClipTable, row: ClipRow): Promise<void> {
   const { data: older } = await supabase
-    .from("exercise_videos")
+    .from(table.name)
     .select("id, mux_asset_id, mux_upload_id")
-    .eq("exercise_id", row.exercise_id)
+    .eq(table.owner, row[table.owner] ?? "")
     .eq("role", row.role)
     .lt("created_at", row.created_at);
   if (!older?.length) return;
   await Promise.all(older.map((o) => deleteMuxVideo(o)));
   await supabase
-    .from("exercise_videos")
+    .from(table.name)
     .delete()
     .in(
       "id",
@@ -120,9 +147,9 @@ function chooseMp4(files: Array<{ name?: string; status?: string }>): string | "
   return null;
 }
 
-async function syncOne(supabase: AdminClient, row: VideoRow): Promise<void> {
+async function syncOne(supabase: AdminClient, table: ClipTable, row: ClipRow): Promise<void> {
   try {
-    const patch: Partial<VideoRow> = {};
+    const patch: Partial<ClipRow> = {};
     let assetId = row.mux_asset_id;
 
     if (!assetId && row.mux_upload_id) {
@@ -133,7 +160,7 @@ async function syncOne(supabase: AdminClient, row: VideoRow): Promise<void> {
         patch.status = "processing";
       } else if (["errored", "cancelled", "timed_out"].includes(upload.status)) {
         await supabase
-          .from("exercise_videos")
+          .from(table.name)
           .update({
             status: "errored",
             error: upload.status === "timed_out" ? "The upload never finished." : `Upload ${upload.status}.`,
@@ -169,9 +196,9 @@ async function syncOne(supabase: AdminClient, row: VideoRow): Promise<void> {
     }
 
     if (Object.keys(patch).length) {
-      await supabase.from("exercise_videos").update(patch).eq("id", row.id);
+      await supabase.from(table.name).update(patch).eq("id", row.id);
     }
-    if (patch.status === "ready") await retireOlder(supabase, row);
+    if (patch.status === "ready") await retireOlder(supabase, table, row);
   } catch {
     // Mux unreachable or the asset is gone; the next page load tries again.
   }
@@ -183,17 +210,24 @@ async function syncOne(supabase: AdminClient, row: VideoRow): Promise<void> {
  * load (and the edit page re-checks every few seconds while clips process).
  */
 export async function syncPendingVideos(supabase: AdminClient, exerciseId?: string): Promise<void> {
-  let query = supabase.from("exercise_videos").select("*").in("status", ["uploading", "processing"]);
-  if (exerciseId) query = query.eq("exercise_id", exerciseId);
-  const { data } = await query;
-  await Promise.all(((data ?? []) as VideoRow[]).map((row) => syncOne(supabase, row)));
+  await syncPendingClips(supabase, EXERCISE_CLIPS, exerciseId);
 }
 
-/** How many workouts use each exercise — in a block, or as their warm-up. */
+/** The same for any clip table — `ownerId` limits it to one exercise's or workout's clips. */
+export async function syncPendingClips(supabase: AdminClient, table: ClipTable, ownerId?: string): Promise<void> {
+  let query = supabase.from(table.name).select("*").in("status", ["uploading", "processing"]);
+  if (ownerId) query = query.eq(table.owner, ownerId);
+  const { data } = await query;
+  await Promise.all(((data ?? []) as ClipRow[]).map((row) => syncOne(supabase, table, row)));
+}
+
+/** How many workouts use each exercise — in a block, or as their warm-up or cool-down. */
 export async function getExerciseUsage(supabase: AdminClient): Promise<Map<string, number>> {
-  const [{ data: blocks }, { data: workouts }] = await Promise.all([
+  const [{ data: blocks }, { data: workouts }, { data: cooldowns }] = await Promise.all([
     supabase.from("workout_blocks").select("workout_id, exercise_id").not("exercise_id", "is", null),
     supabase.from("workouts").select("id, warmup_exercise_id").not("warmup_exercise_id", "is", null),
+    // Empty (an error) until 018_intro_outro_cooldown.sql has run.
+    supabase.from("workouts").select("id, cooldown_exercise_id").not("cooldown_exercise_id", "is", null),
   ]);
   const byExercise = new Map<string, Set<string>>();
   const add = (exerciseId: string, workoutId: string) => {
@@ -202,6 +236,7 @@ export async function getExerciseUsage(supabase: AdminClient): Promise<Map<strin
   };
   for (const b of blocks ?? []) add(b.exercise_id as string, b.workout_id as string);
   for (const w of workouts ?? []) add(w.warmup_exercise_id as string, w.id as string);
+  for (const w of cooldowns ?? []) add(w.cooldown_exercise_id as string, w.id as string);
   return new Map([...byExercise].map(([id, set]) => [id, set.size]));
 }
 
@@ -242,7 +277,7 @@ function assemble(
   }));
 }
 
-/** Every exercise and warm-up (archived included), with clips, tag ids and pairings. */
+/** Every exercise, warm-up and cool-down (archived included), with clips, tag ids and pairings. */
 export async function getExercises(): Promise<AdminExercise[]> {
   const supabase = createAdminClient();
   await syncPendingVideos(supabase);

@@ -12,6 +12,8 @@ import {
   formatDuration,
   formatPace,
   intensityLabel,
+  isSingleVideo,
+  KIND_NOUNS,
   levelsLabel,
   paceSeconds,
   rolesFor,
@@ -24,17 +26,17 @@ import { ClipPreview } from "@/components/admin/exercises/clip-preview";
 import { ManageTags } from "@/components/admin/exercises/manage-tags";
 import { CheckIcon, Flag, Pill } from "@/components/admin/exercises/ui";
 
-type Tab = "exercise" | "warmup" | "archived";
+type Tab = "exercise" | "warmup" | "cooldown" | "archived";
 type Sort = "name" | "new";
 
-// The live loop (or warm-up video) that stands for the exercise in the list.
+// The live loop (or warm-up or cool-down video) that stands for the exercise in the list.
 function mainClip(e: AdminExercise) {
-  const role = e.kind === "warmup" ? "warmup" : e.sided ? "loop_right" : "loop";
+  const role = isSingleVideo(e.kind) ? e.kind : e.sided ? "loop_right" : "loop";
   return slotFor(e.videos, role).current;
 }
 
 function countedBy(e: AdminExercise): string {
-  if (e.kind === "warmup") return `Plays once · ${formatDuration(mainClip(e)?.durationSeconds ?? null)}`;
+  if (isSingleVideo(e.kind)) return `Plays once · ${formatDuration(mainClip(e)?.durationSeconds ?? null)}`;
   if (e.timedOnly) return "Timed only";
   const clip = mainClip(e);
   const pace = clip ? paceSeconds(clip) : null;
@@ -73,6 +75,7 @@ export function ExerciseLibrary({ exercises, tags }: { exercises: AdminExercise[
   const tabs: Array<[Tab, string]> = [
     ["exercise", "Exercises"],
     ["warmup", "Warm-ups"],
+    ["cooldown", "Cool-downs"],
     ["archived", "Archived"],
   ];
 
@@ -177,7 +180,7 @@ export function ExerciseLibrary({ exercises, tags }: { exercises: AdminExercise[
               {total === 0
                 ? tab === "archived"
                   ? "Nothing archived."
-                  : `No ${tab === "warmup" ? "warm-ups" : "exercises"} yet — upload one to get started.`
+                  : `No ${KIND_NOUNS[tab]}s yet — upload one to get started.`
                 : "Nothing matches these filters."}
             </p>
           ) : (
@@ -188,6 +191,7 @@ export function ExerciseLibrary({ exercises, tags }: { exercises: AdminExercise[
                 const flags = [
                   ...(e.sided ? ["R + L"] : []),
                   ...(tab === "archived" && e.kind === "warmup" ? ["Warm-up"] : []),
+                  ...(tab === "archived" && e.kind === "cooldown" ? ["Cool-down"] : []),
                   ...attentionFlags(e),
                 ];
                 return (
@@ -257,7 +261,7 @@ export function ExerciseLibrary({ exercises, tags }: { exercises: AdminExercise[
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
                   {selected.archivedAt ? "Archived " : ""}
-                  {selected.kind === "warmup" ? "warm-up" : "exercise"}
+                  {KIND_NOUNS[selected.kind]}
                 </p>
                 <p className="text-lg font-semibold">{selected.name}</p>
               </div>
@@ -335,8 +339,11 @@ export function ExerciseLibrary({ exercises, tags }: { exercises: AdminExercise[
 
 function PanelFacts({ exercise: e }: { exercise: AdminExercise }) {
   const facts: Array<[string, string]> = [];
-  if (e.kind === "warmup") {
-    facts.push(["Length", formatDuration(mainClip(e)?.durationSeconds ?? null)], ["Plays", "Once, start to finish"]);
+  if (isSingleVideo(e.kind)) {
+    facts.push(
+      ["Length", formatDuration(mainClip(e)?.durationSeconds ?? null)],
+      ["Plays", e.kind === "cooldown" ? "Once, if members choose it" : "Once, start to finish"],
+    );
   } else {
     const clip = mainClip(e);
     const pace = clip ? paceSeconds(clip) : null;
@@ -350,7 +357,7 @@ function PanelFacts({ exercise: e }: { exercise: AdminExercise }) {
   }
   facts.push(["Equipment", e.equipment.length ? e.equipment.map(equipmentLabel).join(", ") : "None"]);
   if (e.dumbbellLevels.length) facts.push(["Dumbbells", levelsLabel(e.dumbbellLevels)]);
-  // The tutorial is optional; the loops (or the warm-up video) aren't.
+  // The tutorial is optional; the loops (or the warm-up or cool-down video) aren't.
   const missing = rolesFor(e.kind, e.sided).filter((r) => r !== "tutorial" && !slotFor(e.videos, r).current);
   return (
     <dl className="grid grid-cols-2 gap-x-4 gap-y-3">

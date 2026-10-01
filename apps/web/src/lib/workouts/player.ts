@@ -34,10 +34,16 @@ export interface PlayerWorkout {
   level: WorkoutLevel | null;
   coverImageUrl: string | null;
   published: boolean;
+  /** The workout's own video before everything else (and the warm-up), if it has one. */
+  intro: PlayerClip | null;
   warmup: { name: string; clip: PlayerClip } | null;
+  /** Offered after the last exercise ("Cool down?"). */
+  cooldown: { name: string; clip: PlayerClip } | null;
+  /** The workout's own video after the exercises (and the cool-down), before the summary. */
+  outro: PlayerClip | null;
   exercises: Record<string, PlayerExercise>;
   blocks: WorkoutBlock[];
-  /** Everything the workout (warm-up included) uses. */
+  /** Everything the workout (warm-up and cool-down included) uses. */
   equipment: string[];
   dumbbellLevels: string[];
 }

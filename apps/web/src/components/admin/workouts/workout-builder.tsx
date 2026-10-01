@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -16,6 +16,7 @@ import {
 import {
   deleteWorkout,
   generateWorkout,
+  refreshWorkoutVideos,
   removeWorkoutCover,
   saveGeneratorInstructions,
   saveWorkout,
@@ -32,6 +33,7 @@ import {
   type GenerateCriteria,
   type RatingSummary,
   type WorkoutLevel,
+  type WorkoutVideo,
 } from "@/lib/workouts/shared";
 import { ClipPreview } from "@/components/admin/exercises/clip-preview";
 import { Flag, Section } from "@/components/admin/exercises/ui";
@@ -39,6 +41,7 @@ import { DurationInput, ExerciseSearch, Segmented, Stepper, Thumb } from "@/comp
 import { CoverField, resizeCover } from "@/components/admin/workouts/cover-field";
 import { GenerateDialog } from "@/components/admin/workouts/generate-dialog";
 import { RatingDetails } from "@/components/admin/workouts/rating";
+import { WorkoutVideoField } from "@/components/admin/workouts/workout-video-field";
 
 // The builder keeps a stable key on every block and move so React can track
 // rows as they're reordered; keys are stripped before saving.
@@ -114,6 +117,11 @@ export function WorkoutBuilder({
   const [level, setLevel] = useState<WorkoutLevel | null>(workout?.level ?? null);
   const [instructorId, setInstructorId] = useState<string | null>(workout?.instructorId ?? null);
   const [warmupId, setWarmupId] = useState<string | null>(workout?.warmupExerciseId ?? null);
+  const [cooldownId, setCooldownId] = useState<string | null>(workout?.cooldownExerciseId ?? null);
+  // The intro and outro clips, kept fresh while Mux processes them (see below).
+  const [videos, setVideos] = useState<WorkoutVideo[]>(workout?.videos ?? []);
+  // A new workout, once saved here (a video upload saves it first): later saves update it.
+  const createdId = useRef<string | null>(null);
   const [blocks, setBlocks] = useState<KBlock[]>(() => withKeys(workout?.blocks ?? []));
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [busy, setBusy] = useState<null | "save" | "publish">(null);
@@ -134,13 +142,18 @@ export function WorkoutBuilder({
   const plain = stripKeys(blocks);
   const estimate = estimateWorkout(plain, estimates);
   const labels = groupLabels(plain);
-  const problems = publishProblems(plain, byId, warmupId);
+  const problems = publishProblems(plain, byId, warmupId, cooldownId);
   const warmup = warmupId ? byId.get(warmupId) : undefined;
+  const cooldown = cooldownId ? byId.get(cooldownId) : undefined;
+  const extraSeconds = (["intro", "outro"] as const).reduce(
+    (sum, role) => sum + (videos.filter((v) => v.role === role && v.status === "ready").sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]?.durationSeconds ?? 0),
+    0,
+  );
   const published = !!workout?.publishedAt;
   const preview = byId.get(previewId ?? "") ?? byId.get(firstExerciseId(plain) ?? "");
 
-  // Equipment for "You'll need": every exercise in the sequence, plus the warm-up.
-  const usedIds = new Set<string>(warmupId ? [warmupId] : []);
+  // Equipment for "You'll need": every exercise in the sequence, plus the warm-up and cool-down.
+  const usedIds = new Set<string>([warmupId, cooldownId].filter((id): id is string => !!id));
   for (const b of plain) {
     if (b.kind === "exercise") usedIds.add(b.move.exerciseId);
     if (b.kind === "group") b.moves.forEach((m) => usedIds.add(m.exerciseId));
@@ -181,18 +194,43 @@ export function WorkoutBuilder({
   async function save(): Promise<string | null> {
     setError(null);
     const res = await saveWorkout({
-      id: workout?.id,
+      id: workout?.id ?? createdId.current ?? undefined,
       title,
       description,
       level,
       instructorId,
       warmupExerciseId: warmupId,
+      cooldownExerciseId: cooldownId,
       blocks: plain,
     });
+    if (res.id && !workout) createdId.current = res.id;
     if (res.error) setError(res.error);
     else setAiDraft(null); // saved: nothing left to undo
     return res.error ? null : (res.id ?? null);
   }
+
+  /** The workout's id — saving it first if it's new, so an upload has somewhere to go. */
+  async function ensureSaved(): Promise<string | null> {
+    return workout?.id ?? createdId.current ?? (await save());
+  }
+
+  // The intro or outro changed on the server: fetch them again. A new
+  // workout, saved for the upload, moves to its own page once it's done.
+  async function onVideosChanged(id: string) {
+    if (!workout) {
+      router.replace(`/admin/workouts/${id}`);
+      return;
+    }
+    setVideos(await refreshWorkoutVideos(id));
+  }
+
+  // While Mux processes an intro or outro, keep checking (the page syncs with Mux on load).
+  const processingVideo = videos.some((v) => v.status === "uploading" || v.status === "processing");
+  useEffect(() => {
+    if (!processingVideo || !workout) return;
+    const id = window.setInterval(async () => setVideos(await refreshWorkoutVideos(workout.id)), 5000);
+    return () => window.clearInterval(id);
+  }, [processingVideo, workout]);
 
   // Claude drafts a sequence; it fills the builder unsaved, for review.
   async function generate(criteria: GenerateCriteria) {
@@ -274,7 +312,7 @@ export function WorkoutBuilder({
   // A new workout is saved first, so the cover has somewhere to go.
   async function onCover(file: File) {
     setCoverBusy(true);
-    const id = workout?.id ?? (await save());
+    const id = await ensureSaved();
     if (!id) {
       setCoverBusy(false);
       return;
@@ -478,6 +516,16 @@ export function WorkoutBuilder({
           </Section>
 
           <Section title="Sequence" aside="Rests only happen where you add them">
+            {/* Intro: this workout's own video, optional, before everything */}
+            <WorkoutVideoField
+              role="intro"
+              label="Intro"
+              hint="Optional · plays first, before the warm-up"
+              videos={videos}
+              ensureSaved={ensureSaved}
+              onChanged={onVideosChanged}
+            />
+
             {/* Warm-up: optional, pinned first */}
             <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-zinc-300 bg-zinc-50 p-3">
               <Flag>Warm-up</Flag>
@@ -611,6 +659,35 @@ export function WorkoutBuilder({
               ))}
             </ol>
 
+            {/* Cool-down and outro: optional, pinned last */}
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-zinc-300 bg-zinc-50 p-3">
+              <Flag>Cool-down</Flag>
+              <select
+                aria-label="Cool-down"
+                value={cooldownId ?? ""}
+                onChange={(e) => setCooldownId(e.target.value || null)}
+                className="h-9 min-w-48 flex-1 rounded-lg border border-zinc-300 bg-white px-2.5 text-sm"
+              >
+                <option value="">No cool-down</option>
+                {catalog
+                  .filter((c) => c.kind === "cooldown" && (!c.archived || c.id === cooldownId))
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} · {formatDuration(c.durationSeconds)}
+                    </option>
+                  ))}
+              </select>
+              <span className="text-xs text-zinc-500">Members are asked “Cool down?” after the last exercise</span>
+            </div>
+            <WorkoutVideoField
+              role="outro"
+              label="Outro"
+              hint="Optional · plays last, before Workout complete"
+              videos={videos}
+              ensureSaved={ensureSaved}
+              onChanged={onVideosChanged}
+            />
+
             <div className="flex flex-wrap gap-2 border-t border-zinc-100 pt-4">
               <div className="min-w-64 flex-1">
                 <ExerciseSearch
@@ -676,6 +753,10 @@ export function WorkoutBuilder({
               {warmup && (
                 <p className="text-sm text-zinc-500">+{formatDuration(warmup.durationSeconds)} if members take the warm-up</p>
               )}
+              {cooldown && (
+                <p className="text-sm text-zinc-500">+{formatDuration(cooldown.durationSeconds)} if members take the cool-down</p>
+              )}
+              {extraSeconds > 0 && <p className="text-sm text-zinc-500">+{formatDuration(extraSeconds)} intro and outro</p>}
             </div>
             <dl className="space-y-1.5 text-sm">
               {(

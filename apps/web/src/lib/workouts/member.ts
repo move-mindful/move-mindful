@@ -4,9 +4,9 @@ import { cache } from "react";
 import { aboutMinutes, estimateWorkout, sequenceKey, workoutSteps, type WorkoutBlock } from "@move-mindful/core";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getExercisesByIds } from "@/lib/exercises/server";
-import { mp4Url, slotFor, thumbnailUrl, type AdminExercise, type ExerciseVideo } from "@/lib/exercises/shared";
-import { toCatalog, toWorkout, type BlockRow, type WorkoutRow } from "@/lib/workouts/server";
-import type { AdminWorkout } from "@/lib/workouts/shared";
+import { mp4Url, slotFor, thumbnailUrl, type AdminExercise } from "@/lib/exercises/shared";
+import { getWorkoutVideoRows, toCatalog, toWorkout, type BlockRow, type WorkoutRow } from "@/lib/workouts/server";
+import type { AdminWorkout, WorkoutVideo } from "@/lib/workouts/shared";
 import type { PlayerClip, PlayerExercise, PlayerWorkout, WorkoutCard } from "@/lib/workouts/player";
 
 // Member-facing reads. RLS keeps the workout and exercise tables closed to the
@@ -16,7 +16,7 @@ import type { PlayerClip, PlayerExercise, PlayerWorkout, WorkoutCard } from "@/l
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function toClip(video: ExerciseVideo | null): PlayerClip | null {
+function toClip(video: Pick<WorkoutVideo, "playbackId" | "mp4File" | "durationSeconds"> | null): PlayerClip | null {
   const url = video && mp4Url(video);
   if (!video?.playbackId || !url) return null;
   return {
@@ -36,7 +36,7 @@ function exerciseIds(blocks: WorkoutBlock[]): Set<string> {
 }
 
 function toPlayerExercise(e: AdminExercise): PlayerExercise {
-  const clip = (role: ExerciseVideo["role"]) => toClip(slotFor(e.videos, role).current);
+  const clip = (role: AdminExercise["videos"][number]["role"]) => toClip(slotFor(e.videos, role).current);
   const loops: PlayerExercise["loops"] = e.sided
     ? { right: clip("loop_right") ?? undefined, left: clip("loop_left") ?? undefined }
     : { main: clip("loop") ?? undefined };
@@ -70,12 +70,17 @@ function playableBlocks(blocks: WorkoutBlock[], known: Set<string>): WorkoutBloc
 async function assemble(workout: AdminWorkout): Promise<PlayerWorkout> {
   const ids = exerciseIds(workout.blocks);
   if (workout.warmupExerciseId) ids.add(workout.warmupExerciseId);
+  if (workout.cooldownExerciseId) ids.add(workout.cooldownExerciseId);
   const rows = await getExercisesByIds([...ids]);
   const exercises: Record<string, PlayerExercise> = {};
   for (const e of rows) if (e.kind === "exercise") exercises[e.id] = toPlayerExercise(e);
 
-  const warmupRow = rows.find((e) => e.id === workout.warmupExerciseId && e.kind === "warmup");
-  const warmupClip = warmupRow ? toClip(slotFor(warmupRow.videos, "warmup").current) : null;
+  // The warm-up and cool-down: library videos, each played start to finish.
+  const single = (id: string | null, kind: "warmup" | "cooldown") => {
+    const row = rows.find((e) => e.id === id && e.kind === kind);
+    const clip = row ? toClip(slotFor(row.videos, kind).current) : null;
+    return row && clip ? { name: row.name, clip } : null;
+  };
 
   const equipment = new Set<string>();
   const levels = new Set<string>();
@@ -91,7 +96,10 @@ async function assemble(workout: AdminWorkout): Promise<PlayerWorkout> {
     level: workout.level,
     coverImageUrl: workout.coverImageUrl,
     published: !!workout.publishedAt,
-    warmup: warmupRow && warmupClip ? { name: warmupRow.name, clip: warmupClip } : null,
+    intro: toClip(slotFor(workout.videos, "intro").current),
+    warmup: single(workout.warmupExerciseId, "warmup"),
+    cooldown: single(workout.cooldownExerciseId, "cooldown"),
+    outro: toClip(slotFor(workout.videos, "outro").current),
     exercises,
     blocks: playableBlocks(workout.blocks, new Set(Object.keys(exercises))),
     equipment: [...equipment],
@@ -108,12 +116,13 @@ export const getPlayerWorkout = cache(
   async (id: string, includeDrafts: boolean): Promise<PlayerWorkout | null> => {
     if (!UUID.test(id)) return null;
     const supabase = createAdminClient();
-    const [{ data: w }, { data: rows }] = await Promise.all([
+    const [{ data: w }, { data: rows }, videos] = await Promise.all([
       supabase.from("workouts").select("*").eq("id", id).maybeSingle(),
       supabase.from("workout_blocks").select("*").eq("workout_id", id),
+      getWorkoutVideoRows(id, true),
     ]);
     if (!w || (!w.published_at && !includeDrafts)) return null;
-    return assemble(toWorkout(w as WorkoutRow, (rows ?? []) as BlockRow[]));
+    return assemble(toWorkout(w as WorkoutRow, (rows ?? []) as BlockRow[], videos));
   },
 );
 

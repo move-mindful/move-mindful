@@ -85,6 +85,7 @@ export default async function WorkoutsPage({
                         w.totalSeconds ? `About ${aboutMinutes(w.totalSeconds)} min` : "Empty",
                         `${w.exerciseCount} exercise${w.exerciseCount === 1 ? "" : "s"}`,
                         w.hasWarmup && "warm-up",
+                        w.hasCooldown && "cool-down",
                         LEVELS.find((l) => l.id === w.level)?.label,
                       ]
                         .filter(Boolean)

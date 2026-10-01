@@ -4,8 +4,8 @@ import { ExerciseLibrary } from "@/components/admin/exercises/exercise-library";
 
 export const dynamic = "force-dynamic";
 
-// The exercise library: every clip-based exercise and warm-up that workouts are
-// built from (plan.md, Phase 4.5).
+// The exercise library: every clip-based exercise, warm-up and cool-down that
+// workouts are built from (plan.md, Phase 4.5).
 export default async function ExercisesPage() {
   const [exercises, tags] = await Promise.all([getExercises(), getExerciseTags()]);
 
