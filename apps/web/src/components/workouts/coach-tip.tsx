@@ -214,6 +214,14 @@ const RHYTHM = Array.from({ length: BARS }, (_, i) => ({
 }));
 
 /**
+ * How long the bubble waits, once a tip starts playing, before sliding in —
+ * on phones, where the sound itself can take about that long to come out of
+ * the speaker after it starts (iOS starting its audio). Desktop's sound is
+ * near-instant, so there it doesn't wait. Tune by ear.
+ */
+const PHONE_SHOW_DELAY_MS = 500;
+
+/**
  * The instructor's photo in a ring of equalizer bars. Shown, it slides in
  * from the right (past the edge of the video, which clips it) and the ring
  * grows in; hidden, the ring goes first and the photo slides back out. Its
@@ -233,6 +241,8 @@ export function CoachTip({
   const gap = large ? 4 : 3;
   const bar = large ? 13 : 10;
   const size = photo + 2 * (gap + bar);
+  // In: after the phone's wait, then the ring 300 ms behind the photo. Out: the ring first, the photo 200 ms after.
+  const wait = large ? 0 : PHONE_SHOW_DELAY_MS;
   return (
     <div
       aria-hidden="true"
@@ -240,16 +250,17 @@ export function CoachTip({
         show
           ? // In with a little overshoot, then the ring; mounting already shown (back from pause), it still slides in.
             "translate-x-0 opacity-100 duration-500 ease-[cubic-bezier(0.22,1.3,0.36,1)] starting:translate-x-[calc(100%+48px)] starting:opacity-0"
-          : "translate-x-[calc(100%+48px)] opacity-0 delay-200 duration-300 ease-in"
+          : "translate-x-[calc(100%+48px)] opacity-0 duration-300 ease-in"
       }`}
-      style={{ width: size, height: size }}
+      style={{ width: size, height: size, transitionDelay: `${show ? wait : 200}ms` }}
     >
       {/* A soft dark disc, so the bars read over a bright studio. */}
       <div className="absolute inset-0 rounded-full bg-[#0E0E20]/40 backdrop-blur-sm" />
       <div
         className={`absolute inset-0 transition-[scale,opacity] duration-300 ${
-          show ? "scale-100 opacity-100 delay-300 starting:scale-75 starting:opacity-0" : "scale-75 opacity-0"
+          show ? "scale-100 opacity-100 starting:scale-75 starting:opacity-0" : "scale-75 opacity-0"
         }`}
+        style={{ transitionDelay: `${show ? wait + 300 : 0}ms` }}
       >
         {RHYTHM.map((r, i) => (
           <div key={i} className="absolute inset-0" style={{ rotate: `${(360 / BARS) * i}deg` }}>
