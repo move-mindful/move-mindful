@@ -40,7 +40,7 @@ export interface Page {
 
 const PAGES: Page[] = [
   {
-    title: "Tap to move around",
+    title: "Tap to control your workout",
     picture: <TapZonesPicture />,
     rows: [
       {
