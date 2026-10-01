@@ -1959,7 +1959,7 @@ export function AudioSheet({
       </div>
       <div data-sheet-scroll className={`flex min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain ${pad}`}>
         <SwitchRow title="Music" {...music} disabled={off} />
-        <SwitchRow title="Audio tips" text="From your instructor, during sets and rests." {...tips} disabled={off} />
+        <SwitchRow title="Audio tips" {...tips} disabled={off} />
         <SwitchRow title="Sound effects" {...effects} disabled={off} />
         {mix && (
           <SwitchRow
