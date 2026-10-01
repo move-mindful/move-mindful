@@ -542,3 +542,21 @@ test("the cool-down and outro can be paused, restarted, skipped, or finished ear
   s = runExtras([{ type: "begin", warmup: false, mode: "off", now: 0 }, { type: "finish", now: 1000 }]);
   assert.equal(s.phase, "intro");
 });
+
+test("the Audio card doesn't hold the workout, and stays open as it moves on", () => {
+  let s = run([
+    { type: "begin", warmup: false, mode: "off", now: 0 },
+    { type: "jump", step: 3, now: 0 }, // plank, 45 s
+    { type: "sheet", sheet: "audio", now: 10_000 },
+  ]);
+  assert.equal(isRunning(s), true);
+  assert.equal(timerLeft(s, 20_000), 25_000, "the countdown keeps going");
+  s = run([{ type: "tick", now: 45_000 }], s);
+  assert.equal(s.step, 4, "the plank ended on time");
+  assert.equal(s.sheet, "audio", "still open over the next set");
+  assert.equal(activeTime(s, 45_000), 45_000, "the workout clock never stopped");
+  // Settings, unlike it, holds everything.
+  s = run([{ type: "sheet", sheet: "settings", now: 50_000 }, { type: "tick", now: 200_000 }], s);
+  assert.equal(isRunning(s), false);
+  assert.equal(s.step, 4);
+});

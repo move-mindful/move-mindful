@@ -186,9 +186,21 @@ export const initialPlayerState: PlayerState = {
   autoAdvance: false,
 };
 
-/** Playing right now: a video or the exercises, not paused, no sheet over it. */
+/**
+ * Playing right now: a video or the exercises, not paused, and no sheet over
+ * it — except the Audio card, which never holds the workout: the clock,
+ * countdowns, videos and tips carry on under it.
+ */
 export function isRunning(s: PlayerState): boolean {
-  return (isVideoPhase(s.phase) || s.phase === "workout") && !s.paused && s.sheet === null;
+  return (isVideoPhase(s.phase) || s.phase === "workout") && !s.paused && (s.sheet === null || s.sheet === "audio");
+}
+
+/**
+ * The sheet left open as the player moves on by itself (or is moved on): the
+ * Audio card stays, since the workout runs on under it; anything else closes.
+ */
+function staysOpen(s: PlayerState): PlayerSheet {
+  return s.sheet === "audio" ? "audio" : null;
 }
 
 /** Milliseconds left on the countdown at `now`, or null when there isn't one. */
@@ -251,7 +263,7 @@ function readyTimer(ctx: PlayerContext): PlayerState["timer"] {
  */
 function enter(ctx: PlayerContext, s: PlayerState, index: number, forward: boolean): PlayerState {
   // The gesture guide, if it's waiting, opens over the first step (holding the clock).
-  const base = { ...s, paused: false, sheet: s.guidePending ? ("guide" as const) : null, guidePending: false, take: s.take + 1 };
+  const base = { ...s, paused: false, sheet: s.guidePending ? ("guide" as const) : staysOpen(s), guidePending: false, take: s.take + 1 };
   if (index >= ctx.steps.length) return afterWorkout(ctx, { ...base, timer: null });
   const step = ctx.steps[index];
   let stage: PlayerState["stage"] = "exercise";
@@ -294,7 +306,7 @@ function sameAsBefore(steps: WorkoutStep[], index: number): boolean {
 
 /** Play a video phase from its start. */
 function playVideo(s: PlayerState, phase: VideoPhase): PlayerState {
-  return { ...s, phase, paused: false, sheet: null, timer: null, take: s.take + 1 };
+  return { ...s, phase, paused: false, sheet: staysOpen(s), timer: null, take: s.take + 1 };
 }
 
 /** The warm-up from the top. */

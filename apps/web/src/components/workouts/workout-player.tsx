@@ -428,7 +428,8 @@ export function WorkoutPlayer({
     return list;
   }, [shown, state.phase, state.step, state.stage, state.mode, state.seen, steps, workout]);
 
-  // Sheets stop the clock. The video keeps playing behind the overview (so
+  // Sheets stop the clock — all but the Audio card, under which everything
+  // carries on (see isRunning). The video keeps playing behind the overview (so
   // pulling it up doesn't stutter) — the warm-up's and cool-down's too, sound
   // and all; if one ends meanwhile, what follows comes up as usual, closing the overview —
   // but pauses under
@@ -551,7 +552,7 @@ export function WorkoutPlayer({
       if (target?.closest("input, textarea, select")) return;
       if (e.key === "Escape") {
         onEscape();
-      } else if (e.key === " " && !target?.closest("button") && !state.sheet) {
+      } else if (e.key === " " && !target?.closest("button") && (!state.sheet || state.sheet === "audio")) {
         e.preventDefault();
         onSpace();
       } else if (running && e.key === "ArrowRight") {
