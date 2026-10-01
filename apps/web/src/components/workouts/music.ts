@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 
 // ── Workout music: the knobs ──────────────────────────
 // One long track, looped, under the whole workout — and on through the
@@ -16,8 +16,9 @@ export const MUSIC = {
   src: "/audio/workout-music.m4a" as string | null,
   /** Its normal level — exercises, rests, Get ready — as a % of the file's own loudness. */
   volume: 60,
-  /** While each of these plays, the music drops to this % of its normal level (100 = no dip). */
+  /** Music drops to this % of its normal level in each situation (100 = no dip). */
   duckTo: {
+    paused: 10,
     // Aggressive under the instructor's voice: about 20 dB down.
     tutorial: 10,
     tip: 10,
@@ -26,22 +27,27 @@ export const MUSIC = {
     warmup: 35,
     cooldown: 35,
   },
-  /** Seconds to dip down, and to come back up. */
+  /** Seconds to dip down (95% of the way), and to ease back up fully. */
   fadeDown: 0.4,
-  fadeUp: 1.2,
+  fadeUp: 1,
 };
 
-/** Pausing (or the music switched off): a quick fade first, so it doesn't click. */
+/** Stopping the music: a quick fade first, so it doesn't click. */
 const STOP_FADE = 0.15;
 
 type Graph = { ctx: AudioContext; gain: GainNode };
 type AudioContextWindow = Window & { webkitAudioContext?: typeof AudioContext };
 
+function subscribeToVisibility(change: () => void) {
+  document.addEventListener("visibilitychange", change);
+  return () => document.removeEventListener("visibilitychange", change);
+}
+
 /**
  * The music under the workout. It plays while `on` (the Music switch, and not
- * muted) and `playing` (the workout running), at `level` (0–1: MUSIC.volume,
- * ducked); pausing fades it out quickly and pauses it, so it picks up where
- * it was.
+ * muted) and `playing` (the player wants music, including quieter workout
+ * pauses), at `level` (0–1: MUSIC.volume, ducked). Stopping or hiding the page
+ * fades it out quickly and pauses it, so it picks up where it was.
  *
  * The level goes through Web Audio (the element → a gain → the speakers)
  * because iPhone Safari ignores an audio element's own volume. Both the
@@ -51,6 +57,9 @@ type AudioContextWindow = Window & { webkitAudioContext?: typeof AudioContext };
  * after that it plays and pauses on its own.
  */
 export function useWorkoutMusic({ on, playing, level }: { on: boolean; playing: boolean; level: number }) {
+  // An on-screen workout pause can keep the music going, but switching apps
+  // or locking the phone should still stop it along with the workout.
+  const visible = useSyncExternalStore(subscribeToVisibility, () => !document.hidden, () => true);
   const audio = useRef<HTMLAudioElement | null>(null);
   const graph = useRef<Graph | null>(null);
   // Mid-start inside a tap: pausing before its play() settles would undo it.
@@ -58,7 +67,7 @@ export function useWorkoutMusic({ on, playing, level }: { on: boolean; playing: 
   // Restarting after iOS paused it (see `restart`): the pending try, and the recent ones.
   const restartTimer = useRef(0);
   const restarts = useRef<number[]>([]);
-  const want = on && playing && !!MUSIC.src;
+  const want = on && playing && visible && !!MUSIC.src;
   const wantNow = useRef(want);
 
   useEffect(() => {
@@ -76,10 +85,26 @@ export function useWorkoutMusic({ on, playing, level }: { on: boolean; playing: 
       const now = g.ctx.currentTime;
       const from = param.value;
       const seconds = !want ? STOP_FADE : target < from ? MUSIC.fadeDown : MUSIC.fadeUp;
-      param.cancelScheduledValues(now);
+      // Preserve the current level if a pause or another voice interrupts a
+      // fade. Older browsers fall back to the sampled value below.
+      if (typeof param.cancelAndHoldAtTime === "function") param.cancelAndHoldAtTime(now);
+      else param.cancelScheduledValues(now);
       param.setValueAtTime(from, now);
-      // Most of the way there (95%) in `seconds`.
-      param.setTargetAtTime(target, now, seconds / 3);
+      if (want && target > from) {
+        // Ease in and out when a voice ends (especially tutorial → Get ready).
+        // setTargetAtTime rises fastest at the start, which sounds like a jump
+        // from the tutorial's low level. Short linear ramps trace a smooth
+        // curve and can be interrupted without overlapping value-curve events.
+        const segments = 32;
+        for (let i = 1; i <= segments; i++) {
+          const t = i / segments;
+          const eased = t * t * (3 - 2 * t);
+          param.linearRampToValueAtTime(from + (target - from) * eased, now + seconds * t);
+        }
+      } else {
+        // Ducking and stopping still respond quickly: 95% there in `seconds`.
+        param.setTargetAtTime(target, now, seconds / 3);
+      }
     } else {
       a.volume = target; // no Web Audio: the element's own volume (not on iPhones)
     }

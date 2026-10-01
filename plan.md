@@ -235,6 +235,8 @@ Built in vertical slices, so each step leaves something usable and real footage 
   - [x] Audio tips trim their own dead air: the speech is found right after recording (core `speechBounds`, with tests) and the tip plays only that part (`start` / `end`), in the player and the builder's preview; earlier recordings are trimmed when the Audio tips view opens
   - [x] An Audio card behind the sound button (phones) and a new Audio button in the desktop column: Music and Sound effects (placeholders), Audio tips, and Mute all at the bottom (the old instructor-audio setting); Settings no longer has a Sound section. Keep my music playing is hidden and off for user testing (`KEEP_MY_MUSIC`)
   - [x] Music for user testing: one sample track looped under the workout (`components/workouts/music.ts`), ducking under tutorials, tips, intro and outro, with its own levels for the warm-up and cool-down — all tunable in `MUSIC`; through Web Audio for iPhone volume control
+  - [x] Smooth music recovery after a tutorial or other ducked section: a one-second rise that eases in and out, including tutorial → Get ready; interrupted fades continue from the current level
+  - [x] Pausing an exercise, rest or Get ready keeps music playing at 10% of its normal workout level; Resume eases it back up. Music off, Mute all and hiding the page still stop it
   - [x] Add the sample track: `apps/web/public/audio/workout-music.m4a` (30 min, AAC 128 kbps, 30 MB)
   - [ ] Tune the music levels by ear on iPhone and desktop (`MUSIC` in `components/workouts/music.ts`)
   - [ ] Build what the Sound effects switch will control
