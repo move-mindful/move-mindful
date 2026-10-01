@@ -960,8 +960,8 @@ export function WorkoutPlayer({
             tip={!theater && step.tip ? coach() : null}
             theater={theater}
           />
-          {/* Desktop: the tip's photo in the video's corner, as on a set. */}
-          {theater && step.tip && <div className="pointer-events-none absolute bottom-8 right-8">{coach(true)}</div>}
+          {/* Desktop: the tip's photo by the video's corner, as on a set (a bubble's height up from it). */}
+          {theater && step.tip && <div className="pointer-events-none absolute bottom-8 right-8 -translate-y-full">{coach(true)}</div>}
           {/* Phones: Settings (top right) and audio (top left) while the countdown is held, as on the pause screen. */}
           {!theater && state.paused && <CornerSettings onClick={openSettings} />}
           {!theater && state.paused && <CornerAudio muted={muted} onClick={openAudio} />}
@@ -1079,7 +1079,7 @@ export function WorkoutPlayer({
             <TopShade />
             {bar}
             {zones("Next set")}
-            <div className="pointer-events-none absolute bottom-8 right-8">
+            <div className="pointer-events-none absolute bottom-8 right-8 -translate-y-full">
               {coach(true)}
             </div>
           </>
