@@ -373,27 +373,31 @@ export function WorkoutPlayer({
 
   // Music under the workout (the Audio card's Music switch). It plays while the
   // workout runs — the overview and the Audio card leave it going — and on
-  // through the summary until Done; it dips under a voice and through the
-  // warm-up and cool-down. The levels are in MUSIC.
-  const duckTo = tips.playing
-    ? MUSIC.duckTo.tip
-    : state.phase === "workout" && step?.kind === "set" && state.stage === "tutorial"
-      ? MUSIC.duckTo.tutorial
-      : state.phase === "intro"
-        ? MUSIC.duckTo.intro
-        : state.phase === "outro"
-          ? MUSIC.duckTo.outro
-          : state.phase === "warmup"
-            ? MUSIC.duckTo.warmup
-            : state.phase === "cooldown"
-              ? MUSIC.duckTo.cooldown
-              : 100;
+  // through the summary until Done; it dips under a voice, through the
+  // warm-up and cool-down, and on the summary. Held in the workout — paused
+  // (a rest or Get ready held right there included), or Settings, End
+  // workout or the guide over it — it keeps playing quietly instead of
+  // stopping. The levels are in MUSIC.
+  const musicHeld =
+    state.phase === "workout" &&
+    (state.paused || state.sheet === "settings" || state.sheet === "end" || state.sheet === "guide");
+  const duckTo = (() => {
+    if (musicHeld) return MUSIC.duckTo.paused;
+    if (state.phase === "complete") return MUSIC.duckTo.done;
+    if (tips.playing) return MUSIC.duckTo.tip;
+    if (state.phase === "workout" && step?.kind === "set" && state.stage === "tutorial") return MUSIC.duckTo.tutorial;
+    if (state.phase === "intro" || state.phase === "outro" || state.phase === "warmup" || state.phase === "cooldown") {
+      return MUSIC.duckTo[state.phase];
+    }
+    return 100;
+  })();
   const music = useWorkoutMusic({
     on: prefs.music && !muted,
     playing:
-      (active || state.phase === "complete") &&
-      !state.paused &&
-      (state.sheet === null || state.sheet === "overview" || state.sheet === "audio"),
+      musicHeld ||
+      ((active || state.phase === "complete") &&
+        !state.paused &&
+        (state.sheet === null || state.sheet === "overview" || state.sheet === "audio")),
     level: (MUSIC.volume / 100) * (duckTo / 100),
   });
   /** In a tap that should get the music going, if it's meant to be on. */

@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 
 // ── Workout music: the knobs ──────────────────────────
 // One long track, looped, under the whole workout — and on through the
-// summary, until Done — while the Audio card's Music switch is on. When someone talks — a tutorial, an audio tip, the
-// intro or outro — and during the warm-up and cool-down, it dips ("ducks")
-// to a share of its normal level, then comes back up. Tune these by ear.
+// summary, until Done — while the Audio card's Music switch is on. When
+// someone talks — a tutorial, an audio tip, the intro or outro — during the
+// warm-up and cool-down, while the workout's paused, and on the summary, it
+// dips ("ducks") to a share of its normal level, then comes back up. Tune
+// these by ear.
 
 export const MUSIC = {
   /**
@@ -16,7 +18,7 @@ export const MUSIC = {
   src: "/audio/workout-music.m4a" as string | null,
   /** Its normal level — exercises, rests, Get ready — as a % of the file's own loudness. */
   volume: 60,
-  /** While each of these plays, the music drops to this % of its normal level (100 = no dip). */
+  /** While each of these is on, the music drops to this % of its normal level (100 = no dip). */
   duckTo: {
     // Aggressive under the instructor's voice: about 20 dB down.
     tutorial: 10,
@@ -25,23 +27,60 @@ export const MUSIC = {
     outro: 20,
     warmup: 35,
     cooldown: 35,
+    /** Paused in the workout (a set, a tutorial, a held rest or Get ready): it keeps playing, quietly. */
+    paused: 10,
+    /** The summary (Workout complete), level with the outro before it. */
+    done: 20,
   },
-  /** Seconds to dip down, and to come back up. */
+  /**
+   * Seconds to dip down, and to come back up. Both move evenly in loudness,
+   * so coming back (a tutorial ending into Get ready, say) is a smooth rise
+   * rather than a jump.
+   */
   fadeDown: 0.4,
-  fadeUp: 1.2,
+  fadeUp: 1.5,
 };
 
-/** Pausing (or the music switched off): a quick fade first, so it doesn't click. */
+/** Stopping (the music switched off, the page hidden, the workout over): a quick fade first, so it doesn't click. */
 const STOP_FADE = 0.15;
+
+/** Below this a gain is silence: fades to and from it are straight ramps (a loudness-even one can't start or end at zero). */
+const SILENT = 0.001;
 
 type Graph = { ctx: AudioContext; gain: GainNode };
 type AudioContextWindow = Window & { webkitAudioContext?: typeof AudioContext };
 
 /**
+ * Move the music's gain to `target` over `seconds`, from wherever it is now
+ * (mid-fade included). Between two audible levels it moves evenly in
+ * loudness — an exponential ramp, since we hear volume on a log scale —
+ * which is what makes a rise sound smooth; a plain setTargetAtTime does most
+ * of its rising in the first moment, and sounded like a jump. Fading in from
+ * silence, or out to it, is a straight ramp.
+ */
+function rampTo({ ctx, gain }: Graph, target: number, seconds: number) {
+  const param = gain.gain;
+  const now = ctx.currentTime;
+  const from = param.value;
+  if (typeof param.cancelAndHoldAtTime === "function") param.cancelAndHoldAtTime(now);
+  else param.cancelScheduledValues(now);
+  param.setValueAtTime(from, now);
+  if (from < SILENT || target < SILENT) param.linearRampToValueAtTime(target, now + seconds);
+  else param.exponentialRampToValueAtTime(target, now + seconds);
+}
+
+// Whether the page is on screen: hidden (another app, the phone locked), the
+// music stops even where the workout would keep it playing quietly.
+function subscribeToVisibility(change: () => void) {
+  document.addEventListener("visibilitychange", change);
+  return () => document.removeEventListener("visibilitychange", change);
+}
+
+/**
  * The music under the workout. It plays while `on` (the Music switch, and not
- * muted) and `playing` (the workout running), at `level` (0–1: MUSIC.volume,
- * ducked); pausing fades it out quickly and pauses it, so it picks up where
- * it was.
+ * muted), `playing` (the player wants it — running, or held quietly) and the
+ * page is on screen, at `level` (0–1: MUSIC.volume, ducked); stopping fades
+ * it out quickly and pauses it, so it picks up where it was.
  *
  * The level goes through Web Audio (the element → a gain → the speakers)
  * because iPhone Safari ignores an audio element's own volume. Both the
@@ -58,7 +97,8 @@ export function useWorkoutMusic({ on, playing, level }: { on: boolean; playing: 
   // Restarting after iOS paused it (see `restart`): the pending try, and the recent ones.
   const restartTimer = useRef(0);
   const restarts = useRef<number[]>([]);
-  const want = on && playing && !!MUSIC.src;
+  const visible = useSyncExternalStore(subscribeToVisibility, () => !document.hidden, () => true);
+  const want = on && playing && visible && !!MUSIC.src;
   const wantNow = useRef(want);
 
   useEffect(() => {
@@ -72,14 +112,7 @@ export function useWorkoutMusic({ on, playing, level }: { on: boolean; playing: 
     const g = graph.current;
     const target = want ? Math.min(1, Math.max(0, level)) : 0;
     if (g) {
-      const param = g.gain.gain;
-      const now = g.ctx.currentTime;
-      const from = param.value;
-      const seconds = !want ? STOP_FADE : target < from ? MUSIC.fadeDown : MUSIC.fadeUp;
-      param.cancelScheduledValues(now);
-      param.setValueAtTime(from, now);
-      // Most of the way there (95%) in `seconds`.
-      param.setTargetAtTime(target, now, seconds / 3);
+      rampTo(g, target, !want ? STOP_FADE : target < g.gain.gain.value ? MUSIC.fadeDown : MUSIC.fadeUp);
     } else {
       a.volume = target; // no Web Audio: the element's own volume (not on iPhones)
     }
