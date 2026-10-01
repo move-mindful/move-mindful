@@ -3,8 +3,8 @@
 import { useEffect, useRef } from "react";
 
 // ── Workout music: the knobs ──────────────────────────
-// One long track, looped, under the whole workout while the Audio card's
-// Music switch is on. When someone talks — a tutorial, an audio tip, the
+// One long track, looped, under the whole workout — and on through the
+// summary, until Done — while the Audio card's Music switch is on. When someone talks — a tutorial, an audio tip, the
 // intro or outro — and during the warm-up and cool-down, it dips ("ducks")
 // to a share of its normal level, then comes back up. Tune these by ear.
 
@@ -23,8 +23,8 @@ export const MUSIC = {
     tip: 10,
     intro: 25,
     outro: 25,
-    warmup: 40,
-    cooldown: 40,
+    warmup: 35,
+    cooldown: 35,
   },
   /** Seconds to dip down, and to come back up. */
   fadeDown: 0.4,

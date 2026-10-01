@@ -359,8 +359,9 @@ export function WorkoutPlayer({
   const coach = (large = false) => <CoachTip show={tips.speaking} instructor={workout.instructor} large={large} />;
 
   // Music under the workout (the Audio card's Music switch). It plays while the
-  // workout runs — the overview and the Audio card leave it going — and dips
-  // under a voice and through the warm-up and cool-down; the levels are in MUSIC.
+  // workout runs — the overview and the Audio card leave it going — and on
+  // through the summary until Done; it dips under a voice and through the
+  // warm-up and cool-down. The levels are in MUSIC.
   const duckTo = tips.speaking
     ? MUSIC.duckTo.tip
     : state.phase === "workout" && step?.kind === "set" && state.stage === "tutorial"
@@ -376,7 +377,10 @@ export function WorkoutPlayer({
               : 100;
   const music = useWorkoutMusic({
     on: prefs.music && !muted,
-    playing: active && !state.paused && (state.sheet === null || state.sheet === "overview" || state.sheet === "audio"),
+    playing:
+      (active || state.phase === "complete") &&
+      !state.paused &&
+      (state.sheet === null || state.sheet === "overview" || state.sheet === "audio"),
     level: (MUSIC.volume / 100) * (duckTo / 100),
   });
   /** In a tap that should get the music going, if it's meant to be on. */
