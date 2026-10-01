@@ -281,7 +281,7 @@ export function GestureGuide({
             onClick={() => (last ? onDone() : setPage(page + 1))}
             className="h-[54px] flex-1 rounded-full bg-white text-[17px] font-semibold text-[#14142B]"
           >
-            {last ? "Close" : "Next"}
+            {last ? "Let's go!" : "Next"}
           </button>
         </div>
       </section>

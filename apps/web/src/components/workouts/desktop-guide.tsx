@@ -148,7 +148,7 @@ export function DesktopGuide({
               onClick={() => (last ? onDone() : setPage(page + 1))}
               className="h-12 min-w-[120px] rounded-full bg-white px-7 text-base font-semibold text-[#14142B] transition hover:bg-white/90"
             >
-              {last ? "Close" : "Next"}
+              {last ? "Let's go!" : "Next"}
             </button>
           </div>
         </div>
