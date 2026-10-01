@@ -7,9 +7,11 @@ import guideBackground from "./guide-background.webp";
 import {
   ArrowDown,
   ArrowUp,
+  Bluetooth,
   ChevronLeft,
   Close,
   ChevronRight,
+  Headphones,
   Loop,
   Music,
   Muted,
@@ -25,9 +27,9 @@ import { TAP_ZONES } from "./player-screens";
 /**
  * The first-run guide to the player, over the stage on phones: tapping (the
  * three zones drawn over the video), swiping, watching a tutorial from the
- * pause screen, the audio button and its card, Settings and the tutorial
- * mode, auto-advance, and last how the member's tutorials and auto-advance
- * are set right now, with a way into Settings. Shown once — right after Begin, over the warm-up, or as the first
+ * pause screen, the audio button and its card, wireless headphones, Settings
+ * and the tutorial mode, auto-advance, and last how the member's tutorials
+ * and auto-advance are set right now, with a way into Settings. Shown once — right after Begin, over the warm-up, or as the first
  * exercise comes up when there's no warm-up (see `begin` in the core reducer)
  * — and again from Settings; signed-out /demo1 visitors get it every time.
  * The workout waits while it's open.
@@ -104,6 +106,19 @@ const PAGES: Page[] = [
       },
       { icon: <Music size={18} />, title: "Music and audio tips", text: "Turn each on or off." },
       { icon: <Muted size={18} />, title: "Mute all", text: "Turn off all sound at once." },
+    ],
+  },
+  {
+    title: "Have Bluetooth headphones?",
+    picture: <EarbudsPicture />,
+    rows: [
+      {
+        icon: <Bluetooth size={18} />,
+        tint: "bg-[#A99CFF]/25 text-[#C9C0FF]",
+        title: "Use them",
+        text: "Connect them to your phone before you start.",
+      },
+      { icon: <Headphones size={18} />, title: "Hear it all", text: "Instructor, tips and music, in your ears." },
     ],
   },
   {
@@ -378,6 +393,56 @@ function AudioPicture() {
         </span>
       </div>
     </div>
+  );
+}
+
+/**
+ * The headphones page's picture: a pair of wireless earbuds — generic, not
+ * any brand's — with a signal arcing above them, on a soft accent glow.
+ */
+function EarbudsPicture() {
+  return (
+    <svg width="288" height="240" viewBox="0 0 240 200" aria-hidden="true">
+      <defs>
+        <linearGradient id="guide-buds-shell" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#FFFFFF" />
+          <stop offset="0.55" stopColor="#F1F1F6" />
+          <stop offset="1" stopColor="#C9C9D8" />
+        </linearGradient>
+        <linearGradient id="guide-buds-stem" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#FFFFFF" />
+          <stop offset="1" stopColor="#D4D4E0" />
+        </linearGradient>
+        <radialGradient id="guide-buds-glow" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stopColor="#A99CFF" stopOpacity="0.45" />
+          <stop offset="1" stopColor="#A99CFF" stopOpacity="0" />
+        </radialGradient>
+        <filter id="guide-buds-shadow" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="6" stdDeviation="6" floodColor="#000" floodOpacity="0.35" />
+        </filter>
+      </defs>
+      <ellipse cx="120" cy="100" rx="110" ry="90" fill="url(#guide-buds-glow)" />
+      <g fill="none" stroke="#C9C0FF" strokeWidth="3" strokeLinecap="round">
+        <path d="M104 52a24 24 0 0 1 32 0" />
+        <path d="M94 40a38 38 0 0 1 52 0" opacity="0.6" />
+      </g>
+      <Earbud x={78} turn={18} />
+      <Earbud x={162} turn={-18} mirrored />
+    </svg>
+  );
+}
+
+/** One earbud: a rounded head with its ear tip and speaker, and a stem. */
+function Earbud({ x, turn, mirrored = false }: { x: number; turn: number; mirrored?: boolean }) {
+  return (
+    <g transform={`translate(${x} 92) rotate(${turn})${mirrored ? " scale(-1 1)" : ""}`} filter="url(#guide-buds-shadow)">
+      <rect x="-8" y="2" width="16" height="78" rx="8" fill="url(#guide-buds-stem)" />
+      <rect x="-8" y="70" width="16" height="10" rx="5" fill="#B4B4C6" />
+      <ellipse cx="-2" cy="-4" rx="24" ry="21" fill="url(#guide-buds-shell)" />
+      <ellipse cx="13" cy="-9" rx="11" ry="10" fill="#E4E4EC" />
+      <ellipse cx="14" cy="-9" rx="5" ry="4.5" fill="#3A3A52" opacity="0.8" />
+      <ellipse cx="-12" cy="6" rx="3.2" ry="2.2" fill="#3A3A52" opacity="0.35" />
+    </g>
   );
 }
 
