@@ -38,3 +38,24 @@ html:has([data-dark-page]) body {
    to put the exercise info and controls beside the 9:16 video instead of over
    it. Keep in step with THEATER_QUERY in components/workouts/theater.tsx. */
 @custom-variant theater (@media (min-width: 1024px) and (min-aspect-ratio: 5/4));
+
+/* The equalizer bars round the instructor's photo during an audio tip
+   (components/workouts/coach-tip.tsx). Each bar runs this at its own speed
+   and offset, back and forth, so the ring flickers like speech. */
+@keyframes coach-eq {
+  0% {
+    transform: scaleY(0.2);
+  }
+  30% {
+    transform: scaleY(1);
+  }
+  55% {
+    transform: scaleY(0.45);
+  }
+  80% {
+    transform: scaleY(0.85);
+  }
+  100% {
+    transform: scaleY(0.3);
+  }
+}

@@ -71,6 +71,7 @@ import { WorkoutPreview } from "./workout-preview";
 import { GestureGuide } from "./gesture-guide";
 import { DesktopGuide } from "./desktop-guide";
 import { usePlayerPreferences } from "./preferences";
+import { CoachTip, useCoachTip } from "./coach-tip";
 import { saveWorkoutSession } from "@/app/actions/workout-sessions";
 import type { PlayerPreferences } from "@/lib/member/preferences";
 import type { SavedProgress, SessionEvent } from "@/lib/member/sessions";
@@ -287,6 +288,12 @@ export function WorkoutPlayer({
   const targetIndex = setStepFor(steps, state.step);
   const target = targetIndex !== null ? (steps[targetIndex] as SetStep) : null;
   const targetExercise = target ? workout.exercises[target.exerciseId] : undefined;
+
+  // The instructor's audio tip, a few seconds into the exercise (after the
+  // tutorial and Get ready). For now a stand-in on every set — the look only,
+  // no recordings yet — and hidden with instructor audio off.
+  const tipPlaying = useCoachTip(state.take, running && state.phase === "workout" && !!set && state.stage === "exercise");
+  const tip = tipPlaying && !muted;
 
   // ── Videos ──────────────────────────────────────────
 
@@ -919,6 +926,9 @@ export function WorkoutPlayer({
             <TopShade />
             {bar}
             {zones("Next set")}
+            <div className="pointer-events-none absolute bottom-8 right-8">
+              <CoachTip show={tip} large />
+            </div>
           </>
         );
         info = (
@@ -957,6 +967,7 @@ export function WorkoutPlayer({
               onOverview={openOverview}
               muted={muted}
               onToggleSound={() => setSound(muted)}
+              tip={<CoachTip show={tip} />}
             />
           </>
         );

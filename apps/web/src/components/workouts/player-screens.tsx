@@ -461,6 +461,7 @@ export function SetScreen({
   onOverview,
   muted,
   onToggleSound,
+  tip = null,
 }: {
   name: string;
   /** Reps to do, or the seconds left on a timed set. */
@@ -477,6 +478,8 @@ export function SetScreen({
   onOverview: () => void;
   muted: boolean;
   onToggleSound: () => void;
+  /** The instructor's audio tip (CoachTip): at the right end of the reps, over the Pause button. */
+  tip?: ReactNode;
 }) {
   return (
     <div className={`absolute inset-x-0 bottom-0 isolate flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
@@ -489,7 +492,10 @@ export function SetScreen({
           </div>
         </Collapse>
       )}
-      <div className="flex items-center gap-3">
+      <div className="relative flex items-center gap-3">
+        {/* Bottom-aligned with the reps so it never covers the name below;
+            centred on the Pause button (the ring is 22px wider than it). */}
+        {tip && <div className="absolute bottom-0 right-[-11px]">{tip}</div>}
         {metric.kind === "reps" ? (
           <span className="flex items-baseline gap-1.5">
             <span className="text-[56px] font-semibold leading-none tracking-[-0.03em] tabular-nums">{metric.amount}</span>
