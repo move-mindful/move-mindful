@@ -13,12 +13,15 @@ import {
 import { uploadWorkoutTip } from "@/app/actions/workouts";
 import { formatDuration } from "@/lib/exercises/shared";
 import { TIP_DELAY_SECONDS, TIP_MAX_SECONDS, tipUrl, type CatalogExercise } from "@/lib/workouts/shared";
+import { findSpeech, trimmed } from "@/lib/workouts/trim";
 
 // The builder's "Audio tips" view: the workout as members walk it — every set
 // (each side of a sided one) and every rest, the ones the builder adds between
 // sets and rounds included — each with a tip to record from the microphone,
 // play back, redo or remove. Recordings upload straight away; the sequence
-// points at them once the workout is saved (see uploadWorkoutTip).
+// points at them once the workout is saved (see uploadWorkoutTip). The dead
+// air before and after the speech is trimmed off automatically — the file
+// stays whole, and the tip plays just the speech (AudioTip start / end).
 
 // What the browser records in: AAC in MP4 (Chrome, Safari), which every
 // phone and browser can play. Firefox only records Opus, so it can't record tips.
@@ -63,6 +66,32 @@ export function TipsView({
   const recorder = useRef<{ rec: MediaRecorder; discard: boolean } | null>(null);
   const player = useRef<HTMLAudioElement | null>(null);
 
+  // Tips recorded before trimming existed: find their speech once, as the view
+  // opens, and keep it — the Save bar then asks for a save.
+  const latest = useRef({ steps, onTip });
+  useEffect(() => {
+    latest.current = { steps, onTip };
+  });
+  const tried = useRef(new Set<string>());
+  const untrimmed = steps.flatMap((s) => (s.tip && s.tip.end === undefined ? [s.tip.id] : [])).join(",");
+  useEffect(() => {
+    for (const id of untrimmed ? untrimmed.split(",") : []) {
+      if (tried.current.has(id)) continue;
+      tried.current.add(id);
+      fetch(tipUrl(id))
+        .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))
+        .then(findSpeech)
+        .then((speech) => {
+          // Still there, still untrimmed (nothing moved meanwhile)?
+          const step = latest.current.steps.find((s) => s.tip?.id === id);
+          if (speech && step?.tip && step.tip.end === undefined) latest.current.onTip(step.tipSlot, trimmed(step.tip, speech));
+        })
+        .catch(() => {
+          // Couldn't fetch or decode it: it plays whole, as before.
+        });
+    }
+  }, [untrimmed]);
+
   // The seconds ticking up while recording.
   const recording = busy?.phase === "recording";
   useEffect(() => {
@@ -95,8 +124,20 @@ export function TipsView({
       return;
     }
     const el = (player.current ??= new Audio());
+    const start = tip.start ?? 0;
     el.onended = () => setPlaying(null);
+    // Just the speech, when it's been trimmed: from `start`, stopping at `end`.
+    el.ontimeupdate = () => {
+      if (tip.end !== undefined && el.currentTime >= tip.end) {
+        el.pause();
+        setPlaying(null);
+      }
+    };
+    el.onloadedmetadata = () => {
+      if (Math.abs(el.currentTime - start) > 0.05) el.currentTime = start;
+    };
     el.src = tipUrl(tip.id);
+    el.currentTime = start;
     setPlaying(id);
     el.play().catch(() => {
       setPlaying(null);
@@ -150,13 +191,16 @@ export function TipsView({
         setBusy(null);
         return; // the builder shows why it couldn't save
       }
+      const audio = new Blob(chunks, { type: "audio/mp4" });
+      // Where the speech is, so the dead air either side is skipped.
+      const speech = await findSpeech(await audio.arrayBuffer()).catch(() => null);
       const fd = new FormData();
       fd.set("workoutId", workoutId);
-      fd.set("seconds", String(seconds));
-      fd.set("audio", new Blob(chunks, { type: "audio/mp4" }), "tip.m4a");
+      fd.set("seconds", String(speech?.duration ?? seconds));
+      fd.set("audio", audio, "tip.m4a");
       const res = await uploadWorkoutTip(fd).catch(() => ({ tip: undefined, error: "Couldn’t reach the server. Try again." }));
       setBusy(null);
-      if (res.tip) onTip(slot, res.tip);
+      if (res.tip) onTip(slot, speech ? trimmed(res.tip, speech) : res.tip);
       else setError(res.error ?? "The recording didn’t save. Try again.");
     };
     recorder.current = current;
@@ -261,7 +305,8 @@ export function TipsView({
       <p className="text-sm text-zinc-600">
         Members hear a tip {TIP_DELAY_SECONDS.set} s into its set, once the exercise starts, or {TIP_DELAY_SECONDS.rest} s
         into its rest, with {instructorName ? `${instructorName}’s` : "the instructor’s"} photo on screen. It stops when the
-        set or rest ends, and doesn’t play with instructor audio off. Save the workout to keep new recordings.
+        set or rest ends, and doesn’t play with instructor audio off. The silence before and after each recording is
+        trimmed off. Save the workout to keep new recordings.
       </p>
       {unsaved && (
         <div className="sticky top-2 z-10 flex items-center justify-between gap-3 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm text-violet-950">

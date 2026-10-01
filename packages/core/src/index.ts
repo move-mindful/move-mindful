@@ -6,3 +6,4 @@ export * from "./access";
 export * from "./workouts";
 export * from "./workout-player";
 export * from "./workout-progress";
+export * from "./audio-trim";

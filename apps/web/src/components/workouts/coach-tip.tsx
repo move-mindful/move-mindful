@@ -35,12 +35,20 @@ function silentWav(): string {
 }
 
 /** The tips' audio element, reporting what it does to `on`. */
-function newTipAudio(on: { playing: () => void; paused: () => void; ended: () => void }): HTMLAudioElement {
+function newTipAudio(on: {
+  playing: () => void;
+  paused: () => void;
+  ended: () => void;
+  time: () => void;
+  loaded: () => void;
+}): HTMLAudioElement {
   const a = new Audio();
   a.preload = "auto";
   a.onplaying = () => on.playing();
   a.onpause = () => on.paused();
   a.onended = () => on.ended();
+  a.ontimeupdate = () => on.time();
+  a.onloadedmetadata = () => on.loaded();
   return a;
 }
 
@@ -56,22 +64,31 @@ function newTipAudio(on: { playing: () => void; paused: () => void; ended: () =>
  * past its set or rest. With instructor audio off (`muted`) a tip that comes
  * due is skipped, and one playing pauses until it's turned back on.
  *
+ * A trimmed tip plays just its speech: from `start` to `end` (seconds into
+ * the file; null plays to the file's end), so the dead air either side never
+ * plays — and the bubble leaves with the last word.
+ *
  * `speaking`: a tip is audibly playing, for CoachTip.
  */
 export function useTipAudio({
-  url,
+  tip,
   take,
   running,
   delayMs,
   muted,
 }: {
-  url: string | null;
+  tip: { url: string; start: number; end: number | null } | null;
   take: number;
   running: boolean;
   delayMs: number;
   muted: boolean;
 }): { speaking: boolean; unlock: () => void } {
+  const url = tip?.url ?? null;
+  const start = tip?.start ?? 0;
+  const end = tip?.end ?? null;
   const audio = useRef<HTMLAudioElement | null>(null);
+  // The part of the file the tip on screen plays.
+  const bounds = useRef({ start, end });
   // This take's running time so far, and whether its tip has started or is over.
   const progress = useRef({ take, ms: 0, started: false, done: false });
   // The take whose tip the element holds, and whether instructor audio is off right now.
@@ -88,6 +105,19 @@ export function useTipAudio({
       if (progress.current.take === loaded.current) progress.current.done = true;
       setSpeakingTake(null);
     },
+    // At the end of the speech: stop, as if the file had ended there.
+    time: () => {
+      const a = audio.current;
+      const stop = bounds.current.end;
+      if (!a || a.paused || stop === null || a.currentTime < stop) return;
+      if (progress.current.take === loaded.current) progress.current.done = true;
+      a.pause();
+    },
+    // Started before the file's details had loaded: make sure it's at the speech.
+    loaded: () => {
+      const a = audio.current;
+      if (a && progress.current.started && a.currentTime + 0.05 < bounds.current.start) a.currentTime = bounds.current.start;
+    },
   });
 
   useEffect(() => {
@@ -97,6 +127,7 @@ export function useTipAudio({
   // A new step (or take): stop whatever was playing and load this one's tip.
   useEffect(() => {
     progress.current = { take, ms: 0, started: false, done: false };
+    bounds.current = { start, end };
     if (url && !audio.current) audio.current = newTipAudio(on.current);
     const a = audio.current;
     if (!a) return;
@@ -105,7 +136,7 @@ export function useTipAudio({
       loaded.current = take;
       a.src = url;
     }
-  }, [take, url]);
+  }, [take, url, start, end]);
 
   // Count down to the tip while running; hold (and pause it) otherwise.
   useEffect(() => {
@@ -129,7 +160,7 @@ export function useTipAudio({
           p.done = true;
           return;
         }
-        a.currentTime = 0;
+        a.currentTime = bounds.current.start;
         a.play().catch(() => {
           p.done = true;
         });

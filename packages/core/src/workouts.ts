@@ -10,10 +10,17 @@
 export type Side = "right" | "left";
 export type Measure = "reps" | "time";
 
-/** A recorded audio tip from the instructor: the app's id for its file, and its length. */
+/**
+ * A recorded audio tip from the instructor: the app's id for its file, and
+ * how long it plays. With `start` and `end` (seconds into the file) only that
+ * part plays — the speech, the dead air either side trimmed off (see
+ * speechBounds) — and `seconds` is its length; without them, the whole file.
+ */
 export interface AudioTip {
   id: string;
   seconds: number;
+  start?: number;
+  end?: number;
 }
 
 /**

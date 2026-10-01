@@ -32,6 +32,13 @@ export function readTips(value: unknown, folder?: string): TipMap | undefined {
     if (!TIP_KEY.test(key) || typeof t?.id !== "string" || !TIP_FILE.test(t.id) || !Number.isFinite(seconds)) continue;
     if (folder !== undefined && !t.id.startsWith(`${folder}/`)) continue;
     out[key] = { id: t.id, seconds: Math.min(600, Math.max(0, Math.round(seconds * 10) / 10)) };
+    // The speech within the file, when it's been trimmed.
+    const start = Number((tip as { start?: unknown }).start);
+    const end = Number((tip as { end?: unknown }).end);
+    if (Number.isFinite(start) && Number.isFinite(end) && start >= 0 && end > start && end <= 600) {
+      out[key].start = Math.round(start * 100) / 100;
+      out[key].end = Math.round(end * 100) / 100;
+    }
   }
   return Object.keys(out).length ? out : undefined;
 }

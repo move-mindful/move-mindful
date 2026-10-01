@@ -347,7 +347,9 @@ export function WorkoutPlayer({
   const tipStep =
     state.phase === "workout" && step && (step.kind === "rest" || state.stage === "exercise") ? step : null;
   const tips = useTipAudio({
-    url: tipStep?.tip ? tipUrl(tipStep.tip.id) : null,
+    tip: tipStep?.tip
+      ? { url: tipUrl(tipStep.tip.id), start: tipStep.tip.start ?? 0, end: tipStep.tip.end ?? null }
+      : null,
     take: state.take,
     running: running && !!tipStep,
     delayMs: (step?.kind === "rest" ? TIP_DELAY_SECONDS.rest : TIP_DELAY_SECONDS.set) * 1000,
