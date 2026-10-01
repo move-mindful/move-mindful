@@ -273,6 +273,30 @@ export function WorkoutPlayer({
     onStep();
   }, [state.phase, state.step]);
 
+  // On a phone, the bar around the notch goes black while the player is up —
+  // iOS (and Android's browser bar) colours it from the page's theme-color,
+  // the player pages' purple — and back to purple on the workout preview. The
+  // strip at the bottom comes from the page's background, so it stays purple.
+  // Touch screens only: desktop Safari would tint its tab bar too.
+  const inPlayer = state.phase !== "preview";
+  useEffect(() => {
+    if (!inPlayer || !window.matchMedia("(hover: none) and (pointer: coarse)").matches) return;
+    let metas = [...document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')];
+    const added = metas.length === 0;
+    if (added) {
+      const meta = document.createElement("meta");
+      meta.name = "theme-color";
+      document.head.append(meta);
+      metas = [meta];
+    }
+    const before = metas.map((m) => m.content);
+    metas.forEach((m) => (m.content = "#000000"));
+    return () => {
+      if (added) metas.forEach((m) => m.remove());
+      else metas.forEach((m, i) => (m.content = before[i]));
+    };
+  }, [inPlayer]);
+
   // "Keep my music playing": an "ambient" session mixes with other apps'
   // audio (iOS then lets the Silent switch mute it); "auto" is the default,
   // where instructor audio pauses them. Set before anything plays, and put back
