@@ -30,6 +30,8 @@ export interface PlayerExercise {
 export interface PlayerWorkout {
   id: string;
   title: string;
+  /** Who's teaching it: their photo is on screen while one of their audio tips plays. */
+  instructor: { name: string; photoUrl: string | null } | null;
   description: string;
   level: WorkoutLevel | null;
   coverImageUrl: string | null;

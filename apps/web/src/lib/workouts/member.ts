@@ -67,7 +67,7 @@ function playableBlocks(blocks: WorkoutBlock[], known: Set<string>): WorkoutBloc
     .filter((b): b is WorkoutBlock => !!b);
 }
 
-async function assemble(workout: AdminWorkout): Promise<PlayerWorkout> {
+async function assemble(workout: AdminWorkout, instructor: PlayerWorkout["instructor"] = null): Promise<PlayerWorkout> {
   const ids = exerciseIds(workout.blocks);
   if (workout.warmupExerciseId) ids.add(workout.warmupExerciseId);
   if (workout.cooldownExerciseId) ids.add(workout.cooldownExerciseId);
@@ -92,6 +92,7 @@ async function assemble(workout: AdminWorkout): Promise<PlayerWorkout> {
   return {
     id: workout.id,
     title: workout.title,
+    instructor,
     description: workout.description,
     level: workout.level,
     coverImageUrl: workout.coverImageUrl,
@@ -117,12 +118,17 @@ export const getPlayerWorkout = cache(
     if (!UUID.test(id)) return null;
     const supabase = createAdminClient();
     const [{ data: w }, { data: rows }, videos] = await Promise.all([
-      supabase.from("workouts").select("*").eq("id", id).maybeSingle(),
+      // With its instructor (workouts.instructor_id → instructors), for the audio tips' photo.
+      supabase.from("workouts").select("*, instructor:instructors(name, avatar_url)").eq("id", id).maybeSingle(),
       supabase.from("workout_blocks").select("*").eq("workout_id", id),
       getWorkoutVideoRows(id, true),
     ]);
     if (!w || (!w.published_at && !includeDrafts)) return null;
-    return assemble(toWorkout(w as WorkoutRow, (rows ?? []) as BlockRow[], videos));
+    const teacher = w.instructor as { name: string; avatar_url: string | null } | null;
+    return assemble(
+      toWorkout(w as WorkoutRow, (rows ?? []) as BlockRow[], videos),
+      teacher ? { name: teacher.name, photoUrl: teacher.avatar_url } : null,
+    );
   },
 );
 

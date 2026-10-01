@@ -777,6 +777,7 @@ export function RestScreen({
   onPause,
   onResume,
   onContinue,
+  tip = null,
   theater = false,
 }: {
   /** A group's rest between rounds, rather than an ordinary rest. */
@@ -790,6 +791,12 @@ export function RestScreen({
   onPause: () => void;
   onResume: () => void;
   onContinue: () => void;
+  /**
+   * Phones, a rest with an audio tip: its CoachTip, right above Continue and
+   * level with where it sits on a set. Its room is kept for the whole rest so
+   * nothing moves when it slides in. (Desktop places it in the video's corner.)
+   */
+  tip?: ReactNode;
   theater?: boolean;
 }) {
   const shown = Math.ceil(secondsLeft);
@@ -865,6 +872,7 @@ export function RestScreen({
       {/* Desktop: as far from the card to the buttons as from the ring to the card (the stack's gap-9). */}
       <div className={`relative ${theater ? "gap-9" : "gap-4"} ${bottomGroup(theater)}`}>
         {theater && card}
+        {tip && <div className="-mr-[11px] flex justify-end">{tip}</div>}
         <CountdownControls
           paused={paused}
           onPause={onPause}

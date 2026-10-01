@@ -75,7 +75,8 @@ import { WorkoutPreview } from "./workout-preview";
 import { GestureGuide } from "./gesture-guide";
 import { DesktopGuide } from "./desktop-guide";
 import { usePlayerPreferences } from "./preferences";
-import { CoachTip, useCoachTip } from "./coach-tip";
+import { CoachTip, useTipAudio } from "./coach-tip";
+import { TIP_DELAY_SECONDS, tipUrl } from "@/lib/workouts/shared";
 import { saveWorkoutSession } from "@/app/actions/workout-sessions";
 import type { PlayerPreferences } from "@/lib/member/preferences";
 import type { SavedProgress, SessionEvent } from "@/lib/member/sessions";
@@ -326,11 +327,19 @@ export function WorkoutPlayer({
   const target = targetIndex !== null ? (steps[targetIndex] as SetStep) : null;
   const targetExercise = target ? workout.exercises[target.exerciseId] : undefined;
 
-  // The instructor's audio tip, a few seconds into the exercise (after the
-  // tutorial and Get ready). For now a stand-in on every set — the look only,
-  // no recordings yet — and hidden with instructor audio off.
-  const tipPlaying = useCoachTip(state.take, running && state.phase === "workout" && !!set && state.stage === "exercise");
-  const tip = tipPlaying && !muted;
+  // The instructor's audio tip for the step on screen: a rest's, or a set's
+  // once the exercise itself is on (after the tutorial and Get ready). It
+  // plays a moment in, with their photo on screen — see useTipAudio.
+  const tipStep =
+    state.phase === "workout" && step && (step.kind === "rest" || state.stage === "exercise") ? step : null;
+  const tips = useTipAudio({
+    url: tipStep?.tip ? tipUrl(tipStep.tip.id) : null,
+    take: state.take,
+    running: running && !!tipStep,
+    delayMs: (step?.kind === "rest" ? TIP_DELAY_SECONDS.rest : TIP_DELAY_SECONDS.set) * 1000,
+    muted,
+  });
+  const coach = (large = false) => <CoachTip show={tips.speaking} instructor={workout.instructor} large={large} />;
 
   // ── Videos ──────────────────────────────────────────
 
@@ -531,8 +540,9 @@ export function WorkoutPlayer({
   }) {
     setWarmedUp(warmedUp);
     setMuted(!prefs.instructorAudio);
-    // Inside the tap, so every clip may play with sound later (see video-pool.tsx).
+    // Inside the tap, so every clip — and every audio tip — may play with sound later (see video-pool.tsx).
     pool.unlock();
+    tips.unlock();
     // First time in this layout (or every time, on the demo): the guide opens
     // before the warm-up, or as the first exercise comes up without one. The
     // phone and desktop guides are remembered separately.
@@ -895,8 +905,11 @@ export function WorkoutPlayer({
             onPause={pause}
             onResume={resumePlay}
             onContinue={goOn}
+            tip={!theater && step.tip ? coach() : null}
             theater={theater}
           />
+          {/* Desktop: the tip's photo in the video's corner, as on a set. */}
+          {theater && step.tip && <div className="pointer-events-none absolute bottom-8 right-8">{coach(true)}</div>}
           {/* Phones: Settings while the countdown is held, as on the pause screen. */}
           {!theater && state.paused && <CornerSettings onClick={openSettings} />}
         </>
@@ -1013,7 +1026,7 @@ export function WorkoutPlayer({
             {bar}
             {zones("Next set")}
             <div className="pointer-events-none absolute bottom-8 right-8">
-              <CoachTip show={tip} large />
+              {coach(true)}
             </div>
           </>
         );
@@ -1053,7 +1066,7 @@ export function WorkoutPlayer({
               onOverview={openOverview}
               muted={muted}
               onToggleSound={() => setSound(muted)}
-              tip={<CoachTip show={tip} />}
+              tip={coach()}
             />
           </>
         );
