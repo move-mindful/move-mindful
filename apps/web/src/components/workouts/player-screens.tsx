@@ -506,9 +506,9 @@ export function SetScreen({
       )}
       <div className="relative flex items-center gap-3">
         {/* A bubble's height above the reps (its bottom where its top would be
-            sitting on them), over the video; centred on the Pause button (the
-            ring is 34px wider than it). */}
-        {tip && <div className="absolute bottom-0 right-[-17px] -translate-y-full">{tip}</div>}
+            sitting on them), over the video; 13px in from the video's edge, so
+            about over the Pause button (desktop has more room still). */}
+        {tip && <div className="absolute bottom-0 right-[-7px] -translate-y-full">{tip}</div>}
         {/* Centred, its bottom 40px above the bubble's (which is a bubble's height, 86px, above the reps' bottom). */}
         {upNext && <div className="absolute inset-x-0 bottom-[126px] flex justify-center">{upNext}</div>}
         {metric.kind === "reps" ? (
@@ -889,7 +889,8 @@ export function RestScreen({
       {/* Desktop: as far from the card to the buttons as from the ring to the card (the stack's gap-9). */}
       <div className={`relative ${theater ? "gap-9" : "gap-4"} ${bottomGroup(theater)}`}>
         {theater && card}
-        {tip && <div className="-mr-[17px] flex justify-end">{tip}</div>}
+        {/* 13px in from the video's edge, as on a set. */}
+        {tip && <div className="-mr-[7px] flex justify-end">{tip}</div>}
         <CountdownControls
           paused={paused}
           onPause={onPause}
