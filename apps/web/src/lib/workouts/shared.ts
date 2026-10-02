@@ -17,6 +17,9 @@ export const TIP_MAX_SECONDS = 60;
 /** How far into its set (once the exercise starts, after Get ready) or rest a tip begins. */
 export const TIP_DELAY_SECONDS = { set: 3, rest: 1 } as const;
 
+/** How loud tips play, 0–1 of the recording's own level (was full; turned down 10% on 2026-10-02). */
+export const TIP_VOLUME = 0.9;
+
 /** Where a tip's file is served from. */
 export function tipUrl(id: string): string {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${TIP_BUCKET}/${id}`;

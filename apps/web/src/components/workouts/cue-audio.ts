@@ -98,6 +98,9 @@ function newCueAudio(on: {
  * when the workout does (a tip's bubble stays on screen through it).
  * `time()`: how far into its file the cue is, in seconds (a tip's equalizer
  * bars follow its voice by it) — for animation frames, not render.
+ *
+ * `volume` (0–1, default full) is the element's own volume, which iPhone
+ * Safari ignores (the music goes through Web Audio for that).
  */
 export function useCueAudio({
   clip,
@@ -105,12 +108,14 @@ export function useCueAudio({
   running,
   delayMs,
   muted,
+  volume = 1,
 }: {
   clip: { url: string; start: number; end: number | null } | null;
   take: number;
   running: boolean;
   delayMs: number;
   muted: boolean;
+  volume?: number;
 }): { playing: boolean; held: boolean; time: () => number; unlock: () => void } {
   const url = clip?.url ?? null;
   const start = clip?.start ?? 0;
@@ -163,6 +168,12 @@ export function useCueAudio({
 
   useEffect(() => {
     mutedNow.current = muted;
+  });
+
+  // Its level — set on the element whenever there is one (made for the first
+  // cue, or in the Begin tap).
+  useEffect(() => {
+    if (audio.current) audio.current.volume = volume;
   });
 
   // A new step (or take): stop whatever was playing and load this one's cue.

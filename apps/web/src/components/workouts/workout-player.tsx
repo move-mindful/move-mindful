@@ -83,7 +83,7 @@ import { UpNextCard } from "./up-next-card";
 import { preloadFirstWorkoutBadge } from "./first-workout-badge";
 import { useFireworkSounds } from "./firework-sounds";
 import { MUSIC, useWorkoutMusic } from "./music";
-import { TIP_DELAY_SECONDS, tipUrl } from "@/lib/workouts/shared";
+import { TIP_DELAY_SECONDS, TIP_VOLUME, tipUrl } from "@/lib/workouts/shared";
 import { saveWorkoutSession } from "@/app/actions/workout-sessions";
 import type { PlayerPreferences } from "@/lib/member/preferences";
 import type { SavedProgress, SessionEvent } from "@/lib/member/sessions";
@@ -397,6 +397,7 @@ export function WorkoutPlayer({
     delayMs: (step?.kind === "rest" ? TIP_DELAY_SECONDS.rest : TIP_DELAY_SECONDS.set) * 1000,
     // Mute all, or just the tips switched off in the Audio card.
     muted: muted || !prefs.audioTips,
+    volume: TIP_VOLUME,
   });
   // Paused part-way, the bubble stays (behind the pause screen, or still on a held rest) and carries on with the voice.
   const coach = (large = false) => (
