@@ -69,7 +69,7 @@ A video fitness platform with on-demand classes, exercise-by-exercise workouts, 
 The owner's call (2026-10-01), and an exception to the global "never push unless I explicitly ask" — for this repo only:
 
 - **Push changes yourself once typecheck and lint pass**, without waiting for "push".
-- **Always say plainly whether it's pushed.** Open the reply with "✅ Pushed" (and the commit), or "⏸️ Not pushed — say "push" when ready" for a major change. The owner can't tell otherwise.
+- **Always say plainly whether it's pushed, as the very last line of the reply:** "✅ Pushed" (and the commit), or "⏸️ Not pushed — say "push" when ready" for a major change. The owner can't tell otherwise.
 - **Major changes still wait for the owner to say "push":** a new feature, a big rework, a migration, a dependency change, or anything touching payments, sign-in or members' data. When unsure whether a change is major, ask.
 
 ## Key Principles
