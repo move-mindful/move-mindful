@@ -102,9 +102,10 @@ export function CoachTip({
     return () => cancelAnimationFrame(frame);
   }, [following, levelsText, time]);
 
-  const photo = large ? 64 : 48;
-  const gap = large ? 4 : 3;
-  const bar = large ? 13 : 10;
+  // Phones: 86px across, about the same share of the video as desktop's 98px on a laptop.
+  const photo = large ? 64 : 56;
+  const gap = large ? 4 : 3.5;
+  const bar = large ? 13 : 11.5;
   const barWidth = large ? 3.5 : 3;
   const size = photo + 2 * (gap + bar);
   // In: after the phone's wait, then the ring 300 ms behind the photo. Out: the ring first, the photo 200 ms after.

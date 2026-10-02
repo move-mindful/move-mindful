@@ -507,10 +507,10 @@ export function SetScreen({
       <div className="relative flex items-center gap-3">
         {/* A bubble's height above the reps (its bottom where its top would be
             sitting on them), over the video; centred on the Pause button (the
-            ring is 22px wider than it). */}
-        {tip && <div className="absolute bottom-0 right-[-11px] -translate-y-full">{tip}</div>}
-        {/* Centred, its bottom 40px above the bubble's (which is a bubble's height, 74px, above the reps' bottom). */}
-        {upNext && <div className="absolute inset-x-0 bottom-[114px] flex justify-center">{upNext}</div>}
+            ring is 34px wider than it). */}
+        {tip && <div className="absolute bottom-0 right-[-17px] -translate-y-full">{tip}</div>}
+        {/* Centred, its bottom 40px above the bubble's (which is a bubble's height, 86px, above the reps' bottom). */}
+        {upNext && <div className="absolute inset-x-0 bottom-[126px] flex justify-center">{upNext}</div>}
         {metric.kind === "reps" ? (
           <span className="flex items-baseline gap-1.5">
             <span className="text-[56px] font-semibold leading-none tracking-[-0.03em] tabular-nums">{metric.amount}</span>
@@ -889,7 +889,7 @@ export function RestScreen({
       {/* Desktop: as far from the card to the buttons as from the ring to the card (the stack's gap-9). */}
       <div className={`relative ${theater ? "gap-9" : "gap-4"} ${bottomGroup(theater)}`}>
         {theater && card}
-        {tip && <div className="-mr-[11px] flex justify-end">{tip}</div>}
+        {tip && <div className="-mr-[17px] flex justify-end">{tip}</div>}
         <CountdownControls
           paused={paused}
           onPause={onPause}
