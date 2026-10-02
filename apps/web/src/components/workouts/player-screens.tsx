@@ -842,11 +842,19 @@ export function RestScreen({
       className={`pointer-events-none [&_button]:pointer-events-auto ${theater ? centered : "absolute inset-0 flex flex-col"}`}
     >
       <div className={`flex flex-col items-center gap-[18px] ${theater ? "" : "flex-1 justify-center pt-12"}`}>
-        {/* The same size as GET READY. */}
-        <div className="flex items-center gap-2 text-xl font-bold uppercase tracking-[0.16em] text-[#A99CFF]">
-          {round && <Loop size={20} />}
-          {round ? "Round rest" : "Rest"}
-          {paused && <span className="text-white/75">· Paused</span>}
+        {/* REST at twice GET READY's size; between rounds, ↻ ROUND under it at
+            GET READY's size (and Paused beside REST, at that size too). */}
+        <div className="flex flex-col items-center gap-1.5 font-bold uppercase tracking-[0.16em] text-[#A99CFF]">
+          <div className="flex items-baseline gap-3">
+            <span className="text-[40px] leading-none">Rest</span>
+            {paused && <span className="text-xl text-white/75">· Paused</span>}
+          </div>
+          {round && (
+            <div className="flex items-center gap-2 text-xl">
+              <Loop size={20} />
+              Round
+            </div>
+          )}
         </div>
         <div className="relative size-[248px]">
           <svg viewBox="0 0 248 248" className="absolute inset-0 size-full" aria-hidden="true">
