@@ -69,3 +69,10 @@ html[data-player-up] body {
     transform: scaleY(0.3);
   }
 }
+
+/* The tip bubble's ring of bars turning round the photo (coach-tip.tsx). */
+@keyframes coach-spin {
+  to {
+    rotate: 360deg;
+  }
+}

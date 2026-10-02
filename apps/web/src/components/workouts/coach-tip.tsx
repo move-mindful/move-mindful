@@ -40,6 +40,9 @@ const RHYTHM = Array.from({ length: BARS }, (_, i) => ({
  */
 const VOICE_SCALE = "1 calc(0.3 + 0.7 * min(1, var(--voice, 1.4) * var(--sense)))";
 
+/** Seconds for the ring of bars to turn once round the photo. Tune by eye. */
+const SPIN_SECONDS = 12;
+
 /**
  * How long the bubble waits, once a tip starts playing, before sliding in —
  * on phones, where the sound itself can take about that long to come out of
@@ -128,28 +131,36 @@ export function CoachTip({
         }`}
         style={{ transitionDelay: `${show ? wait + 300 : 0}ms` }}
       >
-        {RHYTHM.map((r, i) => (
-          <div key={i} className="absolute inset-0" style={{ rotate: `${(360 / BARS) * i}deg` }}>
-            <span
-              // Hidden, the bars stop where they are (the voice has ended) as the ring fades; held, until it carries on.
-              className={`absolute left-1/2 origin-bottom rounded-full bg-[#A99CFF] animate-[coach-eq_var(--s)_ease-in-out_var(--d)_infinite_alternate] motion-reduce:animate-none motion-reduce:[--voice:0.45] ${
-                show && !held ? "" : "[animation-play-state:paused]"
-              }`}
-              style={
-                {
-                  "--s": `${r.seconds}s`,
-                  "--d": `${r.delay}s`,
-                  "--sense": r.sense,
-                  scale: VOICE_SCALE,
-                  width: barWidth,
-                  marginLeft: -barWidth / 2,
-                  height: bar * r.reach,
-                  bottom: `calc(50% + ${photo / 2 + gap}px)`,
-                } as CSSProperties
-              }
-            />
-          </div>
-        ))}
+        {/* The ring turns slowly round the photo while the voice plays, stopping with the bars. */}
+        <div
+          className={`absolute inset-0 animate-[coach-spin_var(--spin)_linear_infinite] motion-reduce:animate-none ${
+            show && !held ? "" : "[animation-play-state:paused]"
+          }`}
+          style={{ "--spin": `${SPIN_SECONDS}s` } as CSSProperties}
+        >
+          {RHYTHM.map((r, i) => (
+            <div key={i} className="absolute inset-0" style={{ rotate: `${(360 / BARS) * i}deg` }}>
+              <span
+                // Hidden, the bars stop where they are (the voice has ended) as the ring fades; held, until it carries on.
+                className={`absolute left-1/2 origin-bottom rounded-full bg-[#A99CFF] animate-[coach-eq_var(--s)_ease-in-out_var(--d)_infinite_alternate] motion-reduce:animate-none motion-reduce:[--voice:0.45] ${
+                  show && !held ? "" : "[animation-play-state:paused]"
+                }`}
+                style={
+                  {
+                    "--s": `${r.seconds}s`,
+                    "--d": `${r.delay}s`,
+                    "--sense": r.sense,
+                    scale: VOICE_SCALE,
+                    width: barWidth,
+                    marginLeft: -barWidth / 2,
+                    height: bar * r.reach,
+                    bottom: `calc(50% + ${photo / 2 + gap}px)`,
+                  } as CSSProperties
+                }
+              />
+            </div>
+          ))}
+        </div>
       </div>
       {instructor?.photoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element -- a small avatar from Storage; nothing to optimize
