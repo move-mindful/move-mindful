@@ -15,7 +15,7 @@ import { Sound } from "./icons";
  * useCueAudio (cue-audio.ts).
  */
 
-const BARS = 48;
+const BARS = 36;
 
 /** A steady scatter in 0–1, so the bars differ from each other but not between renders. */
 function scatter(i: number, salt: number): number {
@@ -105,7 +105,7 @@ export function CoachTip({
   const photo = large ? 64 : 48;
   const gap = large ? 4 : 3;
   const bar = large ? 13 : 10;
-  const barWidth = large ? 2.5 : 2;
+  const barWidth = large ? 3.5 : 3;
   const size = photo + 2 * (gap + bar);
   // In: after the phone's wait, then the ring 300 ms behind the photo. Out: the ring first, the photo 200 ms after.
   const wait = large ? 0 : PHONE_SHOW_DELAY_MS;
@@ -122,8 +122,8 @@ export function CoachTip({
       }`}
       style={{ width: size, height: size, transitionDelay: `${show ? wait : 200}ms` }}
     >
-      {/* A soft dark disc, so the bars read over a bright studio — a touch inside the ring, so the longest bars just reach past it. */}
-      <div className="absolute inset-0.5 rounded-full bg-[#0E0E20]/35 backdrop-blur-sm" />
+      {/* A soft dark disc, so the bars read over a bright studio. */}
+      <div className="absolute inset-0 rounded-full bg-[#0E0E20]/35 backdrop-blur-sm" />
       <div
         ref={ring}
         className={`absolute inset-0 transition-[scale,opacity] duration-300 ${
