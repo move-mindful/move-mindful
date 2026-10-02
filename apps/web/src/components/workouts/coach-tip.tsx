@@ -40,6 +40,22 @@ const RHYTHM = Array.from({ length: BARS }, (_, i) => ({
  */
 const VOICE_SCALE = "1 calc(0.3 + 0.7 * min(1, var(--voice, 1.4) * var(--sense)))";
 
+/**
+ * The photo, the gap round it, and the bars' length and width (px): phones
+ * (86px across, about the same share of the video as desktop's 98px on a
+ * laptop), and desktop's `large`.
+ */
+const LOOK = {
+  phone: { photo: 56, gap: 3.5, bar: 11.5, barWidth: 3 },
+  large: { photo: 64, gap: 4, bar: 13, barWidth: 3.5 },
+};
+
+/** How wide (and tall) the bubble is — the room a rest keeps for it (RestScreen). */
+export function coachTipSize(large = false): number {
+  const { photo, gap, bar } = large ? LOOK.large : LOOK.phone;
+  return photo + 2 * (gap + bar);
+}
+
 /** Seconds for the ring of bars to turn once round the photo. Tune by eye. */
 const SPIN_SECONDS = 12;
 
@@ -102,12 +118,8 @@ export function CoachTip({
     return () => cancelAnimationFrame(frame);
   }, [following, levelsText, time]);
 
-  // Phones: 86px across, about the same share of the video as desktop's 98px on a laptop.
-  const photo = large ? 64 : 56;
-  const gap = large ? 4 : 3.5;
-  const bar = large ? 13 : 11.5;
-  const barWidth = large ? 3.5 : 3;
-  const size = photo + 2 * (gap + bar);
+  const { photo, gap, bar, barWidth } = large ? LOOK.large : LOOK.phone;
+  const size = coachTipSize(large);
   // In: after the phone's wait, then the ring 300 ms behind the photo. Out: the ring first, the photo 200 ms after.
   const wait = large ? 0 : PHONE_SHOW_DELAY_MS;
   return (

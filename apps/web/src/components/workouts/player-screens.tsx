@@ -36,6 +36,7 @@ import {
   WatchTutorial,
 } from "./icons";
 import { FirstWorkoutBadge } from "./first-workout-badge";
+import { coachTipSize } from "./coach-tip";
 
 // The player's screens, drawn from the player design canvas (mobile frames).
 // Each fills the 9:16 stage the videos play in; none of them knows about the
@@ -827,8 +828,9 @@ export function RestScreen({
   /**
    * Phones, a rest with an audio tip: its CoachTip, in a row of its own between
    * Up next and Continue — not raised like a set's, since the card is just
-   * above. Its room is kept for the whole rest, so it never covers the card
-   * and nothing moves when it slides in. (Desktop places it by the video's corner.)
+   * above. The row is kept on every rest, tip or not, so it never covers the
+   * card, nothing moves when it slides in, and the card sits the same distance
+   * above the buttons on every rest. (Desktop places it by the video's corner.)
    */
   tip?: ReactNode;
   theater?: boolean;
@@ -902,7 +904,11 @@ export function RestScreen({
       <div className={`relative ${theater ? "gap-9" : "gap-4"} ${bottomGroup(theater)}`}>
         {theater && card}
         {/* 13px in from the video's edge, as on a set. */}
-        {tip && <div className="-mr-[7px] flex justify-end">{tip}</div>}
+        {!theater && (
+          <div className="-mr-[7px] flex justify-end" style={{ height: coachTipSize() }}>
+            {tip}
+          </div>
+        )}
         <CountdownControls
           paused={paused}
           onPause={onPause}
