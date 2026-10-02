@@ -33,6 +33,7 @@ import {
   Muted,
   WatchTutorial,
 } from "./icons";
+import { FirstWorkoutBadge } from "./first-workout-badge";
 
 // The player's screens, drawn from the player design canvas (mobile frames).
 // Each fills the 9:16 stage the videos play in; none of them knows about the
@@ -1405,6 +1406,7 @@ export function CompleteScreen({
   onDone,
   onRestart,
   rating = null,
+  badge = false,
   theater = false,
 }: {
   title: string;
@@ -1415,14 +1417,27 @@ export function CompleteScreen({
   onRestart: () => void;
   /** Signed in: the member's stars for this workout (null until they rate) and how to rate. */
   rating?: { stars: number | null; onRate: (stars: number) => void } | null;
+  /** The spinning 3D 1st Workout badge in place of the check (the check still shows if 3D can't run). */
+  badge?: boolean;
   theater?: boolean;
 }) {
+  const check = (
+    <div className="flex size-[104px] items-center justify-center rounded-full bg-[#A99CFF] text-[#14142B] shadow-[0_0_0_12px_rgba(169,156,255,0.2)]">
+      <Check size={48} width={2.6} />
+    </div>
+  );
   return (
     <div className={theater ? centered : `absolute inset-0 flex flex-col gap-6 overflow-y-auto px-5 pt-[72px] ${bottomPad}`}>
       <div className={`flex flex-col items-center gap-7 ${theater ? "w-[380px] max-w-[calc(100%-40px)]" : "flex-1 justify-center"}`}>
-        <div className="flex size-[104px] items-center justify-center rounded-full bg-[#A99CFF] text-[#14142B] shadow-[0_0_0_12px_rgba(169,156,255,0.2)]">
-          <Check size={48} width={2.6} />
-        </div>
+        {badge ? (
+          // The canvas leaves room round the badge for its tilt; the negative
+          // margin takes that back out of the spacing. A soft lilac glow behind.
+          <div className="-my-3 flex size-[184px] shrink-0 items-center justify-center bg-[radial-gradient(closest-side,rgba(169,156,255,0.22),transparent)]">
+            <FirstWorkoutBadge fallback={check} className="size-full" />
+          </div>
+        ) : (
+          check
+        )}
         <div className="flex flex-col items-center gap-1.5 text-center">
           <h1 className="text-[34px] font-semibold leading-[1.1] tracking-[-0.015em]">Workout complete</h1>
           <div className="text-[17px] text-white/75">{title}</div>

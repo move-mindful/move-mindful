@@ -25,6 +25,7 @@ A video fitness platform with on-demand classes, exercise-by-exercise workouts, 
 - **Database:** Supabase
 - **Push Notifications:** Expo Notifications
 - **AI:** Claude API (`@anthropic-ai/sdk`) — admin-only "Generate with AI" in the workout builder
+- **3D:** Three.js — the 1st Workout badge on the Workout complete screen, loaded on demand (`components/workouts/first-workout-badge*`)
 
 ## Project Structure
 

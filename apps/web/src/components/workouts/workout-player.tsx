@@ -80,6 +80,7 @@ import { usePlayerPreferences } from "./preferences";
 import { CoachTip } from "./coach-tip";
 import { COUNTDOWN, UP_NEXT, useCueAudio } from "./cue-audio";
 import { UpNextCard } from "./up-next-card";
+import { preloadFirstWorkoutBadge } from "./first-workout-badge";
 import { MUSIC, useWorkoutMusic } from "./music";
 import { TIP_DELAY_SECONDS, tipUrl } from "@/lib/workouts/shared";
 import { saveWorkoutSession } from "@/app/actions/workout-sessions";
@@ -273,6 +274,13 @@ export function WorkoutPlayer({
   useEffect(() => {
     onStep();
   }, [state.phase, state.step]);
+
+  // The summary's badge is 3D (Three.js, loaded on demand): fetch it once the
+  // workout's under way, so it's ready the moment they finish.
+  const begun = state.phase !== "preview";
+  useEffect(() => {
+    if (begun) preloadFirstWorkoutBadge();
+  }, [begun]);
 
   // On a phone, the bar around the notch goes black while the player is up,
   // and back to purple on the workout preview. iOS colours it from the page's
@@ -1313,6 +1321,8 @@ export function WorkoutPlayer({
           sets={setCount}
           onDone={done}
           rating={signedIn ? { stars, onRate: rate } : null}
+          // On every finish while it's tried out; meant in the end for a member's first.
+          badge
           onRestart={() => restartWorkout(true)}
           theater={theater}
         />
