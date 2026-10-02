@@ -30,7 +30,7 @@ export const UP_NEXT = {
   src: "/audio/upnext.mp3",
   before: 10,
   /** The chime waits this long (seconds) after the card starts sliding in, so it lands as the card does. */
-  soundAfter: 0.3,
+  soundAfter: 0.15,
   /** With this long (seconds) left, the card slides back out to the right, gone as the set ends. */
   leaveAt: 0.6,
 };
