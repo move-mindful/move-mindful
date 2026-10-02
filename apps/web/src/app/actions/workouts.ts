@@ -53,6 +53,11 @@ function missingCooldownColumn(error: { code?: string; message?: string } | null
   return !!error && error.code === "PGRST204" && !!error.message?.includes("cooldown");
 }
 
+/** Saving "All levels" before 020_workout_level_all.sql: the old level check turns it away. */
+function missingAllLevels(error: { code?: string; message?: string } | null): boolean {
+  return !!error && error.code === "23514" && !!error.message?.includes("workouts_level_check");
+}
+
 async function writeWorkout(
   supabase: AdminClient,
   id: string | undefined,
@@ -110,6 +115,9 @@ export async function saveWorkout(input: WorkoutInput): Promise<{ id?: string; e
     if (cooldown) return { error: "The cool-down can’t be saved until migration 018_intro_outro_cooldown.sql has run." };
     delete fields.cooldown_exercise_id;
     written = await writeWorkout(supabase, input.id, fields);
+  }
+  if (missingAllLevels(written.error) && fields.level === "all_levels") {
+    return { error: "“All levels” can’t be saved until migration 020_workout_level_all.sql has run." };
   }
   if (written.error || !written.id) return { error: written.error?.message ?? "Couldn't save the workout." };
   const id = written.id;

@@ -28,9 +28,11 @@ export type WorkoutVideoRole = "intro" | "outro";
 /** An intro or outro clip — the same lifecycle as an exercise clip (see slotFor). */
 export type WorkoutVideo = Omit<ExerciseVideo, "role" | "repsInClip"> & { role: WorkoutVideoRole };
 
-export type WorkoutLevel = "beginner" | "intermediate" | "advanced";
+export type WorkoutLevel = "all_levels" | "beginner" | "intermediate" | "advanced";
 
+/** A workout's level, in the order the builder lists them. "All levels" needs 020_workout_level_all.sql. */
 export const LEVELS: Array<{ id: WorkoutLevel; label: string }> = [
+  { id: "all_levels", label: "All levels" },
   { id: "beginner", label: "Beginner" },
   { id: "intermediate", label: "Intermediate" },
   { id: "advanced", label: "Advanced" },
