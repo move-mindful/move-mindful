@@ -12,7 +12,7 @@ import { Sound } from "./icons";
  * useCueAudio (cue-audio.ts).
  */
 
-const BARS = 36;
+const BARS = 48;
 
 /** A steady scatter in 0–1, so the bars differ from each other but not between renders. */
 function scatter(i: number, salt: number): number {
@@ -63,6 +63,7 @@ export function CoachTip({
   const photo = large ? 64 : 48;
   const gap = large ? 4 : 3;
   const bar = large ? 13 : 10;
+  const barWidth = large ? 2.5 : 2;
   const size = photo + 2 * (gap + bar);
   // In: after the phone's wait, then the ring 300 ms behind the photo. Out: the ring first, the photo 200 ms after.
   const wait = large ? 0 : PHONE_SHOW_DELAY_MS;
@@ -102,8 +103,8 @@ export function CoachTip({
                 {
                   "--s": `${r.seconds}s`,
                   "--d": `${r.delay}s`,
-                  width: large ? 3.5 : 3,
-                  marginLeft: large ? -1.75 : -1.5,
+                  width: barWidth,
+                  marginLeft: -barWidth / 2,
                   height: bar * r.reach,
                   bottom: `calc(50% + ${photo / 2 + gap}px)`,
                 } as CSSProperties
