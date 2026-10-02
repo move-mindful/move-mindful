@@ -12,8 +12,8 @@ import { useCallback, useEffect, useRef } from "react";
  */
 export const FIREWORK_SOUNDS = {
   srcs: [1, 2, 3, 4, 5].map((n) => `/audio/firework-${n}.m4a`),
-  /** Their level, as a % of the files' own loudness (the music's at 12% on the summary). */
-  volume: 50,
+  /** Their level, as a % of the files' own loudness (the music's at 12% on the summary). 50 was a touch loud. */
+  volume: 37.5,
   /** How far each pop's level and pitch may stray from the file's, either way (0.2 = 20%). */
   levelSpread: 0.2,
   pitchSpread: 0.06,
