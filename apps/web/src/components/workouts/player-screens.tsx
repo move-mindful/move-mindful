@@ -786,6 +786,24 @@ function CountdownControls({
 }
 
 
+/**
+ * REST or GET READY over a countdown ring, in the accent at 40px. Held there
+ * (Pause), a grey PAUSED sits just above it — floating, so pausing doesn't
+ * move the ring.
+ */
+function CountdownTitle({ paused, children }: { paused: boolean; children: ReactNode }) {
+  return (
+    <div className="relative font-bold uppercase tracking-[0.16em]">
+      {paused && (
+        <span className="absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap text-xl text-white/75">
+          Paused
+        </span>
+      )}
+      <span className="block text-[40px] leading-none text-[#A99CFF]">{children}</span>
+    </div>
+  );
+}
+
 export function RestScreen({
   round,
   secondsLeft,
@@ -842,13 +860,9 @@ export function RestScreen({
       className={`pointer-events-none [&_button]:pointer-events-auto ${theater ? centered : "absolute inset-0 flex flex-col"}`}
     >
       <div className={`flex flex-col items-center gap-[18px] ${theater ? "" : "flex-1 justify-center pt-12"}`}>
-        {/* REST at twice GET READY's size; between rounds, ↻ ROUND under it at
-            GET READY's size (and Paused beside REST, at that size too). */}
+        {/* Between rounds, ↻ ROUND under REST at half its size. */}
         <div className="flex flex-col items-center gap-1.5 font-bold uppercase tracking-[0.16em] text-[#A99CFF]">
-          <div className="flex items-baseline gap-3">
-            <span className="text-[40px] leading-none">Rest</span>
-            {paused && <span className="text-xl text-white/75">· Paused</span>}
-          </div>
+          <CountdownTitle paused={paused}>Rest</CountdownTitle>
           {round && (
             <div className="flex items-center gap-2 text-xl">
               <Loop size={20} />
@@ -1077,10 +1091,7 @@ export function ReadyScreen({
       className={`pointer-events-none [&_button]:pointer-events-auto ${theater ? centered : "absolute inset-0 flex flex-col"}`}
     >
       <div className={`flex flex-col items-center gap-[22px] px-6 text-center ${theater ? "" : "flex-1 justify-center pt-10"}`}>
-        <div className="flex items-center gap-2 text-xl font-bold uppercase tracking-[0.16em] text-[#A99CFF]">
-          Get ready
-          {paused && <span className="text-white/75">· Paused</span>}
-        </div>
+        <CountdownTitle paused={paused}>Get ready</CountdownTitle>
         <div className="relative size-[200px]">
           <svg viewBox="0 0 200 200" className="absolute inset-0 size-full" aria-hidden="true">
             <circle cx="100" cy="100" r="92" fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="8" />
