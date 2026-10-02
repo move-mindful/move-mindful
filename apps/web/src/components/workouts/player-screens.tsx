@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
   type ComponentProps,
+  type CSSProperties,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -1427,46 +1428,133 @@ export function CompleteScreen({
     </div>
   );
   return (
-    <div className={theater ? centered : `absolute inset-0 flex flex-col gap-6 overflow-y-auto px-5 pt-[72px] ${bottomPad}`}>
-      <div className={`flex flex-col items-center gap-7 ${theater ? "w-[380px] max-w-[calc(100%-40px)]" : "flex-1 justify-center"}`}>
-        {badge ? (
-          // The canvas leaves room round the badge for its tilt; the negative
-          // margin takes that back out of the spacing. A soft lilac glow behind.
-          <div className="-my-3 flex size-[184px] shrink-0 items-center justify-center bg-[radial-gradient(closest-side,rgba(169,156,255,0.22),transparent)]">
-            <FirstWorkoutBadge fallback={check} className="size-full" />
+    <>
+      <Fireworks />
+      <div className={theater ? centered : `absolute inset-0 flex flex-col gap-6 overflow-y-auto px-5 pt-[72px] ${bottomPad}`}>
+        <div className={`flex flex-col items-center gap-7 ${theater ? "w-[380px] max-w-[calc(100%-40px)]" : "flex-1 justify-center"}`}>
+          {badge ? (
+            // The canvas leaves room round the badge for its tilt; the negative
+            // margin takes that back out of the spacing. A soft lilac glow behind.
+            <div className="-my-3 flex size-[184px] shrink-0 items-center justify-center bg-[radial-gradient(closest-side,rgba(169,156,255,0.22),transparent)]">
+              <FirstWorkoutBadge fallback={check} className="size-full" />
+            </div>
+          ) : (
+            check
+          )}
+          <div className="flex flex-col items-center gap-1.5 text-center">
+            <h1 className="text-[34px] font-semibold leading-[1.1] tracking-[-0.015em]">Workout complete!</h1>
+            <div className="text-[17px] text-white/75">{title}</div>
           </div>
-        ) : (
-          check
-        )}
-        <div className="flex flex-col items-center gap-1.5 text-center">
-          <h1 className="text-[34px] font-semibold leading-[1.1] tracking-[-0.015em]">Workout complete</h1>
-          <div className="text-[17px] text-white/75">{title}</div>
+          <div className="grid w-full grid-cols-3 gap-2 rounded-[18px] bg-white/[0.08] px-2 py-4">
+            <Stat big value={time} label="Time" />
+            <Stat big value={String(exercises)} label={exercises === 1 ? "Exercise" : "Exercises"} />
+            <Stat big value={String(sets)} label={sets === 1 ? "Set" : "Sets"} />
+          </div>
+          {rating && <RateStars stars={rating.stars} onRate={rating.onRate} />}
         </div>
-        <div className="grid w-full grid-cols-3 gap-2 rounded-[18px] bg-white/[0.08] px-2 py-4">
-          <Stat big value={time} label="Time" />
-          <Stat big value={String(exercises)} label={exercises === 1 ? "Exercise" : "Exercises"} />
-          <Stat big value={String(sets)} label={sets === 1 ? "Set" : "Sets"} />
+        <div className={`flex flex-col gap-3 ${theater ? "w-[380px] max-w-[calc(100%-40px)]" : ""}`}>
+          <button
+            type="button"
+            onClick={onDone}
+            autoFocus
+            className="h-[58px] rounded-full bg-white text-[17px] font-semibold text-[#14142B]"
+          >
+            Done
+          </button>
+          <button
+            type="button"
+            onClick={onRestart}
+            className="flex h-[54px] items-center justify-center gap-2.5 rounded-full bg-white/[0.12] text-base font-semibold"
+          >
+            <RestartWorkout />
+            Restart workout
+          </button>
         </div>
-        {rating && <RateStars stars={rating.stars} onRate={rating.onRate} />}
       </div>
-      <div className={`flex flex-col gap-3 ${theater ? "w-[380px] max-w-[calc(100%-40px)]" : ""}`}>
-        <button
-          type="button"
-          onClick={onDone}
-          autoFocus
-          className="h-[58px] rounded-full bg-white text-[17px] font-semibold text-[#14142B]"
-        >
-          Done
-        </button>
-        <button
-          type="button"
-          onClick={onRestart}
-          className="flex h-[54px] items-center justify-center gap-2.5 rounded-full bg-white/[0.12] text-base font-semibold"
-        >
-          <RestartWorkout />
-          Restart workout
-        </button>
-      </div>
+    </>
+  );
+}
+
+// The fireworks' colours: the badge's gold, the player's lilac, the mark's cyan, and a warm white.
+const GOLD = "#FFD37A";
+const LILAC = "#B7ABFF";
+const CYAN = "#7FE7EC";
+const WHITE = "#FFF4DC";
+
+/**
+ * Where each firework bursts (% of the screen, all in its top half: the first
+ * right behind the badge), how wide it grows (% of the screen's width), when
+ * it first goes up and how long each go takes (s), and the colours of its
+ * three sets of dots. The lengths differ a little so the repeats drift apart.
+ */
+const FIREWORKS = [
+  { x: 50, y: 22, size: 58, delay: 0.15, dur: 2.1, colors: [GOLD, WHITE, GOLD] },
+  { x: 22, y: 14, size: 40, delay: 0.6, dur: 2.3, colors: [LILAC, CYAN, LILAC] },
+  { x: 79, y: 30, size: 44, delay: 1.0, dur: 1.9, colors: [CYAN, GOLD, WHITE] },
+  { x: 28, y: 38, size: 36, delay: 1.5, dur: 2.2, colors: [GOLD, LILAC, GOLD] },
+  { x: 73, y: 11, size: 38, delay: 1.9, dur: 2.0, colors: [WHITE, LILAC, CYAN] },
+];
+/** How many times each goes up before they stop. */
+const FIREWORK_ROUNDS = 3;
+
+/**
+ * One burst's dots, as background layers for globals.css .firework: three
+ * rings, each dot in the element's own colour, spreading from the middle of
+ * the box out to the edge as it grows.
+ */
+const BURST = [ring(14, 1, 0), ring(10, 0.72, 0.5), ring(6, 0.42, 0.25)]
+  .flat()
+  .map(([x, y]) => `radial-gradient(circle closest-side, currentColor 92%, #0000) ${x}% ${y}% / var(--dot) var(--dot) no-repeat`)
+  .join(", ");
+
+/** `n` dots evenly round a circle of radius `r` (1 = the box's edge), turned by `offset` of a step. */
+function ring(n: number, r: number, offset: number): Array<[number, number]> {
+  return Array.from({ length: n }, (_, i) => {
+    const a = ((i + offset) / n) * 2 * Math.PI;
+    return [Math.round((50 + 50 * r * Math.cos(a)) * 10) / 10, Math.round((50 + 50 * r * Math.sin(a)) * 10) / 10];
+  });
+}
+
+/**
+ * Fireworks over the Workout complete screen's top half, behind everything on
+ * it: each rises from the bottom as a spark and bursts, a few times over, then
+ * they stop. Sized to the screen (the video column), so a phone and the desktop
+ * column look alike. None with reduced motion.
+ */
+function Fireworks() {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 overflow-hidden [container-type:size] motion-reduce:hidden"
+      style={
+        {
+          "--burst": BURST,
+          "--dot": "max(2px, 0.6cqmin)",
+          "--fall": "3cqh",
+          "--rounds": FIREWORK_ROUNDS,
+        } as CSSProperties
+      }
+    >
+      {FIREWORKS.map((f, i) => (
+        <div
+          key={i}
+          className="firework"
+          style={
+            {
+              "--x": `${f.x}%`,
+              "--y": `${f.y}%`,
+              // From the bottom of the screen up to where it bursts.
+              "--rise": `${100 - f.y}cqh`,
+              "--size": `${f.size}cqw`,
+              "--delay": `${f.delay}s`,
+              "--dur": `${f.dur}s`,
+              "--c1": f.colors[0],
+              "--c2": f.colors[1],
+              "--c3": f.colors[2],
+            } as CSSProperties
+          }
+        />
+      ))}
     </div>
   );
 }

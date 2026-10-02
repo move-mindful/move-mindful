@@ -76,3 +76,68 @@ html[data-player-up] body {
     rotate: 360deg;
   }
 }
+
+/* Fireworks behind the Workout complete screen (Fireworks in
+   components/workouts/player-screens.tsx), after Alvaro Montoro's CSS
+   fireworks. Each is a dot-sized box whose background is a burst of dots
+   (--burst, each dot in the element's colour). It rises from the bottom as one
+   spark, then grows, flinging the dots outward as they fade and drift down.
+   Its ::before and ::after are the same dots turned and recoloured, riding
+   along with it, for a fuller burst. Invisible before and after it plays. */
+.firework,
+.firework::before,
+.firework::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--dot);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  opacity: 0;
+  background: var(--burst);
+  animation: firework-burst var(--dur) ease-out var(--delay) var(--rounds);
+}
+.firework {
+  top: var(--y);
+  left: var(--x);
+  color: var(--c1);
+  animation-name: firework;
+}
+.firework::before {
+  content: "";
+  rotate: 25deg;
+  color: var(--c2);
+}
+.firework::after {
+  content: "";
+  rotate: -37deg;
+  color: var(--c3);
+}
+@keyframes firework {
+  0% {
+    translate: -50% calc(-50% + var(--rise));
+    width: var(--dot);
+    opacity: 1;
+  }
+  45% {
+    translate: -50% -50%;
+    width: var(--dot);
+    opacity: 1;
+  }
+  100% {
+    translate: -50% calc(-50% + var(--fall));
+    width: var(--size);
+    opacity: 0;
+  }
+}
+@keyframes firework-burst {
+  0%,
+  45% {
+    width: var(--dot);
+    opacity: 1;
+  }
+  100% {
+    width: var(--size);
+    opacity: 0;
+  }
+}
