@@ -7,7 +7,8 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 // summary, until Done — while the Audio card's Music switch is on. When
 // someone talks — a tutorial, an audio tip, the intro or outro — during the
 // warm-up and cool-down, while the workout's paused, and on the summary, it
-// dips ("ducks") to a share of its normal level, then comes back up. Tune
+// dips ("ducks") to a lower level, then comes back up. Every level is its own
+// % of the track's loudness, so changing one never moves the others. Tune
 // these by ear.
 
 export const MUSIC = {
@@ -17,25 +18,28 @@ export const MUSIC = {
    */
   src: "/audio/workout-music.m4a" as string | null,
   /** Its normal level — exercises, rests, Get ready — as a % of the file's own loudness. */
-  volume: 60,
+  volume: 50,
   /**
    * Keep playing (at duckTo.paused) while the workout's paused, instead of
    * stopping. Off for now — the user's call, 2026-10-01; flip to bring it back.
    */
   whilePaused: false,
-  /** While each of these is on, the music drops to this % of its normal level (100 = no dip). */
+  /**
+   * While each of these is on, the music plays at this % of the file's own
+   * loudness instead — like `volume`, and set independently of it.
+   */
   duckTo: {
-    // Aggressive under the instructor's voice: about 20 dB down.
-    tutorial: 10,
-    tip: 10,
-    intro: 20,
-    outro: 20,
-    warmup: 35,
-    cooldown: 35,
+    // Aggressive under the instructor's voice: well below the normal level.
+    tutorial: 6,
+    tip: 6,
+    intro: 12,
+    outro: 12,
+    warmup: 21,
+    cooldown: 21,
     /** Paused in the workout (a set, a tutorial, a held rest or Get ready), when `whilePaused` is on. */
-    paused: 10,
+    paused: 6,
     /** The summary (Workout complete), level with the outro before it. */
-    done: 20,
+    done: 12,
   },
   /**
    * Seconds to dip down, and to come back up. Both move evenly in loudness,
@@ -84,7 +88,7 @@ function subscribeToVisibility(change: () => void) {
 /**
  * The music under the workout. It plays while `on` (the Music switch, and not
  * muted), `playing` (the player wants it — running, or held quietly) and the
- * page is on screen, at `level` (0–1: MUSIC.volume, ducked); stopping fades
+ * page is on screen, at `level` (0–1: MUSIC.volume, or a duckTo level); stopping fades
  * it out quickly and pauses it, so it picks up where it was.
  *
  * The level goes through Web Audio (the element → a gain → the speakers)

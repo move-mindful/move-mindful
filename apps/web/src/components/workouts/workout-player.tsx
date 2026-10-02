@@ -443,7 +443,7 @@ export function WorkoutPlayer({
     MUSIC.whilePaused &&
     state.phase === "workout" &&
     (state.paused || state.sheet === "settings" || state.sheet === "end" || state.sheet === "guide");
-  const duckTo = (() => {
+  const musicLevel = (() => {
     if (musicHeld) return MUSIC.duckTo.paused;
     if (state.phase === "complete") return MUSIC.duckTo.done;
     if (tips.playing) return MUSIC.duckTo.tip;
@@ -451,7 +451,7 @@ export function WorkoutPlayer({
     if (state.phase === "intro" || state.phase === "outro" || state.phase === "warmup" || state.phase === "cooldown") {
       return MUSIC.duckTo[state.phase];
     }
-    return 100;
+    return MUSIC.volume;
   })();
   const music = useWorkoutMusic({
     on: prefs.music && !muted,
@@ -460,7 +460,7 @@ export function WorkoutPlayer({
       ((active || state.phase === "complete") &&
         !state.paused &&
         (state.sheet === null || state.sheet === "overview" || state.sheet === "audio")),
-    level: (MUSIC.volume / 100) * (duckTo / 100),
+    level: musicLevel / 100,
   });
   /** In a tap that should get the music going, if it's meant to be on. */
   function wakeMusic() {
