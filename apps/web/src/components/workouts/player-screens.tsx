@@ -36,7 +36,6 @@ import {
   WatchTutorial,
 } from "./icons";
 import { FirstWorkoutBadge } from "./first-workout-badge";
-import { coachTipSize } from "./coach-tip";
 
 // The player's screens, drawn from the player design canvas (mobile frames).
 // Each fills the 9:16 stage the videos play in; none of them knows about the
@@ -789,19 +788,19 @@ function CountdownControls({
 
 
 /**
- * REST or GET READY over a countdown ring, in the accent at 40px. Held there
- * (Pause), a grey PAUSED sits just above it — floating, so pausing doesn't
- * move the ring.
+ * REST or GET READY over a countdown ring, in the accent at 32px. Held there
+ * (Pause), a grey PAUSED (16px) sits just above it — floating, so pausing
+ * doesn't move the ring.
  */
 function CountdownTitle({ paused, children }: { paused: boolean; children: ReactNode }) {
   return (
     <div className="relative font-bold uppercase tracking-[0.16em]">
       {paused && (
-        <span className="absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap text-xl text-white/75">
+        <span className="absolute bottom-full left-1/2 mb-[5px] -translate-x-1/2 whitespace-nowrap text-base text-white/75">
           Paused
         </span>
       )}
-      <span className="block text-[40px] leading-none text-[#A99CFF]">{children}</span>
+      <span className="block text-[32px] leading-none text-[#A99CFF]">{children}</span>
     </div>
   );
 }
@@ -826,11 +825,10 @@ export function RestScreen({
   onResume: () => void;
   onContinue: () => void;
   /**
-   * Phones, a rest with an audio tip: its CoachTip, in a row of its own between
-   * Up next and Continue — not raised like a set's, since the card is just
-   * above. The row is kept on every rest, tip or not, so it never covers the
-   * card, nothing moves when it slides in, and the card sits the same distance
-   * above the buttons on every rest. (Desktop places it by the video's corner.)
+   * Phones, a rest with an audio tip: its CoachTip, floating 16px above the
+   * buttons — taking no room, so a rest looks the same with a tip or without,
+   * and the bubble may overlap the Up next card's corner. (Desktop places it
+   * by the video's corner.)
    */
   tip?: ReactNode;
   theater?: boolean;
@@ -904,11 +902,7 @@ export function RestScreen({
       <div className={`relative ${theater ? "gap-9" : "gap-4"} ${bottomGroup(theater)}`}>
         {theater && card}
         {/* 13px in from the video's edge, as on a set. */}
-        {!theater && (
-          <div className="-mr-[7px] flex justify-end" style={{ height: coachTipSize() }}>
-            {tip}
-          </div>
-        )}
+        {tip && <div className="absolute bottom-full right-[13px] mb-4">{tip}</div>}
         <CountdownControls
           paused={paused}
           onPause={onPause}
