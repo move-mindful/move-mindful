@@ -1069,7 +1069,6 @@ export function WorkoutPlayer({
           <RestScreen
             secondsLeft={leftMs / 1000}
             totalSeconds={step.seconds}
-            roundLine={step.reason === "round" && t ? `${t.groupLabel} · round ${t.round} of ${t.rounds} is next` : null}
             next={
               t
                 ? {

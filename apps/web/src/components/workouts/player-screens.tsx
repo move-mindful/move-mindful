@@ -808,7 +808,6 @@ function CountdownTitle({ paused, children }: { paused: boolean; children: React
 export function RestScreen({
   secondsLeft,
   totalSeconds,
-  roundLine,
   next,
   paused,
   onPause,
@@ -819,7 +818,6 @@ export function RestScreen({
 }: {
   secondsLeft: number;
   totalSeconds: number;
-  roundLine: string | null;
   next: { label: string; name: string; detail: string; thumbnail: string | null } | null;
   /** Held right here (Pause), the countdown stopped — see CountdownControls. */
   paused: boolean;
@@ -898,7 +896,6 @@ export function RestScreen({
             {shown >= 60 ? clock(shown) : shown}
           </div>
         </div>
-        {roundLine && <div className="text-base text-white/80">{roundLine}</div>}
         {!theater && card && <div className="mt-2 w-full px-5">{card}</div>}
       </div>
       {/* Desktop: as far from the card to the buttons as from the ring to the card (the stack's gap-9). */}
