@@ -805,7 +805,6 @@ function CountdownTitle({ paused, children }: { paused: boolean; children: React
 }
 
 export function RestScreen({
-  round,
   secondsLeft,
   totalSeconds,
   roundLine,
@@ -817,8 +816,6 @@ export function RestScreen({
   tip = null,
   theater = false,
 }: {
-  /** A group's rest between rounds, rather than an ordinary rest. */
-  round: boolean;
   secondsLeft: number;
   totalSeconds: number;
   roundLine: string | null;
@@ -860,16 +857,7 @@ export function RestScreen({
       className={`pointer-events-none [&_button]:pointer-events-auto ${theater ? centered : "absolute inset-0 flex flex-col"}`}
     >
       <div className={`flex flex-col items-center gap-[18px] ${theater ? "" : "flex-1 justify-center pt-12"}`}>
-        {/* Between rounds, ↻ ROUND under REST at half its size. */}
-        <div className="flex flex-col items-center gap-1.5 font-bold uppercase tracking-[0.16em] text-[#A99CFF]">
-          <CountdownTitle paused={paused}>Rest</CountdownTitle>
-          {round && (
-            <div className="flex items-center gap-2 text-xl">
-              <Loop size={20} />
-              Round
-            </div>
-          )}
-        </div>
+        <CountdownTitle paused={paused}>Rest</CountdownTitle>
         <div className="relative size-[248px]">
           <svg viewBox="0 0 248 248" className="absolute inset-0 size-full" aria-hidden="true">
             <circle cx="124" cy="124" r="116" fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="8" />
