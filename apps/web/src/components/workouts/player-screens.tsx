@@ -1418,7 +1418,7 @@ export function CompleteScreen({
   sets: number;
   onDone: () => void;
   onRestart: () => void;
-  /** Signed in: the member's stars for this workout (null until they rate) and how to rate. */
+  /** The viewer's stars for this workout (null until they rate) and how to rate. Signed out (/demo1) they show but aren't kept. */
   rating?: { stars: number | null; onRate: (stars: number) => void } | null;
   /** The spinning 3D 1st Workout badge in place of the check (the check still shows if 3D can't run). */
   badge?: boolean;

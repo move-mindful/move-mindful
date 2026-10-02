@@ -235,6 +235,8 @@ export function WorkoutPlayer({
   async function rate(value: number) {
     const before = stars;
     setStars(value);
+    // Signed out (/demo1): the stars still light up, but there's nowhere to keep them.
+    if (!signedIn) return;
     const res = await rateWorkout(workout.id, value).catch(() => ({ saved: false }));
     if (!res.saved) setStars(before);
   }
@@ -1331,7 +1333,7 @@ export function WorkoutPlayer({
           exercises={exerciseCount}
           sets={setCount}
           onDone={done}
-          rating={signedIn ? { stars, onRate: rate } : null}
+          rating={{ stars, onRate: rate }}
           // On every finish while it's tried out; meant in the end for a member's first.
           badge
           onFireworkBurst={fireworkSounds.play}
