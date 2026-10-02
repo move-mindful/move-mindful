@@ -27,6 +27,9 @@ const RHYTHM = Array.from({ length: BARS }, (_, i) => ({
   reach: 0.62 + scatter(i, 3) * 0.38,
 }));
 
+/** The dark disc's fade: solid to 65% of the way out, then easing to clear at its edge. */
+const DISC_FADE = "radial-gradient(closest-side, #000 65%, transparent)";
+
 /**
  * How long the bubble waits, once a tip starts playing, before sliding in —
  * on phones, where the sound itself can take about that long to come out of
@@ -76,8 +79,12 @@ export function CoachTip({
       }`}
       style={{ width: size, height: size, transitionDelay: `${show ? wait : 200}ms` }}
     >
-      {/* A soft dark disc, so the bars read over a bright studio. */}
-      <div className="absolute inset-0 rounded-full bg-[#0E0E20]/40 backdrop-blur-sm" />
+      {/* A soft dark disc, so the bars read over a bright studio: a little wider
+          than the ring, solid behind the photo and fading out toward its edge. */}
+      <div
+        className="absolute -inset-2 rounded-full bg-[#0E0E20]/40 backdrop-blur-sm"
+        style={{ maskImage: DISC_FADE, WebkitMaskImage: DISC_FADE }}
+      />
       <div
         className={`absolute inset-0 transition-[scale,opacity] duration-300 ${
           show ? `scale-100 opacity-100 ${held ? "" : "starting:scale-75 starting:opacity-0"}` : "scale-75 opacity-0"
