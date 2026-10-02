@@ -49,6 +49,11 @@ html[data-player-up] body {
    it. Keep in step with THEATER_QUERY in components/workouts/theater.tsx. */
 @custom-variant theater (@media (min-width: 1024px) and (min-aspect-ratio: 5/4));
 
+/* A short screen: an iPhone SE (667pt, 647 as a home-screen web app), or a
+   low laptop window. Screens that are tight there tighten up with `short:`
+   (the workout's pause screen). Taller phones never see it. */
+@custom-variant short (@media (max-height: 700px));
+
 /* The equalizer bars round the instructor's photo during an audio tip
    (components/workouts/coach-tip.tsx). Each bar runs this at its own speed
    and offset, back and forth, so the ring flickers like speech. */

@@ -1316,7 +1316,9 @@ export function PausedScreen({
   theater?: boolean;
 }) {
   const secondary =
-    "flex h-[54px] shrink-0 items-center justify-center gap-2.5 rounded-full bg-white/[0.12] text-base font-semibold";
+    "flex h-[54px] short:h-12 shrink-0 items-center justify-center gap-2.5 rounded-full bg-white/[0.12] text-base font-semibold";
+  // On a short screen (an iPhone SE) everything tightens a little — the Play
+  // button, the buttons, the gaps — so End workout still fits (`short:`).
   // A video's pause (no stats, two buttons) is short: on a phone the whole
   // stack sits in the middle of the screen, rather than down by the buttons.
   const compact = !theater && !stats;
@@ -1327,7 +1329,9 @@ export function PausedScreen({
           theater ? centered : `absolute inset-0 flex flex-col overflow-y-auto ${compact ? "justify-center py-16" : ""}`
         }
       >
-        <div className={`flex flex-col items-center gap-5 ${theater ? "" : compact ? "pb-8" : "flex-1 justify-end pb-8 pt-16"}`}>
+        <div
+          className={`flex flex-col items-center gap-5 ${theater ? "" : compact ? "pb-8 short:pb-6" : "flex-1 justify-end pb-8 pt-16 short:pb-6"}`}
+        >
           <div className="flex flex-col items-center gap-1 text-center">
             {autoAdvance && <AutoPill on={autoAdvance.on} onChange={autoAdvance.onChange} />}
             <h1 className="text-[30px] font-semibold tracking-[-0.01em]">Paused</h1>
@@ -1338,14 +1342,14 @@ export function PausedScreen({
             aria-label="Resume workout"
             onClick={onResume}
             autoFocus
-            className="flex size-[104px] items-center justify-center rounded-full bg-white text-[#14142B] shadow-[0_12px_36px_rgba(0,0,0,0.35)]"
+            className="flex size-[104px] items-center justify-center rounded-full bg-white text-[#14142B] shadow-[0_12px_36px_rgba(0,0,0,0.35)] short:size-[84px]"
           >
             <Play />
           </button>
         </div>
-        <div className={`gap-3.5 ${compact ? "flex flex-col px-5" : bottomGroup(theater)}`}>
+        <div className={`gap-3.5 short:gap-2.5 ${compact ? "flex flex-col px-5" : bottomGroup(theater)}`}>
           {stats && (
-            <div className="grid grid-cols-3 gap-2 rounded-[18px] bg-white/[0.08] px-2 py-3.5">
+            <div className="grid grid-cols-3 gap-2 rounded-[18px] bg-white/[0.08] px-2 py-3.5 short:py-2.5">
               <Stat value={stats.elapsed} label="Elapsed" />
               <Stat value={stats.setsDone} label="Sets done" />
               <Stat value={stats.left} label="Left" />
@@ -1378,7 +1382,7 @@ export function PausedScreen({
           <button
             type="button"
             onClick={onEnd}
-            className="flex h-12 shrink-0 items-center justify-center gap-2 text-base font-semibold text-[#FF9E9E]"
+            className="flex h-12 shrink-0 items-center justify-center gap-2 text-base font-semibold text-[#FF9E9E] short:h-11"
           >
             <Exit />
             End workout
