@@ -1457,11 +1457,15 @@ export function CompleteScreen({
     <>
       <Fireworks onBurst={onFireworkBurst} />
       <div className={theater ? centered : `absolute inset-0 flex flex-col gap-6 overflow-y-auto px-5 pt-[72px] ${bottomPad}`}>
-        <div className={`flex flex-col items-center gap-7 ${theater ? "w-[380px] max-w-[calc(100%-40px)]" : "flex-1 justify-center"}`}>
+        {/* Phones: allowed to shrink below its contents (min-h-0), which only the badge can do. */}
+        <div className={`flex flex-col items-center gap-7 ${theater ? "w-[380px] max-w-[calc(100%-40px)]" : "min-h-0 flex-1 justify-center"}`}>
           {badge ? (
             // The canvas leaves room round the badge for its tilt; the negative
             // margin takes that back out of the spacing. A soft lilac glow behind.
-            <div className="-my-3 flex size-[184px] shrink-0 items-center justify-center bg-[radial-gradient(closest-side,rgba(169,156,255,0.22),transparent)]">
+            // Square from its height: 184px, but on a phone short of room (Safari's
+            // toolbars) it gives up just what's missing, down to 120px, so the
+            // buttons stay on screen; nothing else shrinks. Past that, it scrolls.
+            <div className="-my-3 flex aspect-square h-[184px] min-h-[120px] shrink items-center justify-center bg-[radial-gradient(closest-side,rgba(169,156,255,0.22),transparent)]">
               <FirstWorkoutBadge fallback={check} className="size-full" />
             </div>
           ) : (
