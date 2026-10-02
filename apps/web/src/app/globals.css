@@ -83,7 +83,9 @@ html[data-player-up] body {
    (--burst, each dot in the element's colour). It rises from the bottom as one
    spark, then grows, flinging the dots outward as they fade and drift down.
    Its ::before and ::after are the same dots turned and recoloured, riding
-   along with it, for a fuller burst. Invisible before and after it plays. */
+   along with it, for a fuller burst. Invisible before and after it plays.
+   It bursts 45% of the way through each go: BURST_AT in player-screens.tsx
+   times the pops (firework-sounds.ts) to that. */
 .firework,
 .firework::before,
 .firework::after {

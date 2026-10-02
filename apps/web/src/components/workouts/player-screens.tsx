@@ -8,6 +8,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type AnimationEvent,
   type ComponentProps,
   type CSSProperties,
   type ReactNode,
@@ -1408,6 +1409,7 @@ export function CompleteScreen({
   onRestart,
   rating = null,
   badge = false,
+  onFireworkBurst,
   theater = false,
 }: {
   title: string;
@@ -1420,6 +1422,8 @@ export function CompleteScreen({
   rating?: { stars: number | null; onRate: (stars: number) => void } | null;
   /** The spinning 3D 1st Workout badge in place of the check (the check still shows if 3D can't run). */
   badge?: boolean;
+  /** Each firework's burst, to time its pop to (see Fireworks). */
+  onFireworkBurst?: (x: number, inSeconds: number) => void;
   theater?: boolean;
 }) {
   const check = (
@@ -1429,7 +1433,7 @@ export function CompleteScreen({
   );
   return (
     <>
-      <Fireworks />
+      <Fireworks onBurst={onFireworkBurst} />
       <div className={theater ? centered : `absolute inset-0 flex flex-col gap-6 overflow-y-auto px-5 pt-[72px] ${bottomPad}`}>
         <div className={`flex flex-col items-center gap-7 ${theater ? "w-[380px] max-w-[calc(100%-40px)]" : "flex-1 justify-center"}`}>
           {badge ? (
@@ -1496,6 +1500,8 @@ const FIREWORKS = [
 ];
 /** How many times each goes up before they stop. */
 const FIREWORK_ROUNDS = 3;
+/** How far into each go it bursts, after rising: keep in step with the 45% in globals.css @keyframes firework. */
+const BURST_AT = 0.45;
 
 /**
  * One burst's dots, as background layers for globals.css .firework: three
@@ -1519,9 +1525,14 @@ function ring(n: number, r: number, offset: number): Array<[number, number]> {
  * Fireworks over the Workout complete screen's top half, behind everything on
  * it: each rises from the bottom as a spark and bursts, a few times over, then
  * they stop. Sized to the screen (the video column), so a phone and the desktop
- * column look alike. None with reduced motion.
+ * column look alike. None with reduced motion. `onBurst` hears of each burst
+ * as its go starts (the browser's own animation events, so it keeps time with
+ * what's on screen): where it is across the screen and how soon it bursts.
  */
-function Fireworks() {
+function Fireworks({ onBurst }: { onBurst?: (x: number, inSeconds: number) => void }) {
+  function goesUp(e: AnimationEvent<HTMLDivElement>, f: (typeof FIREWORKS)[number]) {
+    if (e.animationName === "firework" && !e.pseudoElement) onBurst?.(f.x, f.dur * BURST_AT);
+  }
   return (
     <div
       aria-hidden="true"
@@ -1539,6 +1550,9 @@ function Fireworks() {
         <div
           key={i}
           className="firework"
+          // Each go: as it starts, and as each repeat starts (not its dots' own animations).
+          onAnimationStart={(e) => goesUp(e, f)}
+          onAnimationIteration={(e) => goesUp(e, f)}
           style={
             {
               "--x": `${f.x}%`,

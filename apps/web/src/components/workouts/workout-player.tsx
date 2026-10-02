@@ -81,6 +81,7 @@ import { CoachTip } from "./coach-tip";
 import { COUNTDOWN, UP_NEXT, useCueAudio } from "./cue-audio";
 import { UpNextCard } from "./up-next-card";
 import { preloadFirstWorkoutBadge } from "./first-workout-badge";
+import { useFireworkSounds } from "./firework-sounds";
 import { MUSIC, useWorkoutMusic } from "./music";
 import { TIP_DELAY_SECONDS, tipUrl } from "@/lib/workouts/shared";
 import { saveWorkoutSession } from "@/app/actions/workout-sessions";
@@ -446,6 +447,15 @@ export function WorkoutPlayer({
     muted: muted || !prefs.soundEffects,
   });
 
+  // The pops for the summary's fireworks: a sound effect too. Leaving the
+  // summary (Done, Restart workout) silences any still to come.
+  const fireworkSounds = useFireworkSounds(!muted && prefs.soundEffects);
+  const { stop: stopFireworkSounds } = fireworkSounds;
+  const onSummary = state.phase === "complete";
+  useEffect(() => {
+    if (!onSummary) stopFireworkSounds();
+  }, [onSummary, stopFireworkSounds]);
+
   // Music under the workout (the Audio card's Music switch). It plays while the
   // workout runs — the overview and the Audio card leave it going — and on
   // through the summary until Done; it dips under a voice, through the
@@ -686,6 +696,7 @@ export function WorkoutPlayer({
     tips.unlock();
     countdown.unlock();
     upNextChime.unlock();
+    fireworkSounds.unlock();
     // The music from the top — only when it's on, so a muted member never downloads it.
     if (prefs.music && prefs.instructorAudio) music.begin();
     // First time in this layout (or every time, on the demo): the guide opens
@@ -1323,6 +1334,7 @@ export function WorkoutPlayer({
           rating={signedIn ? { stars, onRate: rate } : null}
           // On every finish while it's tried out; meant in the end for a member's first.
           badge
+          onFireworkBurst={fireworkSounds.play}
           onRestart={() => restartWorkout(true)}
           theater={theater}
         />
