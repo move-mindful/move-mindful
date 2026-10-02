@@ -741,7 +741,8 @@ const centered = "absolute inset-0 flex flex-col items-center justify-center gap
 const bottomGroup = (theater: boolean) =>
   theater ? "flex w-[380px] max-w-[calc(100%-40px)] flex-col" : `flex flex-col px-5 ${bottomPad}`;
 
-const RING = 2 * Math.PI * 116;
+/** The countdown rings round a rest and Get ready: 200px across, radius 92. */
+const RING = 2 * Math.PI * 92;
 
 /**
  * The buttons under a countdown (rest, get ready): Pause — which holds the
@@ -858,13 +859,14 @@ export function RestScreen({
     >
       <div className={`flex flex-col items-center gap-[18px] ${theater ? "" : "flex-1 justify-center pt-12"}`}>
         <CountdownTitle paused={paused}>Rest</CountdownTitle>
-        <div className="relative size-[248px]">
-          <svg viewBox="0 0 248 248" className="absolute inset-0 size-full" aria-hidden="true">
-            <circle cx="124" cy="124" r="116" fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="8" />
+        {/* The same size as Get ready's. */}
+        <div className="relative size-[200px]">
+          <svg viewBox="0 0 200 200" className="absolute inset-0 size-full" aria-hidden="true">
+            <circle cx="100" cy="100" r="92" fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="8" />
             <circle
-              cx="124"
-              cy="124"
-              r="116"
+              cx="100"
+              cy="100"
+              r="92"
               fill="none"
               stroke="#A99CFF"
               strokeWidth="8"
@@ -874,22 +876,22 @@ export function RestScreen({
               // Negative, so the ring empties clockwise from 12 o'clock, like a
               // clock hand sweeping round.
               strokeDashoffset={-RING * (1 - (totalSeconds > 0 ? secondsLeft / totalSeconds : 0))}
-              transform="rotate(-90 124 124)"
+              transform="rotate(-90 100 100)"
               style={{ transition: "stroke-dashoffset 250ms linear" }}
             />
           </svg>
           <div
             role="timer"
             aria-label={`${shown} seconds of rest left`}
-            // Growing as the digits drop: 1:30 at 72px, 59–10 at 84px (opened up
+            // Growing as the digits drop: 1:30 at 58px, 59–10 at 68px (opened up
             // a little so wide pairs like 44 don't touch), and the last nine
-            // at 120px — Get ready's digit scaled to this larger ring.
+            // at 96px — Get ready's digit, in the same ring.
             className={`absolute inset-0 flex items-center justify-center font-semibold tabular-nums ${
               shown >= 60
-                ? "text-[72px] tracking-[-0.03em]"
+                ? "text-[58px] tracking-[-0.03em]"
                 : shown >= 10
-                  ? "text-[84px] tracking-[0.03em]"
-                  : "text-[120px] tracking-[-0.04em]"
+                  ? "text-[68px] tracking-[0.03em]"
+                  : "text-[96px] tracking-[-0.04em]"
             }`}
           >
             {/* Under a minute, just the seconds (45 … 9 … 1), like Get ready; 1:30 above that. */}
@@ -1027,7 +1029,6 @@ export function VideoScreen({
 
 // ── Get ready ─────────────────────────────────────────
 
-const READY_RING = 2 * Math.PI * 92;
 
 /**
  * The few seconds before an exercise starts: GET READY, a ring counting
@@ -1092,9 +1093,9 @@ export function ReadyScreen({
               strokeWidth="8"
               strokeLinecap="round"
               opacity={paused ? 0.45 : 1}
-              strokeDasharray={READY_RING}
+              strokeDasharray={RING}
               // Empties clockwise from 12 o'clock, like the rest ring.
-              strokeDashoffset={-READY_RING * (1 - (totalSeconds > 0 ? secondsLeft / totalSeconds : 0))}
+              strokeDashoffset={-RING * (1 - (totalSeconds > 0 ? secondsLeft / totalSeconds : 0))}
               transform="rotate(-90 100 100)"
               style={{ transition: "stroke-dashoffset 250ms linear" }}
             />
