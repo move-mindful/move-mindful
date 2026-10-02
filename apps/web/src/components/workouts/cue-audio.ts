@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // Cues: short clips the player plays a set time into a step — the
 // instructor's audio tips (with their bubble, coach-tip.tsx), the countdown
@@ -96,6 +96,8 @@ function newCueAudio(on: {
  * `playing`: the cue is audibly playing (the music dips while it is).
  * `held`: it's been paused part-way by a pause or a sheet, and will carry on
  * when the workout does (a tip's bubble stays on screen through it).
+ * `time()`: how far into its file the cue is, in seconds (a tip's equalizer
+ * bars follow its voice by it) — for animation frames, not render.
  */
 export function useCueAudio({
   clip,
@@ -109,7 +111,7 @@ export function useCueAudio({
   running: boolean;
   delayMs: number;
   muted: boolean;
-}): { playing: boolean; held: boolean; unlock: () => void } {
+}): { playing: boolean; held: boolean; time: () => number; unlock: () => void } {
   const url = clip?.url ?? null;
   const start = clip?.start ?? 0;
   const end = clip?.end ?? null;
@@ -218,6 +220,8 @@ export function useCueAudio({
   // Leaving the player.
   useEffect(() => () => audio.current?.pause(), []);
 
+  const time = useCallback(() => audio.current?.currentTime ?? 0, []);
+
   function unlock() {
     audio.current ??= newCueAudio(on.current);
     const a = audio.current;
@@ -241,6 +245,7 @@ export function useCueAudio({
     playing: speakingTake !== null && speakingTake === take,
     // Muted while held, it won't carry on.
     held: heldTake !== null && heldTake === take && !muted,
+    time,
     unlock,
   };
 }

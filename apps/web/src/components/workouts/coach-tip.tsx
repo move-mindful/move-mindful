@@ -1,14 +1,17 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
+import { decodeVoiceLevels, voiceLevelAt } from "@move-mindful/core";
 import { Sound } from "./icons";
 
 /**
  * The instructor's audio tips in the player. A moment into a set or rest that
  * has one, the tip plays and the instructor's photo slides in at the bottom
  * right of the video, ringed by equalizer bars, sliding away when it ends.
- * The bars don't follow the audio; they only say a voice is playing.
- * Recorded in the builder's Audio tips view (TipMap in core); played by
+ * The bars follow the voice — jumping on a word, settling between them — from
+ * the loudness the builder measured when it was recorded (AudioTip `levels`),
+ * read at the tip's place in its file; a tip without them just has the bars
+ * move. Recorded in the builder's Audio tips view (TipMap in core); played by
  * useCueAudio (cue-audio.ts).
  */
 
@@ -20,12 +23,22 @@ function scatter(i: number, salt: number): number {
   return x - Math.floor(x);
 }
 
-// Each bar's own speed, head start and reach: quick and uneven, like speech.
+// Each bar's own speed, head start and reach: quick and uneven, like speech —
+// and how strongly it answers the voice, so they don't rise as one.
 const RHYTHM = Array.from({ length: BARS }, (_, i) => ({
   seconds: 0.34 + scatter(i, 1) * 0.46,
   delay: -scatter(i, 2),
   reach: 0.62 + scatter(i, 3) * 0.38,
+  sense: 0.75 + scatter(i, 4) * 0.5,
 }));
+
+/**
+ * How tall a bar stands for the voice (`--voice`, 0–1, set on the ring as the
+ * tip plays), on top of its own flicker: never below 30% of its reach in a
+ * pause, full height on a strong word. Unset — a tip without levels — every
+ * bar is at full height, as before.
+ */
+const VOICE_SCALE = "1 calc(0.3 + 0.7 * min(1, var(--voice, 1.4) * var(--sense)))";
 
 /** The dark disc's fade: solid to 65% of the way out, then easing to clear at its edge. */
 const DISC_FADE = "radial-gradient(closest-side, #000 65%, transparent)";
@@ -48,18 +61,47 @@ const PHONE_SHOW_DELAY_MS = 500;
  * `held`: the tip's paused part-way with the workout. The bubble stays put
  * with its bars still, and — back on screen after the pause screen — is
  * simply there again rather than sliding in a second time.
+ *
+ * `voice`: the tip's levels and how far into its file it's playing, for the
+ * bars to follow.
  */
 export function CoachTip({
   show,
   held = false,
+  voice = null,
   instructor,
   large = false,
 }: {
   show: boolean;
   held?: boolean;
+  voice?: { levels: string; time: () => number } | null;
   instructor: { name: string; photoUrl: string | null } | null;
   large?: boolean;
 }) {
+  const ring = useRef<HTMLDivElement>(null);
+  // Follow the voice frame by frame while it's playing (held, the bars stay where they are).
+  const levelsText = voice?.levels ?? null;
+  const time = voice?.time ?? null;
+  const following = show && !held && !!levelsText && !!time;
+  useEffect(() => {
+    const el = ring.current;
+    if (!el) return;
+    // A tip without levels: the bars at full height, whatever the last tip left.
+    if (!levelsText || !time) {
+      el.style.removeProperty("--voice");
+      return;
+    }
+    if (!following || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const levels = decodeVoiceLevels(levelsText);
+    let frame = 0;
+    const tick = () => {
+      el.style.setProperty("--voice", voiceLevelAt(levels, time()).toFixed(3));
+      frame = requestAnimationFrame(tick);
+    };
+    tick();
+    return () => cancelAnimationFrame(frame);
+  }, [following, levelsText, time]);
+
   const photo = large ? 64 : 48;
   const gap = large ? 4 : 3;
   const bar = large ? 13 : 10;
@@ -87,6 +129,7 @@ export function CoachTip({
         style={{ maskImage: DISC_FADE, WebkitMaskImage: DISC_FADE }}
       />
       <div
+        ref={ring}
         className={`absolute inset-0 transition-[scale,opacity] duration-300 ${
           show ? `scale-100 opacity-100 ${held ? "" : "starting:scale-75 starting:opacity-0"}` : "scale-75 opacity-0"
         }`}
@@ -96,13 +139,15 @@ export function CoachTip({
           <div key={i} className="absolute inset-0" style={{ rotate: `${(360 / BARS) * i}deg` }}>
             <span
               // Hidden, the bars stop where they are (the voice has ended) as the ring fades; held, until it carries on.
-              className={`absolute left-1/2 origin-bottom rounded-full bg-[#A99CFF] animate-[coach-eq_var(--s)_ease-in-out_var(--d)_infinite_alternate] motion-reduce:animate-none motion-reduce:scale-y-60 ${
+              className={`absolute left-1/2 origin-bottom rounded-full bg-[#A99CFF] animate-[coach-eq_var(--s)_ease-in-out_var(--d)_infinite_alternate] motion-reduce:animate-none motion-reduce:[--voice:0.45] ${
                 show && !held ? "" : "[animation-play-state:paused]"
               }`}
               style={
                 {
                   "--s": `${r.seconds}s`,
                   "--d": `${r.delay}s`,
+                  "--sense": r.sense,
+                  scale: VOICE_SCALE,
                   width: barWidth,
                   marginLeft: -barWidth / 2,
                   height: bar * r.reach,

@@ -389,7 +389,13 @@ export function WorkoutPlayer({
   });
   // Paused part-way, the bubble stays (behind the pause screen, or still on a held rest) and carries on with the voice.
   const coach = (large = false) => (
-    <CoachTip show={tips.playing || tips.held} held={tips.held} instructor={workout.instructor} large={large} />
+    <CoachTip
+      show={tips.playing || tips.held}
+      held={tips.held}
+      voice={tipStep?.tip?.levels ? { levels: tipStep.tip.levels, time: tips.time } : null}
+      instructor={workout.instructor}
+      large={large}
+    />
   );
 
   // The countdown over the last seconds of a rest, and of Get ready: a sound

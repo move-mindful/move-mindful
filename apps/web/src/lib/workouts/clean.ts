@@ -1,6 +1,7 @@
 import "server-only";
 
-import type { Side, TipMap, WorkoutBlock, WorkoutMove } from "@move-mindful/core";
+import { VOICE_LEVELS_PER_SECOND, type Side, type TipMap, type WorkoutBlock, type WorkoutMove } from "@move-mindful/core";
+import { TIP_MAX_SECONDS } from "@/lib/workouts/shared";
 
 // The server's own check on a sequence, whoever wrote it — the builder on
 // save, or Claude via "Generate with AI": known exercises only, sane numbers,
@@ -18,6 +19,8 @@ function int(value: unknown, min: number, max: number, fallback: number): number
 // Slot keys (TipMap in core): "rest", "2", "2:left", "2:1".
 const TIP_KEY = /^(rest|\d{1,2}(:(right|left|\d{1,2}))?)$/;
 const TIP_FILE = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\.m4a$/;
+// One character per reading (encodeVoiceLevels in core): up to TIP_MAX_SECONDS and then some.
+const TIP_LEVELS = new RegExp(`^[0-9a-z]{1,${(TIP_MAX_SECONDS + 10) * VOICE_LEVELS_PER_SECOND}}$`);
 
 /**
  * Tips as stored or sent: well-formed ones only (and, with `folder`, only
@@ -39,6 +42,9 @@ export function readTips(value: unknown, folder?: string): TipMap | undefined {
       out[key].start = Math.round(start * 100) / 100;
       out[key].end = Math.round(end * 100) / 100;
     }
+    // The voice's loudness through the file, for the player's equalizer bars.
+    const levels = (tip as { levels?: unknown }).levels;
+    if (typeof levels === "string" && TIP_LEVELS.test(levels)) out[key].levels = levels;
   }
   return Object.keys(out).length ? out : undefined;
 }

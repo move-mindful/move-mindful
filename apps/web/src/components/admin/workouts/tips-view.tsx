@@ -13,7 +13,7 @@ import {
 import { uploadWorkoutTip } from "@/app/actions/workouts";
 import { formatDuration } from "@/lib/exercises/shared";
 import { TIP_DELAY_SECONDS, TIP_MAX_SECONDS, tipUrl, type CatalogExercise } from "@/lib/workouts/shared";
-import { findSpeech, trimmed } from "@/lib/workouts/trim";
+import { readRecording, withReading } from "@/lib/workouts/trim";
 
 // The builder's "Audio tips" view: the workout as members walk it — every set
 // (each side of a sided one) and every rest, the ones the builder adds between
@@ -21,13 +21,16 @@ import { findSpeech, trimmed } from "@/lib/workouts/trim";
 // play back, redo or remove. Recordings upload straight away; the sequence
 // points at them once the workout is saved (see uploadWorkoutTip). The dead
 // air before and after the speech is trimmed off automatically — the file
-// stays whole, and the tip plays just the speech (AudioTip start / end).
+// stays whole, and the tip plays just the speech (AudioTip start / end) — and
+// the voice's loudness is measured for the player's equalizer bars (`levels`).
 
 // What the browser records in: AAC in MP4 (Chrome, Safari), which every
 // phone and browser can play. Firefox only records Opus, so it can't record tips.
 const RECORD_TYPES = ["audio/mp4;codecs=mp4a.40.2", "audio/mp4"];
 
 const slotId = (s: TipSlot) => `${s.block}/${s.move ?? "-"}/${s.key}`;
+/** Recorded before trimming, or before voice levels: the view reads it again. */
+const unread = (tip: AudioTip) => tip.end === undefined || tip.levels === undefined;
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** A slot being recorded (`startedAt` once the recorder has started, on the page's clock) or saved. */
@@ -66,31 +69,31 @@ export function TipsView({
   const recorder = useRef<{ rec: MediaRecorder; discard: boolean } | null>(null);
   const player = useRef<HTMLAudioElement | null>(null);
 
-  // Tips recorded before trimming existed: find their speech once, as the view
-  // opens, and keep it — the Save bar then asks for a save.
+  // Tips recorded before trimming or voice levels existed: read them once, as
+  // the view opens, and keep what's found — the Save bar then asks for a save.
   const latest = useRef({ steps, onTip });
   useEffect(() => {
     latest.current = { steps, onTip };
   });
   const tried = useRef(new Set<string>());
-  const untrimmed = steps.flatMap((s) => (s.tip && s.tip.end === undefined ? [s.tip.id] : [])).join(",");
+  const unreadIds = steps.flatMap((s) => (s.tip && unread(s.tip) ? [s.tip.id] : [])).join(",");
   useEffect(() => {
-    for (const id of untrimmed ? untrimmed.split(",") : []) {
+    for (const id of unreadIds ? unreadIds.split(",") : []) {
       if (tried.current.has(id)) continue;
       tried.current.add(id);
       fetch(tipUrl(id))
         .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))
-        .then(findSpeech)
-        .then((speech) => {
-          // Still there, still untrimmed (nothing moved meanwhile)?
+        .then(readRecording)
+        .then((reading) => {
+          // Still there, still unread (nothing moved meanwhile)?
           const step = latest.current.steps.find((s) => s.tip?.id === id);
-          if (speech && step?.tip && step.tip.end === undefined) latest.current.onTip(step.tipSlot, trimmed(step.tip, speech));
+          if (reading && step?.tip && unread(step.tip)) latest.current.onTip(step.tipSlot, withReading(step.tip, reading));
         })
         .catch(() => {
-          // Couldn't fetch or decode it: it plays whole, as before.
+          // Couldn't fetch or decode it: it plays as it did.
         });
     }
-  }, [untrimmed]);
+  }, [unreadIds]);
 
   // The seconds ticking up while recording.
   const recording = busy?.phase === "recording";
@@ -192,15 +195,15 @@ export function TipsView({
         return; // the builder shows why it couldn't save
       }
       const audio = new Blob(chunks, { type: "audio/mp4" });
-      // Where the speech is, so the dead air either side is skipped.
-      const speech = await findSpeech(await audio.arrayBuffer()).catch(() => null);
+      // Where the speech is, so the dead air either side is skipped, and its voice levels.
+      const reading = await readRecording(await audio.arrayBuffer()).catch(() => null);
       const fd = new FormData();
       fd.set("workoutId", workoutId);
-      fd.set("seconds", String(speech?.duration ?? seconds));
+      fd.set("seconds", String(reading?.duration ?? seconds));
       fd.set("audio", audio, "tip.m4a");
       const res = await uploadWorkoutTip(fd).catch(() => ({ tip: undefined, error: "Couldn’t reach the server. Try again." }));
       setBusy(null);
-      if (res.tip) onTip(slot, speech ? trimmed(res.tip, speech) : res.tip);
+      if (res.tip) onTip(slot, reading ? withReading(res.tip, reading) : res.tip);
       else setError(res.error ?? "The recording didn’t save. Try again.");
     };
     recorder.current = current;

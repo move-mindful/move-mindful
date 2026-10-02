@@ -15,12 +15,16 @@ export type Measure = "reps" | "time";
  * how long it plays. With `start` and `end` (seconds into the file) only that
  * part plays — the speech, the dead air either side trimmed off (see
  * speechBounds) — and `seconds` is its length; without them, the whole file.
+ * `levels`: how loud the voice is through the file, for the player's
+ * equalizer bars (see voiceLevels / encodeVoiceLevels); without it, the bars
+ * just move.
  */
 export interface AudioTip {
   id: string;
   seconds: number;
   start?: number;
   end?: number;
+  levels?: string;
 }
 
 /**
