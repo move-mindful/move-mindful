@@ -825,10 +825,11 @@ export function RestScreen({
   onResume: () => void;
   onContinue: () => void;
   /**
-   * Phones, a rest with an audio tip: its CoachTip, floating 16px above the
-   * buttons — taking no room, so a rest looks the same with a tip or without,
-   * and the bubble may overlap the Up next card's corner. (Desktop places it
-   * by the video's corner.)
+   * Phones, a rest with an audio tip: its CoachTip, taking no room, so a rest
+   * looks the same with a tip or without. It sits midway between the Up next
+   * card and the buttons, but never closer than 16px to the buttons: where
+   * that's tight (Safari's toolbars), it rides up over the card's corner.
+   * (Desktop places it by the video's corner.)
    */
   tip?: ReactNode;
   theater?: boolean;
@@ -856,6 +857,9 @@ export function RestScreen({
       className={`pointer-events-none [&_button]:pointer-events-auto ${theater ? centered : "absolute inset-0 flex flex-col"}`}
     >
       <div className={`flex flex-col items-center gap-[18px] ${theater ? "" : "flex-1 justify-center pt-12"}`}>
+        {/* Phones: the space above, matching the space below the card (so the
+            stack stays centred), less the gap the stack would add for it. */}
+        {!theater && <div className="-mb-[18px] flex-1" />}
         <CountdownTitle paused={paused}>Rest</CountdownTitle>
         {/* The same size as Get ready's. */}
         <div className="relative size-[200px]">
@@ -897,12 +901,25 @@ export function RestScreen({
           </div>
         </div>
         {!theater && card && <div className="mt-2 w-full px-5">{card}</div>}
+        {/* Phones: the space between the card and the buttons. A tip's bubble
+            sits in its middle, 13px in from the video's edge as on a set; when
+            the space is short of the bubble plus 16px, it keeps 16px over the
+            buttons and spills upward instead (justify-end), over the card. */}
+        {!theater && (
+          <div className="relative -mt-[18px] w-full flex-1">
+            {tip && (
+              <div className="absolute inset-0 flex flex-col items-end justify-end px-[13px]">
+                <div className="flex-1" />
+                <div className="shrink-0">{tip}</div>
+                <div className="min-h-4 flex-1" />
+              </div>
+            )}
+          </div>
+        )}
       </div>
       {/* Desktop: as far from the card to the buttons as from the ring to the card (the stack's gap-9). */}
       <div className={`relative ${theater ? "gap-9" : "gap-4"} ${bottomGroup(theater)}`}>
         {theater && card}
-        {/* 13px in from the video's edge, as on a set. */}
-        {tip && <div className="absolute bottom-full right-[13px] mb-4">{tip}</div>}
         <CountdownControls
           paused={paused}
           onPause={onPause}
