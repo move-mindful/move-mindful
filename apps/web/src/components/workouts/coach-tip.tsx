@@ -41,13 +41,19 @@ const PHONE_SHOW_DELAY_MS = 500;
  * grows in; hidden, the ring goes first and the photo slides back out. Its
  * box is the whole ring, bars included; the screen places it. `large` on
  * desktop. Without a photo, the instructor's initial (or a speaker) instead.
+ *
+ * `held`: the tip's paused part-way with the workout. The bubble stays put
+ * with its bars still, and — back on screen after the pause screen — is
+ * simply there again rather than sliding in a second time.
  */
 export function CoachTip({
   show,
+  held = false,
   instructor,
   large = false,
 }: {
   show: boolean;
+  held?: boolean;
   instructor: { name: string; photoUrl: string | null } | null;
   large?: boolean;
 }) {
@@ -62,8 +68,10 @@ export function CoachTip({
       aria-hidden="true"
       className={`pointer-events-none relative transition-[translate,opacity] motion-reduce:translate-x-0 motion-reduce:transition-opacity ${
         show
-          ? // In with a little overshoot, then the ring; mounting already shown (back from pause), it still slides in.
-            "translate-x-0 opacity-100 duration-500 ease-[cubic-bezier(0.22,1.3,0.36,1)] starting:translate-x-[calc(100%+48px)] starting:opacity-0"
+          ? // In with a little overshoot, then the ring. Back from the pause screen mid-tip (held), already in place.
+            `translate-x-0 opacity-100 duration-500 ease-[cubic-bezier(0.22,1.3,0.36,1)] ${
+              held ? "" : "starting:translate-x-[calc(100%+48px)] starting:opacity-0"
+            }`
           : "translate-x-[calc(100%+48px)] opacity-0 duration-300 ease-in"
       }`}
       style={{ width: size, height: size, transitionDelay: `${show ? wait : 200}ms` }}
@@ -72,16 +80,16 @@ export function CoachTip({
       <div className="absolute inset-0 rounded-full bg-[#0E0E20]/40 backdrop-blur-sm" />
       <div
         className={`absolute inset-0 transition-[scale,opacity] duration-300 ${
-          show ? "scale-100 opacity-100 starting:scale-75 starting:opacity-0" : "scale-75 opacity-0"
+          show ? `scale-100 opacity-100 ${held ? "" : "starting:scale-75 starting:opacity-0"}` : "scale-75 opacity-0"
         }`}
         style={{ transitionDelay: `${show ? wait + 300 : 0}ms` }}
       >
         {RHYTHM.map((r, i) => (
           <div key={i} className="absolute inset-0" style={{ rotate: `${(360 / BARS) * i}deg` }}>
             <span
-              // Hidden, the bars stop where they are (the voice has ended) as the ring fades.
+              // Hidden, the bars stop where they are (the voice has ended) as the ring fades; held, until it carries on.
               className={`absolute left-1/2 origin-bottom rounded-full bg-[#A99CFF] animate-[coach-eq_var(--s)_ease-in-out_var(--d)_infinite_alternate] motion-reduce:animate-none motion-reduce:scale-y-60 ${
-                show ? "" : "[animation-play-state:paused]"
+                show && !held ? "" : "[animation-play-state:paused]"
               }`}
               style={
                 {

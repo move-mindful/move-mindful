@@ -93,7 +93,9 @@ function newCueAudio(on: {
  * end) — a trimmed tip's speech, or the part of the countdown a short rest
  * has room for.
  *
- * `playing`: the cue is audibly playing (a tip's bubble shows while it is).
+ * `playing`: the cue is audibly playing (the music dips while it is).
+ * `held`: it's been paused part-way by a pause or a sheet, and will carry on
+ * when the workout does (a tip's bubble stays on screen through it).
  */
 export function useCueAudio({
   clip,
@@ -107,7 +109,7 @@ export function useCueAudio({
   running: boolean;
   delayMs: number;
   muted: boolean;
-}): { playing: boolean; unlock: () => void } {
+}): { playing: boolean; held: boolean; unlock: () => void } {
   const url = clip?.url ?? null;
   const start = clip?.start ?? 0;
   const end = clip?.end ?? null;
@@ -121,14 +123,26 @@ export function useCueAudio({
   const mutedNow = useRef(muted);
   // Mid-unlock: pausing before its play() settles would undo it (as in the video pool).
   const unlocking = useRef(false);
-  // The take whose cue is audibly playing, from the element's own events.
+  // The take whose cue is audibly playing, from the element's own events; and
+  // the take whose cue is held part-way, for the workout pausing.
   const [speakingTake, setSpeakingTake] = useState<number | null>(null);
+  const [heldTake, setHeldTake] = useState<number | null>(null);
+  // Pausing it for the workout pausing (not for its end, a new step or mute).
+  const holding = useRef(false);
   const on = useRef({
-    playing: () => setSpeakingTake(loaded.current),
-    paused: () => setSpeakingTake(null),
+    playing: () => {
+      setSpeakingTake(loaded.current);
+      setHeldTake(null);
+    },
+    paused: () => {
+      setSpeakingTake(null);
+      setHeldTake(holding.current ? loaded.current : null);
+      holding.current = false;
+    },
     ended: () => {
       if (progress.current.take === loaded.current) progress.current.done = true;
       setSpeakingTake(null);
+      setHeldTake(null);
     },
     // At the end of the speech: stop, as if the file had ended there.
     time: () => {
@@ -169,12 +183,15 @@ export function useCueAudio({
     const p = progress.current;
     if (!url || !a || p.take !== take || p.done) return;
     if (!running) {
-      if (!a.paused) a.pause();
+      if (!a.paused) {
+        holding.current = true;
+        a.pause();
+      }
       return;
     }
     if (p.started) {
       if (muted) a.pause();
-      else a.play().catch(() => {});
+      else a.play().catch(() => setHeldTake(null));
       return;
     }
     const since = performance.now();
@@ -220,5 +237,10 @@ export function useCueAudio({
     );
   }
 
-  return { playing: speakingTake !== null && speakingTake === take, unlock };
+  return {
+    playing: speakingTake !== null && speakingTake === take,
+    // Muted while held, it won't carry on.
+    held: heldTake !== null && heldTake === take && !muted,
+    unlock,
+  };
 }
