@@ -64,25 +64,12 @@ A video fitness platform with on-demand classes, exercise-by-exercise workouts, 
 - Neither affects the commit author, which is `Maxwell Gustaitis
   <contact@movemindful.com>` either way.
 
-## Pushing small changes
+## Pushing
 
 The owner's call (2026-10-01), and an exception to the global "never push unless I explicitly ask" — for this repo only:
 
-- **Small, low-risk changes: commit and push straight away, without waiting for "push".** That covers tweaks like:
-  - a colour, opacity, size, spacing or position
-  - a tuning number (music levels, timings)
-  - wording
-  - putting back something tried earlier
-  - docs-only edits
-
-  Typecheck and lint must pass first. Say in the reply that it's pushed.
-- **Everything else still waits for the owner to say "push":**
-  - new features or new behaviour
-  - anything touching data loading, server actions, auth, payments or webhooks
-  - a migration or a dependency change
-  - anything that couldn't be checked
-
-  When unsure which kind a change is, ask.
+- **Push changes yourself once typecheck and lint pass**, without waiting for "push". Say in the reply that it's pushed.
+- **Major changes still wait for the owner to say "push":** a new feature, a big rework, a migration, a dependency change, or anything touching payments, sign-in or members' data. When unsure whether a change is major, ask.
 
 ## Key Principles
 
