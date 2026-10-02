@@ -40,9 +40,6 @@ const RHYTHM = Array.from({ length: BARS }, (_, i) => ({
  */
 const VOICE_SCALE = "1 calc(0.3 + 0.7 * min(1, var(--voice, 1.4) * var(--sense)))";
 
-/** The dark disc's edge: solid to 88% of the way out, then a quick fade to clear — just the rim softened. */
-const DISC_EDGE = "radial-gradient(closest-side, #000 88%, transparent)";
-
 /**
  * How long the bubble waits, once a tip starts playing, before sliding in —
  * on phones, where the sound itself can take about that long to come out of
@@ -122,11 +119,8 @@ export function CoachTip({
       }`}
       style={{ width: size, height: size, transitionDelay: `${show ? wait : 200}ms` }}
     >
-      {/* A soft dark disc, so the bars read over a bright studio, its edge feathered. */}
-      <div
-        className="absolute -inset-0.5 rounded-full bg-[#0E0E20]/40 backdrop-blur-sm"
-        style={{ maskImage: DISC_EDGE, WebkitMaskImage: DISC_EDGE }}
-      />
+      {/* A soft dark disc, so the bars read over a bright studio. */}
+      <div className="absolute inset-0 rounded-full bg-[#0E0E20]/35 backdrop-blur-sm" />
       <div
         ref={ring}
         className={`absolute inset-0 transition-[scale,opacity] duration-300 ${
