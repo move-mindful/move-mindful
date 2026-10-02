@@ -122,8 +122,8 @@ export function CoachTip({
       }`}
       style={{ width: size, height: size, transitionDelay: `${show ? wait : 200}ms` }}
     >
-      {/* A soft dark disc, so the bars read over a bright studio. */}
-      <div className="absolute inset-0 rounded-full bg-[#0E0E20]/35 backdrop-blur-sm" />
+      {/* A soft dark disc, so the bars read over a bright studio — a touch inside the ring, so the longest bars just reach past it. */}
+      <div className="absolute inset-0.5 rounded-full bg-[#0E0E20]/35 backdrop-blur-sm" />
       <div
         ref={ring}
         className={`absolute inset-0 transition-[scale,opacity] duration-300 ${
