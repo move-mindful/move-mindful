@@ -288,6 +288,8 @@ Key product rules from design review:
 - [ ] Unpaid-user paywall: **US** — app-to-web checkout button (deep-link to RevenueCat Web Billing, return with entitlement unlocked); **non-US fallback** — generic "membership required" state, no link (anti-steering). Verify App Review + legal status before shipping
 
 ### Phase 6 — Push notifications
+- [ ] Now Playing (lock screen, Dynamic Island) for a workout: the app publishes one entry itself — the workout's title, instructor, cover and progress, with play/pause and skip wired to the player — set at Begin and updated as it goes, and the tips, countdown, chime, videos and music all play without taking it over. (In iPhone Safari the island comes and goes during a workout, as each of those sounds takes its turn and iOS briefly pauses the music when a video with sound starts. Not fixed on the web: there, iPhones are for testing until the app — see the next item.)
+- [ ] iPhone browsers go to the app: once it's out, an iPhone opening the site (the player above all) is sent to the app (a Smart App Banner, or a prompt) rather than using the web player. Laptops and desktops keep the web version for good
 - [ ] Expo Notifications for iOS
 - [ ] New class alerts, challenge reminders, live stream starting
 
