@@ -76,8 +76,8 @@ export function CoachTip({
       }`}
       style={{ width: size, height: size, transitionDelay: `${show ? wait : 200}ms` }}
     >
-      {/* A soft dark disc, so the bars read over a bright studio. */}
-      <div className="absolute inset-0 rounded-full bg-[#0E0E20]/40 backdrop-blur-sm" />
+      {/* A frosted disc behind the bars, in the Up next card's glass (up-next-card.tsx). */}
+      <div className="absolute inset-0 rounded-full border border-white/20 bg-white/10 backdrop-blur-md" />
       <div
         className={`absolute inset-0 transition-[scale,opacity] duration-300 ${
           show ? `scale-100 opacity-100 ${held ? "" : "starting:scale-75 starting:opacity-0"}` : "scale-75 opacity-0"
