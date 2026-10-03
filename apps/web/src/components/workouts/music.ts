@@ -34,8 +34,8 @@ export const MUSIC = {
     tip: 6,
     intro: 12,
     outro: 12,
-    warmup: 17,
-    cooldown: 17,
+    warmup: 15,
+    cooldown: 15,
     /** Paused in the workout (a set, a tutorial, a held rest or Get ready), when `whilePaused` is on. */
     paused: 6,
     /** The summary (Workout complete), level with the outro before it. */
