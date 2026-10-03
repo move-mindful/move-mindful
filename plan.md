@@ -99,7 +99,21 @@ if (!viewerCanAccess(viewer, product.entitlement)) redirect(salesPage)
 // a RevenueCat outage denies access rather than granting it.
 ```
 
-The iOS app will check the same entitlements with `react-native-purchases`, identified by the same Clerk user id.
+The iOS app gets gated content through the same server checks (see iOS App Sign-in below); `react-native-purchases`, identified by the same Clerk user id, drives its paywall and the app-to-web checkout.
+
+### iOS App Sign-in (planned Oct 2026)
+The app signs in to the **same Clerk accounts as the website** — one login, the same purchases, no second account system — and the server checks a request from the app exactly like one from a browser.
+
+- **Sign-in screen:** Clerk's native `AuthView` from `@clerk/expo` (the old `@clerk/clerk-expo` is deprecated) — a SwiftUI screen, not a web page in a box, offering whichever methods are on in the Clerk dashboard. In beta since March 2026; the fallback is our own screens built on Clerk's hooks. Needs a development build, not Expo Go.
+- **Methods:** email only, matching the website today. That means Sign in with Apple isn't required — Apple only requires it alongside a third-party login like Google (Guideline 4.8). If Google is ever added, add Sign in with Apple on web and app, and handle the "Hide My Email" catch: a web buyer who signs in with Apple and hides their email arrives with a relay address, so Clerk creates a new, empty account. The fix: the "membership required" screen shows the signed-in email with "Bought on the website? Sign in with the email you used there."
+- **Staying signed in:** Clerk keeps the device's long-lived login in the iPhone's Keychain, so members stay signed in between launches.
+- **Talking to our server:** the app gets a short-lived session token from Clerk (`getToken()` — 60 seconds, renewed automatically) and sends it as `Authorization: Bearer …` to the app's API routes (Phase 5). On the server, `auth()` reads that header the same way it reads the browser cookie, so `getViewerAccess()`, `requireAdmin()` and "user id from the session, never the request" carry over unchanged.
+- **`proxy.ts`:** a signed-out request is redirected to `/sign-in` today — right for a browser, wrong for the app. The app's API routes answer a 401 JSON error instead.
+- **Purchases:** the server stays the gate for content, so Mux playback ids never reach a phone that isn't entitled. `react-native-purchases` (identified by the Clerk user id) drives the paywall state and the app-to-web checkout.
+- **Chat:** the app sends its Clerk token to the chat-token route; the server checks access and returns a Stream token for `stream-chat-expo` (see Group Chat). Signing out disconnects Stream, then Clerk.
+- **Clerk dashboard (owner):** turn on the Native API, and register the iOS app (Apple Team ID + bundle ID).
+- **App Review:** the app needs a login, so Review needs a demo account with access.
+- **Still open — sign-ups in the app, or sign-in only** (accounts made on the website)? Sign-ups in the app suit people who find it in the App Store, but then Apple requires account deletion in the app too (Guideline 5.1.1(v)). Deleting through Clerk fires the existing `user.deleted` webhook, so `deleteMemberData()` covers our tables; the subscription / Mailchimp / ManyChat question under "Across phases" still applies. Sign-in only keeps Apple's rules simpler.
 
 ---
 
@@ -305,7 +319,7 @@ Key product rules from design review:
 - [ ] Reuse `packages/core` logic and services
 - [ ] An API for the app: the web loads data through server components and server actions, which a native app can't call, so add route handlers (browse and collections, a class's playback, a workout and its clips, saving progress and settings) that verify the app's Clerk session token and check entitlement with the same server code (`getViewerAccess()`), returning JSON
 - [ ] Expo + React Native app — screens rebuilt with native components (NativeWind can keep Tailwind-style classes) to the settled designs
-- [ ] Clerk login (`@clerk/clerk-expo`) — same account as web; identify RevenueCat with the Clerk user ID
+- [ ] Clerk login with `@clerk/expo`'s native `AuthView` (see iOS App Sign-in) — same account as web; identify RevenueCat with the Clerk user ID. Also: the Native API on and the iOS app registered in the Clerk dashboard, a development build, and a 401 JSON error (not the `/sign-in` redirect) from `proxy.ts` for the app's API routes. Decide sign-ups in the app vs sign-in only first
 - [ ] Entitlement gate (`react-native-purchases`) — unlock on "Move Mindful Pro", else show "membership required"
 - [ ] Apple Health (iOS app only; browsers can't): at launch, save finished workouts to Health (HealthKit); later, show the watch's heart rate on the summary. A true Apple Watch app (live heart rate, controls on the wrist) needs a separate Swift watchOS app — a future project, not launch (designed: see the next item)
 - [ ] **Apple Watch companion app** (future project, not launch; designed Oct 2026): designed in a claude.ai design canvas (private to the owner), the [Apple Watch companion](https://claude.ai/artifact/9c5H5HiqQzRE9sS7zcM46i) — build to **variation A ("Glance")**, the rows marked A; B and C are alternatives that weren't chosen. It does nothing without a workout running: just the mark and "Start a workout on your iPhone" (the iPhone can open the watch app itself when a workout begins, with HealthKit's `startWatchApp`). During a workout, three pages: Controls (Back, Pause/Resume, Next, Mute, Auto-advance, End) | Main | Apple's own Now Playing (`NowPlayingView`). Main shows the reps or time, side and set, heart rate and calories, and a whole-workout bar with time elapsed and time left; the number fills purple from the bottom during work (sets, warm-up, cool-down) and drains during rests and Get ready. Also designed: warm-up (the same screen serves the intro, cool-down and outro), tutorial, Get ready and Workout complete (Time, Calories, Avg heart rate, Sets). No pause screen — Pause on Controls turns into Resume. Live heart rate and calories mean the watch runs its own workout session (`HKWorkoutSession`), which also gives the next item its number. Still open: time left as a ticking "−9:18" or the phone's "~9 min" (it's an estimate), and whether the watch can answer "Cool down?"
