@@ -2,7 +2,7 @@
 
 ## Overview
 
-A video fitness platform offering on-demand classes, exercise-by-exercise workouts, live streaming, group chat, and push notifications. Web and iOS are co-equal platforms. All purchases happen on the web; the iOS app is the logged-in experience.
+A video fitness platform offering on-demand classes, exercise-by-exercise workouts, live streaming, group chat, and push notifications. Web and iOS are co-equal platforms. All purchases happen on the web; the iOS app is the logged-in experience — though as of Oct 2026 the leaning is for the app to sell through Apple at launch (see Purchasing & Platform Strategy).
 
 **Where things stand (Sep 2026):** the web app is live at `www.movemindful.com`. What's for sale is a one-time product, `Posture & Mobility Reset`, plus a free lead-magnet routine; the class library, live stream and workouts are built but locked to admins until the membership (and a decision on how workouts are sold) arrives. See [README.md](./README.md) for the current state and [postureproject.md](./postureproject.md) for the pivot.
 
@@ -54,7 +54,7 @@ The sections below are the original plan and still describe where the membership
 - Goal: low-commitment entry point to acquire users
 
 ### Membership (Recurring)
-- Monthly subscription via RevenueCat (Stripe on web, Apple IAP on mobile if added later)
+- Monthly subscription via RevenueCat (Stripe on web; Apple in the app if the app becomes the storefront)
 - Full access to all classes, live streams, chat, community
 
 ### Upsell Flow
@@ -75,17 +75,37 @@ The sections below are the original plan and still describe where the membership
 
 ## Purchasing & Platform Strategy
 
+### Leaning: the app becomes the storefront (Oct 2026 — not final)
+Leaning toward **selling through Apple inside the iOS app, and eventually only there** — the Ladder model (a web quiz → the App Store; a 7-day trial with no card; subscriptions through Apple). The web-storefront sections below stay in force until the switch.
+
+- **Why:** simplest to run. Apple's cut — 15% under the App Store Small Business Program — is all-in: card processing, sales tax / VAT, refunds, failed payments and billing support. The web keeps roughly 10–12% more of each payment (Stripe 2.9% + 30¢), but Move Mindful is then the seller: tax registration and filing (UK/EU VAT from the first sale), international-card surcharges, chargebacks, billing support. And an app that unlocks web purchases without also offering them through Apple risks rejection — Guideline 3.1.3(b) allows that only "provided those items are also available as in-app purchases within the app", and the US link-out change made no exception to that sentence.
+- **RevenueCat stays.** It matches Apple purchases to the Clerk user (the app logs in to RevenueCat with the Clerk id before buying), answers `getViewerAccess()` the same way whichever store charged, fires the same webhook (Mailchimp / ManyChat tags unchanged), and keeps Android or web sales open for later. Free under $2,500/mo tracked revenue, then 1%.
+- **The path — nothing switches off early:**
+  1. Until the app launches, the website keeps selling as today.
+  2. Build the app with Apple payments — the same work either way (Phase 5).
+  3. At launch both sell, so for a while it's effectively the hybrid.
+  4. Once the app's sales are proven, the product pages change from "Buy" to "Get the app". Reversible.
+- **Trial:** no card — the server grants 7 days of access at sign-up (the `/join` grant with an end date), then the app shows the Apple paywall. See "Free trial" under Future Considerations.
+- **Settles:** sign-ups in the app, so account deletion in the app too (see iOS App Sign-in); enroll in the Small Business Program.
+- **Existing buyers:** one-time purchases are lifetime and stay. The membership is paused, so there are few or no web subscriptions to carry; any that exist stay on Web Billing until cancelled.
+- **Members billed by Apple:** the website's account page says "Billed through Apple — manage it on your iPhone" (Apple subscriptions can only be cancelled in iPhone Settings), and the paywall is hidden from anyone who already has access, so nobody pays twice.
+- **Still open:**
+  - **One-time products in the app** — the Posture Reset as an Apple one-time purchase, or folded into the reopened membership so the app sells only a subscription (ties to the open "does the membership include the one-time products?" question above).
+  - **Where Instagram DM traffic signs up** — leaning: a web page (the free class or a quiz) → Clerk sign-up on the web → "Download the app and sign in", which keeps the ManyChat contact-id cookie and the Mailchimp tags working. Sending people straight to the App Store loses the ManyChat link.
+  - **Who'd be left out** — laptop-only and Android visitors couldn't buy. Check roughly what share of Posture Reset buyers came from a computer before switching the website off.
+- **Later, optional:** the US "pay on the web" button (see Future Considerations).
+
 ### Web = Storefront
 - All purchases (challenge + membership) happen on the website
 - RevenueCat manages subscriptions and one-time purchases (Stripe processes the payments)
 - User never creates separate accounts — one Clerk login, RevenueCat customer linked via Clerk user ID
 
-### iOS App = Experience
+### iOS App = Experience (original plan — see the leaning above)
 - No in-app purchases (avoids Apple's 15-30% cut)
 - Users who open the app without a subscription see a "membership required" state
 - **US — app-to-web checkout:** the in-app paywall can show a button that deep-links to the RevenueCat-hosted Web Billing checkout (Stripe underneath) and returns the user to the app with the "Move Mindful Pro" entitlement already unlocked. Enabled by the 2025 *Epic v. Apple* ruling — **no Apple commission, no scare screen**. One tap, no funnel drop-off; still only Stripe (~2.9% + 30¢) + RevenueCat fees. Identity is handed off so the purchase lands on the same `appUserID` (Clerk user ID) the app logs in with.
 - **Outside the US (fallback):** Apple's anti-steering rules still apply — no clickable link to checkout. Show the generic "membership required" state and let marketing drive users to the website.
-- **Caveats:** US-only, and it rests on a ruling Apple is appealing (Ninth Circuit). Keep the no-link fallback so a rule change isn't a re-architecture. Apple's External Purchase Link disclosure rules + App Review still apply. **Verify current legal/App Review status before shipping.**
+- **Caveats:** US-only. The Ninth Circuit largely upheld the ruling but said Apple may later charge a fee covering its genuine costs (amount not set), and Apple has taken it to the Supreme Court; the zero-commission rule stays in force meanwhile. Keep the no-link fallback so a rule change isn't a re-architecture. Apple's External Purchase Link disclosure rules + App Review still apply. **Verify current legal/App Review status before shipping.**
 - Marketing (social media, email, search) still drives users to the website to purchase
 
 ### Access Control Logic
@@ -99,7 +119,7 @@ if (!viewerCanAccess(viewer, product.entitlement)) redirect(salesPage)
 // a RevenueCat outage denies access rather than granting it.
 ```
 
-The iOS app gets gated content through the same server checks (see iOS App Sign-in below); `react-native-purchases`, identified by the same Clerk user id, drives its paywall and the app-to-web checkout.
+The iOS app gets gated content through the same server checks (see iOS App Sign-in below); `react-native-purchases`, identified by the same Clerk user id, drives its paywall and Apple purchases (or the app-to-web checkout, under the original plan).
 
 ### iOS App Sign-in (planned Oct 2026)
 The app signs in to the **same Clerk accounts as the website** — one login, the same purchases, no second account system — and the server checks a request from the app exactly like one from a browser.
@@ -109,11 +129,11 @@ The app signs in to the **same Clerk accounts as the website** — one login, th
 - **Staying signed in:** Clerk keeps the device's long-lived login in the iPhone's Keychain, so members stay signed in between launches.
 - **Talking to our server:** the app gets a short-lived session token from Clerk (`getToken()` — 60 seconds, renewed automatically) and sends it as `Authorization: Bearer …` to the app's API routes (Phase 5). On the server, `auth()` reads that header the same way it reads the browser cookie, so `getViewerAccess()`, `requireAdmin()` and "user id from the session, never the request" carry over unchanged.
 - **`proxy.ts`:** a signed-out request is redirected to `/sign-in` today — right for a browser, wrong for the app. The app's API routes answer a 401 JSON error instead.
-- **Purchases:** the server stays the gate for content, so Mux playback ids never reach a phone that isn't entitled. `react-native-purchases` (identified by the Clerk user id) drives the paywall state and the app-to-web checkout.
+- **Purchases:** the server stays the gate for content, so Mux playback ids never reach a phone that isn't entitled. `react-native-purchases` (identified by the Clerk user id) drives the paywall and Apple purchases.
 - **Chat:** the app sends its Clerk token to the chat-token route; the server checks access and returns a Stream token for `stream-chat-expo` (see Group Chat). Signing out disconnects Stream, then Clerk.
 - **Clerk dashboard (owner):** turn on the Native API, and register the iOS app (Apple Team ID + bundle ID).
 - **App Review:** the app needs a login, so Review needs a demo account with access.
-- **Still open — sign-ups in the app, or sign-in only** (accounts made on the website)? Sign-ups in the app suit people who find it in the App Store, but then Apple requires account deletion in the app too (Guideline 5.1.1(v)). Deleting through Clerk fires the existing `user.deleted` webhook, so `deleteMemberData()` covers our tables; the subscription / Mailchimp / ManyChat question under "Across phases" still applies. Sign-in only keeps Apple's rules simpler.
+- **Sign-ups in the app — leaning yes** (with the app as storefront, above). Apple then requires account deletion in the app too (Guideline 5.1.1(v)). Deleting through Clerk fires the existing `user.deleted` webhook, so `deleteMemberData()` covers our tables; the subscription / Mailchimp / ManyChat question under "Across phases" still applies. Deleting an account doesn't cancel an Apple subscription, so the app tells people to cancel in iPhone Settings first.
 
 ---
 
@@ -319,7 +339,8 @@ Key product rules from design review:
 - [ ] Reuse `packages/core` logic and services
 - [ ] An API for the app: the web loads data through server components and server actions, which a native app can't call, so add route handlers (browse and collections, a class's playback, a workout and its clips, saving progress and settings) that verify the app's Clerk session token and check entitlement with the same server code (`getViewerAccess()`), returning JSON
 - [ ] Expo + React Native app — screens rebuilt with native components (NativeWind can keep Tailwind-style classes) to the settled designs
-- [ ] Clerk login with `@clerk/expo`'s native `AuthView` (see iOS App Sign-in) — same account as web; identify RevenueCat with the Clerk user ID. Also: the Native API on and the iOS app registered in the Clerk dashboard, a development build, and a 401 JSON error (not the `/sign-in` redirect) from `proxy.ts` for the app's API routes. Decide sign-ups in the app vs sign-in only first
+- [ ] Clerk login with `@clerk/expo`'s native `AuthView` (see iOS App Sign-in) — same account as web; identify RevenueCat with the Clerk user ID. Also: the Native API on and the iOS app registered in the Clerk dashboard, a development build, and a 401 JSON error (not the `/sign-in` redirect) from `proxy.ts` for the app's API routes. Sign-ups in the app (leaning), with account deletion in the app
+- [ ] Apple payments (if the app becomes the storefront — see Purchasing & Platform Strategy): products in App Store Connect; the iOS app added to the RevenueCat project and connected to App Store Connect, its products attached to the existing entitlements; `react-native-purchases` logged in with the Clerk user id before any purchase; RevenueCat's paywall, hidden from anyone already entitled; a Restore purchases button; enroll in the App Store Small Business Program (15%); the website's account page shows "Billed through Apple — manage it on your iPhone" for Apple subscriptions
 - [ ] Entitlement gate (`react-native-purchases`) — unlock on "Move Mindful Pro", else show "membership required"
 - [ ] Apple Health (iOS app only; browsers can't): at launch, save finished workouts to Health (HealthKit); later, show the watch's heart rate on the summary. A true Apple Watch app (live heart rate, controls on the wrist) needs a separate Swift watchOS app — a future project, not launch (designed: see the next item)
 - [ ] **Apple Watch companion app** (future project, not launch; designed Oct 2026): designed in a claude.ai design canvas (private to the owner), the [Apple Watch companion](https://claude.ai/artifact/9c5H5HiqQzRE9sS7zcM46i) — build to **variation A ("Glance")**, the rows marked A; B and C are alternatives that weren't chosen. It does nothing without a workout running: just the mark and "Start a workout on your iPhone" (the iPhone can open the watch app itself when a workout begins, with HealthKit's `startWatchApp`). During a workout, three pages: Controls (Back, Pause/Resume, Next, Mute, Auto-advance, End) | Main | Apple's own Now Playing (`NowPlayingView`). Main shows the reps or time, side and set, heart rate and calories, and a whole-workout bar with time elapsed and time left; the number fills purple from the bottom during work (sets, warm-up, cool-down) and drains during rests and Get ready. Also designed: warm-up (the same screen serves the intro, cool-down and outro), tutorial, Get ready and Workout complete (Time, Calories, Avg heart rate, Sets). No pause screen — Pause on Controls turns into Resume. Live heart rate and calories mean the watch runs its own workout session (`HKWorkoutSession`), which also gives the next item its number. Still open: time left as a ticking "−9:18" or the phone's "~9 min" (it's an estimate), and whether the watch can answer "Cool down?"
@@ -391,7 +412,7 @@ The Apple Developer Program ($99/year) follows when the iOS app is ready to publ
 - **Mux over Cloudflare Stream** — better React SDK, superior analytics (Mux Data), more polished livestreaming
 - **Clerk for auth, RevenueCat for payments** — Clerk handles identity (who is this person?), RevenueCat handles commerce (what have they paid for?). Clean separation of concerns
 - **RevenueCat over Clerk Billing** — subscriber management dashboard, cohort analytics, A/B testing, cross-platform entitlements, and seamless path to Apple IAP if needed later
-- **No in-app purchases at launch** — avoids Apple's 15-30% cut; web is the storefront, app is the experience; proven model (Netflix, Spotify, Kindle). RevenueCat makes adding IAP trivial later if needed
+- **No in-app purchases at launch** — avoids Apple's 15-30% cut; web is the storefront, app is the experience; proven model (Netflix, Spotify, Kindle). RevenueCat makes adding IAP trivial later if needed. **Under review (Oct 2026):** leaning toward selling through Apple in the app instead — see "Leaning: the app becomes the storefront"
 
 ---
 
@@ -480,5 +501,5 @@ When a member deletes their account, their data goes with it: any new table keye
 - **Chromecast support** — requires Google Cast SDK integration, not automatic like AirPlay
 - **Mux signed playback** — every asset is public today, so a playback id streams to anyone who has it. Signed policies with short-lived tokens minted server-side would close that; worth it once sharing shows up or revenue justifies the work (see [postureproject.md](./postureproject.md))
 - **Android app** — React Native / Expo supports Android out of the box; add when there's demand
-- **Free trial, no credit card (undecided)** — a possible top-of-funnel option: let users try Move Mindful free for a fixed window (e.g. 7–14 days) without entering a card. Recommended mechanism if pursued: a RevenueCat **promotional entitlement** (a grant, *not* a standard subscription free trial, which would require a card) granted server-side at Clerk signup (`user.created` webhook → RevenueCat REST API, secret key). Keeps RevenueCat as the single source of truth — the existing entitlement gate works unchanged on web + mobile, and conversion to paid is the same "Move Mindful Pro" entitlement (no migration). Trade-off: no-card trials are easily abused via new accounts. Not yet decided whether to build this.
-- **Apple external purchase link (app-to-web)** — as of the 2025 *Epic v. Apple* contempt ruling, US apps can link out to external web checkout with **no Apple commission and no scare screen** (this replaced Apple's early-2024 regime of ~27% + a scare screen). RevenueCat's app-to-web flow implements this against Web Billing — see "iOS App = Experience" above. Still **US-only** and **under appeal** at the Ninth Circuit; monitor the legal status and keep a no-link fallback for other storefronts. If the ruling is reversed, fall back to the reader-app (no-link) model — the underlying checkout doesn't change
+- **Free trial, no credit card (likely, Oct 2026)** — 7 days of access at sign-up, then the Apple paywall in the app (see "Leaning: the app becomes the storefront"). The `/join` free membership already grants a lifetime promotional entitlement (`lib/revenuecat-admin.ts`); the trial is the same call with an end date. Originally: a possible top-of-funnel option to let users try Move Mindful free for a fixed window (e.g. 7–14 days) without entering a card. Recommended mechanism if pursued: a RevenueCat **promotional entitlement** (a grant, *not* a standard subscription free trial, which would require a card) granted server-side at Clerk signup (`user.created` webhook → RevenueCat REST API, secret key). Keeps RevenueCat as the single source of truth — the existing entitlement gate works unchanged on web + mobile, and conversion to paid is the same "Move Mindful Pro" entitlement (no migration). Trade-off: no-card trials are easily abused via new accounts. Likely, not built yet.
+- **Apple external purchase link (app-to-web)** — as of the 2025 *Epic v. Apple* contempt ruling, US apps can link out to external web checkout with **no Apple commission and no scare screen** (this replaced Apple's early-2024 regime of ~27% + a scare screen). RevenueCat's app-to-web flow implements this against Web Billing — see "iOS App = Experience" above. Still **US-only**; the Ninth Circuit largely upheld it (Apple may later charge a cost-based fee, amount not set) and Apple has taken it to the Supreme Court — monitor the legal status and keep a no-link fallback for other storefronts. With the app as storefront (the Oct 2026 leaning), this becomes an optional later addition. If the ruling is reversed, fall back to the reader-app (no-link) model — the underlying checkout doesn't change
