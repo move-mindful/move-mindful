@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * just its end.
  */
 export const COUNTDOWN = {
+  /** At 90% of the level supplied (the file itself: iPhones ignore an element's volume). */
   src: "/audio/countdown.m4a",
   /** The file's length. */
   seconds: 3.03,
@@ -27,6 +28,7 @@ export const COUNTDOWN = {
  * A set no longer than that doesn't get it.
  */
 export const UP_NEXT = {
+  /** At 90% of the level supplied, like the countdown. */
   src: "/audio/upnext.mp3",
   before: 10,
   /** The chime waits this long (seconds) after the card starts sliding in, so it lands as the card does. */
