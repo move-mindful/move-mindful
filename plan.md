@@ -194,6 +194,21 @@ Options considered:
 | **PubNub** | Free up to 200 MAU | Chat SDK available, cheaper paid tiers | Less polished than Stream/Sendbird |
 | **Ably** | Free up to 200 MAU | Scalable real-time infrastructure | Lower-level, more UI work required |
 
+### 5. Working Out Now & Cheers (Future — outline, Oct 2026)
+Move Mindful is a social app: members see who's working out right now and can cheer them on. The exact display isn't settled; this is the idea.
+
+- **Working out now:** a horizontally scrolling row of profile pictures, each with a ring around it showing how far that member is through their workout. Tapping a picture opens their profile page (member profiles aren't built yet — a separate piece of work).
+- **Cheers:** tapping to send a cheer to someone mid-workout plays an animation on their workout screen. Keep it brief and out of the way of the video, in line with the player's minimal, video-first look — e.g. the sender's picture with an emoji floating up and fading.
+- **Shown for everyone** — it's a social app, so there's no opt-in. The privacy policy should still say members' workouts are visible to other members.
+- **What exists already:** `workout_sessions` (`013_workout_sessions.sql`). The player creates a row when a workout begins, updates it at every new set (`percent_complete`, `updated_at`) and marks it completed or discarded at the end. "Working out now" is roughly the sessions still `in_progress` and updated in the last few minutes; `percent_complete` drives the ring.
+- **What it needs:**
+  - **A query across all members** — today's session queries are all per member. Join each live session to the member's name and photo (Clerk) and the workout's title; an index on `(status, updated_at)` once there's volume.
+  - **A sharper "right now":** saves only happen at each new set, so a member paused for 15 minutes still looks active until the cutoff, and one who closed the app mid-workout stays `in_progress` (that's what lets them resume). Add a light check-in from the player every 30–60 seconds while it's actually playing, plus "paused" and "left" signals.
+  - **Refreshing the row:** an API route the web and app poll every ~30 seconds is plenty to start; real-time can come later.
+  - **Cheers:** a server action / API route behind auth (sender from the Clerk session) that records the cheer — a new `workout_cheers` table (sender, recipient, session, time), keyed by Clerk user ids, so it goes in `deleteMemberData()`. Only to someone with a live session; rate-limited per sender, so it can't be used to spam. The recipient's player picks up new cheers with its check-in (a few seconds' delay); if that feels slow, real-time delivery (Supabase Realtime broadcast, or a push to the iOS app) later. Once blocking exists (chat / profiles), a blocked member can't cheer you or see you in the row.
+- **Possible extras:** "3 people cheered you on" on the Workout complete screen; a "Natasha just finished Leg Day 💪" post in the community chat (see Group Chat) for people to react to.
+- **Depends on:** workouts released to members (the Workouts section is admin-only for now, so only admins create sessions), member profile pages, and — for the iOS app — the Phase 5 API routes, through which the app's player saves sessions the same way.
+
 ---
 
 ## Build Order
@@ -369,6 +384,13 @@ Key product rules from design review:
 ### Phase 8 — Group chat
 - [x] Evaluate options — chose Stream Chat with a Ladder-style design (see Group Chat above)
 - [ ] Build when community engagement becomes a priority
+
+### Phase 9 — Working out now & cheers
+See "Working Out Now & Cheers" under Feature Breakdown.
+- [ ] Decide how it's displayed (the row of profile pictures with progress rings is the starting idea)
+- [ ] Member profile pages (what tapping a picture opens)
+- [ ] Working out now: the player's check-in and paused / left signals, the cross-member query, and the scrolling row on web and app
+- [ ] Cheers: the `workout_cheers` table (in `deleteMemberData()`), the send route with rate limits, and the animation on the recipient's workout screen
 
 ---
 
