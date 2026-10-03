@@ -20,7 +20,7 @@ A video fitness platform offering on-demand classes, exercise-by-exercise workou
 | Payments/Subs      | RevenueCat                     | Subscriptions, one-time purchases, member management, analytics |
 | Payment Processing | Stripe (via RevenueCat)        | Web payment processing                       |
 | Video              | Mux                           | On-demand classes + livestreaming (later)    |
-| Chat               | TBD (not at launch)           | Group chat — evaluate when needed (see below) |
+| Chat               | Stream Chat (not at launch)   | Group chat, Ladder-style design (see below)  |
 | Push Notifications | Expo Notifications            | iOS push notifications                       |
 | Web Hosting        | Vercel                        | Next.js hosting, serverless functions, CDN   |
 | Backend / DB       | Supabase                      | Postgres, auth helpers, storage, realtime    |
@@ -128,12 +128,34 @@ The iOS app will check the same entitlements with `react-native-purchases`, iden
 
 ### 4. Group Chat (Future — not at launch)
 - Not included in initial build — add when community engagement becomes a priority
-- Options to evaluate when the time comes:
+
+**Decision (2026-10-03): Stream Chat, with a Ladder-style design.**
+
+- **Why Stream:** ready-made kits for React (`stream-chat-react`) and Expo (`stream-chat-expo`), so web and iOS get the same features without building chat twice. Threads, reactions, @mentions, pinned messages, image uploads, push, and flag/mute/block come built in — the last matters because App Store Guideline 1.2 requires filter, report and block for user-generated content. It also has a livestream channel type for Phase 7.
+- **Cost:** free Build tier — 1,000 monthly active users, 100 concurrent connections. The free Maker Account (≤5 people, <$10k/mo revenue, <$100k funding) raises that to about 2,000 users. After that, Start is $399/mo billed yearly ($499 monthly) for 10,000 users. The 100-connection cap is the one to watch for a busy live class.
+- **Design — "Ladder style",** after the team chat in the Ladder fitness app:
+  - Flat, Slack-style rows rather than Stream's default bubbles: avatar, bold name and muted time, then plain text, everything left-aligned.
+  - @mentions in the accent color.
+  - Reaction pills with counts, plus an add-reaction button.
+  - A "1 • View Thread" link with a line running down from the avatar.
+  - Header: back button, a pill with the group photo, name and a dropdown to switch groups, and a pill with search and pinned messages.
+  - A round scroll-to-bottom button.
+  - Composer: round photo button, pill-shaped input, round send button in the accent color.
+  - The coach's messages carry a badge (Stream's moderator role).
+  - Dark, in Move Mindful's own navy (`#14142B`) and lavender (`#A99CFF`) instead of Ladder's black and lime.
+- **Build notes:**
+  - Our server creates the member's Stream token only after the Clerk session and `getViewerAccess()` checks, and sets channel membership itself.
+  - Messages go from the browser straight to Stream — the one exception to "the browser never writes to the database", governed by that token.
+  - `deleteMemberData()` must also delete the member's Stream user.
+  - The message row is a custom component, built once for web and once for the Expo app.
+- **Still open:** one community room or several groups, and who gets in.
+
+Options considered:
 
 | Option | Cost | Pros | Cons |
 |---|---|---|---|
 | **Supabase Realtime** | Free (already in stack) | No extra vendor, real-time Postgres subscriptions, $0 cost | More DIY — you build the chat UI and features yourself |
-| **Stream Chat** | $399/mo (Maker plan) | Best-in-class React + React Native SDKs, moderation, threads, reactions, typing indicators | Expensive — biggest line item at early stage |
+| **Stream Chat** | Free to 1,000 MAU (Maker Account ~2,000), then $399/mo | Best-in-class React + React Native SDKs, moderation, threads, reactions, typing indicators | Steep jump from free to paid |
 | **Sendbird** | Free up to 25 MAU, then $399/mo | Similar quality to Stream, good SDKs | Same price jump |
 | **PubNub** | Free up to 200 MAU | Chat SDK available, cheaper paid tiers | Less polished than Stream/Sendbird |
 | **Ably** | Free up to 200 MAU | Scalable real-time infrastructure | Lower-level, more UI work required |
@@ -304,7 +326,7 @@ Key product rules from design review:
 - [ ] Auto-record livestreams for on-demand library (via Phase 4 admin tools)
 
 ### Phase 8 — Group chat
-- [ ] Evaluate options (Supabase Realtime, Stream, Sendbird, etc.)
+- [x] Evaluate options — chose Stream Chat with a Ladder-style design (see Group Chat above)
 - [ ] Build when community engagement becomes a priority
 
 ---
