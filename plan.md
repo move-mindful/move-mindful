@@ -369,6 +369,8 @@ Key product rules from design review:
   - the install icons (`public/icon-192.png`, `icon-512.png`, maskable too)
   - `public/logo.png`
   - the iOS app's layered icon (Icon Composer)
+  - Clerk's dashboard: the logo and favicon on its sign-in screens and emails
+  - RevenueCat's dashboard: the app icon on the project and its paywalls
 
   A light mark on a dark background is what iOS 26's Clear mode turns into glass well. The web icon's white figure on black (2026-10-04) works there; the white tile didn't.
 - [ ] Apple Health (iOS app only; browsers can't): at launch, save finished workouts to Health (HealthKit); later, show the watch's heart rate on the summary. A true Apple Watch app (live heart rate, controls on the wrist) needs a separate Swift watchOS app — a future project, not launch (designed: see the next item)
