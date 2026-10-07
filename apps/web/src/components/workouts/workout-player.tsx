@@ -446,11 +446,16 @@ export function WorkoutPlayer({
       ? (set.measure === "time" ? set.amount : set.workSeconds) * 1000
       : 0;
   const upNextDue = setMs > UP_NEXT.before * 1000 && setStepFor(steps, state.step + 1) !== null;
+  // And ten seconds before a rest ends, the same chime, without a card (the
+  // rest screen already shows what's next) — so straight on the tenth second.
+  // A rest no longer than that skips it, as a set does.
+  const restMs = state.phase === "workout" && step?.kind === "rest" ? step.seconds * 1000 : 0;
+  const chimeMs = upNextDue ? setMs : restMs > UP_NEXT.before * 1000 ? restMs : 0;
   const upNextChime = useCueAudio({
-    clip: upNextDue ? { url: UP_NEXT.src, start: 0, end: null } : null,
+    clip: chimeMs > 0 ? { url: UP_NEXT.src, start: 0, end: null } : null,
     take: state.take,
-    running: running && upNextDue,
-    delayMs: (setMs / 1000 - UP_NEXT.before + UP_NEXT.soundAfter) * 1000,
+    running: running && chimeMs > 0,
+    delayMs: (chimeMs / 1000 - UP_NEXT.before + (upNextDue ? UP_NEXT.soundAfter : 0)) * 1000,
     muted: muted || !prefs.soundEffects,
   });
 
