@@ -5,9 +5,10 @@ import type { ReactNode } from "react";
 /**
  * What's next, sliding in as a set nears its end — ten seconds out, on a set
  * that ends by itself (timed, or reps on auto-advance) — with its chime
- * (UP_NEXT in cue-audio.ts), and staying until the set ends. It sits a little
- * above the tip bubble's line (a set's tip comes early, so they don't meet),
- * centred on the video, sliding in from past its right edge with the bubble's
+ * (UP_NEXT in cue-audio.ts), and staying until the set ends. On phones it sits
+ * just above the set's info (16px over the superset line, or the reps); on
+ * desktop a little above the tip bubble's line (a set's tip comes early, so
+ * they rarely meet). Centred on the video, it slides in from past its right edge with the bubble's
  * easing — straight away; the chime follows a moment later (UP_NEXT.soundAfter)
  * so it lands as the card does — in the frosted grey of the player's other
  * controls (the Up next pill). The screen places it, centred in the video

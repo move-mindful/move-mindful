@@ -498,12 +498,15 @@ export function SetScreen({
   onAudio: () => void;
   /** The instructor's audio tip (CoachTip): at the right end of the reps, over the Pause button. */
   tip?: ReactNode;
-  /** The Up next card (UpNextCard) near the set's end: centred, a little above the tip bubble's line. */
+  /** The Up next card (UpNextCard) near the set's end: 16px above whatever tops the info (the superset line, or the reps). */
   upNext?: ReactNode;
 }) {
   return (
     <div className={`absolute inset-x-0 bottom-0 isolate flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
       <BottomShade />
+      {/* Just above the stack, 16px clear of whatever's at its top — the
+          superset line, or the reps — within the screen's 20px gutters. */}
+      {upNext && <div className="absolute inset-x-5 bottom-full mb-4 flex justify-center">{upNext}</div>}
       {groupLine && (
         <Collapse open={!hidden}>
           <div className="mb-2 flex items-center gap-[7px] text-[13px] font-semibold tracking-[0.02em] text-[#A99CFF]">
@@ -518,8 +521,6 @@ export function SetScreen({
             sitting on them), over the video; 13px in from the video's edge, so
             about over the Pause button (desktop has more room still). */}
         {tip && <div className="absolute bottom-0 right-[-7px] -translate-y-full">{tip}</div>}
-        {/* Centred, its bottom 40px above the bubble's (which is a bubble's height, 86px, above the reps' bottom). */}
-        {upNext && <div className="absolute inset-x-0 bottom-[126px] flex justify-center">{upNext}</div>}
         {metric.kind === "reps" ? (
           <span className="flex items-baseline gap-1.5">
             <span className="text-[56px] font-semibold leading-none tracking-[-0.03em] tabular-nums">{metric.amount}</span>
