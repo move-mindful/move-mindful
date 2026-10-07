@@ -1075,22 +1075,26 @@ export function WorkoutPlayer({
       );
     }
   } else if (state.phase === "rundown") {
-    // The workout overview: the list over the loops, while the tip plays.
+    // The workout overview: the list over the loops — dimmed the whole way
+    // across, as on a rest — while the tip plays.
     screen = (
-      <RundownScreen
-        workout={workout}
-        steps={steps}
-        minutes={minutes}
-        exerciseId={lineup[rundownIndex]?.exerciseId ?? null}
-        onPick={pickRundown}
-        fraction={rundownMs > 0 ? rundownElapsed / rundownMs : 0}
-        paused={state.paused}
-        onPause={pause}
-        onResume={resumePlay}
-        onContinue={() => act({ type: "next" })}
-        tip={workout.rundownTip ? coach(theater) : null}
-        theater={theater}
-      />
+      <>
+        <Dim strength={0.4} />
+        <RundownScreen
+          workout={workout}
+          steps={steps}
+          minutes={minutes}
+          exerciseId={lineup[rundownIndex]?.exerciseId ?? null}
+          onPick={pickRundown}
+          fraction={rundownMs > 0 ? rundownElapsed / rundownMs : 0}
+          paused={state.paused}
+          onPause={pause}
+          onResume={resumePlay}
+          onContinue={() => act({ type: "next" })}
+          tip={workout.rundownTip ? coach(theater) : null}
+          theater={theater}
+        />
+      </>
     );
     // Desktop: back starts the overview over, next goes on to the workout; the list is on screen, so no Workout button.
     if (theater) {

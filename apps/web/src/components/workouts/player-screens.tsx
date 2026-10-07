@@ -904,9 +904,9 @@ export function RestScreen({
 // ── The workout overview ──────────────────────────────
 
 /**
- * The workout overview, after the intro (the "rundown"): the exercise list on
- * a see-through panel over each exercise's loop in turn — the stage plays
- * them — with the one on screen lit; tapping another shows that one. The
+ * The workout overview, after the intro (the "rundown"): the exercise list
+ * over each exercise's loop in turn — the stage plays them, dimmed the whole
+ * way across as on a rest — with the one on screen lit; tapping another shows that one. The
  * instructor's tip talks the workout through meanwhile. Pause holds it all;
  * Continue, filling as the section runs, goes on to the first exercise.
  * Desktop shows the same in the video column.
@@ -953,8 +953,8 @@ export function RundownScreen({
         theater ? "px-7 pt-12" : "px-4 pt-[calc(max(20px,env(safe-area-inset-top))+16px)]"
       }`}
     >
-      {/* Tinted, not blurred: the loops show through clearly. The title stays put while the list scrolls. */}
-      <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#14142B]/40">
+      {/* No box: the stage dims the loops behind (not blurred). The title stays put while the list scrolls. */}
+      <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="flex items-baseline justify-between gap-3 px-4 pb-1.5 pt-3.5">
           <h2 className="text-[17px] font-semibold">Workout Overview</h2>
           <span className="shrink-0 text-[15px] text-white/70">~{minutes} min</span>
@@ -963,14 +963,10 @@ export function RundownScreen({
           <WorkoutRows workout={workout} steps={steps} position={null} spotlight={{ exerciseId, onPick }} />
         </div>
       </div>
-      {/* The buttons, on a shade as deep as a rest's (so Pause looks as it
-          does there) that runs on down to the screen's edge. */}
+      {/* The buttons, on a rest's own bottom shade (so Pause looks as it does
+          there), running on down to the screen's edge. */}
       <div className={`relative isolate mt-4 ${theater ? "-mx-7 px-7 pb-10" : `-mx-4 px-5 ${bottomPad}`}`}>
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 -top-12 bottom-0 -z-10"
-          style={{ background: "linear-gradient(180deg, rgba(14,14,32,0) 0px, rgba(14,14,32,0.55) 48px, rgba(14,14,32,0.85) 100%)" }}
-        />
+        <BottomShade />
         {tip && <div className="absolute bottom-full right-[13px] mb-3">{tip}</div>}
         <CountdownControls
           paused={paused}
