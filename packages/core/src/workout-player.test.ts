@@ -560,3 +560,70 @@ test("the Audio card doesn't hold the workout, and stays open as it moves on", (
   assert.equal(isRunning(s), false);
   assert.equal(s.step, 4);
 });
+
+// ── The rundown (the workout overview) ────────────────
+
+// 8 s of tip and 3 s after it.
+const withRundown = playerReducer({ steps, hasTutorial: () => false, hasIntro: true, rundownMs: 11_000 });
+const runRundown = (actions: PlayerAction[], from: PlayerState = initialPlayerState) => actions.reduce(withRundown, from);
+
+test("the rundown comes after the intro, counts down, then the first exercise", () => {
+  let s = runRundown([{ type: "begin", warmup: false, mode: "off", now: 0 }]);
+  assert.equal(s.phase, "intro");
+  s = runRundown([{ type: "clipEnded", now: 20_000 }], s);
+  assert.equal(s.phase, "rundown");
+  assert.equal(isRunning(s), true);
+  assert.equal(timerLeft(s, 25_000), 6000);
+  // Not yet…
+  s = runRundown([{ type: "tick", now: 30_000 }], s);
+  assert.equal(s.phase, "rundown");
+  // …then on to the first exercise, the workout clock only starting there.
+  s = runRundown([{ type: "tick", now: 31_000 }], s);
+  assert.equal(s.phase, "workout");
+  assert.equal(s.step, 0);
+  assert.equal(activeTime(s, 31_000), 0);
+});
+
+test("Continue ends the rundown early; without an intro it comes first", () => {
+  let s = runRundown([{ type: "begin", warmup: false, mode: "off", now: 0 }, { type: "next", now: 1000 }]);
+  assert.equal(s.phase, "rundown", "Next on the intro skips it, into the rundown");
+  s = runRundown([{ type: "next", now: 2000 }], s);
+  assert.equal(s.phase, "workout");
+  const noIntro = playerReducer({ steps, hasTutorial: () => false, rundownMs: 11_000 });
+  s = noIntro(initialPlayerState, { type: "begin", warmup: false, mode: "off", now: 0 });
+  assert.equal(s.phase, "rundown");
+});
+
+test("pausing the rundown holds its countdown; restarting it starts it over", () => {
+  let s = runRundown([{ type: "begin", warmup: false, mode: "off", now: 0 }, { type: "next", now: 0 }]);
+  s = runRundown([{ type: "pause", now: 4000 }], s);
+  assert.equal(isRunning(s), false);
+  s = runRundown([{ type: "tick", now: 60_000 }], s);
+  assert.equal(s.phase, "rundown", "held");
+  s = runRundown([{ type: "resume", now: 60_000 }], s);
+  assert.equal(timerLeft(s, 60_000), 7000);
+  const take = s.take;
+  s = runRundown([{ type: "restartVideo", now: 61_000 }], s);
+  assert.equal(s.phase, "rundown");
+  assert.equal(timerLeft(s, 61_000), 11_000);
+  assert.equal(s.take, take + 1);
+});
+
+test("a resume and a restart skip the rundown; the guide opens over it when it's first", () => {
+  let s = runRundown([{ type: "begin", warmup: false, mode: "off", from: 2, now: 0 }]);
+  assert.equal(s.phase, "workout");
+  assert.equal(s.step, 2);
+  s = runRundown([{ type: "begin", warmup: false, mode: "off", now: 0 }, { type: "next", now: 0 }, { type: "next", now: 0 }]);
+  s = runRundown([{ type: "restartWorkout", now: 5000 }], s);
+  assert.equal(s.phase, "workout");
+  const noIntro = playerReducer({ steps, hasTutorial: () => false, rundownMs: 11_000 });
+  s = noIntro(initialPlayerState, { type: "begin", warmup: false, mode: "off", guide: true, now: 0 });
+  assert.equal(s.phase, "rundown");
+  assert.equal(s.sheet, "guide");
+  assert.equal(isRunning(s), false, "held until the guide closes");
+});
+
+test("without a rundown, the intro goes straight on to the exercises", () => {
+  const s = extras(extras(initialPlayerState, { type: "begin", warmup: false, mode: "off", now: 0 }), { type: "clipEnded", now: 1000 });
+  assert.equal(s.phase, "workout");
+});
