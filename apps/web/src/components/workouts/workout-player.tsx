@@ -29,6 +29,7 @@ import {
   workoutProgress,
   workoutSteps,
   type PlayerAction,
+  type RestStep,
   type SetStep,
   type VideoPhase,
   type WorkoutStep,
@@ -61,7 +62,7 @@ import {
   createSheetPull,
   VideoScreen,
 } from "./player-screens";
-import { List, Moon, Muted, Pause, Play, Settings, Sound, Sun } from "./icons";
+import { List, Moon, Muted, Pause, Play, Settings, Sound, Sun, Timer } from "./icons";
 import {
   Dimmed,
   TheaterControls,
@@ -809,8 +810,24 @@ export function WorkoutPlayer({
   const minutes = aboutMinutes(totalSeconds);
   const setsDone = target?.setIndex ?? setCount;
 
-  /** The Up next card: the set after this one (past any rest), as the rest screen's card shows it. The last set has none. */
-  function nextCard(): { name: string; detail: string | null; thumbnail: string | null } {
+  /**
+   * A rest straight after this step that Up next names instead of the set past
+   * it: one between rounds, or one placed between blocks. (A rest between sets
+   * or sides goes on naming the set.)
+   */
+  function restNext(): RestStep | null {
+    const after = steps[state.step + 1];
+    return after?.kind === "rest" && (after.reason === "round" || after.reason === "block") ? after : null;
+  }
+
+  /**
+   * The Up next card: the set after this one (past any rest), as the rest
+   * screen's card shows it — or the rest itself (see restNext), with a timer
+   * where the set's still would be. The last set has none.
+   */
+  function nextCard(): { name: string; detail: string | null; thumbnail: string | null; icon?: ReactNode } {
+    const rest = restNext();
+    if (rest) return { name: "Rest", detail: clock(rest.seconds), thumbnail: null, icon: <Timer size={theater ? 26 : 22} /> };
     const j = setStepFor(steps, state.step + 1);
     if (j === null) return { name: "", detail: null, thumbnail: null };
     const t = steps[j] as SetStep;
@@ -825,6 +842,8 @@ export function WorkoutPlayer({
   }
 
   function upNext(): { label: string; text: string } {
+    const rest = restNext();
+    if (rest) return { label: "Up next", text: `Rest · ${clock(rest.seconds)}` };
     const j = setStepFor(steps, state.step + 1);
     if (j === null) return { label: "Up next", text: "Finish" };
     const next = steps[j] as SetStep;

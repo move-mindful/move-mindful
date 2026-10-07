@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 /**
  * What's next, sliding in as a set nears its end — ten seconds out, on a set
  * that ends by itself (timed, or reps on auto-advance) — with its chime
@@ -23,12 +25,15 @@ export function UpNextCard({
   name,
   detail,
   thumbnail,
+  icon = null,
   large = false,
 }: {
   stage: "waiting" | "shown" | "gone";
   name: string;
   detail: string | null;
   thumbnail: string | null;
+  /** In the thumbnail's place when there's none: a rest's timer. */
+  icon?: ReactNode;
   large?: boolean;
 }) {
   return (
@@ -49,13 +54,21 @@ export function UpNextCard({
               "translate-x-[calc(var(--col)/2+50%+8px)] opacity-0 duration-300 ease-in"
         }`}
       >
-        {thumbnail && (
-          <span className={`shrink-0 overflow-hidden rounded-lg bg-white/10 ${large ? "h-[72px] w-14" : "h-16 w-12"}`}>
-            {/* eslint-disable-next-line @next/next/no-img-element -- a tiny Mux still; nothing to optimize */}
-            <img src={thumbnail} alt="" className="size-full object-cover" />
+        {(thumbnail || icon) && (
+          <span
+            className={`flex shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/10 text-[#A99CFF] ${
+              large ? "h-[72px] w-14" : "h-16 w-12"
+            }`}
+          >
+            {thumbnail ? (
+              // eslint-disable-next-line @next/next/no-img-element -- a tiny Mux still; nothing to optimize
+              <img src={thumbnail} alt="" className="size-full object-cover" />
+            ) : (
+              icon
+            )}
           </span>
         )}
-        <span className={`flex min-w-0 flex-col gap-0.5 ${thumbnail ? "" : "pl-2"}`}>
+        <span className={`flex min-w-0 flex-col gap-0.5 ${thumbnail || icon ? "" : "pl-2"}`}>
           <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/70">Up next</span>
           <span className={`truncate font-semibold ${large ? "text-[19px]" : "text-[17px]"}`}>{name}</span>
           {detail && <span className={`truncate text-white/70 ${large ? "text-[15px]" : "text-sm"}`}>{detail}</span>}
