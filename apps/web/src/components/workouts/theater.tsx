@@ -51,21 +51,6 @@ export interface TheaterButton {
   onClick: () => void;
 }
 
-/** Right of the video: a column of labelled round buttons. */
-export function TheaterButtons({ buttons }: { buttons: TheaterButton[] }) {
-  return (
-    <div className="absolute bottom-16 flex flex-col items-center gap-4" style={{ left: beside }}>
-      {buttons.map((b) => (
-        <button key={b.label} type="button" aria-label={b.aria} onClick={b.onClick} className="group flex flex-col items-center gap-1.5">
-          <span className="flex size-[52px] items-center justify-center rounded-full bg-white/10 transition group-hover:bg-white/20">
-            {b.icon}
-          </span>
-          <span className="text-xs font-medium text-white/70">{b.label}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
 
 /**
  * Paused: what's on (the info left of the video) stays in place, dimmed and
@@ -80,28 +65,60 @@ export function Dimmed({ children }: { children: ReactNode }) {
   );
 }
 
-/** Back and next, level with the middle of the video. */
-export function TheaterArrows({
+/**
+ * Back and next, level with the middle of the video, and right of the video a
+ * column of labelled round buttons. Next heads that column, so on a short
+ * window (a small laptop, a tablet) it rises to stay above the buttons rather
+ * than ending up under them.
+ */
+export function TheaterControls({
   onBack,
   onNext,
   nextLabel,
   backLabel = "Previous set",
+  buttons,
 }: {
   onBack: () => void;
   onNext: () => void;
   nextLabel: string;
   backLabel?: string;
+  buttons: TheaterButton[];
 }) {
-  const arrow =
-    "absolute top-1/2 -mt-[26px] flex size-[52px] items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20";
+  const arrow = "flex size-[52px] items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20";
   return (
     <>
-      <button type="button" aria-label={backLabel} onClick={onBack} className={arrow} style={{ right: beside }}>
+      <button
+        type="button"
+        aria-label={backLabel}
+        onClick={onBack}
+        className={`absolute top-1/2 -mt-[26px] ${arrow}`}
+        style={{ right: beside }}
+      >
         <ChevronLeft />
       </button>
-      <button type="button" aria-label={nextLabel} onClick={onNext} className={arrow} style={{ left: beside }}>
-        <ChevronRight />
-      </button>
+      {/* The column runs from the top to 64px off the bottom, packed at its
+          foot: next, then the buttons. The buttons' box is at least half the
+          column less 58px tall, which puts next's middle level with the
+          video's; when the buttons need more room than that, next sits 32px
+          above them instead. */}
+      <div
+        className="pointer-events-none absolute top-0 bottom-16 flex flex-col items-center justify-end [&_button]:pointer-events-auto"
+        style={{ left: beside }}
+      >
+        <button type="button" aria-label={nextLabel} onClick={onNext} className={`shrink-0 ${arrow}`}>
+          <ChevronRight />
+        </button>
+        <div className="flex flex-col items-center justify-end gap-4 pt-8" style={{ minHeight: "calc(50% - 58px)" }}>
+          {buttons.map((b) => (
+            <button key={b.label} type="button" aria-label={b.aria} onClick={b.onClick} className="group flex flex-col items-center gap-1.5">
+              <span className="flex size-[52px] items-center justify-center rounded-full bg-white/10 transition group-hover:bg-white/20">
+                {b.icon}
+              </span>
+              <span className="text-xs font-medium text-white/70">{b.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
     </>
   );
 }

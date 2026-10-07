@@ -64,8 +64,7 @@ import {
 import { List, Moon, Muted, Pause, Play, Settings, Sound, Sun } from "./icons";
 import {
   Dimmed,
-  TheaterArrows,
-  TheaterButtons,
+  TheaterControls,
   TheaterSetInfo,
   TheaterTutorialInfo,
   TheaterVideoInfo,
@@ -909,7 +908,15 @@ export function WorkoutPlayer({
         onSkip={skip}
       />
     );
-    const arrows = <TheaterArrows onBack={askRestartVideo} onNext={skip} backLabel={restartLabel} nextLabel={skipLabel} />;
+    const controls = (
+      <TheaterControls
+        onBack={askRestartVideo}
+        onNext={skip}
+        backLabel={restartLabel}
+        nextLabel={skipLabel}
+        buttons={sideButtons(withOverview)}
+      />
+    );
     if (state.paused) {
       blurred = true;
       screen = (
@@ -939,8 +946,7 @@ export function WorkoutPlayer({
         beside = (
           <>
             <Dimmed>{theaterInfo}</Dimmed>
-            {arrows}
-            <TheaterButtons buttons={sideButtons(withOverview)} />
+            {controls}
           </>
         );
       }
@@ -963,8 +969,7 @@ export function WorkoutPlayer({
       beside = (
         <>
           {theaterInfo}
-          {arrows}
-          <TheaterButtons buttons={sideButtons(withOverview)} />
+          {controls}
         </>
       );
     } else {
@@ -1097,8 +1102,7 @@ export function WorkoutPlayer({
       if (theater) {
         beside = (
           <>
-            <TheaterArrows onBack={back} onNext={goOn} nextLabel="Skip the rest" />
-            <TheaterButtons buttons={sideButtons()} />
+            <TheaterControls onBack={back} onNext={goOn} nextLabel="Skip the rest" buttons={sideButtons()} />
           </>
         );
       }
@@ -1136,8 +1140,7 @@ export function WorkoutPlayer({
       if (theater) {
         beside = (
           <>
-            <TheaterArrows onBack={back} onNext={goOn} nextLabel="Start now" />
-            <TheaterButtons buttons={sideButtons()} />
+            <TheaterControls onBack={back} onNext={goOn} nextLabel="Start now" buttons={sideButtons()} />
           </>
         );
       }
@@ -1167,8 +1170,7 @@ export function WorkoutPlayer({
         beside = (
           <>
             {info}
-            <TheaterArrows onBack={back} onNext={next} nextLabel="Start the exercise" />
-            <TheaterButtons buttons={sideButtons()} />
+            <TheaterControls onBack={back} onNext={next} nextLabel="Start the exercise" buttons={sideButtons()} />
           </>
         );
       } else {
@@ -1240,8 +1242,7 @@ export function WorkoutPlayer({
         beside = (
           <>
             {info}
-            <TheaterArrows onBack={back} onNext={next} nextLabel="Next set" />
-            <TheaterButtons buttons={sideButtons()} />
+            <TheaterControls onBack={back} onNext={next} nextLabel="Next set" buttons={sideButtons()} />
           </>
         );
       } else {
@@ -1314,8 +1315,7 @@ export function WorkoutPlayer({
         beside = (
           <>
             {info && <Dimmed>{info}</Dimmed>}
-            <TheaterArrows onBack={back} onNext={goOn} nextLabel={nextLabel} />
-            <TheaterButtons buttons={sideButtons()} />
+            <TheaterControls onBack={back} onNext={goOn} nextLabel={nextLabel} buttons={sideButtons()} />
           </>
         );
       }
