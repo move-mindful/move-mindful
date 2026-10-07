@@ -77,11 +77,12 @@ function withKeys(blocks: WorkoutBlock[]): KBlock[] {
 }
 
 function stripKeys(blocks: KBlock[]): WorkoutBlock[] {
-  const move = ({ exerciseId, measure, amount, firstSide, tips }: KMove): WorkoutMove => ({
+  const move = ({ exerciseId, measure, amount, firstSide, restBetweenSides, tips }: KMove): WorkoutMove => ({
     exerciseId,
     measure,
     amount,
     firstSide,
+    ...(restBetweenSides && { restBetweenSides }),
     ...(tips && { tips }),
   });
   return blocks.map((b): WorkoutBlock => {
@@ -1027,6 +1028,18 @@ function MoveFields({
             { id: "left", label: "Left first" },
           ]}
         />
+      )}
+      {/* Every set (or round): a rest after the first side, before the second. 0:00 for none. */}
+      {sided && (
+        <span className="flex items-center gap-1.5 text-xs text-zinc-500">
+          Rest between sides
+          <DurationInput
+            label="Rest between sides"
+            seconds={m.restBetweenSides ?? 0}
+            onChange={(restBetweenSides) => onChange({ restBetweenSides })}
+            className="w-14"
+          />
+        </span>
       )}
     </div>
   );

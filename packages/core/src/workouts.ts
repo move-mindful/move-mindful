@@ -31,9 +31,11 @@ export interface AudioTip {
  * A move's or block's audio tips, by slot key. On a move, one per set (a
  * single exercise) or round (a group), and per side for a sided exercise:
  * "2", "2:left". On a block, one per rest: a rest block's own ("rest"), the
- * rest before a single exercise's set n ("n"), and in a group the rest before
- * move m of round r ("r:m" — m = 0 is the rest between rounds). Tips are
- * optional everywhere; see TipSlot for how a step finds its own.
+ * rest before a single exercise's set n ("n"), in a group the rest before
+ * move m of round r ("r:m" — m = 0 is the rest between rounds), and the rest
+ * between the sides of move m in set or round r ("r:m:side" — m = 0 for a
+ * single exercise). Tips are optional everywhere; see TipSlot for how a step
+ * finds its own.
  */
 export type TipMap = Record<string, AudioTip>;
 
@@ -47,6 +49,8 @@ export interface WorkoutMove {
   amount: number;
   /** Sided exercises only. */
   firstSide: Side;
+  /** Sided exercises only: seconds of rest between the two sides, every set (or round). None when 0 or missing. */
+  restBetweenSides?: number;
   /** Tips for its sets (or rounds), by side when sided — see TipMap. */
   tips?: TipMap;
 }
@@ -97,7 +101,7 @@ export const DEFAULT_ESTIMATE_OPTIONS: EstimateOptions = {
 export interface WorkoutEstimate {
   /** Time spent doing the exercises. */
   exerciseSeconds: number;
-  /** Rest blocks plus the rests inside supersets and circuits. */
+  /** Rest blocks, the rests between sets and sides, and the rests inside supersets and circuits. */
   restSeconds: number;
   /** Getting into position and switching sides. */
   transitionSeconds: number;
@@ -114,7 +118,7 @@ function moveSeconds(
   exercise: EstimateExercise | undefined,
   opts: EstimateOptions,
   missing: Set<string>,
-): { work: number; transition: number } {
+): { work: number; transition: number; rest: number } {
   const sides = exercise?.sided ? 2 : 1;
   let perSide = move.amount;
   if (move.measure === "reps") {
@@ -125,12 +129,19 @@ function moveSeconds(
   return {
     work: perSide * sides,
     transition: opts.secondsPerSet + (sides === 2 ? opts.secondsPerSideSwitch : 0),
+    rest: sides === 2 ? sideRest(move) : 0,
   };
+}
+
+/** A sided move's rest between its sides, in seconds (0 for none). */
+function sideRest(move: WorkoutMove): number {
+  return Math.max(0, move.restBetweenSides ?? 0);
 }
 
 /**
  * Estimate a workout's length. Rests are the rest blocks, the rest between a
- * single exercise's sets (none after the last set), and a group's rests.
+ * single exercise's sets (none after the last set), a group's rests, and the
+ * rest between a sided exercise's sides.
  */
 export function estimateWorkout(
   blocks: WorkoutBlock[],
@@ -149,16 +160,17 @@ export function estimateWorkout(
       restSeconds += block.seconds;
     } else if (block.kind === "exercise") {
       used.add(block.move.exerciseId);
-      const { work, transition } = moveSeconds(block.move, exercises[block.move.exerciseId], opts, missing);
+      const { work, transition, rest } = moveSeconds(block.move, exercises[block.move.exerciseId], opts, missing);
       exerciseSeconds += work * block.sets;
       transitionSeconds += transition * block.sets;
-      restSeconds += block.restBetweenSets * (block.sets - 1);
+      restSeconds += block.restBetweenSets * (block.sets - 1) + rest * block.sets;
     } else if (block.moves.length > 0) {
       for (const move of block.moves) {
         used.add(move.exerciseId);
-        const { work, transition } = moveSeconds(move, exercises[move.exerciseId], opts, missing);
+        const { work, transition, rest } = moveSeconds(move, exercises[move.exerciseId], opts, missing);
         exerciseSeconds += work * block.rounds;
         transitionSeconds += transition * block.rounds;
+        restSeconds += rest * block.rounds;
       }
       restSeconds += block.restBetweenExercises * (block.moves.length - 1) * block.rounds;
       restSeconds += block.restBetweenRounds * (block.rounds - 1);
@@ -263,9 +275,10 @@ export interface RestStep {
   block: number;
   /**
    * What it sits between: a single exercise's sets ("set"), a group's
-   * exercises ("exercise") or rounds ("round"), or a rest block ("block").
+   * exercises ("exercise") or rounds ("round"), a sided exercise's two sides
+   * ("side"), or a rest block ("block").
    */
-  reason: "set" | "exercise" | "round" | "block";
+  reason: "set" | "exercise" | "round" | "side" | "block";
   seconds: number;
   /** The instructor's audio tip for this rest, if one was recorded. */
   tip: AudioTip | null;
@@ -309,6 +322,7 @@ export function workoutSteps(
     const perSide =
       move.measure === "time" ? move.amount : move.amount * (exercise?.paceSeconds || opts.fallbackPaceSeconds);
     sides.forEach((side, part) => {
+      if (part === 1) rest(block, "side", sideRest(move), `${round}:${index}:side`);
       const key = side ? `${round}:${side}` : String(round);
       out.push({
         kind: "set",

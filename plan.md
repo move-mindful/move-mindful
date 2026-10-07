@@ -313,6 +313,8 @@ Built in vertical slices, so each step leaves something usable and real footage 
   - [x] Sound effects: a 3-second countdown over the last seconds of every rest and Get ready (`COUNTDOWN` in `cue-audio.ts`, which tips now share: one cue player for anything that plays a set time into a step)
   - [x] An "All levels" workout level (`020_workout_level_all.sql`), alongside Beginner, Intermediate and Advanced: in the builder, Generate with AI and everywhere members see a workout's level
   - [ ] Apply `020_workout_level_all.sql` in Supabase
+  - [x] Rest between sides (`021_rest_between_sides.sql`): an exercise done on each side can rest between its sides, every set (or round, in a superset or circuit) — "Rest between sides" in the builder, beside First side; none by default. The player shows the normal rest screen (Up next: the second side) and skips Get ready after it, as after any rest into the same exercise; it counts in time estimates and can carry an audio tip (slot `r:m:side`). Core `restBetweenSides` on a move, rest reason `side`, with tests. Generate with AI doesn't use it yet
+  - [ ] Apply `021_rest_between_sides.sql` in Supabase
   - [ ] Black status bar around the notch during the player (phones): theme-color → black and a black page background while the player is up are both in, but the user's iPhone still shows purple — parked 2026-10-01; next, find out whether it's the home-screen app or Safari
   - [ ] Try audio tips on iPhone Safari (a tip starting on its own after the Begin tap's unlock; with "Keep my music playing" on and off)
   - [ ] Remove the playback lab (`/admin/lab/playback`) and its two test clips
@@ -336,7 +338,7 @@ Key product rules from design review:
 - Intensity is a plain 1–4 (higher is more intense) with no descriptive words, so the meaning stays the admin's; optional, exercises only; it's for programming (Generate with AI) and isn't shown to members
 - "Pairs well with" goes both ways and is a preference, not a limit: Generate with AI favours pairings but may group other exercises
 - Generate with AI never saves: it fills the builder, and the admin reviews and saves like any edit
-- A workout is a list of blocks: a single exercise (sets, with rest between sets), a rest, or a group (rounds, rest between exercises, rest between rounds; exercises in a group do one set each). Two exercises = "Superset N", three or more = "Circuit N"
+- A workout is a list of blocks: a single exercise (sets, with rest between sets), a rest, or a group (rounds, rest between exercises, rest between rounds; exercises in a group do one set each). Two exercises = "Superset N", three or more = "Circuit N". An exercise done on each side can also rest between its sides, every set or round
 - **Oct 2026: no separate warm-up or cool-down any more.** The player leaves them out (`WARMUP_AND_COOLDOWN` in `lib/workouts/member.ts`); the builder, database and player code keep them for now. The two decisions below are how they worked
 - The warm-up is optional for members and plays once, start to finish; listed workout times exclude it
 - The intro and outro belong to one workout; the warm-up and cool-down are library videos shared between workouts. The cool-down is offered at the end ("Cool down?") rather than switched on or off up front. None of them count in listed workout times, and the workout counts as done once the exercises are

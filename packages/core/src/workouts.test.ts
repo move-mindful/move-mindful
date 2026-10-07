@@ -173,6 +173,65 @@ test("step lengths add up to the estimate", () => {
   assert.equal(secondsLeft(steps, steps.length), 0);
 });
 
+test("steps: a rest between sides, every set or round, for sided exercises only", () => {
+  const blocks: WorkoutBlock[] = [
+    { kind: "exercise", move: { ...move("squat", "reps", 8), restBetweenSides: 15 }, sets: 2, restBetweenSets: 30 },
+    {
+      kind: "group",
+      rounds: 2,
+      restBetweenExercises: 10,
+      restBetweenRounds: 0,
+      // A rest between sides on an exercise that isn't sided does nothing.
+      moves: [{ ...move("row", "reps", 10), restBetweenSides: 20 }, { ...move("squat", "time", 30), restBetweenSides: 5 }],
+    },
+  ];
+  const steps = workoutSteps(blocks, exercises);
+  const shape = steps.map((s) => (s.kind === "rest" ? `rest ${s.reason} ${s.seconds}` : `${s.exerciseId} r${s.round} ${s.side ?? "-"}`));
+  assert.deepEqual(shape, [
+    "squat r1 right",
+    "rest side 15",
+    "squat r1 left",
+    "rest set 30",
+    "squat r2 right",
+    "rest side 15",
+    "squat r2 left",
+    "row r1 -",
+    "rest exercise 10",
+    "squat r1 right",
+    "rest side 5",
+    "squat r1 left",
+    "row r2 -",
+    "rest exercise 10",
+    "squat r2 right",
+    "rest side 5",
+    "squat r2 left",
+  ]);
+  // Counted in the estimate (2 × 15 + 2 × 5 on top of the other rests), and the steps still add up to it.
+  const est = estimateWorkout(blocks, exercises);
+  assert.equal(est.restSeconds, 30 + 2 * 15 + 2 * 10 + 2 * 5);
+  assert.equal(secondsLeft(steps, 0), est.totalSeconds);
+});
+
+test("a rest between sides finds its own tip", () => {
+  const blocks: WorkoutBlock[] = [
+    {
+      kind: "exercise",
+      move: { ...move("squat", "reps", 8), restBetweenSides: 15 },
+      sets: 2,
+      restBetweenSets: 0,
+      restTips: { "2:0:side": { id: "side-rest-set-2", seconds: 6 } },
+    },
+  ];
+  const rests = workoutSteps(blocks, exercises).filter((s) => s.kind === "rest");
+  assert.deepEqual(
+    rests.map((s) => [s.tipSlot.key, s.tip?.id ?? null]),
+    [
+      ["1:0:side", null],
+      ["2:0:side", "side-rest-set-2"],
+    ],
+  );
+});
+
 test("steps drop rests at the edges and merge back-to-back rests", () => {
   const blocks: WorkoutBlock[] = [
     { kind: "rest", seconds: 30 },

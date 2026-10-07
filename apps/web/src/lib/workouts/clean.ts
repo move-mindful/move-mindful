@@ -16,8 +16,8 @@ function int(value: unknown, min: number, max: number, fallback: number): number
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
 }
 
-// Slot keys (TipMap in core): "rest", "2", "2:left", "2:1".
-const TIP_KEY = /^(rest|\d{1,2}(:(right|left|\d{1,2}))?)$/;
+// Slot keys (TipMap in core): "rest", "2", "2:left", "2:1", "2:1:side".
+const TIP_KEY = /^(rest|\d{1,2}(:(right|left|\d{1,2}(:side)?))?)$/;
 const TIP_FILE = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\.m4a$/;
 // One character per reading (encodeVoiceLevels in core): up to TIP_MAX_SECONDS and then some.
 const TIP_LEVELS = new RegExp(`^[0-9a-z]{1,${(TIP_MAX_SECONDS + 10) * VOICE_LEVELS_PER_SECOND}}$`);
@@ -54,11 +54,13 @@ function cleanMove(m: WorkoutMove, info: Map<string, ExerciseInfo>, tipFolder: s
   if (!ex || ex.kind !== "exercise") return null;
   const measure = ex.timed_only || m.measure === "time" ? "time" : "reps";
   const tips = tipFolder ? readTips(m.tips, tipFolder) : undefined;
+  const restBetweenSides = int(m.restBetweenSides, 0, 600, 0);
   return {
     exerciseId: m.exerciseId,
     measure,
     amount: measure === "time" ? int(m.amount, 1, 3600, 30) : int(m.amount, 1, 999, 10),
     firstSide: (m.firstSide === "left" ? "left" : "right") as Side,
+    ...(restBetweenSides > 0 && { restBetweenSides }),
     ...(tips && { tips }),
   };
 }

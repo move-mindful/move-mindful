@@ -227,7 +227,10 @@ export function TipsView({
   const name = (id: string) => byId.get(id)?.name ?? "Missing exercise";
 
   function labelFor(s: WorkoutStep): string {
-    if (s.kind === "rest") return `${s.reason === "round" ? "Rest between rounds" : "Rest"} · ${formatDuration(s.seconds)}`;
+    if (s.kind === "rest") {
+      const what = s.reason === "round" ? "Rest between rounds" : s.reason === "side" ? "Rest between sides" : "Rest";
+      return `${what} · ${formatDuration(s.seconds)}`;
+    }
     const side = s.side ? cap(s.side) : null;
     if (s.groupLabel) {
       return [`Round ${s.round}`, `${String.fromCharCode(65 + s.move)} ${name(s.exerciseId)}`, side].filter(Boolean).join(" · ");

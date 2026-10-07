@@ -24,11 +24,12 @@ import {
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
-// save_workout_sequence (019_workout_audio_tips.sql) takes an exercise block
-// flat — { kind, exerciseId, measure, amount, firstSide, sets,
-// restBetweenSets } — rather than with the exercise nested under `move`, and
-// each row's audio tips as its `tips` column holds them: { sets, rests }.
-// Before 019 has run, the old function ignores `tips`.
+// save_workout_sequence (021_rest_between_sides.sql) takes an exercise block
+// flat — { kind, exerciseId, measure, amount, firstSide, restBetweenSides,
+// sets, restBetweenSets } — rather than with the exercise nested under `move`,
+// and each row's audio tips as its `tips` column holds them: { sets, rests }.
+// Before 019 has run, the old function ignores `tips`; before 021, it ignores
+// `restBetweenSides` (see sideRestsSave).
 function rowTips(sets: TipMap | undefined, rests: TipMap | undefined) {
   return sets || rests ? { ...(sets && { sets }), ...(rests && { rests }) } : null;
 }
@@ -51,6 +52,16 @@ function toSequencePayload(blocks: WorkoutBlock[]) {
 // cooldown_exercise_id column (PGRST204); a workout without a cool-down still saves.
 function missingCooldownColumn(error: { code?: string; message?: string } | null): boolean {
   return !!error && error.code === "PGRST204" && !!error.message?.includes("cooldown");
+}
+
+/**
+ * Whether a rest between sides will save: before 021_rest_between_sides.sql
+ * has run, the old save function drops it without a word, so the column is
+ * checked first (42703: no such column).
+ */
+async function sideRestsSave(supabase: AdminClient): Promise<boolean> {
+  const { error } = await supabase.from("workout_blocks").select("rest_between_sides").limit(1);
+  return error?.code !== "42703";
 }
 
 /** Saving "All levels" before 020_workout_level_all.sql: the old level check turns it away. */
@@ -86,9 +97,16 @@ export async function saveWorkout(input: WorkoutInput): Promise<{ id?: string; e
   if (!title) return { error: "Give the workout a title." };
 
   const ids = new Set<string>();
+  let sideRests = false;
   for (const b of input.blocks ?? []) {
-    if (b?.kind === "exercise") ids.add(b.move?.exerciseId);
-    if (b?.kind === "group") (b.moves ?? []).forEach((m) => ids.add(m?.exerciseId));
+    const moves = b?.kind === "exercise" ? [b.move] : b?.kind === "group" ? (b.moves ?? []) : [];
+    for (const m of moves) {
+      ids.add(m?.exerciseId);
+      if (Number(m?.restBetweenSides) > 0) sideRests = true;
+    }
+  }
+  if (sideRests && !(await sideRestsSave(supabase))) {
+    return { error: "Rest between sides can’t be saved until migration 021_rest_between_sides.sql has run." };
   }
   if (input.warmupExerciseId) ids.add(input.warmupExerciseId);
   if (input.cooldownExerciseId) ids.add(input.cooldownExerciseId);

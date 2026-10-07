@@ -37,6 +37,8 @@ export interface BlockRow {
   rounds: number | null;
   rest_between_exercises: number | null;
   rest_between_rounds: number | null;
+  /** Seconds between a sided exercise's sides — missing until 021_rest_between_sides.sql has run. */
+  rest_between_sides?: number | null;
   /** Audio tips, { sets, rests } — missing until 019_workout_audio_tips.sql has run. */
   tips?: { sets?: unknown; rests?: unknown } | null;
 }
@@ -132,6 +134,7 @@ function toMove(r: BlockRow): WorkoutMove {
     measure: (r.measure === "time" ? "time" : "reps") as Measure,
     amount: r.amount ?? 1,
     firstSide: (r.first_side === "left" ? "left" : "right") as Side,
+    ...(r.rest_between_sides && { restBetweenSides: r.rest_between_sides }),
     ...(tips && { tips }),
   };
 }
