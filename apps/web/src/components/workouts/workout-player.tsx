@@ -497,6 +497,8 @@ export function WorkoutPlayer({
         !state.paused &&
         (state.sheet === null || state.sheet === "overview" || state.sheet === "audio")),
     level: musicLevel / 100,
+    // While the member reads the preview, so the music's ready the moment they tap Begin.
+    preload: state.phase === "preview",
   });
   /** In a tap that should get the music going, if it's meant to be on. */
   function wakeMusic() {

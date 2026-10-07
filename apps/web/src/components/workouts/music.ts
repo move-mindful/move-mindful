@@ -89,7 +89,9 @@ function subscribeToVisibility(change: () => void) {
  * The music under the workout. It plays while `on` (the Music switch, and not
  * muted), `playing` (the player wants it — running, or held quietly) and the
  * page is on screen, at `level` (0–1: MUSIC.volume, or a duckTo level); stopping fades
- * it out quickly and pauses it, so it picks up where it was.
+ * it out quickly and pauses it, so it picks up where it was. With `preload`
+ * (the workout's preview) and `on`, the track starts loading ahead, so Begin
+ * doesn't wait on it.
  *
  * The level goes through Web Audio (the element → a gain → the speakers)
  * because iPhone Safari ignores an audio element's own volume. Both the
@@ -98,7 +100,17 @@ function subscribeToVisibility(change: () => void) {
  * get it going, like switching Music on) set them up and start them;
  * after that it plays and pauses on its own.
  */
-export function useWorkoutMusic({ on, playing, level }: { on: boolean; playing: boolean; level: number }) {
+export function useWorkoutMusic({
+  on,
+  playing,
+  level,
+  preload = false,
+}: {
+  on: boolean;
+  playing: boolean;
+  level: number;
+  preload?: boolean;
+}) {
   const audio = useRef<HTMLAudioElement | null>(null);
   const graph = useRef<Graph | null>(null);
   // Mid-start inside a tap: pausing before its play() settles would undo it.
@@ -216,6 +228,17 @@ export function useWorkoutMusic({ on, playing, level }: { on: boolean; playing: 
       },
     );
   }
+
+  // Ahead of Begin: make the element now, so the track starts loading — the
+  // start of the file (its index, then the first of the music) is what has
+  // to arrive before it can sound — and Begin's tap only has to play it.
+  // Loading needs no tap; playing waits for Begin. Only while the music's
+  // on, so a member who's switched it off never downloads it.
+  // (After every render, like wantNow above: once the element's made, it's a no-op.)
+  const loadAhead = preload && on && !!MUSIC.src;
+  useEffect(() => {
+    if (loadAhead && !audio.current) element()?.load();
+  });
 
   return {
     /** The Begin tap: the track from the top, fading in. */
