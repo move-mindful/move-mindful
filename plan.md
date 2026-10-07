@@ -314,7 +314,7 @@ Built in vertical slices, so each step leaves something usable and real footage 
   - [x] An "All levels" workout level (`020_workout_level_all.sql`), alongside Beginner, Intermediate and Advanced: in the builder, Generate with AI and everywhere members see a workout's level
   - [ ] Apply `020_workout_level_all.sql` in Supabase
   - [x] Rest between sides (`021_rest_between_sides.sql`): an exercise done on each side can rest between its sides, every set (or round, in a superset or circuit) — "Rest between sides" in the builder, beside First side; none by default. The player shows the normal rest screen (Up next: the second side) and skips Get ready after it, as after any rest into the same exercise; it counts in time estimates and can carry an audio tip (slot `r:m:side`). Core `restBetweenSides` on a move, rest reason `side`, with tests. Generate with AI doesn't use it yet
-  - [ ] Apply `021_rest_between_sides.sql` in Supabase
+  - [x] Apply `021_rest_between_sides.sql` in Supabase
   - [ ] Black status bar around the notch during the player (phones): theme-color → black and a black page background while the player is up are both in, but the user's iPhone still shows purple — parked 2026-10-01; next, find out whether it's the home-screen app or Safari
   - [ ] Try audio tips on iPhone Safari (a tip starting on its own after the Begin tap's unlock; with "Keep my music playing" on and off)
   - [ ] Remove the playback lab (`/admin/lab/playback`) and its two test clips
