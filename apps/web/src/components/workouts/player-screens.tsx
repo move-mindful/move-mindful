@@ -14,8 +14,8 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import type { TutorialMode } from "@move-mindful/core";
-import { clock } from "@/lib/workouts/player";
+import type { TutorialMode, WorkoutStep } from "@move-mindful/core";
+import { clock, type PlayerWorkout } from "@/lib/workouts/player";
 import {
   ArrowRight,
   Check,
@@ -37,6 +37,7 @@ import {
 } from "./icons";
 import { FirstWorkoutBadge } from "./first-workout-badge";
 import { NextCard } from "./up-next-card";
+import { WorkoutRows } from "./workout-rows";
 
 // The player's screens, drawn from the player design canvas (mobile frames).
 // Each fills the 9:16 stage the videos play in; none of them knows about the
@@ -640,12 +641,21 @@ export function TutorialScreen({
  * and Skip warm-up, full size and minimised. `restartKey` restarts the fill
  * (rather than sliding it back) when a looping clip goes round again.
  */
-export function ProgressFill({ fraction, restartKey = 0 }: { fraction: number; restartKey?: number }) {
+export function ProgressFill({
+  fraction,
+  restartKey = 0,
+  tone = "bg-white/20",
+}: {
+  fraction: number;
+  restartKey?: number;
+  /** Its colour: a white wash, for the outlined buttons; on a white one, something that shows. */
+  tone?: string;
+}) {
   return (
     <span
       key={restartKey}
       aria-hidden="true"
-      className="absolute inset-y-0 left-0 bg-white/20"
+      className={`absolute inset-y-0 left-0 ${tone}`}
       style={{ width: `${Math.min(100, Math.max(0, fraction * 100))}%`, transition: "width 250ms linear" }}
     />
   );
@@ -767,12 +777,15 @@ function CountdownControls({
   onResume,
   goLabel,
   onGo,
+  fill = null,
 }: {
   paused: boolean;
   onPause: () => void;
   onResume: () => void;
   goLabel: string;
   onGo: () => void;
+  /** How far the screen has run toward moving on by itself: the way on fills with it. */
+  fill?: number | null;
 }) {
   return (
     <>
@@ -788,10 +801,13 @@ function CountdownControls({
         <button
           type="button"
           onClick={onGo}
-          className="flex h-[58px] flex-[1.4] items-center justify-center gap-2.5 rounded-full bg-white text-[17px] font-semibold text-[#14142B]"
+          className="relative flex h-[58px] flex-[1.4] items-center justify-center gap-2.5 overflow-hidden rounded-full bg-white text-[17px] font-semibold text-[#14142B]"
         >
-          {goLabel}
-          <ArrowRight />
+          {fill !== null && <ProgressFill fraction={fill} tone="bg-[#A99CFF]/45" />}
+          <span className="relative">{goLabel}</span>
+          <span className="relative">
+            <ArrowRight />
+          </span>
         </button>
       </div>
     </>
@@ -883,6 +899,77 @@ export function RestScreen({
       )}
       <div className="mt-5">
         <CountdownControls paused={paused} onPause={onPause} onResume={onResume} goLabel="Continue" onGo={onContinue} />
+      </div>
+    </div>
+  );
+}
+
+// ── The workout overview ──────────────────────────────
+
+/**
+ * The workout overview, after the intro (the "rundown"): the exercise list on
+ * a see-through panel over each exercise's loop in turn — the stage plays
+ * them — with the one on screen lit; tapping another shows that one. The
+ * instructor's tip talks the workout through meanwhile. Pause holds it all;
+ * Continue, filling as the section runs, goes on to the first exercise.
+ * Desktop shows the same in the video column.
+ */
+export function RundownScreen({
+  workout,
+  steps,
+  exerciseId,
+  onPick,
+  fraction,
+  paused,
+  onPause,
+  onResume,
+  onContinue,
+  tip = null,
+  theater = false,
+}: {
+  workout: PlayerWorkout;
+  steps: WorkoutStep[];
+  /** The exercise whose loop is on screen. */
+  exerciseId: string | null;
+  onPick: (exerciseId: string) => void;
+  /** How far through the section: Continue fills with it. */
+  fraction: number;
+  paused: boolean;
+  onPause: () => void;
+  onResume: () => void;
+  onContinue: () => void;
+  /** The tip's CoachTip, taking no room: just above the buttons, at the right. */
+  tip?: ReactNode;
+  theater?: boolean;
+}) {
+  const list = useRef<HTMLDivElement>(null);
+  // A long workout scrolls: keep the lit exercise in view as the loops move on.
+  useEffect(() => {
+    list.current?.querySelector("[data-spotlit]")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [exerciseId]);
+  return (
+    <div
+      className={`pointer-events-none absolute inset-0 flex flex-col [&_button]:pointer-events-auto ${
+        theater ? "px-7 pb-10 pt-12" : `px-4 pt-[calc(max(20px,env(safe-area-inset-top))+16px)] ${bottomPad}`
+      }`}
+    >
+      <div
+        ref={list}
+        className="pointer-events-auto min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-3xl border border-white/10 bg-[#14142B]/40 p-2 backdrop-blur-[3px]"
+      >
+        <WorkoutRows workout={workout} steps={steps} position={null} spotlight={{ exerciseId, onPick }} />
+      </div>
+      <div className={`relative isolate mt-4 ${theater ? "" : "-mx-4 px-5"}`}>
+        <BottomShade />
+        {tip && <div className="absolute bottom-full right-[13px] mb-3">{tip}</div>}
+        <CountdownControls
+          paused={paused}
+          onPause={onPause}
+          onResume={onResume}
+          goLabel="Continue"
+          onGo={onContinue}
+          fill={fraction}
+        />
       </div>
     </div>
   );

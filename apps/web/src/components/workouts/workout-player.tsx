@@ -35,7 +35,7 @@ import {
   type WorkoutStep,
 } from "@move-mindful/core";
 import { levelsLabel } from "@/lib/exercises/shared";
-import { amountLabel, clock, equipmentText, loopFor, type PlayerClip, type PlayerWorkout } from "@/lib/workouts/player";
+import { amountLabel, clock, equipmentText, exerciseLineup, loopFor, type PlayerClip, type PlayerWorkout } from "@/lib/workouts/player";
 import { rateWorkout } from "@/app/actions/workout-ratings";
 import { OverviewSheet } from "./overview-sheet";
 import { ProgressBar } from "./progress-bar";
@@ -48,6 +48,7 @@ import {
   ReadyScreen,
   RestartVideoPrompt,
   RestScreen,
+  RundownScreen,
   SetScreen,
   TopShade,
   LoadingSpinner,
@@ -83,7 +84,7 @@ import { UpNextCard } from "./up-next-card";
 import { preloadFirstWorkoutBadge } from "./first-workout-badge";
 import { useFireworkSounds } from "./firework-sounds";
 import { MUSIC, useWorkoutMusic } from "./music";
-import { TIP_DELAY_SECONDS, TIP_VOLUME, tipUrl } from "@/lib/workouts/shared";
+import { RUNDOWN, TIP_DELAY_SECONDS, TIP_VOLUME, tipPlaySeconds, tipUrl } from "@/lib/workouts/shared";
 import { saveWorkoutSession } from "@/app/actions/workout-sessions";
 import type { PlayerPreferences } from "@/lib/member/preferences";
 import type { SavedProgress, SessionEvent } from "@/lib/member/sessions";
@@ -203,6 +204,9 @@ export function WorkoutPlayer({
   const exerciseCount = new Set(setSteps.map((s) => s.exerciseId)).size;
   const key = useMemo(() => sequenceKey(steps), [steps]);
 
+  // The workout overview (the rundown) after the intro: as long as its tip,
+  // and a few seconds more. No tip, no overview.
+  const rundownMs = workout.rundownTip ? (tipPlaySeconds(workout.rundownTip) + RUNDOWN.afterTip) * 1000 : 0;
   const reducer = useMemo(
     () =>
       playerReducer({
@@ -210,10 +214,11 @@ export function WorkoutPlayer({
         hasTutorial: (id) => !!workout.exercises[id]?.tutorial,
         readyMs: GET_READY ? GET_READY_MS : 0,
         hasIntro: !!workout.intro,
+        rundownMs,
         hasCooldown: !!workout.cooldown,
         hasOutro: !!workout.outro,
       }),
-    [steps, workout.exercises, workout.intro, workout.cooldown, workout.outro],
+    [steps, workout.exercises, workout.intro, rundownMs, workout.cooldown, workout.outro],
   );
   const [state, dispatch] = useReducer(reducer, initialPlayerState);
   const act = useCallback((a: WithoutNow<PlayerAction>) => dispatch({ ...a, now: performance.now() } as PlayerAction), []);
@@ -360,9 +365,10 @@ export function WorkoutPlayer({
   });
 
   const running = isRunning(state);
-  // A countdown screen — a rest, or getting ready — where pausing holds in place.
+  // A countdown screen — a rest, getting ready, the workout overview — where pausing holds in place.
   const onCountdown =
-    state.phase === "workout" && (steps[state.step]?.kind === "rest" || state.stage === "ready");
+    state.phase === "rundown" ||
+    (state.phase === "workout" && (steps[state.step]?.kind === "rest" || state.stage === "ready"));
   function pause() {
     setHoldInPlace(onCountdown);
     act({ type: "pause" });
@@ -392,13 +398,14 @@ export function WorkoutPlayer({
   // plays a moment in, with their photo on screen — see useCueAudio.
   const tipStep =
     state.phase === "workout" && step && (step.kind === "rest" || state.stage === "exercise") ? step : null;
+  // The workout overview's, straight away: the section is as long as it is.
+  const rundownTip = state.phase === "rundown" ? workout.rundownTip : null;
+  const tipNow = rundownTip ?? tipStep?.tip ?? null;
   const tips = useCueAudio({
-    clip: tipStep?.tip
-      ? { url: tipUrl(tipStep.tip.id), start: tipStep.tip.start ?? 0, end: tipStep.tip.end ?? null }
-      : null,
+    clip: tipNow ? { url: tipUrl(tipNow.id), start: tipNow.start ?? 0, end: tipNow.end ?? null } : null,
     take: state.take,
-    running: running && !!tipStep,
-    delayMs: (step?.kind === "rest" ? TIP_DELAY_SECONDS.rest : TIP_DELAY_SECONDS.set) * 1000,
+    running: running && !!tipNow,
+    delayMs: rundownTip ? 0 : (step?.kind === "rest" ? TIP_DELAY_SECONDS.rest : TIP_DELAY_SECONDS.set) * 1000,
     // Mute all, or just the tips switched off in the Audio card.
     muted: muted || !prefs.audioTips,
     volume: TIP_VOLUME,
@@ -408,7 +415,7 @@ export function WorkoutPlayer({
     <CoachTip
       show={tips.playing || tips.held}
       held={tips.held}
-      voice={tipStep?.tip?.levels ? { levels: tipStep.tip.levels, time: tips.time } : null}
+      voice={tipNow?.levels ? { levels: tipNow.levels, time: tips.time } : null}
       instructor={workout.instructor}
       large={large}
     />
@@ -505,70 +512,6 @@ export function WorkoutPlayer({
     if (prefs.music && !muted) music.wake();
   }
 
-  // ── Videos ──────────────────────────────────────────
-
-  const shown = useMemo<ShownClip | null>(() => {
-    if (state.phase === "preview") return null;
-    if (isVideoPhase(state.phase)) return shownOf(videoClip(workout, state.phase), false);
-    const st = steps[state.step];
-    if (!st) return null;
-    // A rest shows the next exercise (blurred); "Cool down?" and the summary, the last one.
-    if (st.kind === "rest" || state.phase === "complete" || state.phase === "cooldownPrompt") {
-      const i = setStepFor(steps, state.step);
-      const s = i !== null ? steps[i] : null;
-      return s?.kind === "set" ? shownOf(loopFor(workout.exercises[s.exerciseId], s.side), true, true) : null;
-    }
-    const e = workout.exercises[st.exerciseId];
-    if (state.stage === "tutorial" && e?.tutorial) return shownOf(e.tutorial, state.tutorialPlay === "loop");
-    return shownOf(loopFor(e, st.side), true, true);
-  }, [state.phase, state.step, state.stage, state.tutorialPlay, steps, workout]);
-
-  // What's on screen, then what comes after it — kept loaded in the pool.
-  const upcoming = useMemo<PoolClip[]>(() => {
-    const list: PoolClip[] = [];
-    const add = (c: { url: string; poster: string } | null | undefined) => {
-      if (c && list.length < POOL_SIZE && !list.some((x) => x.url === c.url)) list.push({ url: c.url, poster: c.poster });
-    };
-    add(shown);
-    const p = state.phase;
-    if (p === "preview") add(workout.intro);
-    if (p === "preview" || p === "intro") add(workout.warmup?.clip);
-    const started = p === "workout";
-    // After the exercises, only what follows them.
-    const ahead = isFinished(p) ? 0 : steps.length;
-    for (let i = started ? state.step : 0; i < ahead && list.length < POOL_SIZE; i++) {
-      const st = steps[i];
-      if (st.kind !== "set") continue;
-      const e = workout.exercises[st.exerciseId];
-      const tutorial =
-        started && i === state.step
-          ? state.stage === "tutorial"
-          : st.firstOfExercise && state.mode !== "off" && !state.seen.includes(st.exerciseId);
-      if (tutorial) add(e?.tutorial);
-      add(loopFor(e, st.side));
-    }
-    if (p !== "cooldown" && p !== "outro" && p !== "complete") add(workout.cooldown?.clip);
-    if (p !== "outro" && p !== "complete") add(workout.outro);
-    return list;
-  }, [shown, state.phase, state.step, state.stage, state.mode, state.seen, steps, workout]);
-
-  // Sheets stop the clock — all but the Audio card, under which everything
-  // carries on (see isRunning). The video keeps playing behind the overview (so
-  // pulling it up doesn't stutter) — the warm-up's and cool-down's too, sound
-  // and all; if one ends meanwhile, what follows comes up as usual, closing the overview —
-  // but pauses under
-  // Settings and End workout. Getting ready, the exercise already plays behind
-  // the blur; it starts over from the top as the countdown ends (a new take),
-  // in step with the member.
-  const playing =
-    running ||
-    ((state.phase === "workout" || state.phase === "warmup" || state.phase === "cooldown") &&
-      !state.paused &&
-      state.sheet === "overview");
-  useEffect(() => {
-    pool.sync(upcoming, shown, { playing, muted, take: state.take });
-  }, [pool, upcoming, shown, playing, muted, state.take]);
-
   // ── Clocks ──────────────────────────────────────────
 
   // The countdown for a timed set or a rest: redraw a few times a second, and
@@ -588,6 +531,91 @@ export function WorkoutPlayer({
   const leftMs = timer
     ? Math.max(0, Math.min(timer.leftMs, timer.since === null ? timer.leftMs : timer.leftMs - (now - timer.since)))
     : 0;
+
+  // The workout overview: each exercise once, its loop on screen for
+  // RUNDOWN.secondsEach of the section's own clock (so pausing holds it too),
+  // counting on from the one tapped last, if any.
+  const lineup = useMemo(() => exerciseLineup(steps, workout.exercises), [steps, workout.exercises]);
+  const [picked, setPicked] = useState({ take: -1, index: 0, atMs: 0 });
+  const rundownElapsed = state.phase === "rundown" ? Math.max(0, rundownMs - leftMs) : 0;
+  const anchor = picked.take === state.take ? picked : { index: 0, atMs: 0 };
+  const rundownIndex = lineup.length
+    ? (anchor.index + Math.floor(Math.max(0, rundownElapsed - anchor.atMs) / (RUNDOWN.secondsEach * 1000))) % lineup.length
+    : 0;
+  /** A tap on an exercise in the overview: show it now, and count on from it. */
+  function pickRundown(exerciseId: string) {
+    const index = lineup.findIndex((x) => x.exerciseId === exerciseId);
+    if (index !== -1) setPicked({ take: state.take, index, atMs: rundownElapsed });
+  }
+
+  // ── Videos ──────────────────────────────────────────
+
+  const shown = useMemo<ShownClip | null>(() => {
+    if (state.phase === "preview") return null;
+    if (isVideoPhase(state.phase)) return shownOf(videoClip(workout, state.phase), false);
+    // The workout overview: the exercise it's on, cut to (no fade) every few seconds.
+    if (state.phase === "rundown") return shownOf(lineup[rundownIndex]?.clip, true, true);
+    const st = steps[state.step];
+    if (!st) return null;
+    // A rest shows the next exercise (blurred); "Cool down?" and the summary, the last one.
+    if (st.kind === "rest" || state.phase === "complete" || state.phase === "cooldownPrompt") {
+      const i = setStepFor(steps, state.step);
+      const s = i !== null ? steps[i] : null;
+      return s?.kind === "set" ? shownOf(loopFor(workout.exercises[s.exerciseId], s.side), true, true) : null;
+    }
+    const e = workout.exercises[st.exerciseId];
+    if (state.stage === "tutorial" && e?.tutorial) return shownOf(e.tutorial, state.tutorialPlay === "loop");
+    return shownOf(loopFor(e, st.side), true, true);
+  }, [state.phase, state.step, state.stage, state.tutorialPlay, steps, workout, lineup, rundownIndex]);
+
+  // What's on screen, then what comes after it — kept loaded in the pool.
+  const upcoming = useMemo<PoolClip[]>(() => {
+    const list: PoolClip[] = [];
+    const add = (c: { url: string; poster: string } | null | undefined) => {
+      if (c && list.length < POOL_SIZE && !list.some((x) => x.url === c.url)) list.push({ url: c.url, poster: c.poster });
+    };
+    add(shown);
+    const p = state.phase;
+    // The workout overview: the next couple of loops, ready for their cut.
+    if (p === "rundown") for (let k = 1; k <= 2; k++) add(lineup[(rundownIndex + k) % lineup.length]?.clip);
+    if (p === "preview") add(workout.intro);
+    if (p === "preview" || p === "intro") add(workout.warmup?.clip);
+    const started = p === "workout";
+    // After the exercises, only what follows them.
+    const ahead = isFinished(p) ? 0 : steps.length;
+    for (let i = started ? state.step : 0; i < ahead && list.length < POOL_SIZE; i++) {
+      const st = steps[i];
+      if (st.kind !== "set") continue;
+      const e = workout.exercises[st.exerciseId];
+      const tutorial =
+        started && i === state.step
+          ? state.stage === "tutorial"
+          : st.firstOfExercise && state.mode !== "off" && !state.seen.includes(st.exerciseId);
+      if (tutorial) add(e?.tutorial);
+      add(loopFor(e, st.side));
+    }
+    if (p !== "cooldown" && p !== "outro" && p !== "complete") add(workout.cooldown?.clip);
+    if (p !== "outro" && p !== "complete") add(workout.outro);
+    return list;
+  }, [shown, state.phase, state.step, state.stage, state.mode, state.seen, steps, workout, lineup, rundownIndex]);
+
+  // Sheets stop the clock — all but the Audio card, under which everything
+  // carries on (see isRunning). The video keeps playing behind the overview (so
+  // pulling it up doesn't stutter) — the warm-up's and cool-down's too, sound
+  // and all; if one ends meanwhile, what follows comes up as usual, closing the overview —
+  // but pauses under
+  // Settings and End workout. Getting ready, the exercise already plays behind
+  // the blur; it starts over from the top as the countdown ends (a new take),
+  // in step with the member.
+  const playing =
+    running ||
+    ((state.phase === "workout" || state.phase === "warmup" || state.phase === "cooldown") &&
+      !state.paused &&
+      state.sheet === "overview");
+  useEffect(() => {
+    pool.sync(upcoming, shown, { playing, muted, take: state.take });
+  }, [pool, upcoming, shown, playing, muted, state.take]);
+
 
   // How far a video (the intro, warm-up, cool-down, outro) or a tutorial has got. `cycle` counts a looping
   // tutorial's trips round, so its progress can restart without sliding back.
@@ -664,7 +692,13 @@ export function WorkoutPlayer({
     else pause();
   });
   const onSpace = useEffectEvent(() => (state.paused ? resumePlay() : pause()));
-  const onBackKey = useEffectEvent(() => (isVideoPhase(state.phase) ? askRestartVideo() : act({ type: "back" })));
+  const onBackKey = useEffectEvent(() =>
+    isVideoPhase(state.phase)
+      ? askRestartVideo()
+      : state.phase === "rundown"
+        ? act({ type: "restartVideo" })
+        : act({ type: "back" }),
+  );
 
   // Keyboard: arrows move between sets, space pauses, Escape closes a sheet.
 
@@ -1038,6 +1072,35 @@ export function WorkoutPlayer({
             hidden={chromeHidden}
           />
         </>
+      );
+    }
+  } else if (state.phase === "rundown") {
+    // The workout overview: the list over the loops, while the tip plays.
+    screen = (
+      <RundownScreen
+        workout={workout}
+        steps={steps}
+        exerciseId={lineup[rundownIndex]?.exerciseId ?? null}
+        onPick={pickRundown}
+        fraction={rundownMs > 0 ? rundownElapsed / rundownMs : 0}
+        paused={state.paused}
+        onPause={pause}
+        onResume={resumePlay}
+        onContinue={() => act({ type: "next" })}
+        tip={workout.rundownTip ? coach(theater) : null}
+        theater={theater}
+      />
+    );
+    // Desktop: back starts the overview over, next goes on to the workout; the list is on screen, so no Workout button.
+    if (theater) {
+      beside = (
+        <TheaterControls
+          onBack={() => act({ type: "restartVideo" })}
+          onNext={() => act({ type: "next" })}
+          backLabel="Start the overview over"
+          nextLabel="Start the workout"
+          buttons={sideButtons(false)}
+        />
       );
     }
   } else if (state.phase === "cooldownPrompt" && workout.cooldown) {
@@ -1500,7 +1563,11 @@ export function WorkoutPlayer({
             }`}
           />
           <LoadingSpinner
-            show={buffering && running && (isVideoPhase(state.phase) || (state.phase === "workout" && step?.kind === "set"))}
+            show={
+              buffering &&
+              running &&
+              (isVideoPhase(state.phase) || state.phase === "rundown" || (state.phase === "workout" && step?.kind === "set"))
+            }
           />
           {screen}
           {!theater && overview}

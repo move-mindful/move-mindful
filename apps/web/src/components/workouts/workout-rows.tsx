@@ -31,6 +31,7 @@ export function WorkoutRows({
   position,
   onJump,
   warmupOff = false,
+  spotlight,
 }: {
   workout: PlayerWorkout;
   steps: WorkoutStep[];
@@ -38,6 +39,12 @@ export function WorkoutRows({
   onJump?: (step: number) => void;
   /** On the preview: the member has switched the warm-up off. */
   warmupOff?: boolean;
+  /**
+   * The workout overview (after the intro): nothing's done or under way yet;
+   * instead the exercise on screen is lit — every row of it — and tapping any
+   * exercise shows that one (`onPick`). Lit rows carry `data-spotlit`.
+   */
+  spotlight?: { exerciseId: string | null; onPick: (exerciseId: string) => void };
 }) {
   const labels = groupLabels(workout.blocks);
   // During the warm-up no exercise is on yet: only its row is current.
@@ -47,7 +54,13 @@ export function WorkoutRows({
   const curSetIndex = cur !== null ? setStepFor(steps, cur) : null;
   const curSet = curSetIndex !== null ? steps[curSetIndex] : null;
 
+  const lit = (exerciseId: string) => spotlight?.exerciseId === exerciseId;
   const blockStatus = (block: number): Status => {
+    if (spotlight) {
+      const b = workout.blocks[block];
+      const on = b.kind === "exercise" ? lit(b.move.exerciseId) : b.kind === "group" && b.moves.some((m) => lit(m.exerciseId));
+      return on ? "now" : "todo";
+    }
     if (position?.complete) return "done";
     if (cur === null) return "todo";
     if (curStep?.block === block) return "now";
@@ -119,7 +132,8 @@ export function WorkoutRows({
           const ex = workout.exercises[b.move.exerciseId];
           const amount = amountLabel(b.move.measure, b.move.amount, ex?.sided);
           const first = stepOf(i, 1, 0);
-          const tappable = !!onJump && status !== "now" && first !== -1;
+          const tappable = spotlight ? true : !!onJump && status !== "now" && first !== -1;
+          const pick = spotlight ? () => spotlight.onPick(b.move.exerciseId) : () => onJump!(first);
           const setsPips = Array.from({ length: b.sets }, (_, s) =>
             steps.map((st, k) => ({ st, k })).filter(({ st }) => st.kind === "set" && st.block === i && st.round === s + 1),
           );
@@ -127,7 +141,10 @@ export function WorkoutRows({
           return (
             <div key={i} role="listitem">
               <Tag
-                {...(tappable ? { type: "button" as const, onClick: () => onJump!(first), "aria-label": `Jump to ${ex?.name}` } : {})}
+                {...(tappable
+                  ? { type: "button" as const, onClick: pick, "aria-label": `${spotlight ? "Show" : "Jump to"} ${ex?.name}` }
+                  : {})}
+                data-spotlit={(spotlight && status === "now") || undefined}
                 className={`flex w-full items-center gap-3 rounded-2xl border-[1.5px] px-2.5 py-2 text-left ${
                   status === "now" ? "border-[#A99CFF]/60 bg-[#A99CFF]/[0.14]" : "border-transparent"
                 }`}
@@ -198,14 +215,18 @@ export function WorkoutRows({
             </div>
             {b.moves.map((m, k) => {
               const ex = workout.exercises[m.exerciseId];
-              const now = round !== null && curSet?.kind === "set" && curSet.move === k;
+              const now = spotlight ? lit(m.exerciseId) : round !== null && curSet?.kind === "set" && curSet.move === k;
               const target = stepOf(i, round ?? 1, k);
-              const tappable = !!onJump && !now && target !== -1;
+              const tappable = spotlight ? true : !!onJump && !now && target !== -1;
+              const pick = spotlight ? () => spotlight.onPick(m.exerciseId) : () => onJump!(target);
               const Tag = tappable ? "button" : "div";
               return (
                 <Tag
                   key={k}
-                  {...(tappable ? { type: "button" as const, onClick: () => onJump!(target), "aria-label": `Jump to ${ex?.name}` } : {})}
+                  {...(tappable
+                    ? { type: "button" as const, onClick: pick, "aria-label": `${spotlight ? "Show" : "Jump to"} ${ex?.name}` }
+                    : {})}
+                  data-spotlit={(spotlight && now) || undefined}
                   className={`flex w-full items-center gap-3 rounded-xl border-[1.5px] px-2 py-1.5 text-left ${
                     now ? "border-[#A99CFF]/60 bg-[#A99CFF]/[0.14]" : "border-transparent"
                   }`}
@@ -217,7 +238,7 @@ export function WorkoutRows({
                     <span className={`text-[15px] font-semibold ${status === "done" ? "text-white/60" : ""}`}>{ex?.name}</span>
                     <span className="text-[13px] text-white/70">{amountLabel(m.measure, m.amount, ex?.sided)}</span>
                   </span>
-                  {now && <span className="shrink-0 text-xs font-bold text-[#A99CFF]">Now</span>}
+                  {now && !spotlight && <span className="shrink-0 text-xs font-bold text-[#A99CFF]">Now</span>}
                 </Tag>
               );
             })}
