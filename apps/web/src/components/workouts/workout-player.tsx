@@ -1080,6 +1080,7 @@ export function WorkoutPlayer({
       <RundownScreen
         workout={workout}
         steps={steps}
+        minutes={minutes}
         exerciseId={lineup[rundownIndex]?.exerciseId ?? null}
         onPick={pickRundown}
         fraction={rundownMs > 0 ? rundownElapsed / rundownMs : 0}

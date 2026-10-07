@@ -641,21 +641,12 @@ export function TutorialScreen({
  * and Skip warm-up, full size and minimised. `restartKey` restarts the fill
  * (rather than sliding it back) when a looping clip goes round again.
  */
-export function ProgressFill({
-  fraction,
-  restartKey = 0,
-  tone = "bg-white/20",
-}: {
-  fraction: number;
-  restartKey?: number;
-  /** Its colour: a white wash, for the outlined buttons; on a white one, something that shows. */
-  tone?: string;
-}) {
+export function ProgressFill({ fraction, restartKey = 0 }: { fraction: number; restartKey?: number }) {
   return (
     <span
       key={restartKey}
       aria-hidden="true"
-      className={`absolute inset-y-0 left-0 ${tone}`}
+      className="absolute inset-y-0 left-0 bg-white/20"
       style={{ width: `${Math.min(100, Math.max(0, fraction * 100))}%`, transition: "width 250ms linear" }}
     />
   );
@@ -784,7 +775,11 @@ function CountdownControls({
   onResume: () => void;
   goLabel: string;
   onGo: () => void;
-  /** How far the screen has run toward moving on by itself: the way on fills with it. */
+  /**
+   * How far the screen has run toward moving on by itself. With it, the way on
+   * is frosted like the Up next pill and fills as that does; without, it's
+   * solid white.
+   */
   fill?: number | null;
 }) {
   return (
@@ -801,9 +796,11 @@ function CountdownControls({
         <button
           type="button"
           onClick={onGo}
-          className="relative flex h-[58px] flex-[1.4] items-center justify-center gap-2.5 overflow-hidden rounded-full bg-white text-[17px] font-semibold text-[#14142B]"
+          className={`relative flex h-[58px] flex-[1.4] items-center justify-center gap-2.5 overflow-hidden rounded-full text-[17px] font-semibold ${
+            fill !== null ? "border border-white/20 bg-white/10 backdrop-blur-md" : "bg-white text-[#14142B]"
+          }`}
         >
-          {fill !== null && <ProgressFill fraction={fill} tone="bg-[#A99CFF]/45" />}
+          {fill !== null && <ProgressFill fraction={fill} />}
           <span className="relative">{goLabel}</span>
           <span className="relative">
             <ArrowRight />
@@ -917,6 +914,7 @@ export function RestScreen({
 export function RundownScreen({
   workout,
   steps,
+  minutes,
   exerciseId,
   onPick,
   fraction,
@@ -929,6 +927,8 @@ export function RundownScreen({
 }: {
   workout: PlayerWorkout;
   steps: WorkoutStep[];
+  /** The workout's estimated length, beside the title (as the preview shows it). */
+  minutes: number;
   /** The exercise whose loop is on screen. */
   exerciseId: string | null;
   onPick: (exerciseId: string) => void;
@@ -950,17 +950,27 @@ export function RundownScreen({
   return (
     <div
       className={`pointer-events-none absolute inset-0 flex flex-col [&_button]:pointer-events-auto ${
-        theater ? "px-7 pb-10 pt-12" : `px-4 pt-[calc(max(20px,env(safe-area-inset-top))+16px)] ${bottomPad}`
+        theater ? "px-7 pt-12" : "px-4 pt-[calc(max(20px,env(safe-area-inset-top))+16px)]"
       }`}
     >
-      <div
-        ref={list}
-        className="pointer-events-auto min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-3xl border border-white/10 bg-[#14142B]/40 p-2 backdrop-blur-[3px]"
-      >
-        <WorkoutRows workout={workout} steps={steps} position={null} spotlight={{ exerciseId, onPick }} />
+      {/* Tinted, not blurred: the loops show through clearly. The title stays put while the list scrolls. */}
+      <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#14142B]/40">
+        <div className="flex items-baseline justify-between gap-3 px-4 pb-1.5 pt-3.5">
+          <h2 className="text-[17px] font-semibold">Workout Overview</h2>
+          <span className="shrink-0 text-[15px] text-white/70">~{minutes} min</span>
+        </div>
+        <div ref={list} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-2">
+          <WorkoutRows workout={workout} steps={steps} position={null} spotlight={{ exerciseId, onPick }} />
+        </div>
       </div>
-      <div className={`relative isolate mt-4 ${theater ? "" : "-mx-4 px-5"}`}>
-        <BottomShade />
+      {/* The buttons, on a shade as deep as a rest's (so Pause looks as it
+          does there) that runs on down to the screen's edge. */}
+      <div className={`relative isolate mt-4 ${theater ? "-mx-7 px-7 pb-10" : `-mx-4 px-5 ${bottomPad}`}`}>
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 -top-12 bottom-0 -z-10"
+          style={{ background: "linear-gradient(180deg, rgba(14,14,32,0) 0px, rgba(14,14,32,0.55) 48px, rgba(14,14,32,0.85) 100%)" }}
+        />
         {tip && <div className="absolute bottom-full right-[13px] mb-3">{tip}</div>}
         <CountdownControls
           paused={paused}
