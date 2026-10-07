@@ -172,7 +172,11 @@ export function CornerAudio({ muted, onClick }: { muted: boolean; onClick: () =>
   );
 }
 
-/** Audio · Up next (opens the overview) · Pause. */
+/**
+ * Audio · Up next (opens the overview) · Pause. Up next fills the space
+ * between the two buttons, so it keeps one width whatever it names, as the
+ * Up next cards do; a long name is cut short.
+ */
 function ControlsRow({
   pill,
   fill = null,
@@ -196,7 +200,7 @@ function ControlsRow({
         type="button"
         aria-label={`Open workout overview. ${pill.label}: ${pill.text}`}
         onClick={onOverview}
-        className="relative flex h-[52px] min-w-0 items-center gap-2.5 overflow-hidden rounded-full border border-white/20 bg-white/10 pl-3.5 pr-5 text-left backdrop-blur-md"
+        className="relative flex h-[52px] min-w-0 flex-1 items-center gap-2.5 overflow-hidden rounded-full border border-white/20 bg-white/10 pl-3.5 pr-5 text-left backdrop-blur-md"
       >
         {fill !== null && <ProgressFill fraction={fill} />}
         <span className="relative">
