@@ -337,6 +337,7 @@ Key product rules from design review:
 - "Pairs well with" goes both ways and is a preference, not a limit: Generate with AI favours pairings but may group other exercises
 - Generate with AI never saves: it fills the builder, and the admin reviews and saves like any edit
 - A workout is a list of blocks: a single exercise (sets, with rest between sets), a rest, or a group (rounds, rest between exercises, rest between rounds; exercises in a group do one set each). Two exercises = "Superset N", three or more = "Circuit N"
+- **Oct 2026: no separate warm-up or cool-down any more.** The player leaves them out (`WARMUP_AND_COOLDOWN` in `lib/workouts/member.ts`); the builder, database and player code keep them for now. The two decisions below are how they worked
 - The warm-up is optional for members and plays once, start to finish; listed workout times exclude it
 - The intro and outro belong to one workout; the warm-up and cool-down are library videos shared between workouts. The cool-down is offered at the end ("Cool down?") rather than switched on or off up front. None of them count in listed workout times, and the workout counts as done once the exercises are
 - Editing an exercise changes it in every workout that uses it; a replaced clip stays live until the new one finishes processing. Archiving hides an exercise from the library and builder search while existing workouts keep working; delete only when nothing uses it

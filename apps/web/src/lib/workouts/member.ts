@@ -16,6 +16,12 @@ import type { PlayerClip, PlayerExercise, PlayerWorkout, WorkoutCard } from "@/l
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// Workouts no longer have a separate warm-up and cool-down. The builder still
+// sets them and they're still saved, but the player leaves them out — so no
+// Warm-up switch beside Begin, no warm-up or cool-down row, no "Cool down?".
+// `true` brings them back.
+const WARMUP_AND_COOLDOWN = false;
+
 function toClip(video: Pick<WorkoutVideo, "playbackId" | "mp4File" | "durationSeconds"> | null): PlayerClip | null {
   const url = video && mp4Url(video);
   if (!video?.playbackId || !url) return null;
@@ -69,8 +75,10 @@ function playableBlocks(blocks: WorkoutBlock[], known: Set<string>): WorkoutBloc
 
 async function assemble(workout: AdminWorkout, instructor: PlayerWorkout["instructor"] = null): Promise<PlayerWorkout> {
   const ids = exerciseIds(workout.blocks);
-  if (workout.warmupExerciseId) ids.add(workout.warmupExerciseId);
-  if (workout.cooldownExerciseId) ids.add(workout.cooldownExerciseId);
+  const warmupId = WARMUP_AND_COOLDOWN ? workout.warmupExerciseId : null;
+  const cooldownId = WARMUP_AND_COOLDOWN ? workout.cooldownExerciseId : null;
+  if (warmupId) ids.add(warmupId);
+  if (cooldownId) ids.add(cooldownId);
   const rows = await getExercisesByIds([...ids]);
   const exercises: Record<string, PlayerExercise> = {};
   for (const e of rows) if (e.kind === "exercise") exercises[e.id] = toPlayerExercise(e);
@@ -98,8 +106,8 @@ async function assemble(workout: AdminWorkout, instructor: PlayerWorkout["instru
     coverImageUrl: workout.coverImageUrl,
     published: !!workout.publishedAt,
     intro: toClip(slotFor(workout.videos, "intro").current),
-    warmup: single(workout.warmupExerciseId, "warmup"),
-    cooldown: single(workout.cooldownExerciseId, "cooldown"),
+    warmup: single(warmupId, "warmup"),
+    cooldown: single(cooldownId, "cooldown"),
     outro: toClip(slotFor(workout.videos, "outro").current),
     exercises,
     blocks: playableBlocks(workout.blocks, new Set(Object.keys(exercises))),
