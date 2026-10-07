@@ -512,7 +512,7 @@ export function SetScreen({
           </div>
         </Collapse>
       )}
-      {/* On the reps' baseline, so the side pill sits level with "reps" rather than the number's middle. */}
+      {/* On the reps' baseline; the side pill is centred on "reps" (see below). */}
       <div className="relative flex items-baseline gap-3">
         {/* A bubble's height above the reps (its bottom where its top would be
             sitting on them), over the video; 13px in from the video's edge, so
@@ -530,9 +530,14 @@ export function SetScreen({
             {clock(metric.seconds)}
           </span>
         )}
+        {/* Centred on the lowercase "reps": CSS's own middle (half an x-height up
+            from the baseline), in a box set in the "reps" type — and so at the
+            same height beside a time. */}
         {side && (
-          <span className="flex h-7 items-center rounded-full bg-[#A99CFF] px-3 text-[13px] font-bold tracking-[0.08em] text-white">
-            {side.toUpperCase()}
+          <span className="text-[26px] font-medium">
+            <span className="inline-flex h-7 items-center rounded-full bg-[#A99CFF] px-3 align-middle text-[13px] font-bold tracking-[0.08em] text-white">
+              {side.toUpperCase()}
+            </span>
           </span>
         )}
       </div>

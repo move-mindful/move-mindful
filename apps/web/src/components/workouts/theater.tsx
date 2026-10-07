@@ -169,7 +169,7 @@ export function TheaterSetInfo({
           {groupLine}
         </div>
       )}
-      {/* On the reps' baseline, so the side pill sits level with "reps" rather than the number's middle. */}
+      {/* On the reps' baseline; the side pill is centred on "reps", as on phones. */}
       <div className="flex items-baseline gap-3.5">
         {metric.kind === "reps" ? (
           <span className="flex items-baseline gap-2.5">
@@ -182,8 +182,10 @@ export function TheaterSetInfo({
           </span>
         )}
         {side && (
-          <span className="flex h-8 items-center rounded-full bg-[#A99CFF] px-3.5 text-sm font-bold tracking-[0.08em] text-white">
-            {side.toUpperCase()}
+          <span className="text-[34px] font-medium">
+            <span className="inline-flex h-8 items-center rounded-full bg-[#A99CFF] px-3.5 align-middle text-sm font-bold tracking-[0.08em] text-white">
+              {side.toUpperCase()}
+            </span>
           </span>
         )}
       </div>
