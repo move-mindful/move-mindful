@@ -507,7 +507,8 @@ export function SetScreen({
           </div>
         </Collapse>
       )}
-      <div className="relative flex items-center gap-3">
+      {/* On the reps' baseline, so the side pill sits level with "reps" rather than the number's middle. */}
+      <div className="relative flex items-baseline gap-3">
         {/* A bubble's height above the reps (its bottom where its top would be
             sitting on them), over the video; 13px in from the video's edge, so
             about over the Pause button (desktop has more room still). */}
@@ -525,7 +526,7 @@ export function SetScreen({
           </span>
         )}
         {side && (
-          <span className="flex h-7 items-center rounded-full bg-[#A99CFF] px-3 text-[13px] font-bold tracking-[0.08em] text-[#14142B]">
+          <span className="flex h-7 items-center rounded-full bg-[#A99CFF] px-3 text-[13px] font-bold tracking-[0.08em] text-white">
             {side.toUpperCase()}
           </span>
         )}
