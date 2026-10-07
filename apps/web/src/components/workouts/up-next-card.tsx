@@ -9,7 +9,10 @@
  * easing — straight away; the chime follows a moment later (UP_NEXT.soundAfter)
  * so it lands as the card does — in the frosted grey of the player's other
  * controls (the Up next pill). The screen places it, centred in the video
- * column (it uses `--col`); `large` on desktop.
+ * column (it uses `--col`); `large` on desktop. Its width is set, not the
+ * name's — the width of the column inside its 20px gutters on phones, 380px on
+ * desktop, as the rest screen's card is — so it doesn't change size from one
+ * exercise to the next; a name too long for it is cut short.
  *
  * `stage`: waiting (off past the right edge), shown, or gone — slid back out
  * past the right edge just before the set ends (UP_NEXT.leaveAt), so it's
@@ -37,7 +40,7 @@ export function UpNextCard({
       <div
         aria-hidden="true"
         className={`pointer-events-none flex items-center rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md transition-[translate,opacity] motion-reduce:translate-x-0 motion-reduce:transition-opacity ${
-          large ? "max-w-[380px] gap-4 p-3 pr-6" : "max-w-[min(340px,calc(100vw-32px))] gap-3.5 p-2.5 pr-5"
+          large ? "w-[380px] max-w-[calc(100%-40px)] gap-4 p-3 pr-6" : "w-full gap-3.5 p-2.5 pr-5"
         } ${
           stage === "shown"
             ? // From past the video's right edge: half the column, half the card, and a little more.
