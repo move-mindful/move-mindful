@@ -42,10 +42,15 @@ export function UpNextCard({
       <span role="status" className="sr-only">
         {stage === "shown" ? `Up next: ${name}${detail ? `, ${detail}` : ""}` : ""}
       </span>
-      <div
-        aria-hidden="true"
-        className={`pointer-events-none flex items-center rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md transition-[translate,opacity] motion-reduce:translate-x-0 motion-reduce:transition-opacity ${
-          large ? "w-[380px] max-w-[calc(100%-40px)] gap-4 p-3 pr-6" : "w-full gap-3.5 p-2.5 pr-5"
+      <NextCard
+        name={name}
+        detail={detail}
+        thumbnail={thumbnail}
+        icon={icon}
+        large={large}
+        hidden
+        className={`pointer-events-none transition-[translate,opacity] motion-reduce:translate-x-0 motion-reduce:transition-opacity ${
+          large ? "w-[380px] max-w-[calc(100%-40px)]" : "w-full"
         } ${
           stage === "shown"
             ? // From past the video's right edge: half the column, half the card, and a little more.
@@ -53,27 +58,62 @@ export function UpNextCard({
             : // Waiting, or gone: back out past the right edge, the way it came.
               "translate-x-[calc(var(--col)/2+50%+8px)] opacity-0 duration-300 ease-in"
         }`}
-      >
-        {(thumbnail || icon) && (
-          <span
-            className={`flex shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/10 text-[#A99CFF] ${
-              large ? "h-[72px] w-14" : "h-16 w-12"
-            }`}
-          >
-            {thumbnail ? (
-              // eslint-disable-next-line @next/next/no-img-element -- a tiny Mux still; nothing to optimize
-              <img src={thumbnail} alt="" className="size-full object-cover" />
-            ) : (
-              icon
-            )}
-          </span>
-        )}
-        <span className={`flex min-w-0 flex-col gap-0.5 ${thumbnail || icon ? "" : "pl-2"}`}>
-          <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/70">Up next</span>
-          <span className={`truncate font-semibold ${large ? "text-[19px]" : "text-[17px]"}`}>{name}</span>
-          {detail && <span className={`truncate text-white/70 ${large ? "text-[15px]" : "text-sm"}`}>{detail}</span>}
-        </span>
-      </div>
+      />
     </>
+  );
+}
+
+/**
+ * The frosted card itself — a still (or an icon), its label, the name and a
+ * detail line — shared by the Up next card and the rest screen's. The caller
+ * sets its width (and anything else) with `className`; `hidden` keeps it from
+ * screen readers when something else reads it out.
+ */
+export function NextCard({
+  label = "Up next",
+  name,
+  detail,
+  thumbnail,
+  icon = null,
+  large = false,
+  hidden = false,
+  className = "",
+}: {
+  label?: string;
+  name: string;
+  detail: string | null;
+  thumbnail: string | null;
+  icon?: ReactNode;
+  large?: boolean;
+  hidden?: boolean;
+  className?: string;
+}) {
+  return (
+    <div
+      aria-hidden={hidden || undefined}
+      className={`flex items-center rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md ${
+        large ? "gap-4 p-3 pr-6" : "gap-3.5 p-2.5 pr-5"
+      } ${className}`}
+    >
+      {(thumbnail || icon) && (
+        <span
+          className={`flex shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/10 text-[#A99CFF] ${
+            large ? "h-[72px] w-14" : "h-16 w-12"
+          }`}
+        >
+          {thumbnail ? (
+            // eslint-disable-next-line @next/next/no-img-element -- a tiny Mux still; nothing to optimize
+            <img src={thumbnail} alt="" className="size-full object-cover" />
+          ) : (
+            icon
+          )}
+        </span>
+      )}
+      <span className={`flex min-w-0 flex-col gap-0.5 ${thumbnail || icon ? "" : "pl-2"}`}>
+        <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/70">{label}</span>
+        <span className={`truncate font-semibold ${large ? "text-[19px]" : "text-[17px]"}`}>{name}</span>
+        {detail && <span className={`truncate text-white/70 ${large ? "text-[15px]" : "text-sm"}`}>{detail}</span>}
+      </span>
+    </div>
   );
 }

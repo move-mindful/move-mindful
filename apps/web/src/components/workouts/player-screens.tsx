@@ -36,6 +36,7 @@ import {
   WatchTutorial,
 } from "./icons";
 import { FirstWorkoutBadge } from "./first-workout-badge";
+import { NextCard } from "./up-next-card";
 
 // The player's screens, drawn from the player design canvas (mobile frames).
 // Each fills the 9:16 stage the videos play in; none of them knows about the
@@ -742,7 +743,7 @@ const centered = "absolute inset-0 flex flex-col items-center justify-center gap
 const bottomGroup = (theater: boolean) =>
   theater ? "flex w-[380px] max-w-[calc(100%-40px)] flex-col" : `flex flex-col px-5 ${bottomPad}`;
 
-/** The countdown rings round a rest and Get ready: 200px across, radius 92. */
+/** The countdown ring round Get ready: 200px across, radius 92. */
 const RING = 2 * Math.PI * 92;
 
 /**
@@ -789,7 +790,7 @@ function CountdownControls({
 
 
 /**
- * REST or GET READY over a countdown ring, in the accent at 32px. Held there
+ * GET READY over its countdown ring, in the accent at 32px. Held there
  * (Pause), a grey PAUSED (16px) sits just above it — floating, so pausing
  * doesn't move the ring.
  */
@@ -806,9 +807,16 @@ function CountdownTitle({ paused, children }: { paused: boolean; children: React
   );
 }
 
+/**
+ * A rest, laid out like the exercise screen: the next exercise's video plays
+ * clear behind it, and at the bottom left the time left — always m:ss (1:00,
+ * 0:45, 0:09), so it never changes width — with REST beside it where a set has
+ * its reps, then the Up next card and Pause / Continue. Desktop shows the
+ * same in the video column. Held (Pause), PAUSED floats above the time and
+ * Pause reads Resume.
+ */
 export function RestScreen({
   secondsLeft,
-  totalSeconds,
   next,
   paused,
   onPause,
@@ -818,116 +826,53 @@ export function RestScreen({
   theater = false,
 }: {
   secondsLeft: number;
-  totalSeconds: number;
   next: { label: string; name: string; detail: string; thumbnail: string | null } | null;
   /** Held right here (Pause), the countdown stopped — see CountdownControls. */
   paused: boolean;
   onPause: () => void;
   onResume: () => void;
   onContinue: () => void;
-  /**
-   * Phones, a rest with an audio tip: its CoachTip, taking no room, so a rest
-   * looks the same with a tip or without. It sits midway between the Up next
-   * card and the buttons, but never closer than 16px to the buttons: where
-   * that's tight (Safari's toolbars), it rides up over the card's corner.
-   * (Desktop places it by the video's corner.)
-   */
+  /** The rest's audio tip (CoachTip), taking no room: a bubble's height above the time, at its right end, as on a set. */
   tip?: ReactNode;
   theater?: boolean;
 }) {
   const shown = Math.ceil(secondsLeft);
-  // What's up next. On phones it sits right under the ring; on desktop, with
-  // everything centred, above the buttons.
-  const card = next && (
-    <div className="flex items-center gap-3.5 rounded-[18px] bg-white/[0.08] py-2.5 pl-2.5 pr-4">
-      <span className="h-[72px] w-14 shrink-0 overflow-hidden rounded-xl bg-white/10">
-        {next.thumbnail && (
-          // eslint-disable-next-line @next/next/no-img-element -- a tiny Mux still; nothing to optimize
-          <img src={next.thumbnail} alt="" className="size-full object-cover" />
-        )}
-      </span>
-      <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/70">{next.label}</span>
-        <span className="truncate text-lg font-semibold">{next.name}</span>
-        <span className="text-sm text-white/70">{next.detail}</span>
-      </span>
-    </div>
-  );
   return (
     <div
-      className={`pointer-events-none [&_button]:pointer-events-auto ${theater ? centered : "absolute inset-0 flex flex-col"}`}
+      className={`pointer-events-none absolute inset-x-0 bottom-0 isolate flex flex-col [&_button]:pointer-events-auto ${
+        theater ? "px-7 pb-10" : `px-5 ${bottomPad}`
+      }`}
     >
-      <div className={`flex flex-col items-center gap-[18px] ${theater ? "" : "flex-1 justify-center pt-12"}`}>
-        {/* Phones: the space above, matching the space below the card (so the
-            stack stays centred), less the gap the stack would add for it. */}
-        {!theater && <div className="-mb-[18px] flex-1" />}
-        <CountdownTitle paused={paused}>Rest</CountdownTitle>
-        {/* The same size as Get ready's. */}
-        <div className="relative size-[200px]">
-          <svg viewBox="0 0 200 200" className="absolute inset-0 size-full" aria-hidden="true">
-            <circle cx="100" cy="100" r="92" fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="8" />
-            <circle
-              cx="100"
-              cy="100"
-              r="92"
-              fill="none"
-              stroke="#A99CFF"
-              strokeWidth="8"
-              strokeLinecap="round"
-              opacity={paused ? 0.45 : 1}
-              strokeDasharray={RING}
-              // Negative, so the ring empties clockwise from 12 o'clock, like a
-              // clock hand sweeping round.
-              strokeDashoffset={-RING * (1 - (totalSeconds > 0 ? secondsLeft / totalSeconds : 0))}
-              transform="rotate(-90 100 100)"
-              style={{ transition: "stroke-dashoffset 250ms linear" }}
-            />
-          </svg>
-          <div
-            role="timer"
-            aria-label={`${shown} seconds of rest left`}
-            // Growing as the digits drop: 1:30 at 58px, 59–10 at 68px (opened up
-            // a little so wide pairs like 44 don't touch), and the last nine
-            // at 96px — Get ready's digit, in the same ring.
-            className={`absolute inset-0 flex items-center justify-center font-semibold tabular-nums ${
-              shown >= 60
-                ? "text-[58px] tracking-[-0.03em]"
-                : shown >= 10
-                  ? "text-[68px] tracking-[0.03em]"
-                  : "text-[96px] tracking-[-0.04em]"
-            }`}
-          >
-            {/* Under a minute, just the seconds (45 … 9 … 1), like Get ready; 1:30 above that. */}
-            {shown >= 60 ? clock(shown) : shown}
-          </div>
-        </div>
-        {!theater && card && <div className="mt-2 w-full px-5">{card}</div>}
-        {/* Phones: the space between the card and the buttons. A tip's bubble
-            sits in its middle, 13px in from the video's edge as on a set; when
-            the space is short of the bubble plus 16px, it keeps 16px over the
-            buttons and spills upward instead (justify-end), over the card. */}
-        {!theater && (
-          <div className="relative -mt-[18px] w-full flex-1">
-            {tip && (
-              <div className="absolute inset-0 flex flex-col items-end justify-end px-[13px]">
-                <div className="flex-1" />
-                <div className="shrink-0">{tip}</div>
-                <div className="min-h-4 flex-1" />
-              </div>
-            )}
-          </div>
+      <BottomShade />
+      <div className="relative flex items-baseline gap-[11px]">
+        {paused && (
+          <span className="absolute bottom-full left-0 mb-2 text-[13px] font-bold uppercase tracking-[0.16em] text-white/75">
+            Paused
+          </span>
         )}
+        {tip && <div className="absolute bottom-0 right-[-7px] -translate-y-full">{tip}</div>}
+        {/* Opened up a little (like the reps are not), so a pair like the 00 in 1:00 doesn't touch. */}
+        <span
+          role="timer"
+          aria-label={`${shown} seconds of rest left`}
+          className="text-[60px] font-semibold leading-none tracking-[0.03em] tabular-nums"
+        >
+          {clock(shown)}
+        </span>
+        <span className="text-2xl font-bold uppercase leading-none tracking-[0.16em]">Rest</span>
       </div>
-      {/* Desktop: as far from the card to the buttons as from the ring to the card (the stack's gap-9). */}
-      <div className={`relative ${theater ? "gap-9" : "gap-4"} ${bottomGroup(theater)}`}>
-        {theater && card}
-        <CountdownControls
-          paused={paused}
-          onPause={onPause}
-          onResume={onResume}
-          goLabel="Continue"
-          onGo={onContinue}
+      {next && (
+        <NextCard
+          label={next.label}
+          name={next.name}
+          detail={next.detail}
+          thumbnail={next.thumbnail}
+          large={theater}
+          className="mt-[18px] w-full"
         />
+      )}
+      <div className="mt-5">
+        <CountdownControls paused={paused} onPause={onPause} onResume={onResume} goLabel="Continue" onGo={onContinue} />
       </div>
     </div>
   );

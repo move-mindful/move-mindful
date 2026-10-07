@@ -124,6 +124,10 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** The get-ready countdown before an exercise starts (see readyMs in core). */
 const GET_READY_MS = 6000;
+// Get ready is switched off for now (Oct 2026): a set starts straight away,
+// and a rest counting down into it (3-2-1 included) is its countdown. `true`
+// brings it back.
+const GET_READY = false;
 
 /** A random (v4) UUID — randomUUID is only there on https pages, so build one otherwise. */
 function newId(): string {
@@ -204,7 +208,7 @@ export function WorkoutPlayer({
       playerReducer({
         steps,
         hasTutorial: (id) => !!workout.exercises[id]?.tutorial,
-        readyMs: GET_READY_MS,
+        readyMs: GET_READY ? GET_READY_MS : 0,
         hasIntro: !!workout.intro,
         hasCooldown: !!workout.cooldown,
         hasOutro: !!workout.outro,
@@ -1081,18 +1085,19 @@ export function WorkoutPlayer({
     // video stays, dimmed.
     let info: ReactNode = null;
     if (step.kind === "rest") {
-      blurred = true;
+      // The next exercise plays clear behind the rest — no blur — but dimmed a
+      // little, so it reads as "not yet" beside a set.
       const t = target;
       const tName = t ? (workout.exercises[t.exerciseId]?.name ?? "Next exercise") : "";
       const tAmount = t ? amountLabel(t.measure, t.amount) : "";
       screen = (
         <>
-          <Dim />
+          <Dim strength={0.4} />
+          <TopShade />
           {bar}
           {zones("Skip the rest")}
           <RestScreen
             secondsLeft={leftMs / 1000}
-            totalSeconds={step.seconds}
             next={
               t
                 ? {
@@ -1107,11 +1112,9 @@ export function WorkoutPlayer({
             onPause={pause}
             onResume={resumePlay}
             onContinue={goOn}
-            tip={!theater && step.tip ? coach() : null}
+            tip={step.tip ? coach(theater) : null}
             theater={theater}
           />
-          {/* Desktop: the tip's photo by the video's corner, as on a set (a bubble's height up from it). */}
-          {theater && step.tip && <div className="pointer-events-none absolute bottom-8 right-8 -translate-y-full">{coach(true)}</div>}
           {/* Phones: Settings (top right) and audio (top left) while the countdown is held, as on the pause screen. */}
           {!theater && state.paused && <CornerSettings onClick={openSettings} />}
           {!theater && state.paused && <CornerAudio muted={muted} onClick={openAudio} />}
