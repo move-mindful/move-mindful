@@ -1,6 +1,6 @@
 import "server-only";
 
-import { VOICE_LEVELS_PER_SECOND, type Side, type TipMap, type WorkoutBlock, type WorkoutMove } from "@move-mindful/core";
+import { VOICE_LEVELS_PER_SECOND, type AudioTip, type Side, type TipMap, type WorkoutBlock, type WorkoutMove } from "@move-mindful/core";
 import { TIP_MAX_SECONDS } from "@/lib/workouts/shared";
 
 // The server's own check on a sequence, whoever wrote it — the builder on
@@ -23,6 +23,28 @@ const TIP_FILE = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\.m4a$/;
 const TIP_LEVELS = new RegExp(`^[0-9a-z]{1,${(TIP_MAX_SECONDS + 10) * VOICE_LEVELS_PER_SECOND}}$`);
 
 /**
+ * One tip as stored or sent, if it's well formed (and, with `folder`, that
+ * workout's own file); undefined otherwise.
+ */
+export function readTip(tip: unknown, folder?: string): AudioTip | undefined {
+  const t = tip as { id?: unknown; seconds?: unknown; start?: unknown; end?: unknown; levels?: unknown } | null;
+  const seconds = Number(t?.seconds);
+  if (typeof t?.id !== "string" || !TIP_FILE.test(t.id) || !Number.isFinite(seconds)) return undefined;
+  if (folder !== undefined && !t.id.startsWith(`${folder}/`)) return undefined;
+  const out: AudioTip = { id: t.id, seconds: Math.min(600, Math.max(0, Math.round(seconds * 10) / 10)) };
+  // The speech within the file, when it's been trimmed.
+  const start = Number(t.start);
+  const end = Number(t.end);
+  if (Number.isFinite(start) && Number.isFinite(end) && start >= 0 && end > start && end <= 600) {
+    out.start = Math.round(start * 100) / 100;
+    out.end = Math.round(end * 100) / 100;
+  }
+  // The voice's loudness through the file, for the player's equalizer bars.
+  if (typeof t.levels === "string" && TIP_LEVELS.test(t.levels)) out.levels = t.levels;
+  return out;
+}
+
+/**
  * Tips as stored or sent: well-formed ones only (and, with `folder`, only
  * that workout's files). Undefined when none are left.
  */
@@ -30,21 +52,8 @@ export function readTips(value: unknown, folder?: string): TipMap | undefined {
   if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
   const out: TipMap = {};
   for (const [key, tip] of Object.entries(value as Record<string, unknown>)) {
-    const t = tip as { id?: unknown; seconds?: unknown } | null;
-    const seconds = Number(t?.seconds);
-    if (!TIP_KEY.test(key) || typeof t?.id !== "string" || !TIP_FILE.test(t.id) || !Number.isFinite(seconds)) continue;
-    if (folder !== undefined && !t.id.startsWith(`${folder}/`)) continue;
-    out[key] = { id: t.id, seconds: Math.min(600, Math.max(0, Math.round(seconds * 10) / 10)) };
-    // The speech within the file, when it's been trimmed.
-    const start = Number((tip as { start?: unknown }).start);
-    const end = Number((tip as { end?: unknown }).end);
-    if (Number.isFinite(start) && Number.isFinite(end) && start >= 0 && end > start && end <= 600) {
-      out[key].start = Math.round(start * 100) / 100;
-      out[key].end = Math.round(end * 100) / 100;
-    }
-    // The voice's loudness through the file, for the player's equalizer bars.
-    const levels = (tip as { levels?: unknown }).levels;
-    if (typeof levels === "string" && TIP_LEVELS.test(levels)) out[key].levels = levels;
+    const read = TIP_KEY.test(key) ? readTip(tip, folder) : undefined;
+    if (read) out[key] = read;
   }
   return Object.keys(out).length ? out : undefined;
 }

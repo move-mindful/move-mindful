@@ -109,6 +109,7 @@ async function assemble(workout: AdminWorkout, instructor: PlayerWorkout["instru
     warmup: single(warmupId, "warmup"),
     cooldown: single(cooldownId, "cooldown"),
     outro: toClip(slotFor(workout.videos, "outro").current),
+    rundownTip: workout.rundownTip,
     exercises,
     blocks: playableBlocks(workout.blocks, new Set(Object.keys(exercises))),
     equipment: [...equipment],

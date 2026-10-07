@@ -1,7 +1,7 @@
 // Workout types shared by the admin server code and the builder. No server-only
 // imports. The sequence model and estimate live in @move-mindful/core.
 
-import type { EstimateExercise, WorkoutBlock } from "@move-mindful/core";
+import type { AudioTip, EstimateExercise, TipSlot, WorkoutBlock } from "@move-mindful/core";
 import type { ExerciseKind, ExerciseVideo } from "@/lib/exercises/shared";
 
 // ── Audio tips ────────────────────────────────────────
@@ -16,6 +16,21 @@ export const TIP_MAX_SECONDS = 60;
 
 /** How far into its set (once the exercise starts, after Get ready) or rest a tip begins. */
 export const TIP_DELAY_SECONDS = { set: 3, rest: 1 } as const;
+
+/**
+ * The workout overview (the "rundown", after the intro): each exercise's loop
+ * shows for `secondsEach`, and the section runs `afterTip` seconds past the
+ * end of its tip before the first exercise.
+ */
+export const RUNDOWN = { secondsEach: 5, afterTip: 3 } as const;
+
+/** The builder's Audio tips view gives the workout overview's tip this slot; it's kept on the workout, not a block. */
+export const RUNDOWN_TIP_SLOT: TipSlot = { block: -1, move: null, key: "rundown" };
+
+/** How long a tip plays: just the speech when it's been trimmed. */
+export function tipPlaySeconds(tip: AudioTip): number {
+  return (tip.end ?? tip.seconds) - (tip.start ?? 0);
+}
 
 /** How loud tips play, 0–1 of the recording's own level (was full; turned down 10% on 2026-10-02). */
 export const TIP_VOLUME = 0.9;
@@ -78,6 +93,8 @@ export interface AdminWorkout {
   coverImageUrl: string | null;
   publishedAt: string | null;
   blocks: WorkoutBlock[];
+  /** The workout overview's tip (022_workout_overview_tip.sql): the section plays only when there is one. */
+  rundownTip: AudioTip | null;
   /** Its intro and outro clips, every row (see slotFor). */
   videos: WorkoutVideo[];
 }
@@ -93,6 +110,7 @@ export interface WorkoutInput {
   warmupExerciseId: string | null;
   cooldownExerciseId: string | null;
   blocks: WorkoutBlock[];
+  rundownTip?: AudioTip | null;
 }
 
 /** A workout's member ratings (017_workout_ratings.sql): the average, how many, and how many of each (index 0 = 1 star). */

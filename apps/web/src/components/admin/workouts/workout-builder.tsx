@@ -10,6 +10,7 @@ import {
   keepStepTips,
   withTip,
   workoutSteps,
+  type AudioTip,
   type EstimateExercise,
   type Measure,
   type Side,
@@ -32,6 +33,7 @@ import {
   EMPTY_CRITERIA,
   LEVELS,
   publishProblems,
+  RUNDOWN_TIP_SLOT,
   type AdminWorkout,
   type CatalogExercise,
   type GenerateCriteria,
@@ -154,6 +156,8 @@ export function WorkoutBuilder({
   // A new workout, once saved here (a video upload saves it first): later saves update it.
   const createdId = useRef<string | null>(null);
   const [blocks, setBlocks] = useState<KBlock[]>(() => withKeys(workout?.blocks ?? []));
+  // The workout overview's tip, recorded in the Audio tips view (it's the workout's, not a block's).
+  const [rundownTip, setRundownTip] = useState<AudioTip | null>(workout?.rundownTip ?? null);
   // The sequence's two views: editing it, or recording its audio tips.
   const [view, setView] = useState<"edit" | "tips">("edit");
   // Tips recorded or removed since the last save (a recording is only kept once saved).
@@ -238,6 +242,7 @@ export function WorkoutBuilder({
       cooldownExerciseId: cooldownId,
       // Tips whose set, side or rest has gone (fewer sets, say) aren't saved.
       blocks: keepStepTips(plain, workoutSteps(plain, estimates)),
+      rundownTip,
     });
     if (res.id && !workout) createdId.current = res.id;
     if (res.error) setError(res.error);
@@ -574,12 +579,14 @@ export function WorkoutBuilder({
             {view === "tips" ? (
               <TipsView
                 blocks={plain}
+                rundownTip={rundownTip}
                 estimates={estimates}
                 byId={byId}
                 instructorName={instructors.find((i) => i.id === instructorId)?.name ?? null}
                 ensureSaved={ensureSaved}
                 onTip={(slot, tip) => {
-                  setBlocks((prev) => withTip(prev, slot, tip));
+                  if (slot.block === RUNDOWN_TIP_SLOT.block) setRundownTip(tip);
+                  else setBlocks((prev) => withTip(prev, slot, tip));
                   setTipChanges((n) => n + 1);
                 }}
                 unsaved={tipChanges > 0}

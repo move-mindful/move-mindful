@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { aboutMinutes, type WorkoutStep } from "@move-mindful/core";
-import { equipmentPills, levelLabel, type PlayerClip, type PlayerWorkout } from "@/lib/workouts/player";
+import { equipmentPills, exerciseLineup, levelLabel, type PlayerWorkout } from "@/lib/workouts/player";
 import { DoneLabel } from "./done-label";
 import { ArrowRight, Check, ChevronLeft, EQUIPMENT_ICONS, RestartWorkout } from "./icons";
 import { Switch } from "./player-screens";
@@ -46,19 +46,8 @@ export function WorkoutPreview({
 }) {
   const level = levelLabel(workout.level);
   const pills = equipmentPills(workout);
-  const clips = useMemo(() => {
-    const seen = new Set<string>();
-    const result: PlayerClip[] = [];
-    for (const step of steps) {
-      if (step.kind !== "set" || seen.has(step.exerciseId)) continue;
-      seen.add(step.exerciseId);
-      const loops = workout.exercises[step.exerciseId]?.loops;
-      // One clip per exercise, even across sets, rounds and left/right sides.
-      const clip = (step.side ? loops?.[step.side] : loops?.main) ?? loops?.main ?? loops?.right ?? loops?.left;
-      if (clip) result.push(clip);
-    }
-    return result;
-  }, [steps, workout.exercises]);
+  // One clip per exercise, even across sets, rounds and left/right sides.
+  const clips = useMemo(() => exerciseLineup(steps, workout.exercises).map((x) => x.clip), [steps, workout.exercises]);
   const cover = workout.coverImageUrl ?? clips[0]?.poster ?? null;
   const canStart = steps.length > 0;
 

@@ -2,7 +2,7 @@
 // (lib/workouts/member.ts) and handed to the client player. No server-only
 // imports. The step model and state machine live in @move-mindful/core.
 
-import type { EstimateExercise, Measure, Side, WorkoutBlock } from "@move-mindful/core";
+import type { AudioTip, EstimateExercise, Measure, Side, WorkoutBlock, WorkoutStep } from "@move-mindful/core";
 import { DUMBBELL_LEVELS, EQUIPMENT_OPTIONS } from "@/lib/exercises/shared";
 import { LEVELS, type WorkoutLevel } from "@/lib/workouts/shared";
 
@@ -43,6 +43,8 @@ export interface PlayerWorkout {
   cooldown: { name: string; clip: PlayerClip } | null;
   /** The workout's own video after the exercises (and the cool-down), before the summary. */
   outro: PlayerClip | null;
+  /** The workout overview's tip, after the intro: the section plays only when there is one. */
+  rundownTip: AudioTip | null;
   exercises: Record<string, PlayerExercise>;
   blocks: WorkoutBlock[];
   /** Everything the workout (warm-up and cool-down included) uses. */
@@ -67,6 +69,27 @@ export interface WorkoutCard {
 export function loopFor(exercise: PlayerExercise | undefined, side: Side | null): PlayerClip | null {
   if (!exercise) return null;
   return (side ? exercise.loops[side] : exercise.loops.main) ?? null;
+}
+
+/**
+ * Each exercise once, in the order the workout first meets it, with one loop
+ * clip — its first side's — however many sets, rounds and sides it has. The
+ * preview's montage and the workout overview play these.
+ */
+export function exerciseLineup(
+  steps: WorkoutStep[],
+  exercises: Record<string, PlayerExercise>,
+): Array<{ exerciseId: string; clip: PlayerClip }> {
+  const seen = new Set<string>();
+  const result: Array<{ exerciseId: string; clip: PlayerClip }> = [];
+  for (const step of steps) {
+    if (step.kind !== "set" || seen.has(step.exerciseId)) continue;
+    seen.add(step.exerciseId);
+    const loops = exercises[step.exerciseId]?.loops;
+    const clip = (step.side ? loops?.[step.side] : loops?.main) ?? loops?.main ?? loops?.right ?? loops?.left;
+    if (clip) result.push({ exerciseId: step.exerciseId, clip });
+  }
+  return result;
 }
 
 /** 75 → "1:15". */

@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { mux } from "@/lib/mux/client";
 import { requestOrigin } from "@/lib/mux/request-origin";
 import { EXERCISE_STATIC_RENDITIONS, WORKOUT_CLIPS, deleteMuxVideo, syncPendingClips } from "@/lib/exercises/server";
-import { cleanBlocks, type ExerciseInfo } from "@/lib/workouts/clean";
+import { cleanBlocks, readTip, type ExerciseInfo } from "@/lib/workouts/clean";
 import { generateWorkoutDraft, setGeneratorInstructions } from "@/lib/workouts/generate";
 import { getCatalog, getWorkout, getWorkoutVideoRows, toWorkoutVideo } from "@/lib/workouts/server";
 import {
@@ -64,6 +64,12 @@ async function sideRestsSave(supabase: AdminClient): Promise<boolean> {
   return error?.code !== "42703";
 }
 
+// Before 022_workout_overview_tip.sql has run, PostgREST rejects the unknown
+// rundown_tip column (PGRST204); a workout without that tip still saves.
+function missingRundownColumn(error: { code?: string; message?: string } | null): boolean {
+  return !!error && error.code === "PGRST204" && !!error.message?.includes("rundown_tip");
+}
+
 /** Saving "All levels" before 020_workout_level_all.sql: the old level check turns it away. */
 function missingAllLevels(error: { code?: string; message?: string } | null): boolean {
   return !!error && error.code === "23514" && !!error.message?.includes("workouts_level_check");
@@ -118,12 +124,17 @@ export async function saveWorkout(input: WorkoutInput): Promise<{ id?: string; e
   const cooldown =
     input.cooldownExerciseId && info.get(input.cooldownExerciseId)?.kind === "cooldown" ? input.cooldownExerciseId : null;
 
+  // The workout overview's tip: only ever this workout's own recording (a new
+  // workout has none yet — recording one saves it first).
+  const rundownTip = input.id ? (readTip(input.rundownTip, input.id) ?? null) : null;
+
   const fields: Record<string, unknown> = {
     title,
     description: (input.description ?? "").trim().slice(0, 2000),
     level: LEVELS.some((l) => l.id === input.level) ? input.level : null,
     instructor_id: input.instructorId || null,
     cooldown_exercise_id: cooldown,
+    rundown_tip: rundownTip,
     updated_at: new Date().toISOString(),
   };
 
@@ -132,6 +143,11 @@ export async function saveWorkout(input: WorkoutInput): Promise<{ id?: string; e
     // No cool-down can be picked before the migration (none exist yet), so this is a plain save.
     if (cooldown) return { error: "The cool-down can’t be saved until migration 018_intro_outro_cooldown.sql has run." };
     delete fields.cooldown_exercise_id;
+    written = await writeWorkout(supabase, input.id, fields);
+  }
+  if (missingRundownColumn(written.error)) {
+    if (rundownTip) return { error: "The workout overview’s tip can’t be saved until migration 022_workout_overview_tip.sql has run." };
+    delete fields.rundown_tip;
     written = await writeWorkout(supabase, input.id, fields);
   }
   if (missingAllLevels(written.error) && fields.level === "all_levels") {
@@ -147,8 +163,9 @@ export async function saveWorkout(input: WorkoutInput): Promise<{ id?: string; e
     p_blocks: toSequencePayload(blocks),
   });
   if (error) return { id, error: `The sequence didn't save: ${error.message}` };
-  // Recordings the saved sequence no longer uses (redone, removed, or never saved) go.
-  await removeTipFiles(supabase, id, new Set(allTips(blocks).map((t) => t.id)));
+  // Recordings the saved sequence (and the workout overview) no longer use — redone, removed, or never saved — go.
+  const kept = [...allTips(blocks), ...(rundownTip ? [rundownTip] : [])];
+  await removeTipFiles(supabase, id, new Set(kept.map((t) => t.id)));
 
   revalidateWorkouts(id);
   return { id };

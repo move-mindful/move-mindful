@@ -8,7 +8,7 @@ import {
   type WorkoutMove,
 } from "@move-mindful/core";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { readTips } from "@/lib/workouts/clean";
+import { readTip, readTips } from "@/lib/workouts/clean";
 import { WORKOUT_CLIPS, getExercises, syncPendingClips } from "@/lib/exercises/server";
 import { getRatingSummaries } from "@/lib/member/ratings-server";
 import { isSingleVideo, paceSeconds, rolesFor, slotFor, type AdminExercise, type VideoRole, type VideoStatus } from "@/lib/exercises/shared";
@@ -53,6 +53,8 @@ export interface WorkoutRow {
   /** Missing until 018_intro_outro_cooldown.sql has run. */
   cooldown_exercise_id?: string | null;
   cover_image_url?: string | null;
+  /** The workout overview's tip — missing until 022_workout_overview_tip.sql has run. */
+  rundown_tip?: unknown;
   published_at: string | null;
   updated_at: string;
 }
@@ -174,6 +176,7 @@ export function toWorkout(w: WorkoutRow, rows: BlockRow[], videos: WorkoutVideoR
     coverImageUrl: w.cover_image_url ?? null,
     publishedAt: w.published_at,
     blocks: toBlocks(rows),
+    rundownTip: readTip(w.rundown_tip) ?? null,
     videos: videos.map(toWorkoutVideo),
   };
 }

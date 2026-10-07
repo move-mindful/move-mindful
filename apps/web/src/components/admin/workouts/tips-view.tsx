@@ -12,12 +12,13 @@ import {
 } from "@move-mindful/core";
 import { uploadWorkoutTip } from "@/app/actions/workouts";
 import { formatDuration } from "@/lib/exercises/shared";
-import { TIP_DELAY_SECONDS, TIP_MAX_SECONDS, tipUrl, type CatalogExercise } from "@/lib/workouts/shared";
+import { RUNDOWN, RUNDOWN_TIP_SLOT, TIP_DELAY_SECONDS, TIP_MAX_SECONDS, tipUrl, type CatalogExercise } from "@/lib/workouts/shared";
 import { readRecording, withReading } from "@/lib/workouts/trim";
 
-// The builder's "Audio tips" view: the workout as members walk it — every set
-// (each side of a sided one) and every rest, the ones the builder adds between
-// sets and rounds included — each with a tip to record from the microphone,
+// The builder's "Audio tips" view: the workout as members walk it — the
+// workout overview after the intro, then every set (each side of a sided one)
+// and every rest, the ones the builder adds between sets and rounds included —
+// each with a tip to record from the microphone,
 // play back, redo or remove. Recordings upload straight away; the sequence
 // points at them once the workout is saved (see uploadWorkoutTip). The dead
 // air before and after the speech is trimmed off automatically — the file
@@ -33,11 +34,25 @@ const slotId = (s: TipSlot) => `${s.block}/${s.move ?? "-"}/${s.key}`;
 const unread = (tip: AudioTip) => tip.end === undefined || tip.levels === undefined;
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
+/** A row: where its tip goes, the tip, and the seconds it has before its set or rest ends. */
+type Entry = { tipSlot: TipSlot; tip: AudioTip | null; room: number };
+
+function entry(s: WorkoutStep): Entry {
+  return { tipSlot: s.tipSlot, tip: s.tip, room: room(s) };
+}
+
+/** Seconds between the tip starting and its set or rest ending (for a rep set, the reps at the clip's pace). */
+function room(s: WorkoutStep): number {
+  if (s.kind === "rest") return s.seconds - TIP_DELAY_SECONDS.rest;
+  return (s.measure === "time" ? s.amount : s.workSeconds) - TIP_DELAY_SECONDS.set;
+}
+
 /** A slot being recorded (`startedAt` once the recorder has started, on the page's clock) or saved. */
 type Busy = { slot: string; phase: "recording" | "saving"; startedAt: number | null } | null;
 
 export function TipsView({
   blocks,
+  rundownTip,
   estimates,
   byId,
   instructorName,
@@ -47,6 +62,8 @@ export function TipsView({
   onSave,
 }: {
   blocks: WorkoutBlock[];
+  /** The workout overview's tip (in RUNDOWN_TIP_SLOT): kept on the workout, not a block. */
+  rundownTip: AudioTip | null;
   estimates: Record<string, EstimateExercise>;
   byId: Map<string, CatalogExercise>;
   /** The workout's instructor, for the explanation at the top. */
@@ -71,12 +88,14 @@ export function TipsView({
 
   // Tips recorded before trimming or voice levels existed: read them once, as
   // the view opens, and keep what's found — the Save bar then asks for a save.
-  const latest = useRef({ steps, onTip });
+  const overview: Entry = { tipSlot: RUNDOWN_TIP_SLOT, tip: rundownTip, room: Infinity };
+  const entries: Entry[] = [overview, ...steps.map(entry)];
+  const latest = useRef({ entries, onTip });
   useEffect(() => {
-    latest.current = { steps, onTip };
+    latest.current = { entries, onTip };
   });
   const tried = useRef(new Set<string>());
-  const unreadIds = steps.flatMap((s) => (s.tip && unread(s.tip) ? [s.tip.id] : [])).join(",");
+  const unreadIds = entries.flatMap((e) => (e.tip && unread(e.tip) ? [e.tip.id] : [])).join(",");
   useEffect(() => {
     for (const id of unreadIds ? unreadIds.split(",") : []) {
       if (tried.current.has(id)) continue;
@@ -86,8 +105,8 @@ export function TipsView({
         .then(readRecording)
         .then((reading) => {
           // Still there, still unread (nothing moved meanwhile)?
-          const step = latest.current.steps.find((s) => s.tip?.id === id);
-          if (reading && step?.tip && unread(step.tip)) latest.current.onTip(step.tipSlot, withReading(step.tip, reading));
+          const entry = latest.current.entries.find((e) => e.tip?.id === id);
+          if (reading && entry?.tip && unread(entry.tip)) latest.current.onTip(entry.tipSlot, withReading(entry.tip, reading));
         })
         .catch(() => {
           // Couldn't fetch or decode it: it plays as it did.
@@ -238,16 +257,10 @@ export function TipsView({
     return [s.rounds > 1 ? `Set ${s.round}` : null, side].filter(Boolean).join(" · ") || "Set";
   }
 
-  /** Seconds between the tip starting and its set or rest ending (for a rep set, the reps at the clip's pace). */
-  function room(s: WorkoutStep): number {
-    if (s.kind === "rest") return s.seconds - TIP_DELAY_SECONDS.rest;
-    return (s.measure === "time" ? s.amount : s.workSeconds) - TIP_DELAY_SECONDS.set;
-  }
-
-  function row(s: WorkoutStep, label: string, muted = false) {
+  function row(s: Entry, label: string, muted = false) {
     const id = slotId(s.tipSlot);
     const mine = busy?.slot === id ? busy : null;
-    const over = s.tip ? Math.ceil(s.tip.seconds - room(s)) : 0;
+    const over = s.tip ? Math.ceil(s.tip.seconds - s.room) : 0;
     const btn = "flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition disabled:opacity-40";
     return (
       <li key={id} className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 py-1.5">
@@ -314,6 +327,18 @@ export function TipsView({
         set or rest ends, and doesn’t play with instructor audio off. The silence before and after each recording is
         trimmed off. Save the workout to keep new recordings.
       </p>
+      {/* The workout overview: after the intro, the exercise list over each one's loop while this plays. */}
+      <div className="rounded-xl border border-zinc-200 px-3 pt-2.5">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="truncate font-semibold">Workout overview</span>
+          <span className="shrink-0 text-xs text-zinc-500">After the intro</span>
+        </div>
+        <p className="mt-0.5 text-xs text-zinc-500">
+          Plays straight away over the exercise list; the section lasts as long as it, plus {RUNDOWN.afterTip} s. No
+          tip, no overview.
+        </p>
+        <ul>{row(overview, "Talk members through the workout")}</ul>
+      </div>
       {unsaved && (
         <div className="sticky top-2 z-10 flex items-center justify-between gap-3 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm text-violet-950">
           <span>Tips changed — save the workout to keep them.</span>
@@ -343,7 +368,7 @@ export function TipsView({
             if (b.kind === "rest") {
               return (
                 <li key={g.block} className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-3">
-                  <ul>{row(g.steps[0], labelFor(g.steps[0]))}</ul>
+                  <ul>{row(entry(g.steps[0]), labelFor(g.steps[0]))}</ul>
                 </li>
               );
             }
@@ -361,7 +386,7 @@ export function TipsView({
                   </span>
                 </div>
                 <ul className="divide-y divide-zinc-100">
-                  {g.steps.map((s) => row(s, labelFor(s), s.kind === "rest"))}
+                  {g.steps.map((s) => row(entry(s), labelFor(s), s.kind === "rest"))}
                 </ul>
               </li>
             );
