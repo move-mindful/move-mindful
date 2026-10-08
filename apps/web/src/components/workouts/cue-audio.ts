@@ -9,16 +9,16 @@ import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react"
 
 /**
  * The countdown over the last seconds of a rest or Get ready — a sound
- * effect (the Audio card's switch): three short beeps a second apart, the
- * first 0.03 s into the file, so started `seconds` before the end they land
- * just as the timer shows 3, 2 and 1 (the last done most of a second before
- * the end). A shorter one gets just its end.
+ * effect (the Audio card's switch): three counts a second apart, each
+ * starting 0.1 s into its second, so started with `seconds` left they land on
+ * 3, 2, 1 as the timer shows them and finish as it ends. A shorter one gets
+ * just its end.
  */
 export const COUNTDOWN = {
-  /** As supplied (Oct 8, 2026; 2.18 s) — about as loud as the tones before it. iPhones ignore an element's volume, so the level is the file's. */
+  /** At 90% of the level supplied (the file itself: iPhones ignore an element's volume). */
   src: "/audio/countdown.m4a",
-  /** How long before the end (seconds) it starts. */
-  seconds: 3,
+  /** The file's length. */
+  seconds: 3.03,
   /** Start it this much earlier (seconds) if the counts land late on a phone. */
   lead: 0,
 };

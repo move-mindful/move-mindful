@@ -502,7 +502,7 @@ export function WorkoutPlayer({
 
   // The countdown over the last seconds of a rest, and of Get ready: a sound
   // effect, off with the Audio card's Sound effects (or Mute all). Timed to
-  // land on their last 3, 2, 1. (Both start a new take, so its clock starts with them.)
+  // end as they do. (Both start a new take, so its clock starts with them.)
   const countdownOver =
     state.phase !== "workout" || !step
       ? null
