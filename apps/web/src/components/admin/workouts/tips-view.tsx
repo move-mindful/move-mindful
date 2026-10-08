@@ -96,7 +96,8 @@ export function TipsView({
   // follows those cues, as it will for members.
   const overviewId = slotId(RUNDOWN_TIP_SLOT);
   const firstExercise = (steps.find((s) => s.kind === "set") as SetStep | undefined)?.exerciseId ?? null;
-  const [preview, setPreview] = useState<"record" | "play" | null>(null);
+  // "ready": open to review the sequence before recording; "record": recording; "play": playing back.
+  const [preview, setPreview] = useState<"ready" | "record" | "play" | null>(null);
   const [cueNow, setCueNow] = useState<string | null>(null);
   const [playTime, setPlayTime] = useState(0);
   const cues = useRef<TipCue[]>([]);
@@ -233,7 +234,11 @@ export function TipsView({
       // Left the view, or a click straight on and off: nothing to keep.
       if (current.discard || seconds < 0.5) {
         setBusy(null);
-        if (overviewTip) setPreview(null);
+        // The overview's: back to reviewing it, ready to record again.
+        if (overviewTip) {
+          setCueNow(firstExercise);
+          setPreview("ready");
+        }
         return;
       }
       setBusy({ slot: id, phase: "saving", startedAt });
@@ -271,6 +276,21 @@ export function TipsView({
   function stopRecording() {
     const rec = recorder.current?.rec;
     if (rec?.state === "recording") rec.stop();
+  }
+
+  /**
+   * Record (or Redo) on a row. The workout overview's opens the overview
+   * first, to review the sequence; its own Record button starts the take.
+   */
+  function recordFor(slot: TipSlot) {
+    if (slotId(slot) !== overviewId) {
+      record(slot);
+      return;
+    }
+    stopPlayback();
+    setError(null);
+    setCueNow(firstExercise);
+    setPreview("ready");
   }
 
   /** Recording the overview's tip, a take thrown away: nothing's saved. */
@@ -344,7 +364,7 @@ export function TipsView({
             <button
               type="button"
               disabled={!!busy}
-              onClick={() => record(s.tipSlot)}
+              onClick={() => recordFor(s.tipSlot)}
               className={`${btn} border-transparent text-zinc-600 hover:bg-zinc-100`}
             >
               Redo
@@ -366,7 +386,7 @@ export function TipsView({
           <button
             type="button"
             disabled={!!busy}
-            onClick={() => record(s.tipSlot)}
+            onClick={() => recordFor(s.tipSlot)}
             className={`${btn} border-zinc-300 text-zinc-700 hover:border-red-300 hover:bg-red-50 hover:text-red-700`}
           >
             <span className="size-2 rounded-full bg-red-500" />
@@ -393,8 +413,9 @@ export function TipsView({
         </div>
         <p className="mt-0.5 text-xs text-zinc-500">
           Plays straight away over the exercise list; the section lasts as long as it, plus {RUNDOWN.afterTip} s. No
-          tip, no overview. Recording opens the overview: tap each exercise as you start talking about it, and members’
-          overview follows along (▶ plays it back that way). Mistimed? Redo it.
+          tip, no overview. Record opens the overview to review the sequence; its own Record starts the take — tap each
+          exercise as you start talking about it, and members’ overview follows along (▶ plays it back that way).
+          Mistimed? Redo it.
         </p>
         <ul>{row(overview, "Talk members through the workout")}</ul>
       </div>
@@ -452,44 +473,69 @@ export function TipsView({
           })}
         </ol>
       )}
-      {preview === "record" && (
+      {(preview === "ready" || preview === "record") && (
         <OverviewPreview
           blocks={blocks}
           byId={byId}
           estimates={estimates}
           exerciseId={cueNow}
-          onPick={busy?.phase === "recording" ? cue : undefined}
+          // Reviewing, a tap just shows that exercise; recording, it's a cue.
+          onPick={preview === "ready" ? (exerciseId) => setCueNow(exerciseId) : busy?.phase === "recording" ? cue : undefined}
           caption={
-            busy?.phase === "saving"
-              ? "Saving the recording…"
-              : "Recording — tap each exercise as you start talking about it."
+            error ??
+            (preview === "ready"
+              ? "Review the sequence — tap an exercise to see it. Then Record, and tap each exercise as you start talking about it."
+              : busy?.phase === "saving"
+                ? "Saving the recording…"
+                : "Recording — tap each exercise as you start talking about it.")
           }
           controls={
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={cancelRecording}
-                disabled={busy?.phase !== "recording"}
-                className="flex h-[58px] flex-1 items-center justify-center rounded-full bg-white/[0.14] text-[17px] font-semibold disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={stopRecording}
-                disabled={busy?.phase !== "recording" || busy.startedAt === null}
-                className="flex h-[58px] flex-[1.4] items-center justify-center gap-2.5 rounded-full bg-red-600 text-[17px] font-semibold tabular-nums disabled:opacity-60"
-              >
-                {busy?.phase === "saving" ? (
-                  "Saving…"
-                ) : (
-                  <>
-                    <span className="size-2.5 animate-pulse rounded-sm bg-white" />
-                    Stop · {formatDuration(busy?.startedAt == null ? 0 : (now - busy.startedAt) / 1000)}
-                  </>
-                )}
-              </button>
-            </div>
+            preview === "ready" ? (
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPreview(null)}
+                  className="flex h-[58px] flex-1 items-center justify-center rounded-full bg-white/[0.14] text-[17px] font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => record(RUNDOWN_TIP_SLOT)}
+                  disabled={!!busy}
+                  className="flex h-[58px] flex-[1.4] items-center justify-center gap-2.5 rounded-full bg-red-600 text-[17px] font-semibold disabled:opacity-60"
+                >
+                  <span className="size-2.5 rounded-full bg-white" />
+                  Record
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={cancelRecording}
+                  disabled={busy?.phase !== "recording"}
+                  className="flex h-[58px] flex-1 items-center justify-center rounded-full bg-white/[0.14] text-[17px] font-semibold disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={stopRecording}
+                  disabled={busy?.phase !== "recording" || busy.startedAt === null}
+                  className="flex h-[58px] flex-[1.4] items-center justify-center gap-2.5 rounded-full bg-red-600 text-[17px] font-semibold tabular-nums disabled:opacity-60"
+                >
+                  {busy?.phase === "saving" ? (
+                    "Saving…"
+                  ) : (
+                    <>
+                      <span className="size-2.5 animate-pulse rounded-sm bg-white" />
+                      Stop · {formatDuration(busy?.startedAt == null ? 0 : (now - busy.startedAt) / 1000)}
+                    </>
+                  )}
+                </button>
+              </div>
+            )
           }
         />
       )}
