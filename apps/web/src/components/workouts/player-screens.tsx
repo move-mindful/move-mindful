@@ -35,6 +35,7 @@ import {
   Muted,
   WatchTutorial,
 } from "./icons";
+import { UP_NEXT } from "./cue-audio";
 import { FirstWorkoutBadge } from "./first-workout-badge";
 import { Marquee } from "./marquee";
 import { NextCard } from "./up-next-card";
@@ -861,6 +862,11 @@ export function RestScreen({
   theater?: boolean;
 }) {
   const shown = Math.ceil(secondsLeft);
+  // With the Up next chime (UP_NEXT.before, 10 s out), REST slides up and away
+  // and a purple GET READY slides up in its place. A rest that short from the
+  // start just says GET READY.
+  const ready = secondsLeft <= UP_NEXT.before;
+  const label = "col-start-1 row-start-1 text-2xl font-bold uppercase leading-none tracking-[0.16em] transition-[opacity,translate] duration-300 ease-out";
   return (
     <div
       className={`pointer-events-none absolute inset-x-0 bottom-0 isolate flex flex-col [&_button]:pointer-events-auto ${
@@ -883,7 +889,15 @@ export function RestScreen({
         >
           {clock(shown)}
         </span>
-        <span className="text-2xl font-bold uppercase leading-none tracking-[0.16em]">Rest</span>
+        {/* The two share one spot (a one-cell grid), so the swap moves nothing else. */}
+        <span className="inline-grid">
+          <span aria-hidden={ready || undefined} className={`${label} ${ready ? "-translate-y-3 opacity-0" : ""}`}>
+            Rest
+          </span>
+          <span aria-hidden={!ready || undefined} className={`${label} text-[#A99CFF] ${ready ? "" : "translate-y-3 opacity-0"}`}>
+            Get ready
+          </span>
+        </span>
       </div>
       {next && (
         <NextCard
