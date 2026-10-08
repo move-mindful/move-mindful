@@ -46,6 +46,8 @@ export const UP_NEXT = {
  * countdown starts. Not on rests.
  */
 export const EXERCISE_START = {
+  /** Switched off for now (Oct 2026, the owner's call); `true` brings it back. */
+  on: false,
   /** As supplied (Oct 2026): a 0.21 s blip, sound from its very start. */
   src: "/audio/exercise-start.mp3",
 };

@@ -511,9 +511,9 @@ export function WorkoutPlayer({
   // The start sound as that lifts — after the announcement, as the set's
   // countdown starts (exerciseLeadMs). A sound effect; exercises only.
   const startSound = useCueAudio({
-    clip: beginSet ? { url: EXERCISE_START.src, start: 0, end: null } : null,
+    clip: EXERCISE_START.on && beginSet ? { url: EXERCISE_START.src, start: 0, end: null } : null,
     take: state.take,
-    running: running && !!beginSet,
+    running: running && EXERCISE_START.on && !!beginSet,
     delayMs: beginMs,
     muted: muted || !prefs.soundEffects,
   });
