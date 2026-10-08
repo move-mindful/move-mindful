@@ -148,3 +148,12 @@ html[data-player-up] body {
     opacity: 0;
   }
 }
+
+/* A page that scrolls without showing a scroll bar — the workout's Begin page
+   (data-no-page-scrollbar on its root), like the player's own lists. */
+html:has([data-no-page-scrollbar]) {
+  scrollbar-width: none;
+}
+html:has([data-no-page-scrollbar])::-webkit-scrollbar {
+  display: none;
+}

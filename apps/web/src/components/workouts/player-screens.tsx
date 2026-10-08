@@ -2243,7 +2243,10 @@ export function SettingsSheet({
       </div>
       <div
         data-sheet-scroll
-        className={`flex min-h-0 flex-col gap-[18px] overflow-y-auto overscroll-contain ${variant === "side" ? "px-7" : "px-5"}`}
+        // Scrolls without showing a scroll bar, like the overviews' lists.
+        className={`flex min-h-0 flex-col gap-[18px] overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+          variant === "side" ? "px-7" : "px-5"
+        }`}
       >
         {/* Sound has its own card now: the audio button's. */}
         <section aria-labelledby="settings-exercises" className="flex flex-col gap-3">

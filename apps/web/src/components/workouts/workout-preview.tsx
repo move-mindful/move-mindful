@@ -67,7 +67,8 @@ export function WorkoutPreview({
     // The page is a step lighter than the player's ink (#14142B), which the
     // pinned Begin bar keeps so it matches Safari's toolbar and reads as its
     // own panel over the list.
-    <div className="relative min-h-dvh bg-[#1F1F3E] text-white">
+    // data-no-page-scrollbar: the page scrolls without showing a scroll bar (globals.css).
+    <div data-no-page-scrollbar className="relative min-h-dvh bg-[#1F1F3E] text-white">
       {/* Back sits at the top of the page and scrolls away with it (above the
           pinned cover); on desktop it stays put over the fixed left half. */}
       <Link
