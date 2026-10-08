@@ -3,6 +3,8 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { VOICE, type VoiceLine } from "@/lib/workouts/announcements";
+import { joinMp3, mp3Audio } from "@/lib/workouts/mp3";
+import { NEXT_UP_CLIP } from "@/lib/workouts/next-up-clip";
 
 // The voice announcements' recordings (see announcements.ts): made with
 // ElevenLabs text to speech, stored in the public `voice-lines` bucket and
@@ -23,9 +25,21 @@ const MOST_PER_SAVE = 150;
  */
 const TIME_BUDGET = 40_000;
 
-/** The line's name: its file's, and its row's key. The voice and model are in it, so a new one makes new files. */
+/**
+ * A rest's line naming what's next — "Starting rest, 30 seconds. Next up,
+ * bicep curl, 10 reps." — is made in two parts round the owner's own "Next
+ * up" (NEXT_UP_CLIP): made whole, ElevenLabs said it too animatedly.
+ */
+const REST_WITH_NEXT = /^(Starting rest, [^.]+\.) Next up, (.+)$/;
+const NEXT_UP = mp3Audio(NEXT_UP_CLIP.mp3);
+
+/**
+ * The line's name: its file's, and its row's key. The voice and model are in
+ * it, and for a spliced line the Next up clip's version, so a new one makes new files.
+ */
 function lineKey(text: string): string {
-  return createHash("sha256").update(`${VOICE.voiceId}\n${VOICE.modelId}\n${text}`).digest("hex").slice(0, 40);
+  const recipe = REST_WITH_NEXT.test(text) ? `\n${NEXT_UP_CLIP.version}` : "";
+  return createHash("sha256").update(`${VOICE.voiceId}\n${VOICE.modelId}\n${text}${recipe}`).digest("hex").slice(0, 40);
 }
 
 function lineUrl(key: string): string {
@@ -78,6 +92,35 @@ async function speak(text: string, apiKey: string): Promise<{ audio: Buffer; sec
 }
 
 /**
+ * A line's recording, made but not stored: as ElevenLabs says it — or a rest's
+ * naming what's next, its two parts said one after the other (the plan takes
+ * three requests at once, which the workers use) and joined round the Next up
+ * clip. `seconds` is where the speech ends, the last part's end counted from
+ * the joined file's start.
+ */
+export async function voiceLineAudio(
+  text: string,
+  apiKey: string,
+): Promise<{ audio: Buffer; seconds: number; characters: number }> {
+  const parts = text.match(REST_WITH_NEXT);
+  if (!parts) return speak(text, apiKey);
+  const rest = await speak(parts[1], apiKey);
+  const next = await speak(parts[2], apiKey);
+  const before = mp3Audio(rest.audio);
+  const joined = joinMp3([before, NEXT_UP, mp3Audio(next.audio)]);
+  if (!joined) {
+    // ElevenLabs' format no longer matches the clip's: say it all instead.
+    console.warn("[voice-lines] the Next up clip doesn't match; making the line whole");
+    return speak(text, apiKey);
+  }
+  return {
+    audio: joined,
+    seconds: before.seconds + NEXT_UP.seconds + next.seconds,
+    characters: rest.characters + next.characters,
+  };
+}
+
+/**
  * Make whichever of these lines haven't been made yet. Returns how many there
  * are, how many are ready now, how many it made, and the first thing that went
  * wrong, if anything did (the lines it did make are kept).
@@ -102,7 +145,7 @@ export async function makeVoiceLines(
 
   async function makeOne(text: string) {
     const key = lineKey(text);
-    const { audio, seconds, characters } = await speak(text, apiKey!);
+    const { audio, seconds, characters } = await voiceLineAudio(text, apiKey!);
     console.info(`[voice-lines] made "${text}": ${characters} characters, ${seconds.toFixed(2)} s`);
     const upload = await supabase.storage
       .from(BUCKET)
