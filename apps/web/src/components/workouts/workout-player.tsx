@@ -83,7 +83,7 @@ import { GestureGuide } from "./gesture-guide";
 import { DesktopGuide } from "./desktop-guide";
 import { usePlayerPreferences } from "./preferences";
 import { CoachTip } from "./coach-tip";
-import { COUNTDOWN, UP_NEXT, useCueAudio, usePrefetched } from "./cue-audio";
+import { COUNTDOWN, EXERCISE_START, UP_NEXT, useCueAudio, usePrefetched } from "./cue-audio";
 import { UpNextCard } from "./up-next-card";
 import { preloadFirstWorkoutBadge } from "./first-workout-badge";
 import { useFireworkSounds } from "./firework-sounds";
@@ -508,6 +508,15 @@ export function WorkoutPlayer({
     ? (announcing ? VOICE.delay + announceLine.seconds + VOICE.cardAfter : VOICE.cardAlone) * 1000
     : 0;
   const beginCard = useOpening(state.take, running, beginMs) && !!beginSet;
+  // The start sound as that lifts — after the announcement, as the set's
+  // countdown starts (exerciseLeadMs). A sound effect; exercises only.
+  const startSound = useCueAudio({
+    clip: beginSet ? { url: EXERCISE_START.src, start: 0, end: null } : null,
+    take: state.take,
+    running: running && !!beginSet,
+    delayMs: beginMs,
+    muted: muted || !prefs.soundEffects,
+  });
   // Not behind the pause screen, which has a dim of its own.
   const pauseScreen = state.paused && !(holdInPlace && onCountdown);
   const stepDim =
@@ -885,6 +894,7 @@ export function WorkoutPlayer({
     announcer.unlock();
     countdown.unlock();
     upNextChime.unlock();
+    startSound.unlock();
     fireworkSounds.unlock();
     // The music from the top — only when it's on, so a muted member never downloads it.
     if (prefs.music && prefs.instructorAudio) music.begin();

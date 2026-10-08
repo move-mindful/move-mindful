@@ -5,7 +5,7 @@ import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react"
 // Cues: short clips the player plays a set time into a step — the
 // instructor's audio tips (with their bubble, coach-tip.tsx), the voice
 // announcements, the countdown over the last seconds of a rest or Get ready,
-// and the Up next chime.
+// the Up next chime, and the start sound as an exercise begins.
 
 /**
  * The countdown over the last seconds of a rest or Get ready — a sound
@@ -38,6 +38,16 @@ export const UP_NEXT = {
   leaveAt: 0.6,
   /** A rest this long (seconds) or longer is what the card and pill name next — Rest and its time — rather than the set after it. */
   restFrom: 20,
+};
+
+/**
+ * The start sound — a sound effect — as an exercise begins: when its name and
+ * the dim over it lift (BeginCard), after its voice announcement, as its
+ * countdown starts. Not on rests.
+ */
+export const EXERCISE_START = {
+  /** As supplied (Oct 2026): a 0.21 s blip, sound from its very start. */
+  src: "/audio/exercise-start.mp3",
 };
 
 /** A tenth of a second of silence (8 kHz, 8-bit mono WAV), to unlock an audio element with. */
