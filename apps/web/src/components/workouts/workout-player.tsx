@@ -554,6 +554,26 @@ export function WorkoutPlayer({
     if (!onSummary) stopFireworkSounds();
   }, [onSummary, stopFireworkSounds]);
 
+  // ── Clocks ──────────────────────────────────────────
+
+  // The countdown for a timed set or a rest: redraw a few times a second, and
+  // tell the reducer when it runs out.
+  const [now, setNow] = useState(0);
+  const timer = state.timer;
+  useEffect(() => {
+    if (!timer || timer.since === null) return;
+    const since = timer.since;
+    const id = window.setInterval(() => {
+      const t = performance.now();
+      setNow(t);
+      if (timer.leftMs - (t - since) <= 0) dispatch({ type: "tick", now: t });
+    }, 200);
+    return () => window.clearInterval(id);
+  }, [timer]);
+  const leftMs = timer
+    ? Math.max(0, Math.min(timer.leftMs, timer.since === null ? timer.leftMs : timer.leftMs - (now - timer.since)))
+    : 0;
+
   // Music under the workout (the Audio card's Music switch). It plays while the
   // workout runs — the overview and the Audio card leave it going — and on
   // through the summary until Done; it dips under a voice, through the
@@ -565,10 +585,19 @@ export function WorkoutPlayer({
     MUSIC.whilePaused &&
     state.phase === "workout" &&
     (state.paused || state.sheet === "settings" || state.sheet === "end" || state.sheet === "guide");
+  // The workout overview's tip starts straight away, but takes a moment to
+  // load: the music's at the tip's level from the section's start (rather than
+  // rising, then dipping as the voice comes in) until the tip should be over —
+  // and after, while it's still playing.
+  const rundownTipAhead =
+    state.phase === "rundown" &&
+    !!workout.rundownTip &&
+    prefs.audioTips &&
+    rundownMs - leftMs < tipPlaySeconds(workout.rundownTip) * 1000;
   const musicLevel = (() => {
     if (musicHeld) return MUSIC.duckTo.paused;
     if (state.phase === "complete") return MUSIC.duckTo.done;
-    if (tips.playing || announcer.playing) return MUSIC.duckTo.tip;
+    if (tips.playing || announcer.playing || rundownTipAhead) return MUSIC.duckTo.tip;
     if (state.phase === "workout" && step?.kind === "set" && state.stage === "tutorial") return MUSIC.duckTo.tutorial;
     if (state.phase === "intro" || state.phase === "outro" || state.phase === "warmup" || state.phase === "cooldown") {
       return MUSIC.duckTo[state.phase];
@@ -590,26 +619,6 @@ export function WorkoutPlayer({
   function wakeMusic() {
     if (prefs.music && !muted) music.wake();
   }
-
-  // ── Clocks ──────────────────────────────────────────
-
-  // The countdown for a timed set or a rest: redraw a few times a second, and
-  // tell the reducer when it runs out.
-  const [now, setNow] = useState(0);
-  const timer = state.timer;
-  useEffect(() => {
-    if (!timer || timer.since === null) return;
-    const since = timer.since;
-    const id = window.setInterval(() => {
-      const t = performance.now();
-      setNow(t);
-      if (timer.leftMs - (t - since) <= 0) dispatch({ type: "tick", now: t });
-    }, 200);
-    return () => window.clearInterval(id);
-  }, [timer]);
-  const leftMs = timer
-    ? Math.max(0, Math.min(timer.leftMs, timer.since === null ? timer.leftMs : timer.leftMs - (now - timer.since)))
-    : 0;
 
   // The workout overview: the warm-up as one entry (its loops taking turns),
   // then each exercise once. With cues on its tip (tapped in
