@@ -127,6 +127,12 @@ function move<T>(list: T[], from: number, to: number): T[] {
 type Snapshot = { title: string; description: string; level: WorkoutLevel | null; warmupId: string | null; blocks: KBlock[] };
 type AiDraft = { notes: string; title: string; description: string; level: WorkoutLevel; before: Snapshot };
 
+// The old warm-up and cool-down video pickers (and their lines under Estimated
+// time) are hidden for now — the warm-up is a block of exercises, and the
+// player leaves both videos out. A workout's saved choices are kept as they
+// are through every save. `true` shows them again.
+const SHOW_WARMUP_COOLDOWN_VIDEOS = false;
+
 const aiBtn = "rounded-md px-2.5 py-1 font-medium text-violet-800 hover:bg-violet-100";
 const iconBtn = "flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30";
 
@@ -621,25 +627,27 @@ export function WorkoutBuilder({
                 />
 
                 {/* The old warm-up video: kept, but the player leaves it out for now (the warm-up block replaces it). */}
-                <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-zinc-300 bg-zinc-50 p-3">
-                  <Flag>Warm-up video</Flag>
-                  <select
-                    aria-label="Warm-up video"
-                    value={warmupId ?? ""}
-                    onChange={(e) => setWarmupId(e.target.value || null)}
-                    className="h-9 min-w-48 flex-1 rounded-lg border border-zinc-300 bg-white px-2.5 text-sm"
-                  >
-                    <option value="">No warm-up</option>
-                    {catalog
-                      .filter((c) => c.kind === "warmup" && (!c.archived || c.id === warmupId))
-                      .map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name} · {formatDuration(c.durationSeconds)}
-                        </option>
-                      ))}
-                  </select>
-                  <span className="text-xs text-zinc-500">Not played for now · use the warm-up block below</span>
-                </div>
+                {SHOW_WARMUP_COOLDOWN_VIDEOS && (
+                  <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-zinc-300 bg-zinc-50 p-3">
+                    <Flag>Warm-up video</Flag>
+                    <select
+                      aria-label="Warm-up video"
+                      value={warmupId ?? ""}
+                      onChange={(e) => setWarmupId(e.target.value || null)}
+                      className="h-9 min-w-48 flex-1 rounded-lg border border-zinc-300 bg-white px-2.5 text-sm"
+                    >
+                      <option value="">No warm-up</option>
+                      {catalog
+                        .filter((c) => c.kind === "warmup" && (!c.archived || c.id === warmupId))
+                        .map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name} · {formatDuration(c.durationSeconds)}
+                          </option>
+                        ))}
+                    </select>
+                    <span className="text-xs text-zinc-500">Not played for now · use the warm-up block below</span>
+                  </div>
+                )}
 
                 {/* The warm-up block: exercises, pinned first. */}
                 {!hasWarmup && (
@@ -777,25 +785,27 @@ export function WorkoutBuilder({
                 </ol>
 
                 {/* Cool-down and outro: optional, pinned last */}
-                <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-zinc-300 bg-zinc-50 p-3">
-                  <Flag>Cool-down</Flag>
-                  <select
-                    aria-label="Cool-down"
-                    value={cooldownId ?? ""}
-                    onChange={(e) => setCooldownId(e.target.value || null)}
-                    className="h-9 min-w-48 flex-1 rounded-lg border border-zinc-300 bg-white px-2.5 text-sm"
-                  >
-                    <option value="">No cool-down</option>
-                    {catalog
-                      .filter((c) => c.kind === "cooldown" && (!c.archived || c.id === cooldownId))
-                      .map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name} · {formatDuration(c.durationSeconds)}
-                        </option>
-                      ))}
-                  </select>
-                  <span className="text-xs text-zinc-500">Members are asked “Cool down?” after the last exercise</span>
-                </div>
+                {SHOW_WARMUP_COOLDOWN_VIDEOS && (
+                  <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-zinc-300 bg-zinc-50 p-3">
+                    <Flag>Cool-down</Flag>
+                    <select
+                      aria-label="Cool-down"
+                      value={cooldownId ?? ""}
+                      onChange={(e) => setCooldownId(e.target.value || null)}
+                      className="h-9 min-w-48 flex-1 rounded-lg border border-zinc-300 bg-white px-2.5 text-sm"
+                    >
+                      <option value="">No cool-down</option>
+                      {catalog
+                        .filter((c) => c.kind === "cooldown" && (!c.archived || c.id === cooldownId))
+                        .map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name} · {formatDuration(c.durationSeconds)}
+                          </option>
+                        ))}
+                    </select>
+                    <span className="text-xs text-zinc-500">Members are asked “Cool down?” after the last exercise</span>
+                  </div>
+                )}
                 <WorkoutVideoField
                   role="outro"
                   label="Outro"
@@ -869,10 +879,10 @@ export function WorkoutBuilder({
               {estimate.tutorialSeconds > 0 && (
                 <p className="text-sm text-zinc-500">+{aboutMinutes(estimate.tutorialSeconds)} min with tutorials</p>
               )}
-              {warmup && (
+              {SHOW_WARMUP_COOLDOWN_VIDEOS && warmup && (
                 <p className="text-sm text-zinc-500">+{formatDuration(warmup.durationSeconds)} if members take the warm-up</p>
               )}
-              {cooldown && (
+              {SHOW_WARMUP_COOLDOWN_VIDEOS && cooldown && (
                 <p className="text-sm text-zinc-500">+{formatDuration(cooldown.durationSeconds)} if members take the cool-down</p>
               )}
               {extraSeconds > 0 && <p className="text-sm text-zinc-500">+{formatDuration(extraSeconds)} intro and outro</p>}
