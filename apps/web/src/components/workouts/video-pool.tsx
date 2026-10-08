@@ -24,13 +24,18 @@ export const POOL_SIZE = 4;
 
 /**
  * At a cut from one clip to another, the one we're leaving stays on screen —
- * paused where it was — until the new one is actually playing, then it's
- * swapped in (still a cut). A paused, hidden video can take a moment to put
- * its first frame up again, iPhones especially, and showing it straight away
- * flashed the black stage behind. Never held longer than this (ms): a clip
- * still loading then shows its spinner as before.
+ * still playing, muted, so nothing freezes — while the new one starts just
+ * visible (HANDOFF_FAINT, so an iPhone draws it) on top; once the new one's
+ * actually playing it's shown (still a cut), and the old one put away a
+ * moment later (HANDOFF_OVERLAP_MS), in case the new one's first frame is a
+ * beat behind. A paused, hidden video can take a moment to put a frame up
+ * again, iPhones especially, and showing it straight away flashed the black
+ * stage behind. Never held longer than this (ms): a clip still loading then
+ * shows its spinner as before.
  */
 const HANDOFF_MAX_MS = 1500;
+const HANDOFF_FAINT = "0.01";
+const HANDOFF_OVERLAP_MS = 120;
 
 export interface ShownClip extends PoolClip {
   loop: boolean;
@@ -132,11 +137,15 @@ export function useVideoPool({
         }
         handoff.current = null;
         to.style.opacity = "1";
-        if (from !== shown.current) {
-          from.style.opacity = "0";
-          if (from.currentTime > 0) from.currentTime = 0;
-        }
-        if (lastSync.current) pool.sync(...lastSync.current);
+        // The old one a moment longer beneath, then away — and anything held back loads.
+        window.setTimeout(() => {
+          if (from !== shown.current && from !== handoff.current?.from) {
+            from.style.opacity = "0";
+            if (!from.paused && !unlocking.current.has(from)) from.pause();
+            if (from.currentTime > 0) from.currentTime = 0;
+          }
+          if (lastSync.current) pool.sync(...lastSync.current);
+        }, HANDOFF_OVERLAP_MS);
       };
       handoff.current = { from, to, frame: requestAnimationFrame(check) };
     };
@@ -191,9 +200,12 @@ export function useVideoPool({
         for (const v of slots) {
           if (v === el) continue;
           v.style.zIndex = "0";
+          // The clip we're cutting from stays up beneath the new one, still playing but muted.
+          if (el && v === keep) {
+            v.muted = true;
+            continue;
+          }
           if (!v.paused && !unlocking.current.has(v)) v.pause();
-          // The clip we're cutting from stays up, paused, beneath the new one.
-          if (el && v === keep) continue;
           v.style.opacity = "0";
           // Leave the clip we're moving off rewound, ready for next time.
           if ((v === prev || v === visible) && v.currentTime > 0) v.currentTime = 0;
@@ -205,7 +217,7 @@ export function useVideoPool({
         }
 
         el.style.zIndex = "1";
-        el.style.opacity = keep ? "0" : "1";
+        el.style.opacity = keep ? HANDOFF_FAINT : "1";
         el.loop = clip.loop;
         el.muted = muted || clip.silent;
         if (restart && el.currentTime > 0) el.currentTime = 0;
