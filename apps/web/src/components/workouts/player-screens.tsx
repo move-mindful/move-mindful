@@ -36,6 +36,7 @@ import {
   WatchTutorial,
 } from "./icons";
 import { FirstWorkoutBadge } from "./first-workout-badge";
+import { Marquee } from "./marquee";
 import { NextCard } from "./up-next-card";
 import { WorkoutRows } from "./workout-rows";
 
@@ -434,7 +435,7 @@ function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
 
 /**
  * A minimised view's one line: a label pill ("Up next", "Tutorial") and what
- * it names, trimmed to fit.
+ * it names, scrolling when it doesn't fit (Marquee).
  */
 /** A bold capitals pill ("Up next", "Tutorial") and a line of text beside it — phones' minimised views and desktop's info. */
 export function LabelLine({
@@ -459,7 +460,7 @@ export function LabelLine({
         {fill !== null && <ProgressFill fraction={fill} />}
         <span className="relative">{label}</span>
       </span>
-      <span className={`min-w-0 truncate ${strong ? "text-[17px] font-semibold" : "text-[15px] font-medium"}`}>{text}</span>
+      <Marquee text={text} className={`min-w-0 ${strong ? "text-[17px] font-semibold" : "text-[15px] font-medium"}`} />
     </p>
   );
 }

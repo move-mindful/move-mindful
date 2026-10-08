@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Marquee } from "./marquee";
 
 /**
  * What's next, sliding in as a set nears its end — ten seconds out, on a set
@@ -15,7 +16,7 @@ import type { ReactNode } from "react";
  * column (it uses `--col`); `large` on desktop. Its width is set, not the
  * name's — the width of the column inside its 20px gutters on phones, 380px on
  * desktop, as the rest screen's card is — so it doesn't change size from one
- * exercise to the next; a name too long for it is cut short.
+ * exercise to the next; a name too long for it scrolls (Marquee).
  *
  * `stage`: waiting (off past the right edge), shown, or gone — slid back out
  * past the right edge just before the set ends (UP_NEXT.leaveAt), so it's
@@ -112,8 +113,9 @@ export function NextCard({
       )}
       <span className={`flex min-w-0 flex-col gap-0.5 ${thumbnail || icon ? "" : "pl-2"}`}>
         <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/70">{label}</span>
-        <span className={`truncate font-semibold ${large ? "text-[19px]" : "text-[17px]"}`}>{name}</span>
-        {detail && <span className={`truncate text-white/70 ${large ? "text-[15px]" : "text-sm"}`}>{detail}</span>}
+        {/* Too long for the card, they scroll (see Marquee). */}
+        <Marquee text={name} className={`font-semibold ${large ? "text-[19px]" : "text-[17px]"}`} />
+        {detail && <Marquee text={detail} className={`text-white/70 ${large ? "text-[15px]" : "text-sm"}`} />}
       </span>
     </div>
   );
