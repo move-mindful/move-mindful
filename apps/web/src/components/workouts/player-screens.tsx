@@ -986,7 +986,11 @@ export function RundownScreen({
           <h2 className="text-[17px] font-semibold">Workout Overview</h2>
           <span className="shrink-0 text-[15px] text-white/70">~{minutes} min</span>
         </div>
-        <div ref={list} className={`min-h-0 ${grow} overflow-y-auto overscroll-contain px-2 pb-2`}>
+        {/* It scrolls (a swipe, the wheel, or following the instructor) without showing a scroll bar. */}
+        <div
+          ref={list}
+          className={`min-h-0 ${grow} overflow-y-auto overscroll-contain px-2 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
+        >
           <WorkoutRows workout={workout} steps={steps} position={null} spotlight={{ exerciseId, onPick, listWarmup }} />
         </div>
       </div>
