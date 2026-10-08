@@ -1,13 +1,9 @@
-import { Outfit } from "next/font/google";
+import { outfit } from "@/components/workouts/outfit";
 
 /**
  * Full-screen member experiences with no site header — the workout preview and
  * player. Dark, in the player's own typeface (the design canvas's Outfit).
  */
-const outfit = Outfit({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
 
 export default function PlayerLayout({ children }: { children: React.ReactNode }) {
   // `data-dark-page` darkens the whole page behind it (see globals.css), which

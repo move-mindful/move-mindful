@@ -906,10 +906,12 @@ export function RestScreen({
 /**
  * The workout overview, after the intro (the "rundown"): the exercise list
  * over each exercise's loop in turn — the stage plays them, dimmed the whole
- * way across as on a rest — with the one on screen lit; tapping another shows that one. The
- * instructor's tip talks the workout through meanwhile. Pause holds it all;
- * Continue, filling as the section runs, goes on to the first exercise.
- * Desktop shows the same in the video column.
+ * way across as on a rest — with the one on screen lit, and scrolled to when
+ * it's out of view, while the instructor's tip talks the workout through.
+ * Pause holds it all; Continue, filling as the section runs, goes on to the
+ * first exercise. Desktop shows the same in the video column. The builder
+ * shows it too, recording the tip: its own `controls`, and `onPick` to tap
+ * exercises as they're talked about.
  */
 export function RundownScreen({
   workout,
@@ -924,6 +926,7 @@ export function RundownScreen({
   onContinue,
   tip = null,
   theater = false,
+  controls,
 }: {
   workout: PlayerWorkout;
   steps: WorkoutStep[];
@@ -931,7 +934,10 @@ export function RundownScreen({
   minutes: number;
   /** The exercise whose loop is on screen. */
   exerciseId: string | null;
-  onPick: (exerciseId: string) => void;
+  /** The builder's recorder: tapping an exercise picks it (with the tap's time). Members can't. */
+  onPick?: (exerciseId: string, at: number) => void;
+  /** In place of Pause / Continue (the builder's recorder). */
+  controls?: ReactNode;
   /** How far through the section: Continue fills with it. */
   fraction: number;
   paused: boolean;
@@ -943,9 +949,17 @@ export function RundownScreen({
   theater?: boolean;
 }) {
   const list = useRef<HTMLDivElement>(null);
-  // A long workout scrolls: keep the lit exercise in view as the loops move on.
+  // A long workout scrolls: as the instructor moves on to an exercise that's
+  // out of view, bring it to the middle of the list (so what follows shows
+  // too) — the list only, never the page. In view already, nothing moves.
   useEffect(() => {
-    list.current?.querySelector("[data-spotlit]")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    const box = list.current;
+    const row = box?.querySelector<HTMLElement>("[data-spotlit]");
+    if (!box || !row) return;
+    const top = row.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
+    const bottom = top + row.offsetHeight;
+    if (top >= box.scrollTop && bottom <= box.scrollTop + box.clientHeight) return;
+    box.scrollTo({ top: Math.max(0, top - (box.clientHeight - row.offsetHeight) / 2), behavior: "smooth" });
   }, [exerciseId]);
   return (
     <div
@@ -968,14 +982,16 @@ export function RundownScreen({
       <div className={`relative isolate mt-4 ${theater ? "-mx-7 px-7 pb-10" : `-mx-4 px-5 ${bottomPad}`}`}>
         <BottomShade />
         {tip && <div className="absolute bottom-full right-[13px] mb-3">{tip}</div>}
-        <CountdownControls
-          paused={paused}
-          onPause={onPause}
-          onResume={onResume}
-          goLabel="Continue"
-          onGo={onContinue}
-          fill={fraction}
-        />
+        {controls ?? (
+          <CountdownControls
+            paused={paused}
+            onPause={onPause}
+            onResume={onResume}
+            goLabel="Continue"
+            onGo={onContinue}
+            fill={fraction}
+          />
+        )}
       </div>
     </div>
   );

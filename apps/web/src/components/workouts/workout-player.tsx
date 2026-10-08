@@ -15,6 +15,7 @@ import {
 import {
   aboutMinutes,
   activeTime,
+  cueAt,
   estimateWorkout,
   fitTutorialMode,
   initialPlayerState,
@@ -532,21 +533,25 @@ export function WorkoutPlayer({
     ? Math.max(0, Math.min(timer.leftMs, timer.since === null ? timer.leftMs : timer.leftMs - (now - timer.since)))
     : 0;
 
-  // The workout overview: each exercise once, its loop on screen for
-  // RUNDOWN.secondsEach of the section's own clock (so pausing holds it too),
-  // counting on from the one tapped last, if any.
+  // The workout overview: each exercise once. With cues on its tip (tapped in
+  // the builder while recording) it shows whichever the instructor is on —
+  // timed on the section's own clock, which starts with the tip, so pausing
+  // holds it and it follows even with tips muted — staying on the last one
+  // once the tip's done. Without cues, each loop in turn for
+  // RUNDOWN.secondsEach.
   const lineup = useMemo(() => exerciseLineup(steps, workout.exercises), [steps, workout.exercises]);
-  const [picked, setPicked] = useState({ take: -1, index: 0, atMs: 0 });
   const rundownElapsed = state.phase === "rundown" ? Math.max(0, rundownMs - leftMs) : 0;
-  const anchor = picked.take === state.take ? picked : { index: 0, atMs: 0 };
-  const rundownIndex = lineup.length
-    ? (anchor.index + Math.floor(Math.max(0, rundownElapsed - anchor.atMs) / (RUNDOWN.secondsEach * 1000))) % lineup.length
-    : 0;
-  /** A tap on an exercise in the overview: show it now, and count on from it. */
-  function pickRundown(exerciseId: string) {
-    const index = lineup.findIndex((x) => x.exerciseId === exerciseId);
-    if (index !== -1) setPicked({ take: state.take, index, atMs: rundownElapsed });
-  }
+  const rundownCues = useMemo(
+    () => (workout.rundownTip?.cues ?? []).filter((c) => lineup.some((x) => x.exerciseId === c.exerciseId)),
+    [workout.rundownTip, lineup],
+  );
+  const rundownIndex = !lineup.length
+    ? 0
+    : rundownCues.length
+      ? lineup.findIndex(
+          (x) => x.exerciseId === cueAt(rundownCues, (workout.rundownTip?.start ?? 0) + rundownElapsed / 1000)?.exerciseId,
+        )
+      : Math.floor(rundownElapsed / (RUNDOWN.secondsEach * 1000)) % lineup.length;
 
   // ── Videos ──────────────────────────────────────────
 
@@ -1085,7 +1090,6 @@ export function WorkoutPlayer({
           steps={steps}
           minutes={minutes}
           exerciseId={lineup[rundownIndex]?.exerciseId ?? null}
-          onPick={pickRundown}
           fraction={rundownMs > 0 ? rundownElapsed / rundownMs : 0}
           paused={state.paused}
           onPause={pause}

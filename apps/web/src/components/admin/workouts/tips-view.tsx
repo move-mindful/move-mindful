@@ -2,9 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  cueAt,
   groupLabels,
   workoutSteps,
   type AudioTip,
+  type SetStep,
+  type TipCue,
   type EstimateExercise,
   type TipSlot,
   type WorkoutBlock,
@@ -14,6 +17,7 @@ import { uploadWorkoutTip } from "@/app/actions/workouts";
 import { formatDuration } from "@/lib/exercises/shared";
 import { RUNDOWN, RUNDOWN_TIP_SLOT, TIP_DELAY_SECONDS, TIP_MAX_SECONDS, tipUrl, type CatalogExercise } from "@/lib/workouts/shared";
 import { readRecording, withReading } from "@/lib/workouts/trim";
+import { OverviewPreview } from "@/components/admin/workouts/overview-preview";
 
 // The builder's "Audio tips" view: the workout as members walk it — the
 // workout overview after the intro, then every set (each side of a sided one)
@@ -86,6 +90,17 @@ export function TipsView({
   const recorder = useRef<{ rec: MediaRecorder; discard: boolean } | null>(null);
   const player = useRef<HTMLAudioElement | null>(null);
 
+  // The workout overview's tip records and plays back over the overview
+  // itself (OverviewPreview): recording, each exercise tapped is a cue — the
+  // one being talked about from then — and playing back, the highlight
+  // follows those cues, as it will for members.
+  const overviewId = slotId(RUNDOWN_TIP_SLOT);
+  const firstExercise = (steps.find((s) => s.kind === "set") as SetStep | undefined)?.exerciseId ?? null;
+  const [preview, setPreview] = useState<"record" | "play" | null>(null);
+  const [cueNow, setCueNow] = useState<string | null>(null);
+  const [playTime, setPlayTime] = useState(0);
+  const cues = useRef<TipCue[]>([]);
+
   // Tips recorded before trimming or voice levels existed: read them once, as
   // the view opens, and keep what's found — the Save bar then asks for a save.
   const overview: Entry = { tipSlot: RUNDOWN_TIP_SLOT, tip: rundownTip, room: Infinity };
@@ -138,6 +153,7 @@ export function TipsView({
   function stopPlayback() {
     player.current?.pause();
     setPlaying(null);
+    setPreview((o) => (o === "play" ? null : o));
   }
 
   function play(tip: AudioTip, id: string) {
@@ -147,13 +163,22 @@ export function TipsView({
     }
     const el = (player.current ??= new Audio());
     const start = tip.start ?? 0;
-    el.onended = () => setPlaying(null);
+    // The workout overview's plays back in the overview, the highlight following its cues.
+    const following = id === overviewId;
+    const tipCues = tip.cues ?? [];
+    if (following) {
+      setCueNow(cueAt(tipCues, start)?.exerciseId ?? firstExercise);
+      setPlayTime(0);
+      setPreview("play");
+    }
+    el.onended = () => stopPlayback();
     // Just the speech, when it's been trimmed: from `start`, stopping at `end`.
     el.ontimeupdate = () => {
-      if (tip.end !== undefined && el.currentTime >= tip.end) {
-        el.pause();
-        setPlaying(null);
+      if (following) {
+        setCueNow(cueAt(tipCues, el.currentTime)?.exerciseId ?? firstExercise);
+        setPlayTime(Math.max(0, el.currentTime - start));
       }
+      if (tip.end !== undefined && el.currentTime >= tip.end) stopPlayback();
     };
     el.onloadedmetadata = () => {
       if (Math.abs(el.currentTime - start) > 0.05) el.currentTime = start;
@@ -162,7 +187,7 @@ export function TipsView({
     el.currentTime = start;
     setPlaying(id);
     el.play().catch(() => {
-      setPlaying(null);
+      stopPlayback();
       setError("Couldn’t play that tip.");
     });
   }
@@ -184,6 +209,7 @@ export function TipsView({
       return;
     }
     const id = slotId(slot);
+    const overviewTip = id === overviewId;
     const rec = new MediaRecorder(stream, { mimeType: type, audioBitsPerSecond: 128_000 });
     const current = { rec, discard: false };
     const chunks: Blob[] = [];
@@ -195,6 +221,8 @@ export function TipsView({
     };
     rec.onstart = (e) => {
       startedAt = e.timeStamp;
+      // The overview opens on its first exercise: cued from the start.
+      if (overviewTip) cues.current = firstExercise ? [{ at: 0, exerciseId: firstExercise }] : [];
       setNow(e.timeStamp);
       setBusy({ slot: id, phase: "recording", startedAt });
     };
@@ -205,12 +233,14 @@ export function TipsView({
       // Left the view, or a click straight on and off: nothing to keep.
       if (current.discard || seconds < 0.5) {
         setBusy(null);
+        if (overviewTip) setPreview(null);
         return;
       }
       setBusy({ slot: id, phase: "saving", startedAt });
       const workoutId = await ensureSaved();
       if (!workoutId) {
         setBusy(null);
+        if (overviewTip) setPreview(null);
         return; // the builder shows why it couldn't save
       }
       const audio = new Blob(chunks, { type: "audio/mp4" });
@@ -222,10 +252,18 @@ export function TipsView({
       fd.set("audio", audio, "tip.m4a");
       const res = await uploadWorkoutTip(fd).catch(() => ({ tip: undefined, error: "Couldn’t reach the server. Try again." }));
       setBusy(null);
-      if (res.tip) onTip(slot, reading ? withReading(res.tip, reading) : res.tip);
-      else setError(res.error ?? "The recording didn’t save. Try again.");
+      if (overviewTip) setPreview(null);
+      if (res.tip) {
+        const tip = reading ? withReading(res.tip, reading) : res.tip;
+        onTip(slot, overviewTip && cues.current.length ? { ...tip, cues: cues.current } : tip);
+      } else setError(res.error ?? "The recording didn’t save. Try again.");
     };
     recorder.current = current;
+    if (overviewTip) {
+      cues.current = [];
+      setCueNow(firstExercise);
+      setPreview("record");
+    }
     setBusy({ slot: id, phase: "recording", startedAt: null });
     rec.start();
   }
@@ -233,6 +271,26 @@ export function TipsView({
   function stopRecording() {
     const rec = recorder.current?.rec;
     if (rec?.state === "recording") rec.stop();
+  }
+
+  /** Recording the overview's tip, a take thrown away: nothing's saved. */
+  function cancelRecording() {
+    const current = recorder.current;
+    if (current?.rec.state !== "recording") return;
+    current.discard = true;
+    current.rec.stop();
+  }
+
+  /**
+   * Recording the overview's tip: the exercise tapped is the one being talked
+   * about from the tap on. `tappedAt` is the tap event's timeStamp — the same
+   * clock as the recorder's start event's.
+   */
+  function cue(exerciseId: string, tappedAt: number) {
+    if (busy?.slot !== overviewId || busy.phase !== "recording" || busy.startedAt === null) return;
+    const at = Math.round(Math.max(0, (tappedAt - busy.startedAt) / 1000) * 100) / 100;
+    cues.current = [...cues.current, { at, exerciseId }];
+    setCueNow(exerciseId);
   }
 
   // The workout's blocks, each with the steps it makes (a block's steps are together).
@@ -335,7 +393,8 @@ export function TipsView({
         </div>
         <p className="mt-0.5 text-xs text-zinc-500">
           Plays straight away over the exercise list; the section lasts as long as it, plus {RUNDOWN.afterTip} s. No
-          tip, no overview.
+          tip, no overview. Recording opens the overview: tap each exercise as you start talking about it, and members’
+          overview follows along (▶ plays it back that way). Mistimed? Redo it.
         </p>
         <ul>{row(overview, "Talk members through the workout")}</ul>
       </div>
@@ -392,6 +451,65 @@ export function TipsView({
             );
           })}
         </ol>
+      )}
+      {preview === "record" && (
+        <OverviewPreview
+          blocks={blocks}
+          byId={byId}
+          estimates={estimates}
+          exerciseId={cueNow}
+          onPick={busy?.phase === "recording" ? cue : undefined}
+          caption={
+            busy?.phase === "saving"
+              ? "Saving the recording…"
+              : "Recording — tap each exercise as you start talking about it."
+          }
+          controls={
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={cancelRecording}
+                disabled={busy?.phase !== "recording"}
+                className="flex h-[58px] flex-1 items-center justify-center rounded-full bg-white/[0.14] text-[17px] font-semibold disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={stopRecording}
+                disabled={busy?.phase !== "recording" || busy.startedAt === null}
+                className="flex h-[58px] flex-[1.4] items-center justify-center gap-2.5 rounded-full bg-red-600 text-[17px] font-semibold tabular-nums disabled:opacity-60"
+              >
+                {busy?.phase === "saving" ? (
+                  "Saving…"
+                ) : (
+                  <>
+                    <span className="size-2.5 animate-pulse rounded-sm bg-white" />
+                    Stop · {formatDuration(busy?.startedAt == null ? 0 : (now - busy.startedAt) / 1000)}
+                  </>
+                )}
+              </button>
+            </div>
+          }
+        />
+      )}
+      {preview === "play" && (
+        <OverviewPreview
+          blocks={blocks}
+          byId={byId}
+          estimates={estimates}
+          exerciseId={cueNow}
+          caption="Playing back — the overview follows your taps, as members will see it."
+          controls={
+            <button
+              type="button"
+              onClick={stopPlayback}
+              className="flex h-[58px] w-full items-center justify-center gap-2.5 rounded-full bg-white/[0.14] text-[17px] font-semibold tabular-nums"
+            >
+              ■ Stop · {formatDuration(playTime)}
+            </button>
+          }
+        />
       )}
     </div>
   );

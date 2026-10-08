@@ -17,7 +17,7 @@ export type Measure = "reps" | "time";
  * speechBounds) — and `seconds` is its length; without them, the whole file.
  * `levels`: how loud the voice is through the file, for the player's
  * equalizer bars (see voiceLevels / encodeVoiceLevels); without it, the bars
- * just move.
+ * just move. `cues`: the workout overview's tip only — see TipCue.
  */
 export interface AudioTip {
   id: string;
@@ -25,6 +25,31 @@ export interface AudioTip {
   start?: number;
   end?: number;
   levels?: string;
+  cues?: TipCue[];
+}
+
+/**
+ * On the workout overview's tip: the exercise the instructor turns to `at`
+ * seconds into the file (the recording's own clock, so trimming doesn't move
+ * it) — tapped in the builder while recording. In order; the overview shows
+ * each from its cue until the next, and the last one on to the end.
+ */
+export interface TipCue {
+  at: number;
+  exerciseId: string;
+}
+
+/**
+ * The cue in force `time` seconds into the tip's file: the last one at or
+ * before it — before the first, the first. Null when there are none.
+ */
+export function cueAt(cues: TipCue[], time: number): TipCue | null {
+  let current: TipCue | null = cues[0] ?? null;
+  for (const cue of cues) {
+    if (cue.at <= time) current = cue;
+    else break;
+  }
+  return current;
 }
 
 /**

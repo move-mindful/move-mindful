@@ -125,8 +125,14 @@ export async function saveWorkout(input: WorkoutInput): Promise<{ id?: string; e
     input.cooldownExerciseId && info.get(input.cooldownExerciseId)?.kind === "cooldown" ? input.cooldownExerciseId : null;
 
   // The workout overview's tip: only ever this workout's own recording (a new
-  // workout has none yet — recording one saves it first).
+  // workout has none yet — recording one saves it first), its cues only for
+  // real exercises.
   const rundownTip = input.id ? (readTip(input.rundownTip, input.id) ?? null) : null;
+  if (rundownTip?.cues) {
+    const cues = rundownTip.cues.filter((c) => info.get(c.exerciseId)?.kind === "exercise");
+    if (cues.length) rundownTip.cues = cues;
+    else delete rundownTip.cues;
+  }
 
   const fields: Record<string, unknown> = {
     title,

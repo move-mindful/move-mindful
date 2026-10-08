@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   aboutMinutes,
   allTips,
+  cueAt,
   estimateWorkout,
   groupLabels,
   keepStepTips,
@@ -312,4 +313,17 @@ test("a merged rest keeps the first rest's tip; withTip and keepStepTips edit th
   after = workoutSteps(blocks, exercises);
   assert.deepEqual(allTips(keepStepTips(blocks, after)), []);
   assert.deepEqual(allTips(blocks).map((t) => t.id).sort(), ["row-3", "second"]);
+});
+
+test("cueAt: the last cue at or before the time; the first before any; null without cues", () => {
+  const cues = [
+    { at: 0, exerciseId: "row" },
+    { at: 7.4, exerciseId: "squat" },
+    { at: 15, exerciseId: "hold" },
+  ];
+  assert.equal(cueAt(cues, 3)?.exerciseId, "row");
+  assert.equal(cueAt(cues, 7.4)?.exerciseId, "squat");
+  assert.equal(cueAt(cues, 99)?.exerciseId, "hold", "the last one on past the end");
+  assert.equal(cueAt([{ at: 2, exerciseId: "squat" }], 0.5)?.exerciseId, "squat", "before the first: the first");
+  assert.equal(cueAt([], 4), null);
 });

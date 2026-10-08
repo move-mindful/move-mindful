@@ -41,10 +41,12 @@ export function WorkoutRows({
   warmupOff?: boolean;
   /**
    * The workout overview (after the intro): nothing's done or under way yet;
-   * instead the exercise on screen is lit — every row of it — and tapping any
-   * exercise shows that one (`onPick`). Lit rows carry `data-spotlit`.
+   * instead the exercise on screen is lit — every row of it. With `onPick`
+   * (the builder, recording its tip) tapping an exercise picks it, with the
+   * tap's time (the event's timeStamp); members just watch. Lit rows carry
+   * `data-spotlit`.
    */
-  spotlight?: { exerciseId: string | null; onPick: (exerciseId: string) => void };
+  spotlight?: { exerciseId: string | null; onPick?: (exerciseId: string, at: number) => void };
 }) {
   const labels = groupLabels(workout.blocks);
   // During the warm-up no exercise is on yet: only its row is current.
@@ -132,8 +134,9 @@ export function WorkoutRows({
           const ex = workout.exercises[b.move.exerciseId];
           const amount = amountLabel(b.move.measure, b.move.amount, ex?.sided);
           const first = stepOf(i, 1, 0);
-          const tappable = spotlight ? true : !!onJump && status !== "now" && first !== -1;
-          const pick = spotlight ? () => spotlight.onPick(b.move.exerciseId) : () => onJump!(first);
+          const tappable = spotlight ? !!spotlight.onPick : !!onJump && status !== "now" && first !== -1;
+          const pick = (e: React.MouseEvent) =>
+            spotlight ? spotlight.onPick?.(b.move.exerciseId, e.timeStamp) : onJump!(first);
           const setsPips = Array.from({ length: b.sets }, (_, s) =>
             steps.map((st, k) => ({ st, k })).filter(({ st }) => st.kind === "set" && st.block === i && st.round === s + 1),
           );
@@ -217,8 +220,9 @@ export function WorkoutRows({
               const ex = workout.exercises[m.exerciseId];
               const now = spotlight ? lit(m.exerciseId) : round !== null && curSet?.kind === "set" && curSet.move === k;
               const target = stepOf(i, round ?? 1, k);
-              const tappable = spotlight ? true : !!onJump && !now && target !== -1;
-              const pick = spotlight ? () => spotlight.onPick(m.exerciseId) : () => onJump!(target);
+              const tappable = spotlight ? !!spotlight.onPick : !!onJump && !now && target !== -1;
+              const pick = (e: React.MouseEvent) =>
+                spotlight ? spotlight.onPick?.(m.exerciseId, e.timeStamp) : onJump!(target);
               const Tag = tappable ? "button" : "div";
               return (
                 <Tag
