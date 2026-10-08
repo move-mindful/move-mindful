@@ -80,9 +80,11 @@ export interface PlayerState {
   /**
    * The countdown for a timed set, a rest, getting ready or the rundown: `leftMs` as of
    * `since`, or frozen at `leftMs` while `since` is null (paused, or a sheet
-   * is open).
+   * is open). With `cap`, it never shows more than that: a set held for its
+   * voice announcement (see `exerciseLeadMs`) counts the hold first, showing
+   * its full time meanwhile.
    */
-  timer: { leftMs: number; since: number | null } | null;
+  timer: { leftMs: number; since: number | null; cap?: number } | null;
   /** Exercises whose tutorial has come up already, so it doesn't again. */
   seen: string[];
   /** Workout time so far, pauses and the warm-up excluded: `activeMs` plus the time since `activeSince`. */
@@ -175,6 +177,12 @@ export interface PlayerContext {
   hasCooldown?: boolean;
   /** The workout has an outro video: it plays after the exercises (and the cool-down), before the summary. */
   hasOutro?: boolean;
+  /**
+   * How long (ms) a set's countdown — a timed set, or reps on auto-advance —
+   * waits as its exercise begins, by step: its voice announcement, so saying
+   * it doesn't eat into the set. The clock shows the set's full time meanwhile.
+   */
+  exerciseLeadMs?: (step: number) => number;
 }
 
 export const initialPlayerState: PlayerState = {
@@ -220,7 +228,7 @@ function staysOpen(s: PlayerState): PlayerSheet {
 export function timerLeft(s: PlayerState, now: number): number | null {
   if (!s.timer) return null;
   const left = s.timer.since === null ? s.timer.leftMs : s.timer.leftMs - (now - s.timer.since);
-  return Math.max(0, left);
+  return Math.max(0, Math.min(left, s.timer.cap ?? Infinity));
 }
 
 /** Workout time so far at `now`. */
@@ -237,20 +245,26 @@ export function setStepFor(steps: WorkoutStep[], index: number): number | null {
   return null;
 }
 
-function timerFor(step: WorkoutStep, stage: PlayerState["stage"], autoAdvance: boolean): PlayerState["timer"] {
+/** A step's countdown; a set's waits `leadMs` first (see `exerciseLeadMs`). */
+function timerFor(step: WorkoutStep, stage: PlayerState["stage"], autoAdvance: boolean, leadMs = 0): PlayerState["timer"] {
   if (step.kind === "rest") return { leftMs: step.seconds * 1000, since: null };
   if (stage !== "exercise") return null;
-  if (step.measure === "time") return { leftMs: step.amount * 1000, since: null };
+  const set = (ms: number) => (leadMs > 0 ? { leftMs: ms + leadMs, since: null, cap: ms } : { leftMs: ms, since: null });
+  if (step.measure === "time") return set(step.amount * 1000);
   // Reps, with auto-advance: the set's estimated length.
-  return autoAdvance ? { leftMs: step.workSeconds * 1000, since: null } : null;
+  return autoAdvance ? set(step.workSeconds * 1000) : null;
+}
+
+function leadFor(ctx: PlayerContext, index: number): number {
+  return Math.max(0, ctx.exerciseLeadMs?.(index) ?? 0);
 }
 
 /** Start the countdown and the workout clock while running; freeze them otherwise. */
 function settle(s: PlayerState, now: number): PlayerState {
   const running = isRunning(s);
   let timer = s.timer;
-  if (timer && running && timer.since === null) timer = { leftMs: timer.leftMs, since: now };
-  if (timer && !running && timer.since !== null) timer = { leftMs: timer.leftMs - (now - timer.since), since: null };
+  if (timer && running && timer.since === null) timer = { ...timer, since: now };
+  if (timer && !running && timer.since !== null) timer = { ...timer, leftMs: timer.leftMs - (now - timer.since), since: null };
 
   const counting = running && s.phase === "workout";
   let { activeMs, activeSince } = s;
@@ -303,7 +317,7 @@ function enter(ctx: PlayerContext, s: PlayerState, index: number, forward: boole
     stage,
     tutorialPlay: s.mode === "once" ? "once" : "loop",
     seen,
-    timer: stage === "ready" ? readyTimer(ctx) : timerFor(step, stage, s.autoAdvance),
+    timer: stage === "ready" ? readyTimer(ctx) : timerFor(step, stage, s.autoAdvance, leadFor(ctx, index)),
   };
 }
 
@@ -384,7 +398,7 @@ function afterVideo(ctx: PlayerContext, s: PlayerState): PlayerState {
 
 function startExercise(ctx: PlayerContext, s: PlayerState): PlayerState {
   const step = ctx.steps[s.step];
-  return { ...s, stage: "exercise", timer: timerFor(step, "exercise", s.autoAdvance), take: s.take + 1 };
+  return { ...s, stage: "exercise", timer: timerFor(step, "exercise", s.autoAdvance, leadFor(ctx, s.step)), take: s.take + 1 };
 }
 
 /** A tutorial done with (played through, or skipped): get ready, then the exercise. */

@@ -627,3 +627,49 @@ test("without a rundown, the intro goes straight on to the exercises", () => {
   const s = extras(extras(initialPlayerState, { type: "begin", warmup: false, mode: "off", now: 0 }), { type: "clipEnded", now: 1000 });
   assert.equal(s.phase, "workout");
 });
+
+// A set's voice announcement holds its countdown: 3 s before every set here.
+const announced = playerReducer({
+  steps,
+  hasTutorial: () => false,
+  exerciseLeadMs: (i) => (steps[i].kind === "set" ? 3000 : 0),
+});
+function runAnnounced(actions: PlayerAction[], from: PlayerState = initialPlayerState): PlayerState {
+  return actions.reduce(announced, from);
+}
+
+test("a set's announcement holds its countdown, which shows the set's full time meanwhile", () => {
+  // The plank: 45 s.
+  let s = runAnnounced([{ type: "begin", warmup: false, mode: "off", now: 0 }, { type: "jump", step: 3, now: 0 }]);
+  assert.equal(s.step, 3);
+  assert.equal(timerLeft(s, 0), 45_000);
+  assert.equal(timerLeft(s, 2_900), 45_000, "held while it's said");
+  assert.equal(timerLeft(s, 4_000), 44_000, "then counting");
+  s = runAnnounced([{ type: "tick", now: 47_900 }], s);
+  assert.equal(s.step, 3, "the whole 45 s, after the hold");
+  s = runAnnounced([{ type: "tick", now: 48_000 }], s);
+  assert.equal(s.step, 4);
+});
+
+test("pausing during an announcement keeps what's left of its hold", () => {
+  let s = runAnnounced([
+    { type: "begin", warmup: false, mode: "off", now: 0 },
+    { type: "jump", step: 3, now: 0 },
+    { type: "pause", now: 1_000 },
+  ]);
+  assert.equal(timerLeft(s, 9_000), 45_000);
+  s = runAnnounced([{ type: "resume", now: 10_000 }], s);
+  assert.equal(timerLeft(s, 11_900), 45_000, "2 of the 3 s held so far");
+  assert.equal(timerLeft(s, 13_000), 44_000);
+});
+
+test("a rep set on auto-advance is held too; a rest isn't", () => {
+  // Row: 10 reps at 2.5 s, so 25 s.
+  let s = runAnnounced([{ type: "begin", warmup: false, mode: "off", autoAdvance: true, now: 0 }]);
+  assert.equal(s.step, 0);
+  assert.equal(timerLeft(s, 2_000), 25_000);
+  assert.equal(timerLeft(s, 4_000), 24_000);
+  s = runAnnounced([{ type: "tick", now: 28_000 }], s);
+  assert.equal(s.step, 1, "on to the rest");
+  assert.equal(timerLeft(s, 29_000), 29_000, "the rest counts from its start");
+});

@@ -235,6 +235,18 @@ export function WorkoutPlayer({
   // The workout overview (the rundown) after the intro: as long as its tip,
   // and a few seconds more. No tip, no overview.
   const rundownMs = workout.rundownTip ? (tipPlaySeconds(workout.rundownTip) + RUNDOWN.afterTip) * 1000 : 0;
+  const [prefs, updatePrefs] = usePlayerPreferences({ account: preferences, signedIn });
+  const [muted, setMuted] = useState(false);
+  // A set's countdown — a timed set, or reps on auto-advance — waits while its
+  // voice announcement is said, until the exercise's name fades (as BeginCard
+  // does), so saying it doesn't eat into the set. Only when it'll be heard.
+  const exerciseLeadMs = useMemo(() => {
+    if (!prefs.announcements || muted) return undefined;
+    return (i: number) => {
+      const line = workout.voice[announcementText(steps, i, workout.exercises) ?? ""];
+      return line ? (VOICE.delay + line.seconds + VOICE.cardAfter) * 1000 : 0;
+    };
+  }, [prefs.announcements, muted, steps, workout.voice, workout.exercises]);
   const reducer = useMemo(
     () =>
       playerReducer({
@@ -245,13 +257,13 @@ export function WorkoutPlayer({
         rundownMs,
         hasCooldown: !!workout.cooldown,
         hasOutro: !!workout.outro,
+        exerciseLeadMs,
       }),
-    [steps, workout.exercises, workout.intro, rundownMs, workout.cooldown, workout.outro],
+    [steps, workout.exercises, workout.intro, rundownMs, workout.cooldown, workout.outro, exerciseLeadMs],
   );
   const [state, dispatch] = useReducer(reducer, initialPlayerState);
   const act = useCallback((a: WithoutNow<PlayerAction>) => dispatch({ ...a, now: performance.now() } as PlayerAction), []);
 
-  const [prefs, updatePrefs] = usePlayerPreferences({ account: preferences, signedIn });
   const canMix = useCanMixAudio() && KEEP_MY_MUSIC;
   const mixAudio = canMix && prefs.mixAudio;
 
@@ -371,7 +383,6 @@ export function WorkoutPlayer({
       }
     };
   }, [mixAudio]);
-  const [muted, setMuted] = useState(false);
   const [warmedUp, setWarmedUp] = useState(false);
   // Settings opened from the guide's last page ("Change settings"): closing
   // Settings goes back to that page rather than into the workout.
@@ -539,11 +550,13 @@ export function WorkoutPlayer({
   // A rest no longer than that skips it, as a set does.
   const restMs = state.phase === "workout" && step?.kind === "rest" ? step.seconds * 1000 : 0;
   const chimeMs = upNextDue ? setMs : restMs > UP_NEXT.before * 1000 ? restMs : 0;
+  // A set's countdown starts after its announcement (exerciseLeadMs): so does the count to its chime.
+  const chimeLeadMs = upNextDue ? (exerciseLeadMs?.(state.step) ?? 0) : 0;
   const upNextChime = useCueAudio({
     clip: chimeMs > 0 ? { url: UP_NEXT.src, start: 0, end: null } : null,
     take: state.take,
     running: running && chimeMs > 0,
-    delayMs: (chimeMs / 1000 - UP_NEXT.before + (upNextDue ? UP_NEXT.soundAfter : 0)) * 1000,
+    delayMs: (chimeMs / 1000 - UP_NEXT.before + (upNextDue ? UP_NEXT.soundAfter : 0)) * 1000 + chimeLeadMs,
     muted: muted || !prefs.soundEffects,
   });
 
@@ -572,8 +585,12 @@ export function WorkoutPlayer({
     }, 200);
     return () => window.clearInterval(id);
   }, [timer]);
+  // (A set held for its announcement shows its full time meanwhile: `cap`.)
   const leftMs = timer
-    ? Math.max(0, Math.min(timer.leftMs, timer.since === null ? timer.leftMs : timer.leftMs - (now - timer.since)))
+    ? Math.max(
+        0,
+        Math.min(timer.leftMs, timer.cap ?? Infinity, timer.since === null ? timer.leftMs : timer.leftMs - (now - timer.since)),
+      )
     : 0;
 
   // Music under the workout (the Audio card's Music switch). It plays while the
