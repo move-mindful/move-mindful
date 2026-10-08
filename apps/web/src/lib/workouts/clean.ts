@@ -1,6 +1,6 @@
 import "server-only";
 
-import { VOICE_LEVELS_PER_SECOND, type AudioTip, type Side, type TipCue, type TipMap, type WorkoutBlock, type WorkoutMove } from "@move-mindful/core";
+import { VOICE_LEVELS_PER_SECOND, WARMUP_CUE, warmupFirst, type AudioTip, type Side, type TipCue, type TipMap, type WorkoutBlock, type WorkoutMove } from "@move-mindful/core";
 import { TIP_MAX_SECONDS } from "@/lib/workouts/shared";
 
 // The server's own check on a sequence, whoever wrote it — the builder on
@@ -49,14 +49,15 @@ export function readTip(tip: unknown, folder?: string): AudioTip | undefined {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Well-formed cues only (a time in the file, an exercise id), in time order; at most 100. */
+/** Well-formed cues only (a time in the file, an exercise id or WARMUP_CUE), in time order; at most 100. */
 function readCues(value: unknown): TipCue[] | undefined {
   if (!Array.isArray(value)) return undefined;
   const cues: TipCue[] = [];
   for (const c of value.slice(0, 100)) {
     const at = Number((c as { at?: unknown })?.at);
     const exerciseId = (c as { exerciseId?: unknown })?.exerciseId;
-    if (!Number.isFinite(at) || at < 0 || at > 600 || typeof exerciseId !== "string" || !UUID.test(exerciseId)) continue;
+    if (!Number.isFinite(at) || at < 0 || at > 600 || typeof exerciseId !== "string") continue;
+    if (exerciseId !== WARMUP_CUE && !UUID.test(exerciseId)) continue;
     cues.push({ at: Math.round(at * 100) / 100, exerciseId });
   }
   cues.sort((a, b) => a.at - b.at);
@@ -122,9 +123,11 @@ export function cleanBlocks(
         restBetweenExercises: int(b.restBetweenExercises, 0, 600, 0),
         restBetweenRounds: int(b.restBetweenRounds, 0, 600, 0),
         moves: (b.moves ?? []).map((m) => cleanMove(m, info, tipFolder)).filter((m): m is WorkoutMove => !!m),
+        ...(b.warmup === true && { warmup: true }),
         ...withRestTips,
       });
     }
   }
-  return out;
+  // One warm-up at most, first.
+  return warmupFirst(out);
 }

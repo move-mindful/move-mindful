@@ -8,6 +8,7 @@ import {
   groupLabels,
   keepStepTips,
   secondsLeft,
+  warmupFirst,
   withTip,
   workoutSteps,
   type AudioTip,
@@ -118,6 +119,61 @@ test("groups are labelled Superset/Circuit, numbered per type", () => {
   });
   const blocks: WorkoutBlock[] = [g(2), { kind: "rest", seconds: 30 }, g(3), g(2), g(4)];
   assert.deepEqual(groupLabels(blocks), ["Superset 1", null, "Circuit 1", "Superset 2", "Circuit 2"]);
+});
+
+test("the warm-up is labelled Warm-up, whatever its size, and doesn't count as a superset or circuit", () => {
+  const g = (n: number, warmup = false): WorkoutBlock => ({
+    kind: "group",
+    rounds: 1,
+    restBetweenExercises: 0,
+    restBetweenRounds: 0,
+    moves: Array.from({ length: n }, () => move("row", "reps", 5)),
+    ...(warmup && { warmup: true }),
+  });
+  assert.deepEqual(groupLabels([g(1, true), g(2), g(3)]), ["Warm-up", "Superset 1", "Circuit 1"]);
+  assert.deepEqual(groupLabels([g(4, true)]), ["Warm-up"]);
+});
+
+test("warmupFirst: the warm-up goes first, and only one stays a warm-up", () => {
+  const single: WorkoutBlock = { kind: "exercise", move: move("row", "reps", 10), sets: 1, restBetweenSets: 0 };
+  const warmup = (id: string): WorkoutBlock => ({
+    kind: "group",
+    rounds: 1,
+    restBetweenExercises: 0,
+    restBetweenRounds: 0,
+    moves: [move(id, "time", 30)],
+    warmup: true,
+  });
+  // Already first: as it was.
+  const ok = [warmup("row"), single];
+  assert.equal(warmupFirst(ok), ok);
+  // None: as it was.
+  assert.deepEqual(warmupFirst([single]), [single]);
+  // Moved up; a second one becomes a plain group.
+  const out = warmupFirst([single, warmup("row"), warmup("hold")]);
+  assert.equal(out[0].kind === "group" && out[0].moves[0].exerciseId, "row");
+  assert.equal(out[0].kind === "group" && out[0].warmup, true);
+  assert.equal(out[1], single);
+  assert.equal(out[2].kind === "group" && out[2].warmup, false);
+});
+
+test("a warm-up plays like a circuit: each exercise in turn, labelled Warm-up", () => {
+  const blocks: WorkoutBlock[] = [
+    {
+      kind: "group",
+      rounds: 1,
+      restBetweenExercises: 0,
+      restBetweenRounds: 0,
+      moves: [move("row", "time", 30), move("hold", "time", 20)],
+      warmup: true,
+    },
+    { kind: "exercise", move: move("row", "reps", 10), sets: 2, restBetweenSets: 30 },
+  ];
+  const steps = workoutSteps(blocks, exercises);
+  assert.deepEqual(
+    steps.map((s) => (s.kind === "set" ? `${s.exerciseId}:${s.groupLabel}` : `rest ${s.seconds}`)),
+    ["row:Warm-up", "hold:Warm-up", "row:null", "rest 30", "row:null"],
+  );
 });
 
 test("steps: sets, sides and rests in play order", () => {

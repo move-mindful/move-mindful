@@ -1230,7 +1230,7 @@ export function WorkoutPlayer({
       const readyLine =
         set.rounds > 1
           ? set.groupLabel
-            ? `${set.groupLabel} · Round ${set.round} of ${set.rounds}`
+            ? set.rounds > 1 ? `${set.groupLabel} · Round ${set.round} of ${set.rounds}` : set.groupLabel
             : `Set ${set.round} of ${set.rounds}`
           : null;
       screen = (
@@ -1318,7 +1318,12 @@ export function WorkoutPlayer({
         set.measure === "time"
           ? ({ kind: "time", seconds: Math.ceil(leftMs / 1000) } as const)
           : ({ kind: "reps", amount: set.amount } as const);
-      const groupLine = set.groupLabel ? `${set.groupLabel} · Round ${set.round} of ${set.rounds}` : null;
+      // "Warm-up" alone when there's just the one round.
+      const groupLine = set.groupLabel
+        ? set.rounds > 1
+          ? `${set.groupLabel} · Round ${set.round} of ${set.rounds}`
+          : set.groupLabel
+        : null;
       const pill = upNext();
       // Ten seconds out on a set that ends by itself: what's next slides in,
       // centred, a little above the tip bubble's line (the set's tip has long

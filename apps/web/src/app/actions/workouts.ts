@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { allTips, type AudioTip, type TipMap, type WorkoutBlock } from "@move-mindful/core";
+import { allTips, isWarmup, WARMUP_CUE, type AudioTip, type TipMap, type WorkoutBlock } from "@move-mindful/core";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mux } from "@/lib/mux/client";
@@ -64,6 +64,16 @@ async function sideRestsSave(supabase: AdminClient): Promise<boolean> {
   return error?.code !== "42703";
 }
 
+/**
+ * Whether a warm-up will save: before 023_warmup_block.sql has run, the old
+ * save function drops the `warmup` flag without a word (the warm-up would
+ * come back a plain circuit), so the column is checked first.
+ */
+async function warmupsSave(supabase: AdminClient): Promise<boolean> {
+  const { error } = await supabase.from("workout_blocks").select("warmup").limit(1);
+  return error?.code !== "42703";
+}
+
 // Before 022_workout_overview_tip.sql has run, PostgREST rejects the unknown
 // rundown_tip column (PGRST204); a workout without that tip still saves.
 function missingRundownColumn(error: { code?: string; message?: string } | null): boolean {
@@ -114,6 +124,10 @@ export async function saveWorkout(input: WorkoutInput): Promise<{ id?: string; e
   if (sideRests && !(await sideRestsSave(supabase))) {
     return { error: "Rest between sides can’t be saved until migration 021_rest_between_sides.sql has run." };
   }
+  const hasWarmup = (input.blocks ?? []).some(isWarmup);
+  if (hasWarmup && !(await warmupsSave(supabase))) {
+    return { error: "The warm-up can’t be saved until migration 023_warmup_block.sql has run." };
+  }
   if (input.warmupExerciseId) ids.add(input.warmupExerciseId);
   if (input.cooldownExerciseId) ids.add(input.cooldownExerciseId);
   const { data: rows } = ids.size
@@ -126,10 +140,12 @@ export async function saveWorkout(input: WorkoutInput): Promise<{ id?: string; e
 
   // The workout overview's tip: only ever this workout's own recording (a new
   // workout has none yet — recording one saves it first), its cues only for
-  // real exercises.
+  // real exercises (and the warm-up, when there is one).
   const rundownTip = input.id ? (readTip(input.rundownTip, input.id) ?? null) : null;
   if (rundownTip?.cues) {
-    const cues = rundownTip.cues.filter((c) => info.get(c.exerciseId)?.kind === "exercise");
+    const cues = rundownTip.cues.filter((c) =>
+      c.exerciseId === WARMUP_CUE ? hasWarmup : info.get(c.exerciseId)?.kind === "exercise",
+    );
     if (cues.length) rundownTip.cues = cues;
     else delete rundownTip.cues;
   }

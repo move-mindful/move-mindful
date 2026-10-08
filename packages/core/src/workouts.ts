@@ -32,12 +32,16 @@ export interface AudioTip {
  * On the workout overview's tip: the exercise the instructor turns to `at`
  * seconds into the file (the recording's own clock, so trimming doesn't move
  * it) — tapped in the builder while recording. In order; the overview shows
- * each from its cue until the next, and the last one on to the end.
+ * each from its cue until the next, and the last one on to the end. The
+ * warm-up, one row in the overview, is cued as WARMUP_CUE.
  */
 export interface TipCue {
   at: number;
   exerciseId: string;
 }
+
+/** A TipCue's `exerciseId` for the warm-up as a whole (its row in the overview). */
+export const WARMUP_CUE = "warmup";
 
 /**
  * The cue in force `time` seconds into the tip's file: the last one at or
@@ -89,6 +93,8 @@ export type WorkoutBlock =
    * A superset (2 exercises) or circuit (3+): each exercise once per round.
    * `restBetweenExercises` follows every exercise except a round's last;
    * `restBetweenRounds` follows every round except the final one.
+   * `warmup`: the workout's warm-up, built the same way (any number of
+   * exercises) — at most one, always first (see warmupFirst).
    */
   | {
       kind: "group";
@@ -96,8 +102,25 @@ export type WorkoutBlock =
       restBetweenExercises: number;
       restBetweenRounds: number;
       moves: WorkoutMove[];
+      warmup?: boolean;
       restTips?: TipMap;
     };
+
+/** The workout's warm-up block, if it has one. */
+export function isWarmup(block: WorkoutBlock | undefined): boolean {
+  return block?.kind === "group" && !!block.warmup;
+}
+
+/**
+ * The blocks with the warm-up where it belongs: first, and only one — a
+ * second is kept as a plain superset or circuit.
+ */
+export function warmupFirst<B extends WorkoutBlock>(blocks: B[]): B[] {
+  const at = blocks.findIndex(isWarmup);
+  if (at === -1 || (at === 0 && !blocks.slice(1).some(isWarmup))) return blocks;
+  const rest = blocks.filter((_, i) => i !== at).map((b) => (isWarmup(b) ? { ...b, warmup: false } : b));
+  return [blocks[at], ...rest];
+}
 
 /** What the estimate needs to know about an exercise. */
 export interface EstimateExercise {
@@ -222,13 +245,15 @@ export function aboutMinutes(seconds: number): number {
 
 /**
  * Labels for group blocks, numbered per type in order: two exercises make a
- * "Superset", three or more a "Circuit". Non-group blocks get null.
+ * "Superset", three or more a "Circuit"; the warm-up is "Warm-up". Non-group
+ * blocks get null.
  */
 export function groupLabels(blocks: WorkoutBlock[]): (string | null)[] {
   let supersets = 0;
   let circuits = 0;
   return blocks.map((b) => {
     if (b.kind !== "group") return null;
+    if (b.warmup) return "Warm-up";
     if (b.moves.length >= 3) return `Circuit ${++circuits}`;
     if (b.moves.length === 2) return `Superset ${++supersets}`;
     return "Superset or circuit";

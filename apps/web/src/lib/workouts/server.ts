@@ -39,6 +39,8 @@ export interface BlockRow {
   rest_between_rounds: number | null;
   /** Seconds between a sided exercise's sides — missing until 021_rest_between_sides.sql has run. */
   rest_between_sides?: number | null;
+  /** A group that's the workout's warm-up — missing until 023_warmup_block.sql has run. */
+  warmup?: boolean | null;
   /** Audio tips, { sets, rests } — missing until 019_workout_audio_tips.sql has run. */
   tips?: { sets?: unknown; rests?: unknown } | null;
 }
@@ -157,6 +159,7 @@ function toBlocks(rows: BlockRow[]): WorkoutBlock[] {
           restBetweenExercises: r.rest_between_exercises ?? 0,
           restBetweenRounds: r.rest_between_rounds ?? 0,
           moves: rows.filter((c) => c.parent_id === r.id).sort(byPosition).map(toMove),
+          ...(r.warmup && { warmup: true }),
           ...withRestTips,
         };
       }

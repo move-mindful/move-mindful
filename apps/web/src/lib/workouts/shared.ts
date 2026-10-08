@@ -200,8 +200,11 @@ export function publishProblems(
 ): string[] {
   const problems: string[] = [];
   if (!blocks.some((b) => b.kind !== "rest")) problems.push("Add at least one exercise.");
-  if (blocks.some((b) => b.kind === "group" && b.moves.length < 2)) {
+  if (blocks.some((b) => b.kind === "group" && !b.warmup && b.moves.length < 2)) {
     problems.push("Every superset or circuit needs at least two exercises.");
+  }
+  if (blocks.some((b) => b.kind === "group" && b.warmup && b.moves.length === 0)) {
+    problems.push("Add an exercise to the warm-up, or remove it.");
   }
   const ids = new Set<string>();
   for (const b of blocks) {
