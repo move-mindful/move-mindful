@@ -13,7 +13,12 @@ import type { PlayerWorkout } from "@/lib/workouts/player";
 export const VOICE = {
   /** "mw_The Helpful Android Assistant", from the ElevenLabs Voice Library (picked Oct 2026). */
   voiceId: "AbfSOGQHeh9ZowXq2JHp",
-  modelId: "eleven_multilingual_v2",
+  /**
+   * Eleven v4 at its normal speed (picked Oct 2026 over Multilingual v2): it
+   * takes a real breath at each comma, so a line runs about 3 s. Its speed
+   * setting hardly changes that; the wording does.
+   */
+  modelId: "eleven_v4",
   /** How far into its rest or exercise (seconds) a line starts. */
   delay: 0.2,
   /** The step's audio tip starts this long (seconds) after its line ends. */
