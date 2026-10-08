@@ -1093,8 +1093,9 @@ export function RundownScreen({
       {/* No box: the stage dims the loops behind (not blurred). The title stays put while the list scrolls. */}
       <div className={`pointer-events-auto flex min-h-0 ${grow} flex-col overflow-hidden`}>
         <div className="flex items-baseline justify-between gap-3 px-4 pb-1.5 pt-3.5">
-          <h2 className="text-[17px] font-semibold">Workout Overview</h2>
-          <span className="shrink-0 text-[15px] text-white/70">~{minutes} min</span>
+          {/* Up a third from 17 and 15px (Oct 2026); the time in white, like the title. */}
+          <h2 className="text-[22px] font-semibold">Workout Overview</h2>
+          <span className="shrink-0 text-[19px]">~{minutes} min</span>
         </div>
         {/* It scrolls (a swipe, the wheel, or following the instructor) without showing a scroll bar. */}
         <div

@@ -22,6 +22,16 @@ export interface PoolClip {
 
 export const POOL_SIZE = 4;
 
+/**
+ * At a cut from one clip to another, the one we're leaving stays on screen —
+ * paused where it was — until the new one is actually playing, then it's
+ * swapped in (still a cut). A paused, hidden video can take a moment to put
+ * its first frame up again, iPhones especially, and showing it straight away
+ * flashed the black stage behind. Never held longer than this (ms): a clip
+ * still loading then shows its spinner as before.
+ */
+const HANDOFF_MAX_MS = 1500;
+
 export interface ShownClip extends PoolClip {
   loop: boolean;
   /** Always plays muted, whatever the sound setting: an exercise's loop. */
@@ -57,6 +67,10 @@ export function useVideoPool({
 }): VideoPool {
   const els = useRef<Array<HTMLVideoElement | null>>([]);
   const shown = useRef<HTMLVideoElement | null>(null);
+  // A cut under way (see HANDOFF_MAX_MS): `from` still up, `to` playing hidden until it's going.
+  const handoff = useRef<{ from: HTMLVideoElement; to: HTMLVideoElement; frame: number } | null>(null);
+  // The last sync's arguments: run again once a handoff ends, to load what it held back.
+  const lastSync = useRef<Parameters<VideoPool["sync"]> | null>(null);
   const lastTake = useRef<number | null>(null);
   // Elements mid-unlock: pausing one before its play() settles would undo it.
   const unlocking = useRef(new Set<HTMLVideoElement>());
@@ -93,7 +107,41 @@ export function useVideoPool({
       );
     };
 
-    return {
+    const stopHandoff = () => {
+      if (handoff.current) cancelAnimationFrame(handoff.current.frame);
+      handoff.current = null;
+    };
+
+    // The new clip's going (its time moving, or — paused — a frame to show), or
+    // it's taken too long: show it, and put the old one away rewound.
+    const watchHandoff = (from: HTMLVideoElement, to: HTMLVideoElement) => {
+      stopHandoff();
+      const t0 = to.currentTime;
+      // Timed by the frames' own clock, from the first.
+      let since: number | null = null;
+      const check = (now: number) => {
+        since ??= now;
+        const h = handoff.current;
+        if (!h || h.to !== to) return;
+        const going = to.paused
+          ? to.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+          : to.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA && to.currentTime !== t0;
+        if (!going && now - since < HANDOFF_MAX_MS) {
+          h.frame = requestAnimationFrame(check);
+          return;
+        }
+        handoff.current = null;
+        to.style.opacity = "1";
+        if (from !== shown.current) {
+          from.style.opacity = "0";
+          if (from.currentTime > 0) from.currentTime = 0;
+        }
+        if (lastSync.current) pool.sync(...lastSync.current);
+      };
+      handoff.current = { from, to, frame: requestAnimationFrame(check) };
+    };
+
+    const pool: VideoPool = {
       refs: Array.from({ length: POOL_SIZE }, (_, i) => (el: HTMLVideoElement | null) => {
         els.current[i] = el;
         if (!el) return;
@@ -105,8 +153,15 @@ export function useVideoPool({
         el.onerror = () => onScreen() && handlers.current.onBuffering(false);
       }),
 
-      sync(upcoming, clip, { playing, muted, take }) {
+      sync(upcoming, clip, opts) {
+        lastSync.current = [upcoming, clip, opts];
+        const { playing, muted, take } = opts;
         const slots = live();
+        const prev = shown.current;
+        // What's on screen now — mid-handoff, the clip still up — and, cutting
+        // to another clip, kept there until the new one's going (not reused meanwhile).
+        const visible = handoff.current?.from ?? prev;
+        const keep = clip && visible && visible.dataset.url !== clip.url ? visible : null;
         const wanted = new Set(upcoming.map((c) => c.url));
         if (clip) wanted.add(clip.url);
         const order = clip && !upcoming.some((c) => c.url === clip.url) ? [clip, ...upcoming] : upcoming;
@@ -115,8 +170,9 @@ export function useVideoPool({
           if (slots.some((v) => v.dataset.url === c.url)) continue;
           const free =
             slots.find((v) => !v.dataset.url) ??
-            slots.find((v) => !wanted.has(v.dataset.url!) && v !== shown.current) ??
-            slots.find((v) => !wanted.has(v.dataset.url!));
+            slots.find((v) => !wanted.has(v.dataset.url!) && v !== prev && v !== keep) ??
+            slots.find((v) => !wanted.has(v.dataset.url!) && v !== keep);
+          // None free while the old clip's held up: loaded when the handoff ends.
           if (!free) break;
           free.pause();
           free.dataset.url = c.url;
@@ -128,13 +184,19 @@ export function useVideoPool({
         const el = clip ? (slots.find((v) => v.dataset.url === clip.url) ?? null) : null;
         const restart = take !== lastTake.current;
         lastTake.current = take;
+        // Still handing over to this same clip: carry on. Anything else ends it (a new one starts below).
+        const handing = !!el && !!keep && handoff.current?.from === keep && handoff.current.to === el;
+        if (!handing) stopHandoff();
 
         for (const v of slots) {
           if (v === el) continue;
-          v.style.opacity = "0";
+          v.style.zIndex = "0";
           if (!v.paused && !unlocking.current.has(v)) v.pause();
+          // The clip we're cutting from stays up, paused, beneath the new one.
+          if (el && v === keep) continue;
+          v.style.opacity = "0";
           // Leave the clip we're moving off rewound, ready for next time.
-          if (v === shown.current && v.currentTime > 0) v.currentTime = 0;
+          if ((v === prev || v === visible) && v.currentTime > 0) v.currentTime = 0;
         }
         shown.current = el;
         if (!el || !clip) {
@@ -142,12 +204,14 @@ export function useVideoPool({
           return;
         }
 
-        el.style.opacity = "1";
+        el.style.zIndex = "1";
+        el.style.opacity = keep ? "0" : "1";
         el.loop = clip.loop;
         el.muted = muted || clip.silent;
         if (restart && el.currentTime > 0) el.currentTime = 0;
         if (playing) play(el);
         else if (!el.paused) el.pause();
+        if (keep && !handing) watchHandoff(keep, el);
         // Not enough loaded to play yet: loading until its "playing" event.
         handlers.current.onBuffering(playing && el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA);
       },
@@ -172,6 +236,7 @@ export function useVideoPool({
 
       current: () => shown.current,
     };
+    return pool;
   }, []);
 }
 
