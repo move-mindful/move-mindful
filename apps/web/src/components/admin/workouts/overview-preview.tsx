@@ -154,6 +154,7 @@ export function OverviewPreview({
           onContinue={noop}
           controls={controls}
           fit
+          listWarmup
         />
       </div>
     </div>

@@ -46,9 +46,10 @@ export function WorkoutRows({
    * instead the exercise on screen is lit — every row of it. With `onPick`
    * (the builder, recording its tip) tapping an exercise picks it, with the
    * tap's time (the event's timeStamp); members just watch. Lit rows carry
-   * `data-spotlit`.
+   * `data-spotlit`. `listWarmup` (the builder) lists the warm-up's exercises
+   * in its row, to talk them through — the row is still tapped as a whole.
    */
-  spotlight?: { exerciseId: string | null; onPick?: (exerciseId: string, at: number) => void };
+  spotlight?: { exerciseId: string | null; onPick?: (exerciseId: string, at: number) => void; listWarmup?: boolean };
 }) {
   const labels = groupLabels(workout.blocks);
   // During the warm-up no exercise is on yet: only its row is current.
@@ -183,7 +184,8 @@ export function WorkoutRows({
           );
         }
 
-        // The warm-up, before the workout starts: one row — tapped as a whole while recording the overview's tip.
+        // The warm-up, before the workout starts: one row — tapped as a whole
+        // while recording the overview's tip, its exercises listed in it there.
         if (b.warmup && !position) {
           const seconds = steps.reduce((sum, st) => (st.block === i ? sum + st.seconds : sum), 0);
           const count = b.moves.length;
@@ -203,12 +205,28 @@ export function WorkoutRows({
                     }
                   : {})}
                 data-spotlit={(spotlight && status === "now") || undefined}
-                className={`flex w-full items-center gap-3 rounded-2xl border-[1.5px] px-2.5 py-2 text-left ${
-                  status === "now" ? "border-[#A99CFF]/60 bg-[#A99CFF]/[0.14]" : "border-transparent"
+                className={`flex w-full flex-col gap-1.5 rounded-2xl border-[1.5px] px-2.5 py-2 text-left ${
+                  status === "now" ? "border-[#A99CFF]/60 bg-[#A99CFF]/[0.14]" : spotlight?.listWarmup ? "border-white/[0.12]" : "border-transparent"
                 }`}
               >
-                <Circle status={status} icon="sun" />
-                <RowText name="Warm-up" detail={detail} />
+                <span className="flex w-full items-center gap-3">
+                  <Circle status={status} icon="sun" />
+                  <RowText name="Warm-up" detail={detail} />
+                </span>
+                {spotlight?.listWarmup && (
+                  // Past the circle, under the name: what's in it, not tappable on its own.
+                  <span className="flex flex-col gap-1 pb-0.5 pl-11">
+                    {b.moves.map((m, k) => {
+                      const ex = workout.exercises[m.exerciseId];
+                      return (
+                        <span key={k} className="flex items-baseline justify-between gap-3 text-[13px]">
+                          <span className="min-w-0 truncate font-medium text-white/85">{ex?.name}</span>
+                          <span className="shrink-0 text-white/60">{amountLabel(m.measure, m.amount, ex?.sided)}</span>
+                        </span>
+                      );
+                    })}
+                  </span>
+                )}
               </Tag>
             </div>
           );

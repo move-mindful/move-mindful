@@ -929,6 +929,7 @@ export function RundownScreen({
   theater = false,
   controls,
   fit = false,
+  listWarmup = false,
 }: {
   workout: PlayerWorkout;
   steps: WorkoutStep[];
@@ -946,6 +947,8 @@ export function RundownScreen({
    * it can be).
    */
   fit?: boolean;
+  /** The builder: the warm-up's row lists its exercises (still lit and tapped as one). */
+  listWarmup?: boolean;
   /** How far through the section: Continue fills with it. */
   fraction: number;
   paused: boolean;
@@ -984,7 +987,7 @@ export function RundownScreen({
           <span className="shrink-0 text-[15px] text-white/70">~{minutes} min</span>
         </div>
         <div ref={list} className={`min-h-0 ${grow} overflow-y-auto overscroll-contain px-2 pb-2`}>
-          <WorkoutRows workout={workout} steps={steps} position={null} spotlight={{ exerciseId, onPick }} />
+          <WorkoutRows workout={workout} steps={steps} position={null} spotlight={{ exerciseId, onPick, listWarmup }} />
         </div>
       </div>
       {/* The buttons, on a rest's own bottom shade (so Pause looks as it does
