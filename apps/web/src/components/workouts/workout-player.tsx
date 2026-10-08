@@ -534,10 +534,13 @@ export function WorkoutPlayer({
     : 0;
 
   // The workout overview: each exercise once. With cues on its tip (tapped in
-  // the builder while recording) it shows whichever the instructor is on —
-  // timed on the section's own clock, which starts with the tip, so pausing
-  // holds it and it follows even with tips muted — staying on the last one
-  // once the tip's done. Without cues, each loop in turn for
+  // the builder while recording) it shows whichever the instructor is on.
+  // While the tip plays (or is held by a pause) that's timed by the voice
+  // itself, the file's own position: the section's clock starts before the
+  // file has loaded and begun — most of a second on a phone — so it would run
+  // ahead of the voice. Otherwise (tips muted, the file not started yet, or
+  // done) it's the section's clock, which starts with the tip, staying on
+  // the last one once the tip's done. Without cues, each loop in turn for
   // RUNDOWN.secondsEach.
   const lineup = useMemo(() => exerciseLineup(steps, workout.exercises), [steps, workout.exercises]);
   const rundownElapsed = state.phase === "rundown" ? Math.max(0, rundownMs - leftMs) : 0;
@@ -545,12 +548,27 @@ export function WorkoutPlayer({
     () => (workout.rundownTip?.cues ?? []).filter((c) => lineup.some((x) => x.exerciseId === c.exerciseId)),
     [workout.rundownTip, lineup],
   );
+  // The exercise the voice is on, read off the playing file (for this take only).
+  const [voiceCue, setVoiceCue] = useState<{ take: number; exerciseId: string | null } | null>(null);
+  const followVoice = state.phase === "rundown" && rundownCues.length > 0 && tips.playing;
+  const voiceTime = tips.time;
+  const rundownTake = state.take;
+  useEffect(() => {
+    if (!followVoice) return;
+    const id = window.setInterval(() => {
+      const exerciseId = cueAt(rundownCues, voiceTime())?.exerciseId ?? null;
+      setVoiceCue((v) => (v?.take === rundownTake && v.exerciseId === exerciseId ? v : { take: rundownTake, exerciseId }));
+    }, 50);
+    return () => window.clearInterval(id);
+  }, [followVoice, rundownCues, voiceTime, rundownTake]);
+  const voiceOn = (tips.playing || tips.held) && voiceCue?.take === state.take;
+  const rundownAt = voiceOn
+    ? voiceCue.exerciseId
+    : cueAt(rundownCues, (workout.rundownTip?.start ?? 0) + rundownElapsed / 1000)?.exerciseId;
   const rundownIndex = !lineup.length
     ? 0
     : rundownCues.length
-      ? lineup.findIndex(
-          (x) => x.exerciseId === cueAt(rundownCues, (workout.rundownTip?.start ?? 0) + rundownElapsed / 1000)?.exerciseId,
-        )
+      ? lineup.findIndex((x) => x.exerciseId === rundownAt)
       : Math.floor(rundownElapsed / (RUNDOWN.secondsEach * 1000)) % lineup.length;
 
   // ── Videos ──────────────────────────────────────────
