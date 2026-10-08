@@ -211,7 +211,8 @@ function ControlsRow({
         </span>
         <span className="relative flex min-w-0 flex-col gap-px">
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/70">{pill.label}</span>
-          <span className="truncate text-[15px] font-medium">{pill.text}</span>
+          {/* Too long for the pill, it scrolls (see Marquee). */}
+          <Marquee text={pill.text} className="text-[15px] font-medium" />
         </span>
       </button>
       <RoundButton label="Pause" onClick={onPause}>
