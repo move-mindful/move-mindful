@@ -4,15 +4,20 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 // A line of text that scrolls when it doesn't fit — the Up next card's and
 // pill's. Text that fits stays put. Text that doesn't waits a moment, glides
-// left until its end shows, waits again, then starts over from the top: a
-// slow, readable pace, with its edges fading while it's cut off. A new text
-// starts from its first word. With Reduce motion on, it's trimmed with "…" instead.
+// left until its end shows at a slow, readable pace, waits again, then glides
+// quickly back to the start and goes round again — its edges fading while
+// it's cut off. A new text starts from its first word. With Reduce motion
+// on, it's trimmed with "…" instead.
 
 /** Pixels a second it glides at. */
 const SPEED = 30;
 /** How long it rests at the start, then at the end (ms). */
 const HOLD_START = 1600;
 const HOLD_END = 1400;
+/** The way back: this many times faster, within these bounds (ms). */
+const BACK_FASTER = 4;
+const BACK_MIN = 350;
+const BACK_MAX = 700;
 /** The fade at each edge while it's cut off. */
 const FADE = "linear-gradient(to right, transparent, #000 10px, #000 calc(100% - 10px), transparent)";
 
@@ -60,14 +65,16 @@ export function Marquee({ text, className = "" }: { text: string; className?: st
     const i = inner.current;
     if (!i || reduced || shift <= 0) return;
     const travel = (shift / SPEED) * 1000;
-    const total = HOLD_START + travel + HOLD_END;
+    const back = Math.min(BACK_MAX, Math.max(BACK_MIN, travel / BACK_FASTER));
+    const total = HOLD_START + travel + HOLD_END + back;
     const moved = `translateX(${-shift}px)`;
     const glide = i.animate(
       [
         { transform: "translateX(0)", offset: 0 },
         { transform: "translateX(0)", offset: HOLD_START / total, easing: "ease-in-out" },
         { transform: moved, offset: (HOLD_START + travel) / total },
-        { transform: moved, offset: 1 },
+        { transform: moved, offset: (HOLD_START + travel + HOLD_END) / total, easing: "ease-in-out" },
+        { transform: "translateX(0)", offset: 1 },
       ],
       { duration: total, iterations: Infinity },
     );
