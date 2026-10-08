@@ -411,8 +411,11 @@ function reduce(ctx: PlayerContext, s: PlayerState, a: PlayerAction): PlayerStat
   switch (a.type) {
     case "begin": {
       const from = a.from ? (setStepFor(ctx.steps, a.from) ?? 0) : 0;
+      // From a clean slate — Begin, Start over or Resume alike — whatever an
+      // earlier go left behind; only `take` carries on, so clips start afresh.
       const started = {
-        ...s,
+        ...initialPlayerState,
+        take: s.take,
         mode: fitTutorialMode(a.mode, !!a.autoAdvance),
         activeMs: from ? Math.max(0, a.activeMs ?? 0) : 0,
         activeSince: null,

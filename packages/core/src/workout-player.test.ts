@@ -673,3 +673,20 @@ test("a rep set on auto-advance is held too; a rest isn't", () => {
   assert.equal(s.step, 1, "on to the rest");
   assert.equal(timerLeft(s, 29_000), 29_000, "the rest counts from its start");
 });
+
+test("Begin starts from a clean slate, whatever an earlier go left behind", () => {
+  // Part-way through, paused with a sheet up, tutorials seen.
+  const used = run([
+    { type: "begin", warmup: false, mode: "loop", now: 0 },
+    { type: "next", now: 1_000 },
+    { type: "next", now: 2_000 },
+    { type: "next", now: 3_000 },
+    { type: "pause", now: 4_000 },
+    { type: "sheet", sheet: "settings", now: 5_000 },
+  ]);
+  assert.ok(used.seen.length > 0 && used.paused && used.step > 0);
+  const again = run([{ type: "begin", warmup: false, mode: "loop", now: 10_000 }], used);
+  const first = run([{ type: "begin", warmup: false, mode: "loop", now: 10_000 }]);
+  assert.deepEqual({ ...again, take: 0 }, { ...first, take: 0 }, "the same as a first Begin");
+  assert.ok(again.take > used.take, "its clips start from the top");
+});

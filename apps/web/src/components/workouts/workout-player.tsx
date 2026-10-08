@@ -904,11 +904,20 @@ export function WorkoutPlayer({
     });
   }
 
-  /** A fresh start (Begin, or Start over): a new session, replacing any saved progress. */
+  /**
+   * A fresh start (Begin, or Start over): a new session, replacing any saved
+   * progress, and the player as if the page had just opened — nothing left
+   * from an earlier go here (a held rest, controls swiped away, Settings
+   * opened from the guide, where the overview's voice had got to).
+   */
   function begin(withWarmup: boolean) {
     const warmup = withWarmup && !!workout.warmup;
     startSession(warmup);
     setSaved(null);
+    setHoldInPlace(false);
+    setChromeHidden(false);
+    setSettingsFromGuide(false);
+    setVoiceCue(null);
     start({ warmup });
   }
 
