@@ -918,11 +918,14 @@ export function RestScreen({
 
 // ── The workout overview ──────────────────────────────
 
+/** How long the overview's list takes to glide the lit exercise to its middle (ms). */
+const RUNDOWN_SCROLL_MS = 800;
+
 /**
  * The workout overview, after the intro (the "rundown"): the exercise list
  * over each exercise's loop in turn — the stage plays them, dimmed the whole
- * way across as on a rest — with the one on screen lit, and scrolled to when
- * it's out of view, while the instructor's tip talks the workout through.
+ * way across as on a rest — with the one on screen lit, and kept near the
+ * list's middle, while the instructor's tip talks the workout through.
  * Pause holds it all; Continue, filling as the section runs, goes on to the
  * first exercise. Desktop shows the same in the video column. The builder
  * shows it too, recording the tip: its own `controls`, and `onPick` to tap
@@ -974,17 +977,35 @@ export function RundownScreen({
   theater?: boolean;
 }) {
   const list = useRef<HTMLDivElement>(null);
-  // A long workout scrolls: as the instructor moves on to an exercise that's
-  // out of view, bring it to the middle of the list (so what follows shows
-  // too) — the list only, never the page. In view already, nothing moves.
+  // A long workout scrolls: as the instructor moves on, the exercise lit
+  // glides to the middle of the list (as near as the list's ends allow), so
+  // what follows shows too — the list only, never the page. Eased over
+  // RUNDOWN_SCROLL_MS; a swipe or the wheel takes over from it.
   useEffect(() => {
     const box = list.current;
     const row = box?.querySelector<HTMLElement>("[data-spotlit]");
     if (!box || !row) return;
     const top = row.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
-    const bottom = top + row.offsetHeight;
-    if (top >= box.scrollTop && bottom <= box.scrollTop + box.clientHeight) return;
-    box.scrollTo({ top: Math.max(0, top - (box.clientHeight - row.offsetHeight) / 2), behavior: "smooth" });
+    const most = box.scrollHeight - box.clientHeight;
+    const target = Math.min(most, Math.max(0, top - (box.clientHeight - row.offsetHeight) / 2));
+    const from = box.scrollTop;
+    if (Math.abs(target - from) < 2) return;
+    const started = performance.now();
+    let frame = requestAnimationFrame(function glide(now) {
+      const t = Math.min(1, (now - started) / RUNDOWN_SCROLL_MS);
+      // Ease in and out (cubic).
+      const eased = t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+      box.scrollTop = from + (target - from) * eased;
+      if (t < 1) frame = requestAnimationFrame(glide);
+    });
+    const stop = () => cancelAnimationFrame(frame);
+    box.addEventListener("wheel", stop, { passive: true });
+    box.addEventListener("touchstart", stop, { passive: true });
+    return () => {
+      stop();
+      box.removeEventListener("wheel", stop);
+      box.removeEventListener("touchstart", stop);
+    };
   }, [exerciseId]);
   // Fitting, the list's own height counts (flex-auto, not flex-1).
   const grow = fit ? "flex-auto" : "flex-1";
