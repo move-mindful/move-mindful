@@ -14,6 +14,9 @@ export const TIP_BUCKET = "workout-tips";
 /** The longest recording the builder takes. A tip still stops when its set or rest ends. */
 export const TIP_MAX_SECONDS = 60;
 
+/** The workout overview's tip talks through the whole workout, so it gets longer. */
+export const RUNDOWN_TIP_MAX_SECONDS = 180;
+
 /** How far into its set (once the exercise starts, after Get ready) or rest a tip begins. */
 export const TIP_DELAY_SECONDS = { set: 3, rest: 1 } as const;
 

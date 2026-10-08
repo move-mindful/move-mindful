@@ -15,7 +15,15 @@ import {
 } from "@move-mindful/core";
 import { uploadWorkoutTip } from "@/app/actions/workouts";
 import { formatDuration } from "@/lib/exercises/shared";
-import { RUNDOWN, RUNDOWN_TIP_SLOT, TIP_DELAY_SECONDS, TIP_MAX_SECONDS, tipUrl, type CatalogExercise } from "@/lib/workouts/shared";
+import {
+  RUNDOWN,
+  RUNDOWN_TIP_MAX_SECONDS,
+  RUNDOWN_TIP_SLOT,
+  TIP_DELAY_SECONDS,
+  TIP_MAX_SECONDS,
+  tipUrl,
+  type CatalogExercise,
+} from "@/lib/workouts/shared";
 import { readRecording, withReading } from "@/lib/workouts/trim";
 import { OverviewPreview } from "@/components/admin/workouts/overview-preview";
 
@@ -216,7 +224,9 @@ export function TipsView({
     const chunks: Blob[] = [];
     // Timed by the recorder's own start and stop events.
     let startedAt = 0;
-    const limit = window.setTimeout(() => rec.state === "recording" && rec.stop(), TIP_MAX_SECONDS * 1000);
+    // A take stops (and saves) by itself at the limit.
+    const maxSeconds = overviewTip ? RUNDOWN_TIP_MAX_SECONDS : TIP_MAX_SECONDS;
+    const limit = window.setTimeout(() => rec.state === "recording" && rec.stop(), maxSeconds * 1000);
     rec.ondataavailable = (e) => {
       if (e.data.size) chunks.push(e.data);
     };
@@ -255,6 +265,7 @@ export function TipsView({
       fd.set("workoutId", workoutId);
       fd.set("seconds", String(reading?.duration ?? seconds));
       fd.set("audio", audio, "tip.m4a");
+      if (overviewTip) fd.set("overview", "1");
       const res = await uploadWorkoutTip(fd).catch(() => ({ tip: undefined, error: "Couldn’t reach the server. Try again." }));
       setBusy(null);
       if (overviewTip) setPreview(null);
@@ -322,6 +333,12 @@ export function TipsView({
   }
 
   const name = (id: string) => byId.get(id)?.name ?? "Missing exercise";
+
+  // Recording the overview's tip: the seconds before it stops by itself.
+  const overviewLeft =
+    busy?.slot === overviewId && busy.phase === "recording" && busy.startedAt !== null
+      ? Math.max(0, RUNDOWN_TIP_MAX_SECONDS - (now - busy.startedAt) / 1000)
+      : null;
 
   function labelFor(s: WorkoutStep): string {
     if (s.kind === "rest") {
@@ -487,7 +504,9 @@ export function TipsView({
               ? "Review the sequence — tap an exercise to see it. Then Record, and tap each exercise as you start talking about it."
               : busy?.phase === "saving"
                 ? "Saving the recording…"
-                : "Recording — tap each exercise as you start talking about it.")
+                : overviewLeft !== null && overviewLeft <= 20
+                  ? `${Math.ceil(overviewLeft)} s left — it stops and saves by itself at ${formatDuration(RUNDOWN_TIP_MAX_SECONDS)}.`
+                  : `Recording — tap each exercise as you start talking about it. Up to ${RUNDOWN_TIP_MAX_SECONDS / 60} minutes.`)
           }
           controls={
             preview === "ready" ? (
