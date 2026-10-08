@@ -56,7 +56,11 @@ export function OverviewSheet({
           </div>
         </div>
       </div>
-      <div data-sheet-scroll className={`min-h-0 overflow-y-auto overscroll-contain ${side ? "px-4" : "px-3"}`}>
+      {/* Scrolls without showing a scroll bar, like the workout overview's list. */}
+      <div
+        data-sheet-scroll
+        className={`min-h-0 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${side ? "px-4" : "px-3"}`}
+      >
         <WorkoutRows workout={workout} steps={steps} position={position} onJump={onJump} />
       </div>
     </>
