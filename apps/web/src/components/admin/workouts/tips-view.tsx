@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import {
   cueAt,
+  isWarmup,
+  WARMUP_CUE,
   groupLabels,
   workoutSteps,
   type AudioTip,
@@ -102,7 +104,9 @@ export function TipsView({
   // one being talked about from then — and playing back, the highlight
   // follows those cues, as it will for members.
   const overviewId = slotId(RUNDOWN_TIP_SLOT);
-  const firstExercise = (steps.find((s) => s.kind === "set") as SetStep | undefined)?.exerciseId ?? null;
+  // What the overview opens on: the warm-up (one row), or the first exercise.
+  const firstSet = steps.find((s) => s.kind === "set") as SetStep | undefined;
+  const firstExercise = firstSet ? (isWarmup(blocks[firstSet.block]) ? WARMUP_CUE : firstSet.exerciseId) : null;
   // "ready": open to review the sequence before recording; "record": recording; "play": playing back.
   const [preview, setPreview] = useState<"ready" | "record" | "play" | null>(null);
   const [cueNow, setCueNow] = useState<string | null>(null);

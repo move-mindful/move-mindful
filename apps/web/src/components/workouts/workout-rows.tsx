@@ -1,6 +1,6 @@
 "use client";
 
-import { groupLabels, setStepFor, type WorkoutStep } from "@move-mindful/core";
+import { groupLabels, setStepFor, WARMUP_CUE, type WorkoutStep } from "@move-mindful/core";
 import { amountLabel, clock, type PlayerWorkout } from "@/lib/workouts/player";
 import { ACCENT } from "./progress-bar";
 import { Check, Loop, Moon, Sun, Timer } from "./icons";
@@ -23,7 +23,9 @@ export interface RowsPosition {
 /**
  * The workout as a list: the warm-up, single exercises, rests and supersets /
  * circuits, and the cool-down. Every row leads with one status circle — an empty ring before it
- * starts, solid accent while it's on, white with a check once done.
+ * starts, solid accent while it's on, white with a check once done. Before the
+ * workout starts (the preview, the overview: no `position`) the warm-up block
+ * is one row; under way, it's listed like a circuit.
  */
 export function WorkoutRows({
   workout,
@@ -60,7 +62,10 @@ export function WorkoutRows({
   const blockStatus = (block: number): Status => {
     if (spotlight) {
       const b = workout.blocks[block];
-      const on = b.kind === "exercise" ? lit(b.move.exerciseId) : b.kind === "group" && b.moves.some((m) => lit(m.exerciseId));
+      const on =
+        b.kind === "exercise"
+          ? lit(b.move.exerciseId)
+          : b.kind === "group" && (b.warmup ? lit(WARMUP_CUE) : b.moves.some((m) => lit(m.exerciseId)));
       return on ? "now" : "todo";
     }
     if (position?.complete) return "done";
@@ -178,7 +183,38 @@ export function WorkoutRows({
           );
         }
 
-        // Superset or circuit.
+        // The warm-up, before the workout starts: one row — tapped as a whole while recording the overview's tip.
+        if (b.warmup && !position) {
+          const seconds = steps.reduce((sum, st) => (st.block === i ? sum + st.seconds : sum), 0);
+          const count = b.moves.length;
+          const detail = [`${count} ${count === 1 ? "exercise" : "exercises"}`, b.rounds > 1 && `${b.rounds} rounds`, clock(seconds)]
+            .filter(Boolean)
+            .join(" · ");
+          const onPick = spotlight?.onPick;
+          const Tag = onPick ? "button" : "div";
+          return (
+            <div key={i} role="listitem">
+              <Tag
+                {...(onPick
+                  ? {
+                      type: "button" as const,
+                      onClick: (e: React.MouseEvent) => onPick(WARMUP_CUE, e.timeStamp),
+                      "aria-label": "Show the warm-up",
+                    }
+                  : {})}
+                data-spotlit={(spotlight && status === "now") || undefined}
+                className={`flex w-full items-center gap-3 rounded-2xl border-[1.5px] px-2.5 py-2 text-left ${
+                  status === "now" ? "border-[#A99CFF]/60 bg-[#A99CFF]/[0.14]" : "border-transparent"
+                }`}
+              >
+                <Circle status={status} icon="sun" />
+                <RowText name="Warm-up" detail={detail} />
+              </Tag>
+            </div>
+          );
+        }
+
+        // Superset or circuit (or the warm-up, under way).
         const round = status === "now" && curSet?.kind === "set" && curSet.block === i ? curSet.round : null;
         return (
           <div
@@ -189,7 +225,7 @@ export function WorkoutRows({
             }`}
           >
             <div className="flex items-center gap-3 px-0.5 pb-1.5 pt-0.5">
-              <Circle status={status} icon="loop" />
+              <Circle status={status} icon={b.warmup ? "sun" : "loop"} />
               <span className="flex min-w-0 flex-1 flex-col gap-px">
                 <span className={`text-base font-bold ${status === "done" ? "text-white/60" : ""}`}>{labels[i]}</span>
                 <span className="text-[13px] text-white/70">

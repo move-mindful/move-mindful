@@ -7,6 +7,7 @@ import {
   aboutMinutes,
   estimateWorkout,
   groupLabels,
+  isWarmup,
   keepStepTips,
   withTip,
   workoutSteps,
@@ -64,6 +65,8 @@ type KBlock =
       restBetweenExercises: number;
       restBetweenRounds: number;
       moves: KMove[];
+      /** The warm-up: pinned first, at most one (see warmupFirst in core). */
+      warmup?: boolean;
       restTips?: TipMap;
     };
 
@@ -99,6 +102,7 @@ function stripKeys(blocks: KBlock[]): WorkoutBlock[] {
         restBetweenExercises: b.restBetweenExercises,
         restBetweenRounds: b.restBetweenRounds,
         moves: b.moves.map(move),
+        ...(b.warmup && { warmup: true }),
         ...restTips,
       };
     }
@@ -390,7 +394,15 @@ export function WorkoutBuilder({
     else router.push("/admin/workouts");
   }
 
-  const moveRow = (from: number, to: number) => setBlocks((prev) => move(prev, from, to));
+  // The warm-up stays first: it doesn't move, and nothing moves above it.
+  const moveRow = (from: number, to: number) =>
+    setBlocks((prev) => (isWarmup(prev[from]) || isWarmup(prev[to]) ? prev : move(prev, from, to)));
+  const hasWarmup = isWarmup(plain[0]);
+  const addWarmup = () =>
+    setBlocks((prev) => [
+      { key: newKey(), kind: "group", warmup: true, rounds: 1, restBetweenExercises: 0, restBetweenRounds: 0, moves: [] },
+      ...prev,
+    ]);
   const remove = (key: string) => setBlocks((prev) => prev.filter((b) => b.key !== key));
 
   return (
@@ -608,11 +620,11 @@ export function WorkoutBuilder({
                   onChanged={onVideosChanged}
                 />
 
-                {/* Warm-up: optional, pinned first */}
+                {/* The old warm-up video: kept, but the player leaves it out for now (the warm-up block replaces it). */}
                 <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-zinc-300 bg-zinc-50 p-3">
-                  <Flag>Warm-up</Flag>
+                  <Flag>Warm-up video</Flag>
                   <select
-                    aria-label="Warm-up"
+                    aria-label="Warm-up video"
                     value={warmupId ?? ""}
                     onChange={(e) => setWarmupId(e.target.value || null)}
                     className="h-9 min-w-48 flex-1 rounded-lg border border-zinc-300 bg-white px-2.5 text-sm"
@@ -626,8 +638,20 @@ export function WorkoutBuilder({
                         </option>
                       ))}
                   </select>
-                  <span className="text-xs text-zinc-500">Optional for members · not counted in the workout time</span>
+                  <span className="text-xs text-zinc-500">Not played for now · use the warm-up block below</span>
                 </div>
+
+                {/* The warm-up block: exercises, pinned first. */}
+                {!hasWarmup && (
+                  <button
+                    type="button"
+                    onClick={addWarmup}
+                    className="w-full rounded-xl border border-dashed border-amber-300 px-4 py-2.5 text-left text-sm font-medium text-amber-800 hover:bg-amber-50"
+                  >
+                    + Warm-up{" "}
+                    <span className="font-normal text-amber-700/80">· exercises before the workout, one row in the overview</span>
+                  </button>
+                )}
 
                 {blocks.length === 0 && (
                   <p className="rounded-lg border border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500">
@@ -643,12 +667,13 @@ export function WorkoutBuilder({
                   {blocks.map((b, i) => (
                     <li key={b.key}>
                       <BlockFrame
-                        tone={b.kind}
+                        tone={b.kind === "group" && b.warmup ? "warmup" : b.kind}
                         onUp={() => moveRow(i, i - 1)}
                         onDown={() => moveRow(i, i + 1)}
                         onRemove={() => remove(b.key)}
-                        first={i === 0}
+                        first={i === 0 || (i === 1 && hasWarmup)}
                         last={i === blocks.length - 1}
+                        pinned={b.kind === "group" && !!b.warmup}
                         seconds={estimateWorkout([plain[i]], estimates).totalSeconds}
                       >
                         {b.kind === "rest" ? (
@@ -692,13 +717,15 @@ export function WorkoutBuilder({
                                   onChange={(s) => update(b.key, (x) => ({ ...x, restBetweenExercises: s }) as KBlock)}
                                 />
                               </Labelled>
-                              <Labelled label="Between rounds">
-                                <DurationInput
-                                  label="Rest between rounds"
-                                  seconds={b.restBetweenRounds}
-                                  onChange={(s) => update(b.key, (x) => ({ ...x, restBetweenRounds: s }) as KBlock)}
-                                />
-                              </Labelled>
+                              {(!b.warmup || b.rounds > 1) && (
+                                <Labelled label="Between rounds">
+                                  <DurationInput
+                                    label="Rest between rounds"
+                                    seconds={b.restBetweenRounds}
+                                    onChange={(s) => update(b.key, (x) => ({ ...x, restBetweenRounds: s }) as KBlock)}
+                                  />
+                                </Labelled>
+                              )}
                             </div>
                             <ol className="space-y-1.5 border-l-2 border-zinc-200 pl-3">
                               {b.moves.map((m, j) => (
@@ -728,8 +755,16 @@ export function WorkoutBuilder({
                                 <ExerciseSearch
                                   compact
                                   catalog={catalog}
-                                  suggested={pairSuggestions(b.moves)}
-                                  placeholder={b.moves.length < 2 ? "Add an exercise to this group…" : "Add another exercise…"}
+                                  suggested={b.warmup ? undefined : pairSuggestions(b.moves)}
+                                  placeholder={
+                                    b.warmup
+                                      ? b.moves.length
+                                        ? "Add another warm-up exercise…"
+                                        : "Add an exercise to the warm-up…"
+                                      : b.moves.length < 2
+                                        ? "Add an exercise to this group…"
+                                        : "Add another exercise…"
+                                  }
                                   onPick={(e) => update(b.key, (x) => (x.kind === "group" ? { ...x, moves: [...x.moves, newMove(e)] } : x))}
                                 />
                               </li>
@@ -928,8 +963,9 @@ function BlockFrame({
   first,
   last,
   seconds,
+  pinned = false,
 }: {
-  tone: KBlock["kind"];
+  tone: KBlock["kind"] | "warmup";
   children: ReactNode;
   onUp: () => void;
   onDown: () => void;
@@ -937,22 +973,29 @@ function BlockFrame({
   first: boolean;
   last: boolean;
   seconds: number;
+  /** The warm-up: always first, so no arrows (a gap the same width keeps it lined up). */
+  pinned?: boolean;
 }) {
   const toneCls = {
     exercise: "border-zinc-200 bg-white",
     rest: "border-dashed border-zinc-300 bg-zinc-50",
     group: "border-zinc-300 bg-white ring-1 ring-zinc-900/5",
+    warmup: "border-amber-200 bg-amber-50/50 ring-1 ring-amber-900/5",
   }[tone];
   return (
     <div className={`flex items-start gap-2 rounded-xl border p-2.5 ${toneCls}`}>
-      <span className="flex flex-col">
-        <button type="button" aria-label="Move up" disabled={first} onClick={onUp} className={iconBtn}>
-          ↑
-        </button>
-        <button type="button" aria-label="Move down" disabled={last} onClick={onDown} className={iconBtn}>
-          ↓
-        </button>
-      </span>
+      {pinned ? (
+        <span className="w-7 shrink-0" />
+      ) : (
+        <span className="flex flex-col">
+          <button type="button" aria-label="Move up" disabled={first} onClick={onUp} className={iconBtn}>
+            ↑
+          </button>
+          <button type="button" aria-label="Move down" disabled={last} onClick={onDown} className={iconBtn}>
+            ↓
+          </button>
+        </span>
+      )}
       <div className="min-w-0 flex-1 py-1">{children}</div>
       <span className="w-12 shrink-0 pt-2 text-right text-sm tabular-nums text-zinc-500">{formatDuration(seconds)}</span>
       <button type="button" aria-label="Remove" onClick={onRemove} className={`${iconBtn} mt-1`}>

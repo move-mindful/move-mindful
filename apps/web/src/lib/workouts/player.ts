@@ -2,7 +2,7 @@
 // (lib/workouts/member.ts) and handed to the client player. No server-only
 // imports. The step model and state machine live in @move-mindful/core.
 
-import type { AudioTip, EstimateExercise, Measure, Side, WorkoutBlock, WorkoutStep } from "@move-mindful/core";
+import { isWarmup, WARMUP_CUE, type AudioTip, type EstimateExercise, type Measure, type Side, type WorkoutBlock, type WorkoutStep } from "@move-mindful/core";
 import { DUMBBELL_LEVELS, EQUIPMENT_OPTIONS } from "@/lib/exercises/shared";
 import { LEVELS, type WorkoutLevel } from "@/lib/workouts/shared";
 
@@ -71,10 +71,16 @@ export function loopFor(exercise: PlayerExercise | undefined, side: Side | null)
   return (side ? exercise.loops[side] : exercise.loops.main) ?? null;
 }
 
+/** A set's loop — its side's — or any loop the exercise has. */
+function setLoop(step: WorkoutStep & { kind: "set" }, exercises: Record<string, PlayerExercise>): PlayerClip | undefined {
+  const loops = exercises[step.exerciseId]?.loops;
+  return (step.side ? loops?.[step.side] : loops?.main) ?? loops?.main ?? loops?.right ?? loops?.left;
+}
+
 /**
  * Each exercise once, in the order the workout first meets it, with one loop
  * clip — its first side's — however many sets, rounds and sides it has. The
- * preview's montage and the workout overview play these.
+ * preview's montage plays these.
  */
 export function exerciseLineup(
   steps: WorkoutStep[],
@@ -85,11 +91,53 @@ export function exerciseLineup(
   for (const step of steps) {
     if (step.kind !== "set" || seen.has(step.exerciseId)) continue;
     seen.add(step.exerciseId);
-    const loops = exercises[step.exerciseId]?.loops;
-    const clip = (step.side ? loops?.[step.side] : loops?.main) ?? loops?.main ?? loops?.right ?? loops?.left;
+    const clip = setLoop(step, exercises);
     if (clip) result.push({ exerciseId: step.exerciseId, clip });
   }
   return result;
+}
+
+/** One entry of the workout overview: an exercise (its id), or the warm-up (WARMUP_CUE) with its exercises' loops. */
+export interface OverviewEntry {
+  key: string;
+  clips: PlayerClip[];
+}
+
+/**
+ * The workout overview's lineup, as its rows are lit and its cues name them:
+ * the warm-up as one entry — its exercises' loops, taking turns — then each
+ * exercise after it once, in the order the workout first meets it.
+ */
+export function overviewLineup(
+  steps: WorkoutStep[],
+  blocks: WorkoutBlock[],
+  exercises: Record<string, PlayerExercise>,
+): OverviewEntry[] {
+  const warmup: OverviewEntry = { key: WARMUP_CUE, clips: [] };
+  const warmupSeen = new Set<string>();
+  const seen = new Set<string>();
+  const rest: OverviewEntry[] = [];
+  for (const step of steps) {
+    if (step.kind !== "set") continue;
+    const inWarmup = isWarmup(blocks[step.block]);
+    const done = inWarmup ? warmupSeen : seen;
+    if (done.has(step.exerciseId)) continue;
+    done.add(step.exerciseId);
+    const clip = setLoop(step, exercises);
+    if (!clip) continue;
+    if (inWarmup) warmup.clips.push(clip);
+    else rest.push({ key: step.exerciseId, clips: [clip] });
+  }
+  return warmup.clips.length ? [warmup, ...rest] : rest;
+}
+
+/**
+ * The overview entry's loop on screen `ms` into the section: the warm-up's
+ * take turns, `RUNDOWN.secondsEach` apiece (`eachMs`).
+ */
+export function entryClip(entry: OverviewEntry | undefined, ms: number, eachMs: number): PlayerClip | undefined {
+  if (!entry?.clips.length) return undefined;
+  return entry.clips[Math.floor(Math.max(0, ms) / eachMs) % entry.clips.length];
 }
 
 /** 75 → "1:15". */

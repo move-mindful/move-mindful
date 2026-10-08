@@ -36,7 +36,7 @@ import {
   type WorkoutStep,
 } from "@move-mindful/core";
 import { levelsLabel } from "@/lib/exercises/shared";
-import { amountLabel, clock, equipmentText, exerciseLineup, loopFor, type PlayerClip, type PlayerWorkout } from "@/lib/workouts/player";
+import { amountLabel, clock, entryClip, equipmentText, loopFor, overviewLineup, type PlayerClip, type PlayerWorkout } from "@/lib/workouts/player";
 import { rateWorkout } from "@/app/actions/workout-ratings";
 import { OverviewSheet } from "./overview-sheet";
 import { ProgressBar } from "./progress-bar";
@@ -533,7 +533,8 @@ export function WorkoutPlayer({
     ? Math.max(0, Math.min(timer.leftMs, timer.since === null ? timer.leftMs : timer.leftMs - (now - timer.since)))
     : 0;
 
-  // The workout overview: each exercise once. With cues on its tip (tapped in
+  // The workout overview: the warm-up as one entry (its loops taking turns),
+  // then each exercise once. With cues on its tip (tapped in
   // the builder while recording) it shows whichever the instructor is on.
   // While the tip plays (or is held by a pause) that's timed by the voice
   // itself, the file's own position: the section's clock starts before the
@@ -542,10 +543,10 @@ export function WorkoutPlayer({
   // done) it's the section's clock, which starts with the tip, staying on
   // the last one once the tip's done. Without cues, each loop in turn for
   // RUNDOWN.secondsEach.
-  const lineup = useMemo(() => exerciseLineup(steps, workout.exercises), [steps, workout.exercises]);
+  const lineup = useMemo(() => overviewLineup(steps, workout.blocks, workout.exercises), [steps, workout.blocks, workout.exercises]);
   const rundownElapsed = state.phase === "rundown" ? Math.max(0, rundownMs - leftMs) : 0;
   const rundownCues = useMemo(
-    () => (workout.rundownTip?.cues ?? []).filter((c) => lineup.some((x) => x.exerciseId === c.exerciseId)),
+    () => (workout.rundownTip?.cues ?? []).filter((c) => lineup.some((x) => x.key === c.exerciseId)),
     [workout.rundownTip, lineup],
   );
   // The exercise the voice is on, read off the playing file (for this take only).
@@ -568,8 +569,15 @@ export function WorkoutPlayer({
   const rundownIndex = !lineup.length
     ? 0
     : rundownCues.length
-      ? lineup.findIndex((x) => x.exerciseId === rundownAt)
+      ? lineup.findIndex((x) => x.key === rundownAt)
       : Math.floor(rundownElapsed / (RUNDOWN.secondsEach * 1000)) % lineup.length;
+  // Its loop on screen (the warm-up's take turns, on the section's clock), and the warm-up's next one.
+  const rundownEach = RUNDOWN.secondsEach * 1000;
+  const rundownClip = state.phase === "rundown" ? entryClip(lineup[rundownIndex], rundownElapsed, rundownEach) : undefined;
+  const rundownNextTurn =
+    state.phase === "rundown" && (lineup[rundownIndex]?.clips.length ?? 0) > 1
+      ? entryClip(lineup[rundownIndex], rundownElapsed + rundownEach, rundownEach)
+      : undefined;
 
   // ── Videos ──────────────────────────────────────────
 
@@ -577,7 +585,7 @@ export function WorkoutPlayer({
     if (state.phase === "preview") return null;
     if (isVideoPhase(state.phase)) return shownOf(videoClip(workout, state.phase), false);
     // The workout overview: the exercise it's on, cut to (no fade) every few seconds.
-    if (state.phase === "rundown") return shownOf(lineup[rundownIndex]?.clip, true, true);
+    if (state.phase === "rundown") return shownOf(rundownClip, true, true);
     const st = steps[state.step];
     if (!st) return null;
     // A rest shows the next exercise (blurred); "Cool down?" and the summary, the last one.
@@ -589,7 +597,7 @@ export function WorkoutPlayer({
     const e = workout.exercises[st.exerciseId];
     if (state.stage === "tutorial" && e?.tutorial) return shownOf(e.tutorial, state.tutorialPlay === "loop");
     return shownOf(loopFor(e, st.side), true, true);
-  }, [state.phase, state.step, state.stage, state.tutorialPlay, steps, workout, lineup, rundownIndex]);
+  }, [state.phase, state.step, state.stage, state.tutorialPlay, steps, workout, rundownClip]);
 
   // What's on screen, then what comes after it — kept loaded in the pool.
   const upcoming = useMemo<PoolClip[]>(() => {
@@ -599,8 +607,11 @@ export function WorkoutPlayer({
     };
     add(shown);
     const p = state.phase;
-    // The workout overview: the next couple of loops, ready for their cut.
-    if (p === "rundown") for (let k = 1; k <= 2; k++) add(lineup[(rundownIndex + k) % lineup.length]?.clip);
+    // The workout overview: the next couple of loops, ready for their cut (and the warm-up's next turn).
+    if (p === "rundown") {
+      add(rundownNextTurn);
+      for (let k = 1; k <= 2; k++) add(lineup[(rundownIndex + k) % lineup.length]?.clips[0]);
+    }
     if (p === "preview") add(workout.intro);
     if (p === "preview" || p === "intro") add(workout.warmup?.clip);
     const started = p === "workout";
@@ -620,7 +631,7 @@ export function WorkoutPlayer({
     if (p !== "cooldown" && p !== "outro" && p !== "complete") add(workout.cooldown?.clip);
     if (p !== "outro" && p !== "complete") add(workout.outro);
     return list;
-  }, [shown, state.phase, state.step, state.stage, state.mode, state.seen, steps, workout, lineup, rundownIndex]);
+  }, [shown, state.phase, state.step, state.stage, state.mode, state.seen, steps, workout, lineup, rundownIndex, rundownNextTurn]);
 
   // Sheets stop the clock — all but the Audio card, under which everything
   // carries on (see isRunning). The video keeps playing behind the overview (so
@@ -1107,7 +1118,7 @@ export function WorkoutPlayer({
           workout={workout}
           steps={steps}
           minutes={minutes}
-          exerciseId={lineup[rundownIndex]?.exerciseId ?? null}
+          exerciseId={lineup[rundownIndex]?.key ?? null}
           fraction={rundownMs > 0 ? rundownElapsed / rundownMs : 0}
           paused={state.paused}
           onPause={pause}

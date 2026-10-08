@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { aboutMinutes, estimateWorkout, workoutSteps, type EstimateExercise, type WorkoutBlock } from "@move-mindful/core";
 import { mp4Url, slotFor, type VideoRole } from "@/lib/exercises/shared";
-import { exerciseLineup, type PlayerClip, type PlayerExercise, type PlayerWorkout } from "@/lib/workouts/player";
-import type { CatalogExercise } from "@/lib/workouts/shared";
+import { overviewLineup, type PlayerClip, type PlayerExercise, type PlayerWorkout } from "@/lib/workouts/player";
+import { RUNDOWN, type CatalogExercise } from "@/lib/workouts/shared";
 import { outfit } from "@/components/workouts/outfit";
 import { Dim, RundownScreen } from "@/components/workouts/player-screens";
 
@@ -86,7 +86,7 @@ export function OverviewPreview({
   blocks: WorkoutBlock[];
   byId: Map<string, CatalogExercise>;
   estimates: Record<string, EstimateExercise>;
-  /** The exercise lit, its loop playing. */
+  /** The exercise lit (or WARMUP_CUE, the warm-up), its loop playing — the warm-up's taking turns. */
   exerciseId: string | null;
   /** Recording: tapping an exercise cues it (with the tap's time, the event's timeStamp). */
   onPick?: (exerciseId: string, at: number) => void;
@@ -98,8 +98,22 @@ export function OverviewPreview({
   const workout = useMemo(() => previewWorkout(blocks, byId), [blocks, byId]);
   const steps = useMemo(() => workoutSteps(blocks, estimates), [blocks, estimates]);
   const minutes = aboutMinutes(estimateWorkout(blocks, estimates).totalSeconds);
-  const lineup = useMemo(() => exerciseLineup(steps, workout.exercises), [steps, workout.exercises]);
-  const clip = (lineup.find((x) => x.exerciseId === exerciseId) ?? lineup[0])?.clip;
+  const lineup = useMemo(() => overviewLineup(steps, blocks, workout.exercises), [steps, blocks, workout.exercises]);
+  const entry = lineup.find((x) => x.key === exerciseId) ?? lineup[0];
+  // The warm-up's loops take turns, from its first each time it's lit.
+  const [turns, setTurns] = useState({ key: "", count: 0 });
+  const key = entry?.key ?? "";
+  const many = (entry?.clips.length ?? 0) > 1;
+  useEffect(() => {
+    if (!many) return;
+    const id = window.setInterval(
+      () => setTurns((t) => (t.key === key ? { key, count: t.count + 1 } : { key, count: 1 })),
+      RUNDOWN.secondsEach * 1000,
+    );
+    return () => window.clearInterval(id);
+  }, [many, key]);
+  const turn = turns.key === key ? turns.count : 0;
+  const clip = entry?.clips.length ? entry.clips[turn % entry.clips.length] : undefined;
   const noop = () => {};
   return (
     <div
