@@ -102,12 +102,21 @@ export const Headphones = ({ size }: P) => (
     <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
   </Stroke>
 );
-/** Music (two notes): the Audio card's Music. */
+/** Music (two beamed notes, like Apple Music's): the music button, and Settings' Music. */
 export const Music = ({ size }: P) => (
   <Stroke size={size}>
     <path d="M9 18V5l11-2v13" />
     <circle cx="6.5" cy="18" r="2.5" />
     <circle cx="17.5" cy="16" r="2.5" />
+  </Stroke>
+);
+/** The music button with the music off: the notes, struck through. */
+export const MusicOff = ({ size }: P) => (
+  <Stroke size={size}>
+    <path d="M9 18V5l11-2v13" />
+    <circle cx="6.5" cy="18" r="2.5" />
+    <circle cx="17.5" cy="16" r="2.5" />
+    <path d="m3 3 18 18" />
   </Stroke>
 );
 export const Muted = ({ size }: P) => (

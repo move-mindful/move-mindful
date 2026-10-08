@@ -18,7 +18,6 @@ import {
   Pause,
   Play,
   Settings,
-  Sound,
   Timer,
   WatchTutorial,
 } from "./icons";
@@ -103,13 +102,13 @@ const PAGES: Page[] = [
     picture: <AudioPicture />,
     rows: [
       {
-        icon: <Sound size={18} />,
+        icon: <Music size={18} />,
         tint: "bg-[#A99CFF]/25 text-[#C9C0FF]",
-        title: "Audio",
-        text: "The speaker button: bottom left, or top left when paused.",
+        title: "Music",
+        text: "The music button turns it on or off: bottom left, or top left when paused.",
       },
-      { icon: <Music size={18} />, title: "Music and audio tips", text: "Turn each on or off." },
-      { icon: <Muted size={18} />, title: "Mute all", text: "Turn off all sound at once." },
+      { icon: <Settings size={18} />, title: "Everything else", text: "In Settings: instructor audio, voice, sound effects." },
+      { icon: <Muted size={18} />, title: "Mute all", text: "In Settings too: all sound off at once." },
     ],
   },
   {
@@ -378,7 +377,7 @@ function AudioPicture() {
     <div className="flex w-[270px] flex-col gap-4">
       <div className="flex flex-col gap-2.5 rounded-[20px] bg-[#1A1A34]/85 p-4 ring-1 ring-white/10">
         <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/60">Audio</span>
-        {["Music", "Audio tips", "Sound effects"].map((label) => (
+        {["Music", "Instructor audio", "Sound effects"].map((label) => (
           <span key={label} className="flex items-center justify-between text-[15px] font-semibold">
             {label}
             <MiniSwitch on />
@@ -391,7 +390,7 @@ function AudioPicture() {
       </div>
       <div className="flex items-center gap-2.5">
         <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white/[0.14] ring-2 ring-[#A99CFF]">
-          <Sound size={20} />
+          <Music size={20} />
         </span>
         <span className="h-11 flex-1 rounded-full border border-white/15 bg-white/[0.06]" />
         <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-white/50">

@@ -31,8 +31,8 @@ import {
   RestartSet,
   RestartWorkout,
   Settings,
-  Sound,
-  Muted,
+  Music,
+  MusicOff,
   WatchTutorial,
 } from "./icons";
 import { UP_NEXT } from "./cue-audio";
@@ -224,20 +224,31 @@ export function CornerSettings({ onClick }: { onClick: () => void }) {
   );
 }
 
-/** Opens the Audio card; crossed out while everything's muted. */
-function AudioButton({ muted, onClick }: { muted: boolean; onClick: () => void }) {
+/**
+ * The music button: the notes while the music's playing, struck through while
+ * it's off — a tap turns it off or on (all it does, for now; the rest of the
+ * sound is at the top of Settings).
+ */
+function MusicButton({ on, onClick }: { on: boolean; onClick: () => void }) {
   return (
-    <RoundButton label={muted ? "Audio settings (muted)" : "Audio settings"} onClick={onClick}>
-      {muted ? <Muted /> : <Sound />}
-    </RoundButton>
+    <button
+      type="button"
+      aria-label="Music"
+      aria-pressed={on}
+      title={on ? "Turn the music off" : "Turn the music on"}
+      onClick={onClick}
+      className={round52}
+    >
+      {on ? <Music /> : <MusicOff />}
+    </button>
   );
 }
 
-/** The audio button, top left — Settings' partner on the phone's pause screens (see CornerSettings). */
-export function CornerAudio({ muted, onClick }: { muted: boolean; onClick: () => void }) {
+/** The music button, top left — Settings' partner on the phone's pause screens (see CornerSettings). */
+export function CornerMusic({ on, onClick }: { on: boolean; onClick: () => void }) {
   return (
     <div className="absolute left-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] z-10">
-      <AudioButton muted={muted} onClick={onClick} />
+      <MusicButton on={on} onClick={onClick} />
     </div>
   );
 }
@@ -250,25 +261,27 @@ export function CornerAudio({ muted, onClick }: { muted: boolean; onClick: () =>
 function ControlsRow({
   pill,
   fill = null,
-  muted,
+  musicOn,
   onPause,
   onOverview,
-  onAudio,
+  onMusic,
   still = false,
 }: {
   pill: { label: string; text: string };
   /** How far until the set moves on by itself (auto-advance, a timed set): Up next fills with it. */
   fill?: number | null;
-  muted: boolean;
+  /** The music's playing (the music button shows it). */
+  musicOn: boolean;
   onPause: () => void;
   onOverview: () => void;
-  onAudio: () => void;
+  /** The music button: music off or on. */
+  onMusic: () => void;
   /** Swiped away: a text too long for the pill holds at its first word, to start over as it comes back. */
   still?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <AudioButton muted={muted} onClick={onAudio} />
+      <MusicButton on={musicOn} onClick={onMusic} />
       <button
         type="button"
         aria-label={`Open workout overview. ${pill.label}: ${pill.text}`}
@@ -552,8 +565,8 @@ export function SetScreen({
   hidden,
   onPause,
   onOverview,
-  muted,
-  onAudio,
+  musicOn,
+  onMusic,
   tip = null,
   upNext = null,
 }: {
@@ -570,9 +583,10 @@ export function SetScreen({
   hidden: boolean;
   onPause: () => void;
   onOverview: () => void;
-  muted: boolean;
-  /** Open the Audio card. */
-  onAudio: () => void;
+  /** The music's playing (the music button shows it). */
+  musicOn: boolean;
+  /** The music button: music off or on. */
+  onMusic: () => void;
   /** The instructor's audio tip (CoachTip): at the right end of the reps, over the Pause button. */
   tip?: ReactNode;
   /** The Up next card (UpNextCard) near the set's end: 16px above whatever tops the info (the superset line, or the reps). */
@@ -629,10 +643,10 @@ export function SetScreen({
           <ControlsRow
             pill={pill}
             fill={fill}
-            muted={muted}
+            musicOn={musicOn}
             onPause={onPause}
             onOverview={onOverview}
-            onAudio={onAudio}
+            onMusic={onMusic}
             still={hidden}
           />
         </div>
@@ -649,8 +663,8 @@ export function TutorialScreen({
   hidden,
   onBegin,
   onPause,
-  muted,
-  onAudio,
+  musicOn,
+  onMusic,
 }: {
   name: string;
   chips: string[];
@@ -661,8 +675,10 @@ export function TutorialScreen({
   hidden: boolean;
   onBegin: () => void;
   onPause: () => void;
-  muted: boolean;
-  onAudio: () => void;
+  /** The music's playing (the music button shows it). */
+  musicOn: boolean;
+  /** The music button: music off or on. */
+  onMusic: () => void;
 }) {
   return (
     <div className={`absolute inset-x-0 bottom-0 isolate flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
@@ -702,7 +718,7 @@ export function TutorialScreen({
         {/* Audio · Skip tutorial (filling as it plays) · Pause — Skip takes the
             workout pill's place; the overview is a swipe up away. */}
         <div className="mt-[18px] flex items-center gap-3">
-          <AudioButton muted={muted} onClick={onAudio} />
+          <MusicButton on={musicOn} onClick={onMusic} />
           <BeginButton progress={progress} onBegin={onBegin} compact className="min-w-0 flex-1" />
           <RoundButton label="Pause" onClick={onPause}>
             <Pause />
@@ -1170,8 +1186,8 @@ export function VideoScreen({
   skipLabel,
   onPause,
   onSkip,
-  muted,
-  onAudio,
+  musicOn,
+  onMusic,
   hidden,
 }: {
   chip: VideoChip;
@@ -1182,8 +1198,10 @@ export function VideoScreen({
   skipLabel: string;
   onPause: () => void;
   onSkip: () => void;
-  muted: boolean;
-  onAudio: () => void;
+  /** The music's playing (the music button shows it). */
+  musicOn: boolean;
+  /** The music button: music off or on. */
+  onMusic: () => void;
   /** Controls swiped away: just the label, the name and a small Skip. */
   hidden: boolean;
 }) {
@@ -1212,7 +1230,7 @@ export function VideoScreen({
         </div>
         <Collapse open={!hidden}>
           <div className="mt-[18px] flex items-center justify-between gap-3">
-            <AudioButton muted={muted} onClick={onAudio} />
+            <MusicButton on={musicOn} onClick={onMusic} />
             {/* Fills as the video plays, like Skip tutorial. */}
             <button
               type="button"
@@ -1487,7 +1505,7 @@ export function PausedScreen({
   skip,
   onEnd,
   onSettings,
-  audio = null,
+  music = null,
   autoAdvance,
   theater = false,
 }: {
@@ -1503,8 +1521,8 @@ export function PausedScreen({
   skip: { label: string; onClick: () => void } | null;
   onEnd: () => void;
   onSettings: (() => void) | null;
-  /** Phones: the audio button, top left (desktop has it in the column beside the video). */
-  audio?: { muted: boolean; onClick: () => void } | null;
+  /** Phones: the music button, top left (desktop has it in the column beside the video). */
+  music?: { on: boolean; onClick: () => void } | null;
   /** The AUTO › ON/OFF pill above "Paused", a quick switch for auto-advance (not on a video's). */
   autoAdvance: { on: boolean; onChange: (on: boolean) => void } | null;
   theater?: boolean;
@@ -1584,7 +1602,7 @@ export function PausedScreen({
           </div>
         </div>
       </div>
-      {audio && <CornerAudio muted={audio.muted} onClick={audio.onClick} />}
+      {music && <CornerMusic on={music.on} onClick={music.onClick} />}
       {onSettings && <CornerSettings onClick={onSettings} />}
     </>
   );
@@ -2269,70 +2287,55 @@ function SwitchRow({
 
 type Toggle = { on: boolean; onChange: (on: boolean) => void };
 
-/**
- * The Audio card, from the audio button: what plays — music, the instructor's
- * audio tips, voice announcements, sound effects (the rest countdown), other
- * apps' music alongside — and, at the bottom, Mute all, which silences everything (the switches
- * above dim while it's on, and keep their settings for when it's off).
- */
-export function AudioSheet({
-  muteAll,
-  music,
-  tips,
-  announcements,
-  effects,
-  mix,
-  onClose,
-  variant = "bottom",
-  drawerOpen,
-}: {
+type AudioToggles = {
   muteAll: Toggle;
   music: Toggle;
+  /** The instructor's audio tips ("Instructor audio"). */
   tips: Toggle;
   announcements: Toggle;
   effects: Toggle;
   /** "Keep my music playing" — null where the browser can't (the switch is hidden). */
   mix: Toggle | null;
-  onClose: () => void;
-  variant?: SheetVariant;
-  /** Phones: always mounted as a drawer that slides open and shut — pass whether it's open. */
-  drawerOpen?: boolean;
-}) {
-  const pad = variant === "side" ? "px-7" : "px-5";
+};
+
+/**
+ * Settings' first section: what plays — music, the instructor's audio (their
+ * tips), voice announcements, sound effects (the countdown, the chimes),
+ * other apps' music alongside — and last Mute all, which silences everything
+ * (the switches above dim while it's on, and keep their settings for when
+ * it's off). Once the Audio card's, from the audio button, which now turns
+ * the music on and off.
+ */
+function AudioSwitches({ muteAll, music, tips, announcements, effects, mix }: AudioToggles) {
   const off = muteAll.on;
   return (
-    <SheetFrame label="Audio" onClose={onClose} variant={variant} drawerOpen={drawerOpen}>
-      <div className={`flex items-center justify-between gap-3 ${pad}`}>
-        <h2 className="text-[22px] font-semibold tracking-[-0.01em]">Audio</h2>
-        <SheetClose label="Close audio settings" />
+    <>
+      <SwitchRow title="Music" {...music} disabled={off} />
+      <SwitchRow title="Instructor audio" {...tips} disabled={off} />
+      <SwitchRow title="Voice announcements" {...announcements} disabled={off} />
+      <SwitchRow title="Sound effects" {...effects} disabled={off} />
+      {mix && (
+        <SwitchRow
+          title="Keep my music playing"
+          text={
+            <>
+              Audio instructions will play without pausing music from other apps.
+              <span className="mt-1 block font-semibold">Phone silent mode must be OFF.</span>
+            </>
+          }
+          {...mix}
+          disabled={off}
+        />
+      )}
+      <div className="mt-1">
+        <SwitchRow title="Mute all" text="No sound from the workout at all." {...muteAll} />
       </div>
-      <div data-sheet-scroll className={`flex min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain ${pad}`}>
-        <SwitchRow title="Music" {...music} disabled={off} />
-        <SwitchRow title="Audio tips" {...tips} disabled={off} />
-        <SwitchRow title="Voice announcements" {...announcements} disabled={off} />
-        <SwitchRow title="Sound effects" {...effects} disabled={off} />
-        {mix && (
-          <SwitchRow
-            title="Keep my music playing"
-            text={
-              <>
-                Audio instructions will play without pausing music from other apps.
-                <span className="mt-1 block font-semibold">Phone silent mode must be OFF.</span>
-              </>
-            }
-            {...mix}
-            disabled={off}
-          />
-        )}
-        <div className="mt-3">
-          <SwitchRow title="Mute all" text="No sound from the workout at all." {...muteAll} />
-        </div>
-      </div>
-    </SheetFrame>
+    </>
   );
 }
 
 export function SettingsSheet({
+  audio,
   mode,
   onMode,
   autoAdvance,
@@ -2341,6 +2344,8 @@ export function SettingsSheet({
   variant = "bottom",
   drawerOpen,
 }: {
+  /** The sound switches, first (see AudioSwitches). */
+  audio: AudioToggles;
   mode: TutorialMode;
   onMode: (mode: TutorialMode) => void;
   autoAdvance: Toggle;
@@ -2364,7 +2369,12 @@ export function SettingsSheet({
           variant === "side" ? "px-7" : "px-5"
         }`}
       >
-        {/* Sound has its own card now: the audio button's. */}
+        <section aria-labelledby="settings-audio" className="flex flex-col gap-3">
+          <h3 id="settings-audio" className="text-base font-semibold">
+            Audio
+          </h3>
+          <AudioSwitches {...audio} />
+        </section>
         <section aria-labelledby="settings-exercises" className="flex flex-col gap-3">
           <h3 id="settings-exercises" className="text-base font-semibold">
             Exercises
