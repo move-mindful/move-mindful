@@ -4,15 +4,16 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { TutorialMode } from "@move-mindful/core";
 import { ChevronLeft, ChevronRight, Close, List, Pause, Settings, Sound, WatchTutorial } from "./icons";
 import { PausedPicture, Row, settingsPage, type Page } from "./gesture-guide";
-import { TAP_ZONES } from "./player-screens";
+import { TAP_ZONES, TUTORIAL_CONTROLS } from "./player-screens";
 
 /**
  * The first-run guide for the desktop "theater" layout (wide landscape
  * screens, iPads held sideways included): a dialog over the dimmed player
- * rather than the phone guide's full-screen card, and four pages instead of
- * seven — the controls here are labelled buttons and keys, not taps and swipes.
- * Moving around, the buttons beside the video, watching a tutorial, and last
- * how tutorials and auto-advance are set, shared with the phone guide.
+ * rather than the phone guide's full-screen card, and fewer pages — the
+ * controls here are labelled buttons and keys, not taps and swipes. Moving
+ * around and the buttons beside the video; with TUTORIAL_CONTROLS on, also
+ * watching a tutorial, and last how tutorials and auto-advance are set,
+ * shared with the phone guide.
  *
  * Shown and remembered like the phone guide, but separately
  * (`seenDesktopGuide`): someone who's learned one hasn't learned the other.
@@ -40,14 +41,19 @@ const PAGES: Page[] = [
     title: "Your buttons",
     picture: <LayoutDiagram focus="buttons" />,
     rows: [
-      { icon: <Settings size={18} />, tint: LIT, title: "Settings", text: "Tutorials and auto-advance." },
+      { icon: <Settings size={18} />, tint: LIT, title: "Settings", text: TUTORIAL_CONTROLS ? "Tutorials and auto-advance." : "Auto-advance." },
       { icon: <Sound size={18} />, title: "Audio", text: "Music, audio tips and sound effects — or mute it all." },
       { icon: <List size={18} />, title: "Workout", text: "Every exercise and where you are. Jump to any of them." },
-      { icon: <Pause size={18} />, title: "Pause", text: "Restart a set, watch the tutorial, or end the workout." },
+      {
+        icon: <Pause size={18} />,
+        title: "Pause",
+        text: TUTORIAL_CONTROLS ? "Restart a set, watch the tutorial, or end the workout." : "Restart a set, or end the workout.",
+      },
     ],
   },
   {
     title: "Watch the tutorial any time",
+    tutorials: true,
     picture: <PausedPicture />,
     rows: [
       { icon: <Pause size={18} />, title: "Pause", text: "Click the middle of the video, or press Space." },
@@ -75,7 +81,7 @@ export function DesktopGuide({
   /** Open on the last page — coming back from Settings after "Change settings". */
   startOnSettings?: boolean;
 }) {
-  const pages = [...PAGES, settingsPage(settings)];
+  const pages = TUTORIAL_CONTROLS ? [...PAGES, settingsPage(settings)] : PAGES.filter((p) => !p.tutorials);
   const count = pages.length;
   const [page, setPage] = useState(startOnSettings ? count - 1 : 0);
   const current = pages[page];
@@ -133,7 +139,7 @@ export function DesktopGuide({
               {page === 0 ? "Skip" : "Back"}
             </button>
             <span className="flex-1" />
-            {last && (
+            {last && TUTORIAL_CONTROLS && (
               <button
                 type="button"
                 onClick={onSettings}

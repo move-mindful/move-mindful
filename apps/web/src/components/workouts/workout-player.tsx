@@ -64,6 +64,7 @@ import {
   VideoProgress,
   createSheetPull,
   StepDim,
+  TUTORIAL_CONTROLS,
   VideoScreen,
 } from "./player-screens";
 import { List, Moon, Muted, Pause, Play, Settings, Sound, Sun, Timer } from "./icons";
@@ -1521,8 +1522,10 @@ export function WorkoutPlayer({
             onRestartSet={() => act({ type: "restartSet" })}
             restartSetLabel={state.stage === "tutorial" ? "Restart tutorial" : "Restart this set"}
             onRestartWorkout={() => restartWorkout()}
-            // During a tutorial, Restart tutorial already covers it.
-            onWatchTutorial={canWatch && state.stage !== "tutorial" ? () => act({ type: "watchTutorial" }) : null}
+            // During a tutorial, Restart tutorial already covers it. Hidden with the other tutorial controls.
+            onWatchTutorial={
+              TUTORIAL_CONTROLS && canWatch && state.stage !== "tutorial" ? () => act({ type: "watchTutorial" }) : null
+            }
             skip={null}
             onEnd={() => act({ type: "sheet", sheet: "end" })}
             // Desktop has Settings in the column beside the video instead.

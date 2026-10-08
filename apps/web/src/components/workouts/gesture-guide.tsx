@@ -22,14 +22,15 @@ import {
   Timer,
   WatchTutorial,
 } from "./icons";
-import { TAP_ZONES } from "./player-screens";
+import { TAP_ZONES, TUTORIAL_CONTROLS } from "./player-screens";
 
 /**
  * The first-run guide to the player, over the stage on phones: tapping (the
- * three zones drawn over the video), swiping, watching a tutorial from the
- * pause screen, the audio button and its card, wireless headphones, Settings
- * and the tutorial mode, auto-advance, and last how the member's tutorials
- * and auto-advance are set right now, with a way into Settings. Shown once — right after Begin, over the warm-up, or as the first
+ * three zones drawn over the video), swiping, the audio button and its card,
+ * and wireless headphones. With TUTORIAL_CONTROLS on, also watching a
+ * tutorial from the pause screen, Settings and the tutorial mode,
+ * auto-advance, and last how the member's tutorials and auto-advance are set
+ * right now, with a way into Settings. Shown once — right after Begin, over the warm-up, or as the first
  * exercise comes up when there's no warm-up (see `begin` in the core reducer)
  * — and again from Settings; signed-out /demo1 visitors get it every time.
  * The workout waits while it's open.
@@ -41,6 +42,8 @@ export interface Page {
   /** What goes above the panel. */
   picture: ReactNode;
   rows: Array<{ icon: ReactNode; tint?: string; title: string; text: string }>;
+  /** About the tutorial controls or Settings: hidden with them (TUTORIAL_CONTROLS). */
+  tutorials?: true;
 }
 
 const PAGES: Page[] = [
@@ -83,6 +86,7 @@ const PAGES: Page[] = [
   },
   {
     title: "View tutorial",
+    tutorials: true,
     picture: <PausedPicture />,
     rows: [
       { icon: <Pause size={18} />, title: "Pause", text: "Tap the middle of the screen." },
@@ -123,6 +127,7 @@ const PAGES: Page[] = [
   },
   {
     title: "Adjust settings",
+    tutorials: true,
     picture: (
       <>
         {/* The gear exactly where it sits on the pause screen: top right,
@@ -157,6 +162,7 @@ const PAGES: Page[] = [
   },
   {
     title: "Auto-advance",
+    tutorials: true,
     picture: (
       // A rep set counting down, with the switch on.
       <div className="flex w-[240px] flex-col items-start gap-3">
@@ -245,9 +251,9 @@ export function GestureGuide({
   /** Open on the last page — coming back from Settings after "Change settings". */
   startOnSettings?: boolean;
 }) {
-  // The last page is the one after PAGES.
-  const [page, setPage] = useState(startOnSettings ? PAGES.length : 0);
-  const pages = [...PAGES, settingsPage(settings)];
+  // With the tutorial controls, the last page is Your settings, after PAGES.
+  const pages = TUTORIAL_CONTROLS ? [...PAGES, settingsPage(settings)] : PAGES.filter((p) => !p.tutorials);
+  const [page, setPage] = useState(startOnSettings ? pages.length - 1 : 0);
   const current = pages[page];
   const last = page === pages.length - 1;
 
@@ -289,7 +295,7 @@ export function GestureGuide({
             <Row key={`${r.title}-${r.text}`} icon={r.icon} tint={r.tint ?? "bg-white/[0.14]"} title={r.title} text={r.text} />
           ))}
         </div>
-        {last && (
+        {last && TUTORIAL_CONTROLS && (
           <button
             type="button"
             onClick={onSettings}
@@ -299,7 +305,7 @@ export function GestureGuide({
             Change settings
           </button>
         )}
-        <div className={`flex items-center gap-3 ${last ? "" : "mt-1"}`}>
+        <div className={`flex items-center gap-3 ${last && TUTORIAL_CONTROLS ? "" : "mt-1"}`}>
           <button
             type="button"
             onClick={() => (page === 0 ? onDone() : setPage(page - 1))}

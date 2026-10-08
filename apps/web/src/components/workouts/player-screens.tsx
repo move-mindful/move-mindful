@@ -45,6 +45,15 @@ import { WorkoutRows } from "./workout-rows";
 // Each fills the 9:16 stage the videos play in; none of them knows about the
 // state machine — workout-player.tsx works out what to show and passes it in.
 
+/**
+ * The tutorial controls — Watch the tutorial on the pause screen, the
+ * Tutorials section in Settings, and the guides' pages on tutorials and
+ * settings (View tutorial, Adjust settings, Auto-advance, Your settings) —
+ * hidden for now (Oct 2026). Tutorials still play as each member's saved
+ * mode says: Play once, unless they'd picked another. `true` brings them back.
+ */
+export const TUTORIAL_CONTROLS = false;
+
 const round52 =
   "flex size-[52px] shrink-0 items-center justify-center rounded-full bg-white/[0.14] backdrop-blur-md transition active:scale-95";
 const bottomPad = "pb-[max(28px,calc(env(safe-area-inset-bottom)+12px))]";
@@ -2362,44 +2371,46 @@ export function SettingsSheet({
             {...autoAdvance}
           />
         </section>
-        <section aria-labelledby="settings-tutorials" className="flex flex-col gap-3">
-          <h3 id="settings-tutorials" className="text-base font-semibold">
-            Tutorials
-          </h3>
-          <fieldset className="flex min-w-0 flex-col gap-2.5">
-            <legend className="mb-2.5 text-xs font-semibold uppercase tracking-[0.1em] text-white/70">
-              Before each new exercise
-            </legend>
-            {MODES.map((m) => {
-              // Loop waits for a tap, which auto-advance is meant to avoid.
-              const blocked = m.id === "loop" && autoAdvance.on;
-              return (
-                <label
-                  key={m.id}
-                  className={`flex items-start gap-3.5 rounded-2xl border-[1.5px] px-4 py-3.5 ${
-                    blocked ? "cursor-not-allowed opacity-50" : "cursor-pointer"
-                  } ${mode === m.id ? "border-[#A99CFF]/85 bg-[#A99CFF]/[0.14]" : "border-white/[0.12] bg-white/[0.04]"}`}
-                >
-                  <input
-                    type="radio"
-                    name="tutorial-mode"
-                    value={m.id}
-                    checked={mode === m.id}
-                    disabled={blocked}
-                    onChange={() => !blocked && onMode(m.id)}
-                    className="mt-px size-5 shrink-0 accent-[#A99CFF]"
-                  />
-                  <span className="flex min-w-0 flex-col gap-[3px]">
-                    <span className="text-[17px] font-semibold">{m.title}</span>
-                    <span className="text-sm leading-snug text-white/75">
-                      {blocked ? "Turn off Auto-advance to use Loop." : m.desc}
+        {TUTORIAL_CONTROLS && (
+          <section aria-labelledby="settings-tutorials" className="flex flex-col gap-3">
+            <h3 id="settings-tutorials" className="text-base font-semibold">
+              Tutorials
+            </h3>
+            <fieldset className="flex min-w-0 flex-col gap-2.5">
+              <legend className="mb-2.5 text-xs font-semibold uppercase tracking-[0.1em] text-white/70">
+                Before each new exercise
+              </legend>
+              {MODES.map((m) => {
+                // Loop waits for a tap, which auto-advance is meant to avoid.
+                const blocked = m.id === "loop" && autoAdvance.on;
+                return (
+                  <label
+                    key={m.id}
+                    className={`flex items-start gap-3.5 rounded-2xl border-[1.5px] px-4 py-3.5 ${
+                      blocked ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+                    } ${mode === m.id ? "border-[#A99CFF]/85 bg-[#A99CFF]/[0.14]" : "border-white/[0.12] bg-white/[0.04]"}`}
+                  >
+                    <input
+                      type="radio"
+                      name="tutorial-mode"
+                      value={m.id}
+                      checked={mode === m.id}
+                      disabled={blocked}
+                      onChange={() => !blocked && onMode(m.id)}
+                      className="mt-px size-5 shrink-0 accent-[#A99CFF]"
+                    />
+                    <span className="flex min-w-0 flex-col gap-[3px]">
+                      <span className="text-[17px] font-semibold">{m.title}</span>
+                      <span className="text-sm leading-snug text-white/75">
+                        {blocked ? "Turn off Auto-advance to use Loop." : m.desc}
+                      </span>
                     </span>
-                  </span>
-                </label>
-              );
-            })}
-          </fieldset>
-        </section>
+                  </label>
+                );
+              })}
+            </fieldset>
+          </section>
+        )}
         {onGuide && (
           <section aria-labelledby="settings-help" className="flex flex-col gap-3">
             <h3 id="settings-help" className="text-base font-semibold">
