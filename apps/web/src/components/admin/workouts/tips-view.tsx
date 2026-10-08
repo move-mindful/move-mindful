@@ -17,7 +17,6 @@ import { uploadWorkoutTip } from "@/app/actions/workouts";
 import { formatDuration } from "@/lib/exercises/shared";
 import {
   RUNDOWN,
-  RUNDOWN_TIP_MAX_SECONDS,
   RUNDOWN_TIP_SLOT,
   TIP_DELAY_SECONDS,
   TIP_MAX_SECONDS,
@@ -225,8 +224,7 @@ export function TipsView({
     // Timed by the recorder's own start and stop events.
     let startedAt = 0;
     // A take stops (and saves) by itself at the limit.
-    const maxSeconds = overviewTip ? RUNDOWN_TIP_MAX_SECONDS : TIP_MAX_SECONDS;
-    const limit = window.setTimeout(() => rec.state === "recording" && rec.stop(), maxSeconds * 1000);
+    const limit = window.setTimeout(() => rec.state === "recording" && rec.stop(), TIP_MAX_SECONDS * 1000);
     rec.ondataavailable = (e) => {
       if (e.data.size) chunks.push(e.data);
     };
@@ -265,7 +263,6 @@ export function TipsView({
       fd.set("workoutId", workoutId);
       fd.set("seconds", String(reading?.duration ?? seconds));
       fd.set("audio", audio, "tip.m4a");
-      if (overviewTip) fd.set("overview", "1");
       const res = await uploadWorkoutTip(fd).catch(() => ({ tip: undefined, error: "Couldn’t reach the server. Try again." }));
       setBusy(null);
       if (overviewTip) setPreview(null);
@@ -337,7 +334,7 @@ export function TipsView({
   // Recording the overview's tip: the seconds before it stops by itself.
   const overviewLeft =
     busy?.slot === overviewId && busy.phase === "recording" && busy.startedAt !== null
-      ? Math.max(0, RUNDOWN_TIP_MAX_SECONDS - (now - busy.startedAt) / 1000)
+      ? Math.max(0, TIP_MAX_SECONDS - (now - busy.startedAt) / 1000)
       : null;
 
   function labelFor(s: WorkoutStep): string {
@@ -505,8 +502,8 @@ export function TipsView({
               : busy?.phase === "saving"
                 ? "Saving the recording…"
                 : overviewLeft !== null && overviewLeft <= 20
-                  ? `${Math.ceil(overviewLeft)} s left — it stops and saves by itself at ${formatDuration(RUNDOWN_TIP_MAX_SECONDS)}.`
-                  : `Recording — tap each exercise as you start talking about it. Up to ${RUNDOWN_TIP_MAX_SECONDS / 60} minutes.`)
+                  ? `${Math.ceil(overviewLeft)} s left — it stops and saves by itself at ${formatDuration(TIP_MAX_SECONDS)}.`
+                  : `Recording — tap each exercise as you start talking about it. Up to ${TIP_MAX_SECONDS / 60} minutes.`)
           }
           controls={
             preview === "ready" ? (

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { VOICE_LEVELS_PER_SECOND, type AudioTip, type Side, type TipCue, type TipMap, type WorkoutBlock, type WorkoutMove } from "@move-mindful/core";
-import { RUNDOWN_TIP_MAX_SECONDS } from "@/lib/workouts/shared";
+import { TIP_MAX_SECONDS } from "@/lib/workouts/shared";
 
 // The server's own check on a sequence, whoever wrote it — the builder on
 // save, or Claude via "Generate with AI": known exercises only, sane numbers,
@@ -19,9 +19,8 @@ function int(value: unknown, min: number, max: number, fallback: number): number
 // Slot keys (TipMap in core): "rest", "2", "2:left", "2:1", "2:1:side".
 const TIP_KEY = /^(rest|\d{1,2}(:(right|left|\d{1,2}(:side)?))?)$/;
 const TIP_FILE = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\.m4a$/;
-// One character per reading (encodeVoiceLevels in core): up to the longest
-// tip (the workout overview's, RUNDOWN_TIP_MAX_SECONDS) and then some.
-const TIP_LEVELS = new RegExp(`^[0-9a-z]{1,${(RUNDOWN_TIP_MAX_SECONDS + 10) * VOICE_LEVELS_PER_SECOND}}$`);
+// One character per reading (encodeVoiceLevels in core): up to TIP_MAX_SECONDS and then some.
+const TIP_LEVELS = new RegExp(`^[0-9a-z]{1,${(TIP_MAX_SECONDS + 10) * VOICE_LEVELS_PER_SECOND}}$`);
 
 /**
  * One tip as stored or sent, if it's well formed (and, with `folder`, that

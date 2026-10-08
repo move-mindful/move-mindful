@@ -13,7 +13,6 @@ import { getCatalog, getWorkout, getWorkoutVideoRows, toWorkoutVideo } from "@/l
 import {
   LEVELS,
   TIP_BUCKET,
-  RUNDOWN_TIP_MAX_SECONDS,
   TIP_MAX_SECONDS,
   publishProblems,
   type GenerateCriteria,
@@ -429,9 +428,8 @@ async function removeTipFiles(supabase: AdminClient, workoutId: string, keep: Se
 
 /**
  * Store one recording (form fields `workoutId`, `seconds`, `audio` — AAC in
- * an MP4 container, as Chrome and Safari record it — and `overview` for the
- * workout overview's, which can run longer). Returns the tip to put in a
- * slot; it's kept once the workout is saved with it.
+ * an MP4 container, as Chrome and Safari record it). Returns the tip to put
+ * in a slot; it's kept once the workout is saved with it.
  */
 export async function uploadWorkoutTip(formData: FormData): Promise<{ tip?: AudioTip; error?: string }> {
   await requireAdmin();
@@ -442,8 +440,7 @@ export async function uploadWorkoutTip(formData: FormData): Promise<{ tip?: Audi
   if (!UUID.test(workoutId)) return { error: "Save the workout first." };
   if (!audio || audio.size === 0 || !Number.isFinite(seconds) || seconds <= 0) return { error: "Nothing was recorded." };
   // Three minutes of AAC at 128 kb/s is under 3 MB.
-  const max = formData.get("overview") === "1" ? RUNDOWN_TIP_MAX_SECONDS : TIP_MAX_SECONDS;
-  if (audio.size > 4_000_000 || seconds > max + 5) return { error: "That recording is too long." };
+  if (audio.size > 4_000_000 || seconds > TIP_MAX_SECONDS + 5) return { error: "That recording is too long." };
 
   const { data: workout } = await supabase.from("workouts").select("id").eq("id", workoutId).maybeSingle();
   if (!workout) return { error: "Save the workout first." };
