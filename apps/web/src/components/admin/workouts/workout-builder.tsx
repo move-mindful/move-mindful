@@ -191,6 +191,15 @@ export function WorkoutBuilder({
   const plain = stripKeys(blocks);
   const estimate = estimateWorkout(plain, estimates);
   const labels = groupLabels(plain);
+  // Each block's audio tips for the Edit view's badges: recorded, of its slots
+  // (each set and side, each rest — as the Audio tips view lists them).
+  const tipCounts = (() => {
+    const steps = workoutSteps(plain, estimates);
+    return plain.map((_, i) => {
+      const mine = steps.filter((s) => s.block === i);
+      return { done: mine.filter((s) => s.tip).length, total: mine.length };
+    });
+  })();
   const problems = publishProblems(plain, byId, warmupId, cooldownId);
   const warmup = warmupId ? byId.get(warmupId) : undefined;
   const cooldown = cooldownId ? byId.get(cooldownId) : undefined;
@@ -682,6 +691,7 @@ export function WorkoutBuilder({
                         first={i === 0 || (i === 1 && hasWarmup)}
                         last={i === blocks.length - 1}
                         pinned={b.kind === "group" && !!b.warmup}
+                        tips={tipCounts[i]}
                         seconds={estimateWorkout([plain[i]], estimates).totalSeconds}
                       >
                         {b.kind === "rest" ? (
@@ -974,6 +984,7 @@ function BlockFrame({
   last,
   seconds,
   pinned = false,
+  tips,
 }: {
   tone: KBlock["kind"] | "warmup";
   children: ReactNode;
@@ -985,6 +996,8 @@ function BlockFrame({
   seconds: number;
   /** The warm-up: always first, so no arrows (a gap the same width keeps it lined up). */
   pinned?: boolean;
+  /** Its audio tips: how many of its slots have one. */
+  tips?: { done: number; total: number };
 }) {
   const toneCls = {
     exercise: "border-zinc-200 bg-white",
@@ -1007,11 +1020,37 @@ function BlockFrame({
         </span>
       )}
       <div className="min-w-0 flex-1 py-1">{children}</div>
+      {/* Grey with none recorded, amber with some, green with all. */}
+      {tips && tips.total > 0 && (
+        <span
+          title={`Audio tips: ${tips.done} of ${tips.total} recorded`}
+          className={`mt-1.5 flex h-6 shrink-0 items-center gap-1 rounded-full px-2 text-xs font-medium tabular-nums ${
+            tips.done === 0
+              ? "text-zinc-400"
+              : tips.done === tips.total
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-amber-50 text-amber-700"
+          }`}
+        >
+          <MicIcon />
+          <span className="sr-only">Audio tips:</span>
+          {tips.done}/{tips.total}
+        </span>
+      )}
       <span className="w-12 shrink-0 pt-2 text-right text-sm tabular-nums text-zinc-500">{formatDuration(seconds)}</span>
       <button type="button" aria-label="Remove" onClick={onRemove} className={`${iconBtn} mt-1`}>
         ×
       </button>
     </div>
+  );
+}
+
+function MicIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+    </svg>
   );
 }
 
