@@ -187,6 +187,7 @@ function ControlsRow({
   onPause,
   onOverview,
   onAudio,
+  still = false,
 }: {
   pill: { label: string; text: string };
   /** How far until the set moves on by itself (auto-advance, a timed set): Up next fills with it. */
@@ -195,6 +196,8 @@ function ControlsRow({
   onPause: () => void;
   onOverview: () => void;
   onAudio: () => void;
+  /** Swiped away: a text too long for the pill holds at its first word, to start over as it comes back. */
+  still?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between gap-3">
@@ -212,7 +215,7 @@ function ControlsRow({
         <span className="relative flex min-w-0 flex-col gap-px">
           <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/70">{pill.label}</span>
           {/* Too long for the pill, it scrolls (see Marquee). */}
-          <Marquee text={pill.text} className="text-[15px] font-medium" />
+          <Marquee text={pill.text} still={still} className="text-[15px] font-medium" />
         </span>
       </button>
       <RoundButton label="Pause" onClick={onPause}>
@@ -445,10 +448,13 @@ export function LabelLine({
   text,
   fill = null,
   strong = false,
+  still = false,
   className = "",
 }: {
   label: string;
   text: string;
+  /** Collapsed out of sight: a text too long for the line holds at its first word, to start over as it shows. */
+  still?: boolean;
   /** Fill the label pill with a countdown's progress (Up next, moving on by itself). */
   fill?: number | null;
   /** The text a size up and bolder — the exercise's name on the minimised tutorial. */
@@ -462,7 +468,7 @@ export function LabelLine({
         {fill !== null && <ProgressFill fraction={fill} />}
         <span className="relative">{label}</span>
       </span>
-      <Marquee text={text} className={`min-w-0 ${strong ? "text-[17px] font-semibold" : "text-[15px] font-medium"}`} />
+      <Marquee text={text} still={still} className={`min-w-0 ${strong ? "text-[17px] font-semibold" : "text-[15px] font-medium"}`} />
     </p>
   );
 }
@@ -548,7 +554,7 @@ export function SetScreen({
       </div>
       {/* Controls swiped away: what's next, under the reps. */}
       <Collapse open={hidden}>
-        <LabelLine label={pill.label} text={pill.text} fill={fill} className="mt-2" />
+        <LabelLine label={pill.label} text={pill.text} fill={fill} still={!hidden} className="mt-2" />
       </Collapse>
       <Collapse open={!hidden}>
         <h1 className="mt-1 truncate text-xl font-semibold leading-tight">{name}</h1>
@@ -560,6 +566,7 @@ export function SetScreen({
             onPause={onPause}
             onOverview={onOverview}
             onAudio={onAudio}
+            still={hidden}
           />
         </div>
       </Collapse>
@@ -602,7 +609,7 @@ export function TutorialScreen({
       {/* Minimised: "Tutorial:" and the exercise above the pills, and a small
           Skip at the end of their row. */}
       <Collapse open={hidden}>
-        <LabelLine label="Tutorial" text={name} strong className="mb-2.5" />
+        <LabelLine label="Tutorial" text={name} strong still={!hidden} className="mb-2.5" />
       </Collapse>
       <div className={`flex gap-2 ${hidden ? "flex-nowrap items-center" : "flex-wrap"}`}>
         {chips.map((c) => (

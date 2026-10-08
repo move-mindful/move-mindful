@@ -41,8 +41,10 @@ function useReducedMotion(): boolean {
  * `className` styles the line (size, weight, colour, and `min-w-0` in a flex
  * row). The fades sit in 10px of padding either side, which the line's
  * negative margins give back, so the text lines up as plain text would.
+ * `still` holds it at its first word — the Up next card while it waits off
+ * screen — and it starts from the top when that ends.
  */
-export function Marquee({ text, className = "" }: { text: string; className?: string }) {
+export function Marquee({ text, className = "", still = false }: { text: string; className?: string; still?: boolean }) {
   const reduced = useReducedMotion();
   const box = useRef<HTMLSpanElement>(null);
   const inner = useRef<HTMLSpanElement>(null);
@@ -63,7 +65,7 @@ export function Marquee({ text, className = "" }: { text: string; className?: st
 
   useEffect(() => {
     const i = inner.current;
-    if (!i || reduced || shift <= 0) return;
+    if (!i || reduced || still || shift <= 0) return;
     const travel = (shift / SPEED) * 1000;
     const back = Math.min(BACK_MAX, Math.max(BACK_MIN, travel / BACK_FASTER));
     const total = HOLD_START + travel + HOLD_END + back;
@@ -79,7 +81,7 @@ export function Marquee({ text, className = "" }: { text: string; className?: st
       { duration: total, iterations: Infinity },
     );
     return () => glide.cancel();
-  }, [shift, text, reduced]);
+  }, [shift, text, reduced, still]);
 
   if (reduced) return <span className={`block truncate ${className}`}>{text}</span>;
   const fade = shift > 0 ? { maskImage: FADE, WebkitMaskImage: FADE } : undefined;

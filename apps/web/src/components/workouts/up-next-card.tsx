@@ -51,6 +51,8 @@ export function UpNextCard({
         icon={icon}
         large={large}
         hidden
+        // Its name starts scrolling (if it must) as it slides in, from the first word.
+        still={stage !== "shown"}
         className={`pointer-events-none transition-[translate,opacity] motion-reduce:translate-x-0 motion-reduce:transition-opacity ${
           large ? "w-[380px] max-w-[calc(100%-40px)]" : "w-full"
         } ${
@@ -79,6 +81,7 @@ export function NextCard({
   icon = null,
   large = false,
   hidden = false,
+  still = false,
   className = "",
 }: {
   label?: string;
@@ -88,6 +91,8 @@ export function NextCard({
   icon?: ReactNode;
   large?: boolean;
   hidden?: boolean;
+  /** Hold a name too long for the card at its first word (the Up next card, off screen). */
+  still?: boolean;
   className?: string;
 }) {
   return (
@@ -114,8 +119,8 @@ export function NextCard({
       <span className={`flex min-w-0 flex-col gap-0.5 ${thumbnail || icon ? "" : "pl-2"}`}>
         <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/70">{label}</span>
         {/* Too long for the card, they scroll (see Marquee). */}
-        <Marquee text={name} className={`font-semibold ${large ? "text-[19px]" : "text-[17px]"}`} />
-        {detail && <Marquee text={detail} className={`text-white/70 ${large ? "text-[15px]" : "text-sm"}`} />}
+        <Marquee text={name} still={still} className={`font-semibold ${large ? "text-[19px]" : "text-[17px]"}`} />
+        {detail && <Marquee text={detail} still={still} className={`text-white/70 ${large ? "text-[15px]" : "text-sm"}`} />}
       </span>
     </div>
   );
