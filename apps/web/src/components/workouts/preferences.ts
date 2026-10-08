@@ -20,6 +20,7 @@ const KEYS = {
   tutorialMode: "movemindful.tutorialMode",
   instructorAudio: "movemindful.sound",
   audioTips: "movemindful.audioTips",
+  announcements: "movemindful.announcements",
   music: "movemindful.music",
   soundEffects: "movemindful.soundEffects",
   mixAudio: "movemindful.mixAudio",
@@ -46,7 +47,7 @@ function readDevice(): Partial<PlayerPreferences> {
   const out: Partial<PlayerPreferences> = {};
   const mode = readItem(KEYS.tutorialMode);
   if (mode === "loop" || mode === "once" || mode === "off") out.tutorialMode = mode;
-  for (const key of ["instructorAudio", "audioTips", "music", "soundEffects", "mixAudio", "warmup", "autoAdvance"] as const) {
+  for (const key of ["instructorAudio", "audioTips", "announcements", "music", "soundEffects", "mixAudio", "warmup", "autoAdvance"] as const) {
     const value = readItem(KEYS[key]);
     if (value === "on" || value === "off") out[key] = value === "on";
   }
@@ -59,7 +60,7 @@ function writeDevice(changes: Partial<PlayerPreferences>) {
   Object.assign(memory, changes);
   try {
     if (changes.tutorialMode) window.localStorage.setItem(KEYS.tutorialMode, changes.tutorialMode);
-    for (const key of ["instructorAudio", "audioTips", "music", "soundEffects", "mixAudio", "warmup", "autoAdvance"] as const) {
+    for (const key of ["instructorAudio", "audioTips", "announcements", "music", "soundEffects", "mixAudio", "warmup", "autoAdvance"] as const) {
       const value = changes[key];
       if (value !== undefined) window.localStorage.setItem(KEYS[key], value ? "on" : "off");
     }

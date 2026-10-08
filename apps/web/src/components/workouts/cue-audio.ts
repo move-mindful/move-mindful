@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 
 // Cues: short clips the player plays a set time into a step — the
-// instructor's audio tips (with their bubble, coach-tip.tsx), the countdown
-// over the last seconds of a rest or Get ready, and the Up next chime.
+// instructor's audio tips (with their bubble, coach-tip.tsx), the voice
+// announcements, the countdown over the last seconds of a rest or Get ready,
+// and the Up next chime.
 
 /**
  * The countdown over the last seconds of a rest or Get ready — a sound
@@ -103,6 +104,10 @@ function newCueAudio(on: {
  *
  * `volume` (0–1, default full) is the element's own volume, which iPhone
  * Safari ignores (the music goes through Web Audio for that).
+ *
+ * `local` gives a downloaded copy of a file, if there is one (usePrefetched),
+ * to play instead of fetching it: asked as each step loads its cue, so a copy
+ * that arrives part-way through a step doesn't restart it.
  */
 export function useCueAudio({
   clip,
@@ -111,6 +116,7 @@ export function useCueAudio({
   delayMs,
   muted,
   volume = 1,
+  local,
 }: {
   clip: { url: string; start: number; end: number | null } | null;
   take: number;
@@ -118,6 +124,7 @@ export function useCueAudio({
   delayMs: number;
   muted: boolean;
   volume?: number;
+  local?: (url: string) => string | undefined;
 }): { playing: boolean; held: boolean; time: () => number; unlock: () => void } {
   const url = clip?.url ?? null;
   const start = clip?.start ?? 0;
@@ -172,6 +179,8 @@ export function useCueAudio({
     mutedNow.current = muted;
   });
 
+  const source = useEffectEvent((u: string) => local?.(u) ?? u);
+
   // Its level — set on the element whenever there is one (made for the first
   // cue, or in the Begin tap).
   useEffect(() => {
@@ -188,7 +197,7 @@ export function useCueAudio({
     if (!unlocking.current) a.pause();
     if (url) {
       loaded.current = take;
-      a.src = url;
+      a.src = source(url);
     }
   }, [take, url, start, end]);
 
@@ -261,4 +270,39 @@ export function useCueAudio({
     time,
     unlock,
   };
+}
+
+/**
+ * Downloads these files ahead — the voice announcements of the next few
+ * steps — and gives back a local copy of each once it's in (for
+ * useCueAudio's `local`), so a cue due the moment its step begins starts then
+ * rather than after a download. Copies last as long as the player (a line is
+ * about 30 KB); one that fails plays from the network, and is tried again
+ * when it's next asked for.
+ */
+export function usePrefetched(urls: string[]): (url: string) => string | undefined {
+  const [copies, setCopies] = useState<Record<string, string>>({});
+  const asked = useRef(new Set<string>());
+  const made = useRef<string[]>([]);
+  const list = urls.join("\n");
+  useEffect(() => {
+    for (const url of list ? list.split("\n") : []) {
+      if (asked.current.has(url)) continue;
+      asked.current.add(url);
+      fetch(url)
+        .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(`${r.status}`))))
+        .then((blob) => {
+          const copy = URL.createObjectURL(blob);
+          made.current.push(copy);
+          setCopies((c) => ({ ...c, [url]: copy }));
+        })
+        .catch(() => asked.current.delete(url));
+    }
+  }, [list]);
+  // Leaving the player: let the copies go.
+  useEffect(() => {
+    const all = made.current;
+    return () => all.forEach((u) => URL.revokeObjectURL(u));
+  }, []);
+  return useCallback((url: string) => copies[url], [copies]);
 }

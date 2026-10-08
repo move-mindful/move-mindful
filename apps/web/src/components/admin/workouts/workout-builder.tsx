@@ -22,6 +22,7 @@ import {
 import {
   deleteWorkout,
   generateWorkout,
+  makeWorkoutAnnouncements,
   refreshWorkoutVideos,
   removeWorkoutCover,
   saveGeneratorInstructions,
@@ -186,6 +187,11 @@ export function WorkoutBuilder({
   const [instructionsText, setInstructionsText] = useState(aiInstructions);
   // Bumped on every run and on Cancel, so an abandoned run's answer is ignored.
   const aiRun = useRef(0);
+  // The voice announcements, made after each save (makeWorkoutAnnouncements):
+  // one run at a time, so two quick saves don't make a line twice; the note
+  // shows the latest.
+  const [voice, setVoice] = useState<"making" | Awaited<ReturnType<typeof makeWorkoutAnnouncements>> | null>(null);
+  const voiceRuns = useRef({ last: 0, queue: Promise.resolve() });
 
   const byId = new Map(catalog.map((c) => [c.id, c]));
   const estimates: Record<string, EstimateExercise> = Object.fromEntries(catalog.map((c) => [c.id, c.estimate]));
@@ -269,8 +275,24 @@ export function WorkoutBuilder({
     else {
       setAiDraft(null); // saved: nothing left to undo
       setTipChanges(0);
+      if (res.id) makeVoice(res.id);
     }
     return res.error ? null : (res.id ?? null);
+  }
+
+  /** Make the saved workout's missing voice announcements, in the background. */
+  function makeVoice(id: string) {
+    const run = ++voiceRuns.current.last;
+    setVoice("making");
+    voiceRuns.current.queue = voiceRuns.current.queue.then(async () => {
+      const res = await makeWorkoutAnnouncements(id).catch(() => ({
+        total: 0,
+        ready: 0,
+        made: 0,
+        error: "Couldn’t reach the server to make the voice announcements.",
+      }));
+      if (run === voiceRuns.current.last) setVoice(res);
+    });
   }
 
   /** The workout's id — saving it first if it's new, so an upload has somewhere to go. */
@@ -480,6 +502,19 @@ export function WorkoutBuilder({
       </div>
 
       {error && <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+
+      {voice === "making" && <p className="mt-3 text-sm text-zinc-500">Making voice announcements…</p>}
+      {voice && voice !== "making" && voice.error && (
+        <p className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {voice.error}
+          {voice.total > 0 && ` (${voice.ready} of ${voice.total} voice announcements ready.)`}
+        </p>
+      )}
+      {voice && voice !== "making" && !voice.error && voice.made > 0 && (
+        <p className="mt-3 text-sm text-zinc-500">
+          Voice announcements ready: {voice.made} new line{voice.made === 1 ? "" : "s"} made.
+        </p>
+      )}
 
       {aiDraft && (
         <div className="mt-4 flex flex-wrap items-start gap-x-4 gap-y-2 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-950">

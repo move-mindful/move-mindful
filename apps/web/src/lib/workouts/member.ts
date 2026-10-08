@@ -8,6 +8,8 @@ import { mp4Url, slotFor, thumbnailUrl, type AdminExercise } from "@/lib/exercis
 import { getWorkoutVideoRows, toCatalog, toWorkout, type BlockRow, type WorkoutRow } from "@/lib/workouts/server";
 import type { AdminWorkout, WorkoutVideo } from "@/lib/workouts/shared";
 import type { PlayerClip, PlayerExercise, PlayerWorkout, WorkoutCard } from "@/lib/workouts/player";
+import { workoutAnnouncements } from "@/lib/workouts/announcements";
+import { getVoiceLines } from "@/lib/workouts/announcements-server";
 
 // Member-facing reads. RLS keeps the workout and exercise tables closed to the
 // browser, so these run with the service-role client — callers gate access
@@ -97,6 +99,7 @@ async function assemble(workout: AdminWorkout, instructor: PlayerWorkout["instru
     e.dumbbellLevels.forEach((x) => levels.add(x));
   }
 
+  const blocks = playableBlocks(workout.blocks, new Set(Object.keys(exercises)));
   return {
     id: workout.id,
     title: workout.title,
@@ -110,8 +113,9 @@ async function assemble(workout: AdminWorkout, instructor: PlayerWorkout["instru
     cooldown: single(cooldownId, "cooldown"),
     outro: toClip(slotFor(workout.videos, "outro").current),
     rundownTip: workout.rundownTip,
+    voice: await getVoiceLines(workoutAnnouncements({ blocks, exercises })),
     exercises,
-    blocks: playableBlocks(workout.blocks, new Set(Object.keys(exercises))),
+    blocks,
     equipment: [...equipment],
     dumbbellLevels: [...levels],
   };

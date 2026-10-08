@@ -5,6 +5,7 @@
 import { isWarmup, WARMUP_CUE, type AudioTip, type EstimateExercise, type Measure, type Side, type WorkoutBlock, type WorkoutStep } from "@move-mindful/core";
 import { DUMBBELL_LEVELS, EQUIPMENT_OPTIONS } from "@/lib/exercises/shared";
 import { LEVELS, type WorkoutLevel } from "@/lib/workouts/shared";
+import type { VoiceLine } from "@/lib/workouts/announcements";
 
 export interface PlayerClip {
   /** The MP4 static rendition. */
@@ -45,6 +46,8 @@ export interface PlayerWorkout {
   outro: PlayerClip | null;
   /** The workout overview's tip, after the intro: the section plays only when there is one. */
   rundownTip: AudioTip | null;
+  /** Its voice announcements that have been made, by their words (see announcementText). */
+  voice: Record<string, VoiceLine>;
   exercises: Record<string, PlayerExercise>;
   blocks: WorkoutBlock[];
   /** Everything the workout (warm-up and cool-down included) uses. */

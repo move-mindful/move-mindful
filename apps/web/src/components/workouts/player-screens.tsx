@@ -129,6 +129,63 @@ export function Dim({ strength = 0.66 }: { strength?: number }) {
   return <div className="pointer-events-none absolute inset-0" style={{ background: `rgba(10,10,26,${strength})` }} />;
 }
 
+/**
+ * The rest's dim, kept on the stage through the exercises: it carries on
+ * from a rest into the exercise after it — under its name (BeginCard) — and
+ * fades away from there, or fades in when an exercise follows another.
+ */
+export function StepDim({ on }: { on: boolean }) {
+  return (
+    <div
+      className={`pointer-events-none absolute inset-0 transition-opacity ${on ? "opacity-100 duration-300" : "opacity-0 duration-500"}`}
+      style={{ background: "rgba(10,10,26,0.4)" }}
+    />
+  );
+}
+
+/**
+ * As an exercise begins: its name, with the reps (or time) and side under
+ * it, big in the middle of the screen over the dim while its voice
+ * announcement is said — then gone with the dim. Stays mounted through the
+ * set so it can fade out.
+ */
+export function BeginCard({
+  show,
+  name,
+  amount,
+  side,
+  theater = false,
+}: {
+  show: boolean;
+  name: string;
+  /** "10 reps", "0:30". */
+  amount: string;
+  side: "right" | "left" | null;
+  theater?: boolean;
+}) {
+  return (
+    <div
+      aria-hidden={!show || undefined}
+      className={`pointer-events-none absolute inset-x-0 top-1/2 flex -translate-y-1/2 flex-col items-center gap-3 px-8 text-center transition-[opacity,scale] ${
+        show ? "scale-100 opacity-100 duration-300 starting:scale-95 starting:opacity-0" : "scale-95 opacity-0 duration-500"
+      }`}
+      style={{ textShadow: "0 2px 18px rgba(10,10,26,0.55)" }}
+    >
+      <h2 className={`text-balance font-semibold leading-[1.1] tracking-[-0.02em] ${theater ? "text-[46px]" : "text-[36px]"}`}>
+        {name}
+      </h2>
+      <div className="flex items-center gap-3">
+        <span className={`font-medium tabular-nums ${theater ? "text-[30px]" : "text-[26px]"}`}>{amount}</span>
+        {side && (
+          <span className="inline-flex h-7 items-center rounded-full bg-[#A99CFF] px-3 text-[13px] font-bold tracking-[0.08em] [text-shadow:none]">
+            {side.toUpperCase()}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function RoundButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
   return (
     <button type="button" aria-label={label} onClick={onClick} className={round52}>
@@ -2201,14 +2258,15 @@ type Toggle = { on: boolean; onChange: (on: boolean) => void };
 
 /**
  * The Audio card, from the audio button: what plays — music, the instructor's
- * audio tips, sound effects (the rest countdown), other apps' music alongside
- * — and, at the bottom, Mute all, which silences everything (the switches
+ * audio tips, voice announcements, sound effects (the rest countdown), other
+ * apps' music alongside — and, at the bottom, Mute all, which silences everything (the switches
  * above dim while it's on, and keep their settings for when it's off).
  */
 export function AudioSheet({
   muteAll,
   music,
   tips,
+  announcements,
   effects,
   mix,
   onClose,
@@ -2218,6 +2276,7 @@ export function AudioSheet({
   muteAll: Toggle;
   music: Toggle;
   tips: Toggle;
+  announcements: Toggle;
   effects: Toggle;
   /** "Keep my music playing" — null where the browser can't (the switch is hidden). */
   mix: Toggle | null;
@@ -2237,6 +2296,7 @@ export function AudioSheet({
       <div data-sheet-scroll className={`flex min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain ${pad}`}>
         <SwitchRow title="Music" {...music} disabled={off} />
         <SwitchRow title="Audio tips" {...tips} disabled={off} />
+        <SwitchRow title="Voice announcements" {...announcements} disabled={off} />
         <SwitchRow title="Sound effects" {...effects} disabled={off} />
         {mix && (
           <SwitchRow

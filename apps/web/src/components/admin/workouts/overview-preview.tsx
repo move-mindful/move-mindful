@@ -67,6 +67,7 @@ function previewWorkout(blocks: WorkoutBlock[], byId: Map<string, CatalogExercis
     cooldown: null,
     outro: null,
     rundownTip: null,
+    voice: {},
     exercises,
     blocks,
     equipment: [],

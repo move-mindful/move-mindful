@@ -41,6 +41,7 @@ import { rateWorkout } from "@/app/actions/workout-ratings";
 import { OverviewSheet } from "./overview-sheet";
 import { ProgressBar } from "./progress-bar";
 import {
+  BeginCard,
   CompleteScreen,
   CooldownPrompt,
   Dim,
@@ -62,6 +63,7 @@ import {
   AudioSheet,
   VideoProgress,
   createSheetPull,
+  StepDim,
   VideoScreen,
 } from "./player-screens";
 import { List, Moon, Muted, Pause, Play, Settings, Sound, Sun, Timer } from "./icons";
@@ -80,12 +82,13 @@ import { GestureGuide } from "./gesture-guide";
 import { DesktopGuide } from "./desktop-guide";
 import { usePlayerPreferences } from "./preferences";
 import { CoachTip } from "./coach-tip";
-import { COUNTDOWN, UP_NEXT, useCueAudio } from "./cue-audio";
+import { COUNTDOWN, UP_NEXT, useCueAudio, usePrefetched } from "./cue-audio";
 import { UpNextCard } from "./up-next-card";
 import { preloadFirstWorkoutBadge } from "./first-workout-badge";
 import { useFireworkSounds } from "./firework-sounds";
 import { MUSIC, useWorkoutMusic } from "./music";
 import { RUNDOWN, TIP_DELAY_SECONDS, TIP_VOLUME, tipPlaySeconds, tipUrl } from "@/lib/workouts/shared";
+import { announcementText, VOICE } from "@/lib/workouts/announcements";
 import { saveWorkoutSession } from "@/app/actions/workout-sessions";
 import type { PlayerPreferences } from "@/lib/member/preferences";
 import type { SavedProgress, SessionEvent } from "@/lib/member/sessions";
@@ -120,6 +123,29 @@ function useCanMixAudio(): boolean {
     () => !!(navigator as AudioSessionNavigator).audioSession,
     () => false,
   );
+}
+
+/**
+ * True through the first `ms` of each take that the workout spends running —
+ * the count holds while it's paused or a sheet is up — then false until the
+ * next take. (With `ms` 0 nothing's counted and it stays true: callers check
+ * what the step is.)
+ */
+function useOpening(take: number, running: boolean, ms: number): boolean {
+  const [over, setOver] = useState<number | null>(null);
+  const spent = useRef({ take, ms: 0 });
+  useEffect(() => {
+    if (spent.current.take !== take) spent.current = { take, ms: 0 };
+    const p = spent.current;
+    if (!running || ms <= 0) return;
+    const since = performance.now();
+    const id = window.setTimeout(() => setOver(take), Math.max(0, ms - p.ms));
+    return () => {
+      window.clearTimeout(id);
+      p.ms += performance.now() - since;
+    };
+  }, [take, running, ms]);
+  return over !== take;
 }
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -402,11 +428,48 @@ export function WorkoutPlayer({
   // The workout overview's, straight away: the section is as long as it is.
   const rundownTip = state.phase === "rundown" ? workout.rundownTip : null;
   const tipNow = rundownTip ?? tipStep?.tip ?? null;
+
+  // The voice announcement as a rest or an exercise begins — "Starting rest,
+  // 30 seconds." / "Begin, bicep curl, 10 reps." — VOICE.delay in: played like
+  // a tip, but with no bubble. A rest too short to say it in before its
+  // countdown goes without. The next few steps' lines are downloaded ahead,
+  // so each starts on time.
+  const announceText = tipStep ? announcementText(tipStep, workout.exercises) : null;
+  const announceFound = announceText ? workout.voice[announceText] : undefined;
+  const announceLine =
+    announceFound &&
+    !(tipStep?.kind === "rest" && tipStep.seconds < VOICE.delay + announceFound.seconds + 0.5 + COUNTDOWN.seconds)
+      ? announceFound
+      : null;
+  // Heard (if muted, the tips are too).
+  const announcing = !!announceLine && prefs.announcements && !muted;
+  const announceAhead = useMemo(() => {
+    if (state.phase === "preview" || !prefs.announcements) return [];
+    return steps
+      .slice(state.step, state.step + 4)
+      .map((s) => workout.voice[announcementText(s, workout.exercises) ?? ""]?.url)
+      .filter((u): u is string => !!u);
+  }, [state.phase, state.step, steps, workout.voice, workout.exercises, prefs.announcements]);
+  const announceCopy = usePrefetched(announceAhead);
+  const announcer = useCueAudio({
+    clip: announceLine ? { url: announceLine.url, start: 0, end: null } : null,
+    take: state.take,
+    running: running && !!announceLine,
+    delayMs: VOICE.delay * 1000,
+    muted: muted || !prefs.announcements,
+    local: announceCopy,
+  });
+
+  // The step's tip waits for its announcement: VOICE.tipAfter past its end.
   const tips = useCueAudio({
     clip: tipNow ? { url: tipUrl(tipNow.id), start: tipNow.start ?? 0, end: tipNow.end ?? null } : null,
     take: state.take,
     running: running && !!tipNow,
-    delayMs: rundownTip ? 0 : (step?.kind === "rest" ? TIP_DELAY_SECONDS.rest : TIP_DELAY_SECONDS.set) * 1000,
+    delayMs: rundownTip
+      ? 0
+      : announcing
+        ? (VOICE.delay + announceLine.seconds + VOICE.tipAfter) * 1000
+        : (step?.kind === "rest" ? TIP_DELAY_SECONDS.rest : TIP_DELAY_SECONDS.set) * 1000,
     // Mute all, or just the tips switched off in the Audio card.
     muted: muted || !prefs.audioTips,
     volume: TIP_VOLUME,
@@ -421,6 +484,21 @@ export function WorkoutPlayer({
       large={large}
     />
   );
+
+  // As an exercise begins, its name and reps (or time) in the middle of the
+  // screen (BeginCard) until its announcement has been said — for
+  // VOICE.cardAlone without one — over the rest's dim (StepDim): kept on from
+  // the rest (or the workout overview) before it, faded in otherwise. Held
+  // while paused.
+  const beginSet = tipStep?.kind === "set" ? tipStep : null;
+  const beginMs = beginSet
+    ? (announcing ? VOICE.delay + announceLine.seconds + VOICE.cardAfter : VOICE.cardAlone) * 1000
+    : 0;
+  const beginCard = useOpening(state.take, running, beginMs) && !!beginSet;
+  // Not behind the pause screen, which has a dim of its own.
+  const pauseScreen = state.paused && !(holdInPlace && onCountdown);
+  const stepDim =
+    state.phase === "rundown" || (state.phase === "workout" && !pauseScreen && (step?.kind === "rest" || beginCard));
 
   // The countdown over the last seconds of a rest, and of Get ready: a sound
   // effect, off with the Audio card's Sound effects (or Mute all). Timed to
@@ -490,7 +568,7 @@ export function WorkoutPlayer({
   const musicLevel = (() => {
     if (musicHeld) return MUSIC.duckTo.paused;
     if (state.phase === "complete") return MUSIC.duckTo.done;
-    if (tips.playing) return MUSIC.duckTo.tip;
+    if (tips.playing || announcer.playing) return MUSIC.duckTo.tip;
     if (state.phase === "workout" && step?.kind === "set" && state.stage === "tutorial") return MUSIC.duckTo.tutorial;
     if (state.phase === "intro" || state.phase === "outro" || state.phase === "warmup" || state.phase === "cooldown") {
       return MUSIC.duckTo[state.phase];
@@ -776,6 +854,7 @@ export function WorkoutPlayer({
     // Inside the tap, so every clip — and every audio tip — may play with sound later (see video-pool.tsx).
     pool.unlock();
     tips.unlock();
+    announcer.unlock();
     countdown.unlock();
     upNextChime.unlock();
     fireworkSounds.unlock();
@@ -1110,10 +1189,9 @@ export function WorkoutPlayer({
     }
   } else if (state.phase === "rundown") {
     // The workout overview: the list over the loops — dimmed the whole way
-    // across, as on a rest — while the tip plays.
+    // across, as on a rest (the stage's StepDim) — while the tip plays.
     screen = (
       <>
-        <Dim strength={0.4} />
         <RundownScreen
           workout={workout}
           steps={steps}
@@ -1198,9 +1276,9 @@ export function WorkoutPlayer({
       const t = target;
       const tName = t ? (workout.exercises[t.exerciseId]?.name ?? "Next exercise") : "";
       const tAmount = t ? amountLabel(t.measure, t.amount) : "";
+      // Its dim is the stage's StepDim, which carries on into the exercise.
       screen = (
         <>
-          <Dim strength={0.4} />
           <TopShade />
           {bar}
           {zones("Skip the rest")}
@@ -1349,12 +1427,16 @@ export function WorkoutPlayer({
           large={theater}
         />
       );
+      const begin = (
+        <BeginCard show={beginCard} name={name} amount={amountLabel(set.measure, set.amount)} side={set.side} theater={theater} />
+      );
       if (theater) {
         screen = (
           <>
             <TopShade />
             {bar}
             {zones("Next set")}
+            {begin}
             <div className="pointer-events-none absolute bottom-8 right-8 -translate-y-full">
               {coach(true)}
             </div>
@@ -1386,6 +1468,7 @@ export function WorkoutPlayer({
             <TopShade />
             {bar}
             {zones("Next set")}
+            {begin}
             <SetScreen
               name={name}
               metric={metric}
@@ -1406,7 +1489,7 @@ export function WorkoutPlayer({
         );
       }
     }
-    if (state.paused && !(holdInPlace && onCountdown)) {
+    if (pauseScreen) {
       blurred = true;
       const canWatch = !!targetExercise?.tutorial;
       screen = (
@@ -1545,6 +1628,7 @@ export function WorkoutPlayer({
           },
         }}
         tips={{ on: prefs.audioTips, onChange: (on) => updatePrefs({ audioTips: on }) }}
+        announcements={{ on: prefs.announcements, onChange: (on) => updatePrefs({ announcements: on }) }}
         effects={{ on: prefs.soundEffects, onChange: (on) => updatePrefs({ soundEffects: on }) }}
         mix={canMix ? { on: prefs.mixAudio, onChange: (on) => updatePrefs({ mixAudio: on }) } : null}
         onClose={() => act({ type: "sheet", sheet: null })}
@@ -1612,6 +1696,7 @@ export function WorkoutPlayer({
               (isVideoPhase(state.phase) || state.phase === "rundown" || (state.phase === "workout" && step?.kind === "set"))
             }
           />
+          <StepDim on={stepDim} />
           {screen}
           {!theater && overview}
           {!theater && settings}

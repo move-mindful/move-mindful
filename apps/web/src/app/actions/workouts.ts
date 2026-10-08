@@ -10,6 +10,9 @@ import { EXERCISE_STATIC_RENDITIONS, WORKOUT_CLIPS, deleteMuxVideo, syncPendingC
 import { cleanBlocks, readTip, type ExerciseInfo } from "@/lib/workouts/clean";
 import { generateWorkoutDraft, setGeneratorInstructions } from "@/lib/workouts/generate";
 import { getCatalog, getWorkout, getWorkoutVideoRows, toWorkoutVideo } from "@/lib/workouts/server";
+import { getPlayerWorkout } from "@/lib/workouts/member";
+import { workoutAnnouncements } from "@/lib/workouts/announcements";
+import { makeVoiceLines } from "@/lib/workouts/announcements-server";
 import {
   LEVELS,
   TIP_BUCKET,
@@ -191,6 +194,21 @@ export async function saveWorkout(input: WorkoutInput): Promise<{ id?: string; e
 
   revalidateWorkouts(id);
   return { id };
+}
+
+/**
+ * Make the voice announcements a workout still needs — the builder calls it
+ * after each save. Lines already made (by this workout or any other) are
+ * reused, so after the first time it's usually just a changed set's or a new
+ * exercise's. Returns how many lines the workout says and how many are ready.
+ */
+export async function makeWorkoutAnnouncements(
+  id: string,
+): Promise<{ total: number; ready: number; made: number; error?: string }> {
+  await requireAdmin();
+  const workout = await getPlayerWorkout(id, true);
+  if (!workout) return { total: 0, ready: 0, made: 0, error: "Save the workout first." };
+  return makeVoiceLines(workoutAnnouncements(workout));
 }
 
 /**

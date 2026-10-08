@@ -18,6 +18,8 @@ export interface PlayerPreferences {
   instructorAudio: boolean;
   /** The instructor's audio tips during sets and rests. */
   audioTips: boolean;
+  /** Voice announcements as each rest and exercise begins ("Begin, bicep curl, 10 reps."). */
+  announcements: boolean;
   /** Music under the workout (components/workouts/music.ts). */
   music: boolean;
   /** Sound effects: the countdown over a rest's last seconds. */
@@ -46,6 +48,7 @@ export const DEFAULT_PLAYER_PREFERENCES: PlayerPreferences = {
   tutorialMode: "once",
   instructorAudio: true,
   audioTips: true,
+  announcements: true,
   music: true,
   soundEffects: true,
   mixAudio: false,
@@ -63,6 +66,7 @@ export function cleanPlayerPreferences(raw: unknown): Partial<PlayerPreferences>
   if (r.tutorialMode === "loop" || r.tutorialMode === "once" || r.tutorialMode === "off") out.tutorialMode = r.tutorialMode;
   if (typeof r.instructorAudio === "boolean") out.instructorAudio = r.instructorAudio;
   if (typeof r.audioTips === "boolean") out.audioTips = r.audioTips;
+  if (typeof r.announcements === "boolean") out.announcements = r.announcements;
   if (typeof r.music === "boolean") out.music = r.music;
   if (typeof r.soundEffects === "boolean") out.soundEffects = r.soundEffects;
   if (typeof r.mixAudio === "boolean") out.mixAudio = r.mixAudio;
