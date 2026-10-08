@@ -240,10 +240,15 @@ export function useVideoPool({
   }, []);
 }
 
-/** The pool's elements, stacked; the shown one is made visible by `sync`. */
+/**
+ * The pool's elements, stacked; the shown one is made visible by `sync`.
+ * `isolate` keeps their z-index (the new clip over the one it's taking over
+ * from) to themselves — without it the shown video drew over everything on
+ * the stage after it: the dim, the overview, the controls.
+ */
 export function PoolVideos({ pool, className = "" }: { pool: VideoPool; className?: string }) {
   return (
-    <div className={`absolute inset-0 ${className}`} aria-hidden="true">
+    <div className={`absolute inset-0 isolate ${className}`} aria-hidden="true">
       {pool.refs.map((ref, i) => (
         <video
           key={i}
