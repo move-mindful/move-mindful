@@ -2074,6 +2074,7 @@ export function Drawer({
   onOpen,
   onClose,
   alert = false,
+  fromTop = false,
   children,
 }: {
   label: string;
@@ -2084,6 +2085,8 @@ export function Drawer({
   onOpen?: () => void;
   onClose: () => void;
   alert?: boolean;
+  /** Each time it opens, its list (`data-sheet-scroll`) starts at the top again — Settings, End workout. */
+  fromTop?: boolean;
   children: ReactNode;
 }) {
   const panelRef = useRef<HTMLElement>(null);
@@ -2134,13 +2137,18 @@ export function Drawer({
     backdrop.style.transition = animate ? fade : "none";
     el.style.transform = open ? "translateY(0px)" : "translateY(100%)";
     backdrop.style.opacity = open ? "1" : "0";
+    // Back at the top before it slides in (still below the screen, so the jump never shows).
+    if (open && fromTop) {
+      const list = el.querySelector<HTMLElement>("[data-sheet-scroll]");
+      if (list) list.scrollTop = 0;
+    }
     // Focus the sheet's marked default (End workout's Cancel), else its first button.
     if (open) {
       (el.querySelector<HTMLElement>("[data-autofocus]") ?? el.querySelector<HTMLElement>("button"))?.focus({
         preventScroll: true,
       });
     }
-  }, [open, slide, fade]);
+  }, [open, slide, fade, fromTop]);
 
   return (
     <SheetDismiss.Provider value={onClose}>
@@ -2253,7 +2261,7 @@ function SheetFrame({
       {children}
     </Sheet>
   ) : (
-    <Drawer label={label} open={drawerOpen} onClose={onClose} alert={alert}>
+    <Drawer label={label} open={drawerOpen} onClose={onClose} alert={alert} fromTop>
       {children}
     </Drawer>
   );
