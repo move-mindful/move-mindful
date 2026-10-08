@@ -1,12 +1,13 @@
 // Voice announcements: a short spoken line as each rest and each exercise
-// begins — "Starting rest, 30 seconds." / "Begin, bicep curl, 10 reps." —
+// begins — "Starting rest, 30 seconds. Next up, bicep curl, 10 reps." /
+// "Begin, bicep curl, 10 reps." —
 // made with ElevenLabs when a workout is saved in the builder
 // (announcements-server.ts) and played by the player like an audio tip, but
 // without the tip's bubble. Shared by the server, which makes the lines and
 // looks them up, and the player, which finds each step's by its words. No
 // server-only imports.
 
-import { workoutSteps, type WorkoutStep } from "@move-mindful/core";
+import { workoutSteps, type SetStep, type WorkoutStep } from "@move-mindful/core";
 import type { PlayerWorkout } from "@/lib/workouts/player";
 
 /** Who says them, and when. A new voice or model makes new recordings (each is stored by both). */
@@ -44,22 +45,36 @@ function spokenTime(seconds: number): string {
   return s ? `${plural(m, "minute")} ${plural(s, "second")}` : plural(m, "minute");
 }
 
-/**
- * What's said as a step begins: "Starting rest, 30 seconds." for a rest;
- * "Begin, bicep curl, 10 reps." for an exercise ("Begin, side plank, right
- * side, 30 seconds." for a side).
- */
-export function announcementText(step: WorkoutStep, exercises: PlayerWorkout["exercises"]): string | null {
-  if (step.kind === "rest") return `Starting rest, ${spokenTime(step.seconds)}.`;
+/** A set as it's said: "bicep curl, 10 reps", "side plank, right side, 30 seconds". */
+function setWords(step: SetStep, exercises: PlayerWorkout["exercises"]): string | null {
   const name = exercises[step.exerciseId]?.name.trim();
   if (!name) return null;
   const amount = step.measure === "reps" ? plural(step.amount, "rep") : spokenTime(step.amount);
-  return `Begin, ${name}${step.side ? `, ${step.side} side` : ""}, ${amount}.`;
+  return `${name}${step.side ? `, ${step.side} side` : ""}, ${amount}`;
+}
+
+/**
+ * What's said as step `index` begins: "Begin, bicep curl, 10 reps." for an
+ * exercise ("Begin, side plank, right side, 30 seconds." for a side); for a
+ * rest, "Starting rest, 30 seconds. Next up, bicep curl, 10 reps." — one
+ * line, the set after it named the same way.
+ */
+export function announcementText(steps: WorkoutStep[], index: number, exercises: PlayerWorkout["exercises"]): string | null {
+  const step = steps[index];
+  if (!step) return null;
+  if (step.kind === "set") {
+    const words = setWords(step, exercises);
+    return words && `Begin, ${words}.`;
+  }
+  const next = steps.slice(index + 1).find((s): s is SetStep => s.kind === "set");
+  const nextWords = next ? setWords(next, exercises) : null;
+  return `Starting rest, ${spokenTime(step.seconds)}.${nextWords ? ` Next up, ${nextWords}.` : ""}`;
 }
 
 /** Every line a workout says, once each. */
 export function workoutAnnouncements(workout: Pick<PlayerWorkout, "blocks" | "exercises">): string[] {
   const estimates = Object.fromEntries(Object.values(workout.exercises).map((e) => [e.id, e.estimate]));
-  const lines = workoutSteps(workout.blocks, estimates).map((s) => announcementText(s, workout.exercises));
+  const steps = workoutSteps(workout.blocks, estimates);
+  const lines = steps.map((_, i) => announcementText(steps, i, workout.exercises));
   return [...new Set(lines.filter((x): x is string => !!x))];
 }

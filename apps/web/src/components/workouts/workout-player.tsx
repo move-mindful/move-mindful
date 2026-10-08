@@ -430,11 +430,12 @@ export function WorkoutPlayer({
   const tipNow = rundownTip ?? tipStep?.tip ?? null;
 
   // The voice announcement as a rest or an exercise begins — "Starting rest,
-  // 30 seconds." / "Begin, bicep curl, 10 reps." — VOICE.delay in: played like
+  // 30 seconds. Next up, bicep curl, 10 reps." / "Begin, bicep curl, 10
+  // reps." — VOICE.delay in: played like
   // a tip, but with no bubble. A rest too short to say it in before its
   // countdown goes without. The next few steps' lines are downloaded ahead,
   // so each starts on time.
-  const announceText = tipStep ? announcementText(tipStep, workout.exercises) : null;
+  const announceText = tipStep ? announcementText(steps, state.step, workout.exercises) : null;
   const announceFound = announceText ? workout.voice[announceText] : undefined;
   const announceLine =
     announceFound &&
@@ -447,7 +448,7 @@ export function WorkoutPlayer({
     if (state.phase === "preview" || !prefs.announcements) return [];
     return steps
       .slice(state.step, state.step + 4)
-      .map((s) => workout.voice[announcementText(s, workout.exercises) ?? ""]?.url)
+      .map((_, k) => workout.voice[announcementText(steps, state.step + k, workout.exercises) ?? ""]?.url)
       .filter((u): u is string => !!u);
   }, [state.phase, state.step, steps, workout.voice, workout.exercises, prefs.announcements]);
   const announceCopy = usePrefetched(announceAhead);
@@ -979,12 +980,16 @@ export function WorkoutPlayer({
 
   /**
    * A rest straight after this step that Up next names instead of the set past
-   * it: one between rounds, or one placed between blocks. (A rest between sets
-   * or sides goes on naming the set.)
+   * it: one between rounds, one placed between blocks, or any of
+   * UP_NEXT.restFrom seconds or more. (A shorter rest between sets, sides or
+   * exercises goes on naming the set.)
    */
   function restNext(): RestStep | null {
     const after = steps[state.step + 1];
-    return after?.kind === "rest" && (after.reason === "round" || after.reason === "block") ? after : null;
+    return after?.kind === "rest" &&
+      (after.reason === "round" || after.reason === "block" || after.seconds >= UP_NEXT.restFrom)
+      ? after
+      : null;
   }
 
   /**
@@ -994,7 +999,7 @@ export function WorkoutPlayer({
    */
   function nextCard(): { name: string; detail: string | null; thumbnail: string | null; icon?: ReactNode } {
     const rest = restNext();
-    if (rest) return { name: "Rest", detail: clock(rest.seconds), thumbnail: null, icon: <Timer size={theater ? 26 : 22} /> };
+    if (rest) return { name: "Rest", detail: clock(rest.seconds), thumbnail: null, icon: <Timer size={theater ? 32 : 28} width={2.5} /> };
     const j = setStepFor(steps, state.step + 1);
     if (j === null) return { name: "", detail: null, thumbnail: null };
     const t = steps[j] as SetStep;

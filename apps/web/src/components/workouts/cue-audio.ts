@@ -36,6 +36,8 @@ export const UP_NEXT = {
   soundAfter: 0.15,
   /** With this long (seconds) left, the card slides back out to the right, gone as the set ends. */
   leaveAt: 0.6,
+  /** A rest this long (seconds) or longer is what the card and pill name next — Rest and its time — rather than the set after it. */
+  restFrom: 20,
 };
 
 /** A tenth of a second of silence (8 kHz, 8-bit mono WAV), to unlock an audio element with. */

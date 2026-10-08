@@ -192,9 +192,9 @@ export const Moon = ({ size = 16 }: P) => (
     <path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z" />
   </Stroke>
 );
-/** A rest. */
-export const Timer = ({ size = 14 }: P) => (
-  <Stroke size={size}>
+/** A rest. `width`: its stroke, heavier on the Up next card. */
+export const Timer = ({ size = 14, width }: P & { width?: number }) => (
+  <Stroke size={size} width={width}>
     <circle cx="12" cy="13" r="8" />
     <path d="M12 9.5V13l2.5 1.5" />
     <path d="M9.5 2.5h5" />
