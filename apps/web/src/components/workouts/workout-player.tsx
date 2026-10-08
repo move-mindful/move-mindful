@@ -91,7 +91,7 @@ import { MUSIC, useWorkoutMusic } from "./music";
 import { RUNDOWN, TIP_DELAY_SECONDS, TIP_VOLUME, tipPlaySeconds, tipUrl } from "@/lib/workouts/shared";
 import { announcementText, VOICE } from "@/lib/workouts/announcements";
 import { saveWorkoutSession } from "@/app/actions/workout-sessions";
-import type { PlayerPreferences } from "@/lib/member/preferences";
+import { DEFAULT_PLAYER_PREFERENCES, type PlayerPreferences } from "@/lib/member/preferences";
 import type { SavedProgress, SessionEvent } from "@/lib/member/sessions";
 
 /**
@@ -877,7 +877,9 @@ export function WorkoutPlayer({
     act({
       type: "begin",
       warmup,
-      mode: prefs.tutorialMode,
+      // With the tutorial controls hidden, everyone gets the default (off): a
+      // saved choice couldn't be changed. It's kept, for when they're back.
+      mode: TUTORIAL_CONTROLS ? prefs.tutorialMode : DEFAULT_PLAYER_PREFERENCES.tutorialMode,
       guide: guideEveryTime || !(theater ? prefs.seenDesktopGuide : prefs.seenGestureGuide),
       autoAdvance: prefs.autoAdvance,
       from,
@@ -967,7 +969,8 @@ export function WorkoutPlayer({
   // looping tutorial would wait for a tap, so turning it on moves Loop to Play
   // once (Off stays off); the reducer does the same to the player.
   const setAutoAdvance = (on: boolean) => {
-    updatePrefs({ autoAdvance: on, tutorialMode: fitTutorialMode(state.mode, on) });
+    // (Not the tutorial mode while its controls are hidden: that would overwrite the saved one.)
+    updatePrefs(TUTORIAL_CONTROLS ? { autoAdvance: on, tutorialMode: fitTutorialMode(state.mode, on) } : { autoAdvance: on });
     act({ type: "autoAdvance", on });
   };
   const openOverview = () => act({ type: "sheet", sheet: "overview" });

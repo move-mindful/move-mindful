@@ -42,10 +42,11 @@ export interface PlayerPreferences {
   seenDesktopGuide: boolean;
 }
 
-// Hands-free by default: tutorials play once and rep sets move on by
-// themselves; a member can switch to Loop or tap-to-advance in Settings.
+// Hands-free by default: no tutorials (Oct 2026; was Play once) and rep sets
+// move on by themselves; a member can switch to tap-to-advance in Settings
+// (and pick a tutorial mode there, when TUTORIAL_CONTROLS brings it back).
 export const DEFAULT_PLAYER_PREFERENCES: PlayerPreferences = {
-  tutorialMode: "once",
+  tutorialMode: "off",
   instructorAudio: true,
   audioTips: true,
   announcements: true,

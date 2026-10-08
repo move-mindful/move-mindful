@@ -49,8 +49,9 @@ import { WorkoutRows } from "./workout-rows";
  * The tutorial controls — Watch the tutorial on the pause screen, the
  * Tutorials section in Settings, and the guides' pages on tutorials and
  * settings (View tutorial, Adjust settings, Auto-advance, Your settings) —
- * hidden for now (Oct 2026). Tutorials still play as each member's saved
- * mode says: Play once, unless they'd picked another. `true` brings them back.
+ * hidden for now (Oct 2026). Meanwhile everyone gets the default tutorial
+ * mode, Off (the player ignores saved ones, and keeps them). `true` brings
+ * them back.
  */
 export const TUTORIAL_CONTROLS = false;
 
