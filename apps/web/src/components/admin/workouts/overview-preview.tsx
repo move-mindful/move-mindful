@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, type ReactNode } from "react";
+import { useMemo, type CSSProperties, type ReactNode } from "react";
 import { aboutMinutes, estimateWorkout, workoutSteps, type EstimateExercise, type WorkoutBlock } from "@move-mindful/core";
 import { mp4Url, slotFor, type VideoRole } from "@/lib/exercises/shared";
 import { exerciseLineup, type PlayerClip, type PlayerExercise, type PlayerWorkout } from "@/lib/workouts/player";
@@ -11,7 +11,17 @@ import { Dim, RundownScreen } from "@/components/workouts/player-screens";
 // The workout overview as members get it — the player's own RundownScreen —
 // in a phone-sized frame over the builder, for its tip: recording it (tap
 // each exercise as you start talking about it) or playing it back (the
-// highlight following those taps).
+// highlight following those taps). The frame is a phone's width, and at
+// least a phone's height, growing to show the whole workout without
+// scrolling — up to the window's height, when the list scrolls.
+
+/** A phone's height (an iPhone's 390 × 844), as tall as fits. */
+const PHONE = "min(780px, 100dvh - 80px)";
+const frame: CSSProperties = {
+  width: `calc(${PHONE} * 390 / 844)`,
+  minHeight: PHONE,
+  maxHeight: "calc(100dvh - 80px)",
+};
 
 function clipOf(e: CatalogExercise, role: VideoRole): PlayerClip | undefined {
   const video = slotFor(e.videos, role).current;
@@ -100,7 +110,8 @@ export function OverviewPreview({
     >
       <p className="max-w-sm text-center text-sm font-medium text-white">{caption}</p>
       <div
-        className={`${outfit.className} relative aspect-[390/844] h-[min(780px,calc(100dvh-80px))] overflow-hidden rounded-[36px] bg-[#14142B] text-white shadow-2xl`}
+        className={`${outfit.className} relative flex flex-col overflow-hidden rounded-[36px] bg-[#14142B] text-white shadow-2xl`}
+        style={frame}
       >
         {/* A new element per exercise: a cut, as in the player. */}
         {clip && (
@@ -128,6 +139,7 @@ export function OverviewPreview({
           onResume={noop}
           onContinue={noop}
           controls={controls}
+          fit
         />
       </div>
     </div>

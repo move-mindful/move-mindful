@@ -927,6 +927,7 @@ export function RundownScreen({
   tip = null,
   theater = false,
   controls,
+  fit = false,
 }: {
   workout: PlayerWorkout;
   steps: WorkoutStep[];
@@ -938,6 +939,12 @@ export function RundownScreen({
   onPick?: (exerciseId: string, at: number) => void;
   /** In place of Pause / Continue (the builder's recorder). */
   controls?: ReactNode;
+  /**
+   * The builder's phone frame: in its flow rather than over it, so the frame
+   * can grow to show the whole list (it scrolls once the frame is as tall as
+   * it can be).
+   */
+  fit?: boolean;
   /** How far through the section: Continue fills with it. */
   fraction: number;
   paused: boolean;
@@ -961,19 +968,21 @@ export function RundownScreen({
     if (top >= box.scrollTop && bottom <= box.scrollTop + box.clientHeight) return;
     box.scrollTo({ top: Math.max(0, top - (box.clientHeight - row.offsetHeight) / 2), behavior: "smooth" });
   }, [exerciseId]);
+  // Fitting, the list's own height counts (flex-auto, not flex-1).
+  const grow = fit ? "flex-auto" : "flex-1";
   return (
     <div
-      className={`pointer-events-none absolute inset-0 flex flex-col [&_button]:pointer-events-auto ${
-        theater ? "px-7 pt-12" : "px-4 pt-[calc(max(20px,env(safe-area-inset-top))+16px)]"
-      }`}
+      className={`pointer-events-none flex flex-col [&_button]:pointer-events-auto ${
+        fit ? "relative min-h-0 flex-auto" : "absolute inset-0"
+      } ${theater ? "px-7 pt-12" : "px-4 pt-[calc(max(20px,env(safe-area-inset-top))+16px)]"}`}
     >
       {/* No box: the stage dims the loops behind (not blurred). The title stays put while the list scrolls. */}
-      <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className={`pointer-events-auto flex min-h-0 ${grow} flex-col overflow-hidden`}>
         <div className="flex items-baseline justify-between gap-3 px-4 pb-1.5 pt-3.5">
           <h2 className="text-[17px] font-semibold">Workout Overview</h2>
           <span className="shrink-0 text-[15px] text-white/70">~{minutes} min</span>
         </div>
-        <div ref={list} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-2">
+        <div ref={list} className={`min-h-0 ${grow} overflow-y-auto overscroll-contain px-2 pb-2`}>
           <WorkoutRows workout={workout} steps={steps} position={null} spotlight={{ exerciseId, onPick }} />
         </div>
       </div>
