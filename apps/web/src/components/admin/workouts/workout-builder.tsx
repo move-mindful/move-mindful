@@ -49,6 +49,7 @@ import { CoverField, resizeCover } from "@/components/admin/workouts/cover-field
 import { GenerateDialog } from "@/components/admin/workouts/generate-dialog";
 import { RatingDetails } from "@/components/admin/workouts/rating";
 import { WorkoutVideoField } from "@/components/admin/workouts/workout-video-field";
+import { SortableList } from "@/components/admin/workouts/sortable-list";
 import { TipsView } from "@/components/admin/workouts/tips-view";
 
 // The builder keeps a stable key on every block and move so React can track
@@ -680,74 +681,77 @@ export function WorkoutBuilder({
                   </p>
                 )}
 
-                <ol className="space-y-2">
-                  {blocks.map((b, i) => (
-                    <li key={b.key}>
-                      <BlockFrame
-                        tone={b.kind === "group" && b.warmup ? "warmup" : b.kind}
-                        onUp={() => moveRow(i, i - 1)}
-                        onDown={() => moveRow(i, i + 1)}
-                        onRemove={() => remove(b.key)}
-                        first={i === 0 || (i === 1 && hasWarmup)}
-                        last={i === blocks.length - 1}
-                        pinned={b.kind === "group" && !!b.warmup}
-                        tips={tipCounts[i]}
-                        seconds={estimateWorkout([plain[i]], estimates).totalSeconds}
-                      >
-                        {b.kind === "rest" ? (
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm font-semibold">Rest</span>
-                            <DurationInput
-                              label="Rest length"
-                              seconds={b.seconds}
-                              onChange={(seconds) => update(b.key, (x) => ({ ...x, seconds }) as KBlock)}
-                            />
-                            <span className="text-xs text-zinc-500">Countdown with Pause and Continue</span>
-                          </div>
-                        ) : b.kind === "exercise" ? (
-                          <MoveFields
-                            move={b.move}
-                            exercise={byId.get(b.move.exerciseId)}
-                            onPreview={() => setPreviewId(b.move.exerciseId)}
-                            onChange={(change) => updateMove(b.key, b.move.key, change)}
-                            sets={{
-                              value: b.sets,
-                              onChange: (sets) => update(b.key, (x) => ({ ...x, sets }) as KBlock),
-                              rest: b.restBetweenSets,
-                              onRest: (restBetweenSets) => update(b.key, (x) => ({ ...x, restBetweenSets }) as KBlock),
-                            }}
+                {/* Drag a block by its handle to reorder; the warm-up stays first. */}
+                <SortableList items={blocks} keyOf={(b) => b.key} onMove={moveRow} fixed={hasWarmup ? 1 : 0} className="space-y-2">
+                  {(b, i, handle) => (
+                    <BlockFrame
+                      tone={b.kind === "group" && b.warmup ? "warmup" : b.kind}
+                      handle={handle}
+                      onRemove={() => remove(b.key)}
+                      tips={tipCounts[i]}
+                      seconds={estimateWorkout([plain[i]], estimates).totalSeconds}
+                    >
+                      {b.kind === "rest" ? (
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-semibold">Rest</span>
+                          <DurationInput
+                            label="Rest length"
+                            seconds={b.seconds}
+                            onChange={(seconds) => update(b.key, (x) => ({ ...x, seconds }) as KBlock)}
                           />
-                        ) : (
-                          <div className="space-y-2">
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                              <span className="font-semibold">{labels[i]}</span>
-                              <Labelled label="Rounds">
-                                <Stepper
-                                  label="Rounds"
-                                  value={b.rounds}
-                                  onChange={(rounds) => update(b.key, (x) => ({ ...x, rounds }) as KBlock)}
-                                />
-                              </Labelled>
-                              <Labelled label="Between exercises">
+                          <span className="text-xs text-zinc-500">Countdown with Pause and Continue</span>
+                        </div>
+                      ) : b.kind === "exercise" ? (
+                        <MoveFields
+                          move={b.move}
+                          exercise={byId.get(b.move.exerciseId)}
+                          onPreview={() => setPreviewId(b.move.exerciseId)}
+                          onChange={(change) => updateMove(b.key, b.move.key, change)}
+                          sets={{
+                            value: b.sets,
+                            onChange: (sets) => update(b.key, (x) => ({ ...x, sets }) as KBlock),
+                            rest: b.restBetweenSets,
+                            onRest: (restBetweenSets) => update(b.key, (x) => ({ ...x, restBetweenSets }) as KBlock),
+                          }}
+                        />
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                            <span className="font-semibold">{labels[i]}</span>
+                            <Labelled label="Rounds">
+                              <Stepper
+                                label="Rounds"
+                                value={b.rounds}
+                                onChange={(rounds) => update(b.key, (x) => ({ ...x, rounds }) as KBlock)}
+                              />
+                            </Labelled>
+                            <Labelled label="Between exercises">
+                              <DurationInput
+                                label="Rest between exercises"
+                                seconds={b.restBetweenExercises}
+                                onChange={(s) => update(b.key, (x) => ({ ...x, restBetweenExercises: s }) as KBlock)}
+                              />
+                            </Labelled>
+                            {(!b.warmup || b.rounds > 1) && (
+                              <Labelled label="Between rounds">
                                 <DurationInput
-                                  label="Rest between exercises"
-                                  seconds={b.restBetweenExercises}
-                                  onChange={(s) => update(b.key, (x) => ({ ...x, restBetweenExercises: s }) as KBlock)}
+                                  label="Rest between rounds"
+                                  seconds={b.restBetweenRounds}
+                                  onChange={(s) => update(b.key, (x) => ({ ...x, restBetweenRounds: s }) as KBlock)}
                                 />
                               </Labelled>
-                              {(!b.warmup || b.rounds > 1) && (
-                                <Labelled label="Between rounds">
-                                  <DurationInput
-                                    label="Rest between rounds"
-                                    seconds={b.restBetweenRounds}
-                                    onChange={(s) => update(b.key, (x) => ({ ...x, restBetweenRounds: s }) as KBlock)}
-                                  />
-                                </Labelled>
-                              )}
-                            </div>
-                            <ol className="space-y-1.5 border-l-2 border-zinc-200 pl-3">
-                              {b.moves.map((m, j) => (
-                                <li key={m.key} className="flex items-center gap-2">
+                            )}
+                          </div>
+                          <div className="space-y-1.5 border-l-2 border-zinc-200 pl-3">
+                            <SortableList
+                              items={b.moves}
+                              keyOf={(m) => m.key}
+                              onMove={(from, to) => update(b.key, (x) => (x.kind === "group" ? { ...x, moves: move(x.moves, from, to) } : x))}
+                              className="space-y-1.5"
+                            >
+                              {(m, j, moveHandle) => (
+                                <div className="flex items-center gap-2">
+                                  {moveHandle}
                                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-zinc-100 text-xs font-bold">
                                     {String.fromCharCode(65 + j)}
                                   </span>
@@ -759,40 +763,34 @@ export function WorkoutBuilder({
                                       onChange={(change) => updateMove(b.key, m.key, change)}
                                     />
                                   </div>
-                                  <span className="flex shrink-0">
-                                    <button type="button" aria-label="Move up" disabled={j === 0} className={iconBtn}
-                                      onClick={() => update(b.key, (x) => (x.kind === "group" ? { ...x, moves: move(x.moves, j, j - 1) } : x))}>↑</button>
-                                    <button type="button" aria-label="Move down" disabled={j === b.moves.length - 1} className={iconBtn}
-                                      onClick={() => update(b.key, (x) => (x.kind === "group" ? { ...x, moves: move(x.moves, j, j + 1) } : x))}>↓</button>
-                                    <button type="button" aria-label="Remove from group" className={iconBtn}
-                                      onClick={() => update(b.key, (x) => (x.kind === "group" ? { ...x, moves: x.moves.filter((y) => y.key !== m.key) } : x))}>×</button>
-                                  </span>
-                                </li>
-                              ))}
-                              <li className="max-w-sm">
-                                <ExerciseSearch
-                                  compact
-                                  catalog={catalog}
-                                  suggested={b.warmup ? undefined : pairSuggestions(b.moves)}
-                                  placeholder={
-                                    b.warmup
-                                      ? b.moves.length
-                                        ? "Add another warm-up exercise…"
-                                        : "Add an exercise to the warm-up…"
-                                      : b.moves.length < 2
-                                        ? "Add an exercise to this group…"
-                                        : "Add another exercise…"
-                                  }
-                                  onPick={(e) => update(b.key, (x) => (x.kind === "group" ? { ...x, moves: [...x.moves, newMove(e)] } : x))}
-                                />
-                              </li>
-                            </ol>
+                                  <button type="button" aria-label="Remove from group" className={iconBtn}
+                                    onClick={() => update(b.key, (x) => (x.kind === "group" ? { ...x, moves: x.moves.filter((y) => y.key !== m.key) } : x))}>×</button>
+                                </div>
+                              )}
+                            </SortableList>
+                            <div className="max-w-sm">
+                              <ExerciseSearch
+                                compact
+                                catalog={catalog}
+                                suggested={b.warmup ? undefined : pairSuggestions(b.moves)}
+                                placeholder={
+                                  b.warmup
+                                    ? b.moves.length
+                                      ? "Add another warm-up exercise…"
+                                      : "Add an exercise to the warm-up…"
+                                    : b.moves.length < 2
+                                      ? "Add an exercise to this group…"
+                                      : "Add another exercise…"
+                                }
+                                onPick={(e) => update(b.key, (x) => (x.kind === "group" ? { ...x, moves: [...x.moves, newMove(e)] } : x))}
+                              />
+                            </div>
                           </div>
-                        )}
-                      </BlockFrame>
-                    </li>
-                  ))}
-                </ol>
+                        </div>
+                      )}
+                    </BlockFrame>
+                  )}
+                </SortableList>
 
                 {/* Cool-down and outro: optional, pinned last */}
                 {SHOW_WARMUP_COOLDOWN_VIDEOS && (
@@ -977,25 +975,17 @@ function Labelled({ label, children }: { label: string; children: ReactNode }) {
 function BlockFrame({
   tone,
   children,
-  onUp,
-  onDown,
+  handle,
   onRemove,
-  first,
-  last,
   seconds,
-  pinned = false,
   tips,
 }: {
   tone: KBlock["kind"] | "warmup";
   children: ReactNode;
-  onUp: () => void;
-  onDown: () => void;
+  /** Its drag handle (SortableList) — null for the warm-up, which stays first: a gap the same width keeps it lined up. */
+  handle: ReactNode;
   onRemove: () => void;
-  first: boolean;
-  last: boolean;
   seconds: number;
-  /** The warm-up: always first, so no arrows (a gap the same width keeps it lined up). */
-  pinned?: boolean;
   /** Its audio tips: how many of its slots have one. */
   tips?: { done: number; total: number };
 }) {
@@ -1007,18 +997,7 @@ function BlockFrame({
   }[tone];
   return (
     <div className={`flex items-start gap-2 rounded-xl border p-2.5 ${toneCls}`}>
-      {pinned ? (
-        <span className="w-7 shrink-0" />
-      ) : (
-        <span className="flex flex-col">
-          <button type="button" aria-label="Move up" disabled={first} onClick={onUp} className={iconBtn}>
-            ↑
-          </button>
-          <button type="button" aria-label="Move down" disabled={last} onClick={onDown} className={iconBtn}>
-            ↓
-          </button>
-        </span>
-      )}
+      {handle ?? <span className="w-7 shrink-0" />}
       <div className="min-w-0 flex-1 py-1">{children}</div>
       {/* Grey with none recorded, amber with some, green with all. */}
       {tips && tips.total > 0 && (
