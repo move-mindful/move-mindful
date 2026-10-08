@@ -930,11 +930,19 @@ function CountdownTitle({ paused, children }: { paused: boolean; children: React
  * its reps, then the Up next card and Pause / Continue. Desktop shows the
  * same in the video column. Held (Pause), PAUSED floats above the time and
  * Pause reads Resume.
+ *
+ * Minimised (controls swiped down, phones): the time stays, and the card and
+ * buttons fold into one line under it — Up next and what it is, as on a set,
+ * with a small Continue at its end that fills as the rest runs, like the
+ * tutorial's Skip. Held, the full controls come back (Resume is there), and
+ * it folds again as it carries on.
  */
 export function RestScreen({
   secondsLeft,
+  seconds,
   next,
   paused,
+  hidden = false,
   onPause,
   onResume,
   onContinue,
@@ -942,9 +950,14 @@ export function RestScreen({
   theater = false,
 }: {
   secondsLeft: number;
-  next: { label: string; name: string; detail: string; thumbnail: string | null } | null;
+  /** The rest's whole length: the small Continue fills with how much of it has run. */
+  seconds: number;
+  /** `short`: the minimised line's — the name, and the reps or time ("Upright row · 12 reps"). */
+  next: { label: string; name: string; detail: string; short: string; thumbnail: string | null } | null;
   /** Held right here (Pause), the countdown stopped — see CountdownControls. */
   paused: boolean;
+  /** Controls swiped away: just the time, and the one line under it. */
+  hidden?: boolean;
   onPause: () => void;
   onResume: () => void;
   onContinue: () => void;
@@ -957,6 +970,7 @@ export function RestScreen({
   // and a purple GET READY slides up in its place. A rest that short from the
   // start just says GET READY.
   const ready = secondsLeft <= UP_NEXT.before;
+  const mini = hidden && !paused;
   const label = "col-start-1 row-start-1 text-2xl font-bold uppercase leading-none tracking-[0.16em] transition-[opacity,translate] duration-300 ease-out";
   return (
     <div
@@ -990,19 +1004,36 @@ export function RestScreen({
           </span>
         </span>
       </div>
-      {next && (
-        <NextCard
-          label={next.label}
-          name={next.name}
-          detail={next.detail}
-          thumbnail={next.thumbnail}
-          large={theater}
-          className="mt-[18px] w-full"
-        />
-      )}
-      <div className="mt-5">
-        <CountdownControls paused={paused} onPause={onPause} onResume={onResume} goLabel="Continue" onGo={onContinue} />
-      </div>
+      {/* Minimised: what's next on one line, and a small Continue at its end. */}
+      <Collapse open={mini}>
+        <div className="mt-2 flex items-center gap-2">
+          {next && <LabelLine label="Up next" text={next.short} still={!mini} className="flex-1" />}
+          <span className="ml-auto shrink-0">
+            <MiniSkipButton
+              progress={{ fraction: seconds ? 1 - secondsLeft / seconds : 0, cycle: 0 }}
+              onBegin={onContinue}
+              label="Continue"
+              aria="Skip the rest"
+            />
+          </span>
+        </div>
+      </Collapse>
+      <Collapse open={!mini}>
+        {next && (
+          <NextCard
+            label={next.label}
+            name={next.name}
+            detail={next.detail}
+            thumbnail={next.thumbnail}
+            large={theater}
+            still={mini}
+            className="mt-[18px] w-full"
+          />
+        )}
+        <div className="mt-5">
+          <CountdownControls paused={paused} onPause={onPause} onResume={onResume} goLabel="Continue" onGo={onContinue} />
+        </div>
+      </Collapse>
     </div>
   );
 }

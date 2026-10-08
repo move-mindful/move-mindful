@@ -1369,17 +1369,20 @@ export function WorkoutPlayer({
           {zones("Skip the rest")}
           <RestScreen
             secondsLeft={leftMs / 1000}
+            seconds={step.seconds}
             next={
               t
                 ? {
                     label: step.reason === "round" ? `Up next · Round ${t.round}` : "Up next",
                     name: t.side ? `${tName} · ${cap(t.side)} side` : tName,
                     detail: !t.groupLabel && t.rounds > 1 ? `Set ${t.round} of ${t.rounds} · ${tAmount}` : tAmount,
+                    short: t.side ? `${tName} · ${cap(t.side)} side · ${tAmount}` : `${tName} · ${tAmount}`,
                     thumbnail: targetExercise?.thumbnail ?? null,
                   }
                 : null
             }
             paused={state.paused}
+            hidden={!theater && chromeHidden}
             onPause={pause}
             onResume={resumePlay}
             onContinue={goOn}
