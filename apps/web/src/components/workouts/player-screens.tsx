@@ -1645,7 +1645,7 @@ export function CompleteScreen({
   exercises,
   sets,
   onDone,
-  onRestart,
+  onRestart = null,
   rating = null,
   badge = false,
   onFireworkBurst,
@@ -1656,7 +1656,8 @@ export function CompleteScreen({
   exercises: number;
   sets: number;
   onDone: () => void;
-  onRestart: () => void;
+  /** Restart workout, under Done — none for now (Oct 2026): it's left out. */
+  onRestart?: (() => void) | null;
   /** The viewer's stars for this workout (null until they rate) and how to rate. Signed out (/demo1) they show but aren't kept. */
   rating?: { stars: number | null; onRate: (stars: number) => void } | null;
   /** The spinning 3D 1st Workout badge in place of the check (the check still shows if 3D can't run). */
@@ -1708,14 +1709,16 @@ export function CompleteScreen({
           >
             Done
           </button>
-          <button
-            type="button"
-            onClick={onRestart}
-            className="flex h-[54px] items-center justify-center gap-2.5 rounded-full bg-white/[0.12] text-base font-semibold"
-          >
-            <RestartWorkout />
-            Restart workout
-          </button>
+          {onRestart && (
+            <button
+              type="button"
+              onClick={onRestart}
+              className="flex h-[54px] items-center justify-center gap-2.5 rounded-full bg-white/[0.12] text-base font-semibold"
+            >
+              <RestartWorkout />
+              Restart workout
+            </button>
+          )}
         </div>
       </div>
     </>

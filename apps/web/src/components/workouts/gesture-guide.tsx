@@ -102,13 +102,13 @@ const PAGES: Page[] = [
     picture: <AudioPicture />,
     rows: [
       {
-        icon: <Music size={18} />,
+        icon: <Settings size={18} />,
         tint: "bg-[#A99CFF]/25 text-[#C9C0FF]",
-        title: "Music",
-        text: "The music button turns it on or off: bottom left, or top left when paused.",
+        title: "Open Settings",
+        text: "On the pause screen, top right. Audio is at the top.",
       },
-      { icon: <Settings size={18} />, title: "Everything else", text: "In Settings: instructor audio, voice, sound effects." },
-      { icon: <Muted size={18} />, title: "Mute all", text: "In Settings too: all sound off at once." },
+      { icon: <Music size={18} />, title: "Music button", text: "Bottom left: turns the music on or off." },
+      { icon: <Muted size={18} />, title: "Mute all", text: "In Settings: all sound off at once." },
     ],
   },
   {
@@ -272,7 +272,7 @@ export function GestureGuide({
 
       <section className="relative flex flex-col gap-4 rounded-t-[28px] bg-[#1A1A34] px-5 pb-[max(28px,calc(env(safe-area-inset-bottom)+12px))] pt-6">
         {/* ✕ closes the guide from any page — in the panel's corner, clear of
-            the pictures above (the Adjust settings page's gear sits in the screen's corner). */}
+            the pictures above (the Adjust audio page's gear sits in the screen's corner). */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/60">
@@ -374,30 +374,38 @@ function SettingsPicture({ mode, autoAdvance }: { mode: TutorialMode; autoAdvanc
  */
 function AudioPicture() {
   return (
-    <div className="flex w-[270px] flex-col gap-4">
-      <div className="flex flex-col gap-2.5 rounded-[20px] bg-[#1A1A34]/85 p-4 ring-1 ring-white/10">
-        <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/60">Audio</span>
-        {["Music", "Instructor audio", "Sound effects"].map((label) => (
-          <span key={label} className="flex items-center justify-between text-[15px] font-semibold">
-            {label}
-            <MiniSwitch on />
+    <>
+      {/* Settings' gear just where it sits on the pause screen: top right, under
+          the progress bar (see PausedScreen) — what to tap for the switches below. */}
+      <span className="absolute right-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] flex size-[52px] items-center justify-center rounded-full bg-white/[0.14] ring-2 ring-[#A99CFF]">
+        <Settings />
+      </span>
+      <div className="flex w-[270px] flex-col gap-4">
+        <div className="flex flex-col gap-2.5 rounded-[20px] bg-[#1A1A34]/85 p-4 ring-1 ring-white/10">
+          <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/60">Settings · Audio</span>
+          {["Music", "Instructor audio", "Voice announcements", "Sound effects"].map((label) => (
+            <span key={label} className="flex items-center justify-between text-[15px] font-semibold">
+              {label}
+              <MiniSwitch on />
+            </span>
+          ))}
+          <span className="mt-1 flex items-center justify-between border-t border-white/10 pt-3 text-[15px] font-semibold">
+            Mute all
+            <MiniSwitch on={false} />
           </span>
-        ))}
-        <span className="mt-1 flex items-center justify-between border-t border-white/10 pt-3 text-[15px] font-semibold">
-          Mute all
-          <MiniSwitch on={false} />
-        </span>
+        </div>
+        {/* The bottom row: the music button. */}
+        <div className="flex items-center gap-2.5">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white/[0.14]">
+            <Music size={20} />
+          </span>
+          <span className="h-11 flex-1 rounded-full border border-white/15 bg-white/[0.06]" />
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-white/50">
+            <Pause size={18} />
+          </span>
+        </div>
       </div>
-      <div className="flex items-center gap-2.5">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white/[0.14] ring-2 ring-[#A99CFF]">
-          <Music size={20} />
-        </span>
-        <span className="h-11 flex-1 rounded-full border border-white/15 bg-white/[0.06]" />
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-white/50">
-          <Pause size={18} />
-        </span>
-      </div>
-    </div>
+    </>
   );
 }
 

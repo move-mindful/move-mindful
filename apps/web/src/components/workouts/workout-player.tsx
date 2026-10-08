@@ -1641,7 +1641,7 @@ export function WorkoutPlayer({
           // On every finish while it's tried out; meant in the end for a member's first.
           badge
           onFireworkBurst={fireworkSounds.play}
-          onRestart={() => restartWorkout(true)}
+          // No Restart workout on the summary for now: Done, then Begin again from the preview.
           theater={theater}
         />
       </>
