@@ -5,7 +5,8 @@ import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react"
 // Cues: short clips the player plays a set time into a step — the
 // instructor's audio tips (with their bubble, coach-tip.tsx), the voice
 // announcements, the countdown over the last seconds of a rest or Get ready,
-// the Up next chime, and the start sound as an exercise begins.
+// the Up next chime, the start sound as an exercise begins, and the level-up
+// as the workout's done.
 
 /**
  * The countdown over the last seconds of a rest or Get ready — a sound
@@ -50,6 +51,15 @@ export const EXERCISE_START = {
   on: false,
   /** As supplied (Oct 2026): a 0.21 s blip, sound from its very start. */
   src: "/audio/exercise-start.mp3",
+};
+
+/**
+ * The level-up as the Workout complete screen comes up — a sound effect,
+ * straight away: it's over (1.1 s) just as the first firework bursts.
+ */
+export const WORKOUT_DONE = {
+  /** As supplied (Oct 2026): 1.83 s, the sound in its first 1.1 s. */
+  src: "/audio/workout-complete.mp3",
 };
 
 /** A tenth of a second of silence (8 kHz, 8-bit mono WAV), to unlock an audio element with. */

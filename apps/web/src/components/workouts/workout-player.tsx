@@ -83,7 +83,7 @@ import { GestureGuide } from "./gesture-guide";
 import { DesktopGuide } from "./desktop-guide";
 import { usePlayerPreferences } from "./preferences";
 import { CoachTip } from "./coach-tip";
-import { COUNTDOWN, EXERCISE_START, UP_NEXT, useCueAudio, usePrefetched } from "./cue-audio";
+import { COUNTDOWN, EXERCISE_START, UP_NEXT, useCueAudio, usePrefetched, WORKOUT_DONE } from "./cue-audio";
 import { UpNextCard } from "./up-next-card";
 import { preloadFirstWorkoutBadge } from "./first-workout-badge";
 import { useFireworkSounds } from "./firework-sounds";
@@ -569,6 +569,18 @@ export function WorkoutPlayer({
     muted: muted || !prefs.soundEffects,
   });
 
+  // The level-up as the summary comes up: a sound effect, done as its first
+  // firework bursts. Downloaded once the workout's begun, so it's there at once.
+  const doneCopy = usePrefetched(state.phase === "preview" ? [] : [WORKOUT_DONE.src]);
+  const doneSound = useCueAudio({
+    clip: state.phase === "complete" ? { url: WORKOUT_DONE.src, start: 0, end: null } : null,
+    take: state.take,
+    running: state.phase === "complete",
+    delayMs: 0,
+    muted: muted || !prefs.soundEffects,
+    local: doneCopy,
+  });
+
   // The pops for the summary's fireworks: a sound effect too. Leaving the
   // summary (Done, Restart workout) silences any still to come.
   const fireworkSounds = useFireworkSounds(!muted && prefs.soundEffects);
@@ -895,6 +907,7 @@ export function WorkoutPlayer({
     countdown.unlock();
     upNextChime.unlock();
     startSound.unlock();
+    doneSound.unlock();
     fireworkSounds.unlock();
     // The music from the top — only when it's on, so a muted member never downloads it.
     if (prefs.music && prefs.instructorAudio) music.begin();
