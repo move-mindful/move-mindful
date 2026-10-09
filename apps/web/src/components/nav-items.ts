@@ -32,20 +32,6 @@ export function navItems(admin: boolean): NavItem[] {
   return [HOME, ...(admin ? SECTIONS : [])];
 }
 
-/** Pages with no tab of their own that the phone header still names. */
-const OTHER_PAGES = [
-  { href: "/account", label: "Account" },
-  { href: "/help", label: "Help" },
-];
-
-/**
- * What the phone header calls the current page: its section's name, or null
- * for a page outside them (a product's videos, say).
- */
-export function pageTitle(pathname: string): string | null {
-  return [HOME, ...SECTIONS, ...OTHER_PAGES].find((p) => isCurrent(p, pathname))?.label ?? null;
-}
-
 export function isCurrent(item: { href: string; nested?: boolean }, pathname: string) {
   return pathname === item.href || (!!item.nested && pathname.startsWith(`${item.href}/`));
 }
