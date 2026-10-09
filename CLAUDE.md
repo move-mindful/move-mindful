@@ -15,13 +15,14 @@ A video fitness platform with on-demand classes, exercise-by-exercise workouts, 
 
 ## Project Notes
 
-When the owner asks to add to Project Notes, record their note in [Project Notes.md](<./Project Notes.md>) at the project root.
+When the owner asks to add to Project Notes, record their note **only in Notion** on [Move Mindful — Project Notes](https://app.notion.com/p/3f4d36c27094817f9fa4eebe4ea5900e?pvs=204) (page ID: `3f4d36c2-7094-817f-9fa4-eebe4ea5900e`). The owner chose Notion only and asked to remove the original Markdown file on 2026-10-09. Do not recreate it or mirror new notes into the repo.
 
-- Put each new entry below the introductory text/comment and above all existing entries, keeping the newest at the top and preserving older notes.
+- Read the Notion page before editing. Put each new entry below the introduction and above all existing entries, keeping the newest at the top and preserving older notes and the note-taking instructions.
 - Give each entry a heading with the actual current date and time in Arizona (`America/Phoenix`), formatted as `## YYYY-MM-DD HH:mm MST`.
 - Lightly trim rambling, repetition and filler words while preserving the owner's meaning and substantive details.
 - Correct voice-transcription mistakes when the intended wording is clear. If a correction or interpretation is uncertain, include the owner's original words in parentheses or alongside the edited wording.
 - A request to add a note records it; it does not by itself ask you to implement tasks described in the note.
+- If Notion is unavailable, report that the note could not be saved there; do not silently fall back to a local file.
 
 ## Tech Stack
 

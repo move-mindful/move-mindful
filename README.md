@@ -2,6 +2,8 @@
 
 A video fitness platform: on-demand classes, exercise-by-exercise workouts, livestreaming, and — later — push notifications and community features. Web and iOS are co-equal platforms: the web is the storefront (where purchases happen), the iOS app will be the logged-in experience.
 
+Project notes live in [Move Mindful — Project Notes on Notion](https://app.notion.com/p/3f4d36c27094817f9fa4eebe4ea5900e?pvs=204), with dated entries kept newest first. New notes are saved only there.
+
 ## Current Status
 
 **Live at [www.movemindful.com](https://www.movemindful.com).** Phases 1–4 are done: the web foundation, Mux video, RevenueCat payments with entitlement gating, and the admin CMS with a curated, collection-based browse. **Phase 4.5 — exercise-by-exercise workouts — is mostly built**: the exercise library, the workout builder, the member player and saved progress. What's left there is deciding which purchase unlocks workouts and where they sit on `/home`. The full build order, with checkmarks, is in [plan.md](./plan.md).
@@ -200,7 +202,6 @@ move-mindful/
 ├── Paytest.md                  # Manual end-to-end test: ManyChat link → sign-up → purchase → tags
 ├── phase-4-plan.md             # Historical: the approved Phase 4 implementation plan
 ├── TODO.md                     # Running marketing/product to-do list
-├── Project Notes.md            # User's dated notes, newest first (Arizona time)
 ├── CLAUDE.md                   # Instructions for AI coding agents (AGENTS.md is a symlink to it)
 ├── turbo.json                  # Turborepo task config
 ├── tsconfig.base.json          # Shared TypeScript compiler options
