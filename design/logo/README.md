@@ -34,9 +34,8 @@ the iPhone Home Screen icon uses until the new logo is ready before launch
 - `gradient.py`: makes both from `app-icon-1024.png`.
 
 `apps/web/public/logo-mark.png` is the squircle scaled to 256px. It's the logo
-in the site's headers (the main site, pricing and admin), from 2026-10-09. The
-landing page's large logo and the signed-out pricing page still use the old
-`logo.png`.
+wherever the site shows its logo, from 2026-10-09: the headers (the main site,
+pricing and admin), the landing page and the signed-out pricing page.
 
 `apps/web/src/app/apple-icon.png` is the glass master scaled to 180px. The browser
 tab icon and the Android/desktop install icons still use the old white logo.

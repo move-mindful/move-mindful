@@ -14,7 +14,7 @@ export default async function Home() {
     <div className="flex flex-col flex-1 items-center justify-center font-sans">
       <main className="flex flex-col items-center gap-8 text-center px-8 py-32">
         <Image
-          src="/logo.png"
+          src="/logo-mark.png"
           alt="Move Mindful"
           width={120}
           height={120}

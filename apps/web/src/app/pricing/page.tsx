@@ -21,7 +21,7 @@ export default async function PricingPage() {
         </header>
       )}
       <div className="flex flex-col flex-1 items-center px-8 py-16 text-center">
-        {!userId && <Image src="/logo.png" alt="MoveMindful" width={64} height={64} />}
+        {!userId && <Image src="/logo-mark.png" alt="MoveMindful" width={64} height={64} />}
       {/* Deliberately neutral: the packages themselves carry their titles,
           descriptions and prices from RevenueCat, and what's on sale changes by
           switching the current offering — no deploy. Copy here that names
