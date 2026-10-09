@@ -72,7 +72,7 @@ export function CollectionCarousel({ row }: { row: BrowseRow }) {
       <div
         ref={scrollRef}
         onScroll={updateScrollState}
-        className="mt-4 flex gap-4 overflow-x-auto pb-2"
+        className="mt-4 flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {row.classes.map((c) => (
           <Link

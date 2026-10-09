@@ -56,8 +56,9 @@ export default async function AppLayout({
 
   return (
     // Room on the left for the sidebar's narrow column (it widens over the
-    // page, not into it).
-    <div data-app-shell className="flex flex-1 flex-col md:pl-[72px]">
+    // page, not into it). data-no-page-scrollbar: the page scrolls without
+    // showing a scroll bar, like the player (globals.css).
+    <div data-app-shell data-no-page-scrollbar className="flex flex-1 flex-col md:pl-[72px]">
       <Sidebar admin={admin} />
       <PhoneHeader />
       {/* flex column so a nested layout's full-height states (e.g. the

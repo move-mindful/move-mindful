@@ -175,7 +175,8 @@ html[data-player-up] body {
 }
 
 /* A page that scrolls without showing a scroll bar — the workout's Begin page
-   (data-no-page-scrollbar on its root), like the player's own lists. */
+   and every signed-in page ((app)/layout.tsx), via data-no-page-scrollbar on
+   their root — like the player's own lists. */
 html:has([data-no-page-scrollbar]) {
   scrollbar-width: none;
 }
