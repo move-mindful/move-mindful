@@ -15,8 +15,8 @@ the iPhone Home Screen icon uses until the new logo is ready before launch
   Run `python3 thicken.py source-black.png <out dir>` (Pillow and NumPy) to
   write the original, 1.3× ("A") and 1.5× ("B") versions.
 
-- `app-icon-glass-1024.png`: the icon now in use (2026-10-04). It's the master
-  above with glass lines, inspired by iOS 26's Liquid Glass. Each line has a
+- `app-icon-glass-1024.png`: the Home Screen icon from 2026-10-04 to 10-09 (no
+  longer in use). It's the master above with glass lines, inspired by iOS 26's Liquid Glass. Each line has a
   thin pure-white rim, and its inside is graded from near-white at the head to
   a light cool grey at the legs. The background stays solid black.
 - `glass.py`: how the glass version was made from `app-icon-1024.png`. Run
@@ -33,12 +33,26 @@ the iPhone Home Screen icon uses until the new logo is ready before launch
   submitting it (Apple takes the square).
 - `gradient.py`: makes both from `app-icon-1024.png`.
 
+- `app-icon-edge-1024.png`: option "2: Gradient + edge light". It's the
+  website's iPhone Home Screen icon from 2026-10-09: "1: Gradient" plus a soft
+  light along the icon's edge, brightest along the top, like iOS 26's glass
+  rim. Dithered.
+- `edge.py`: makes it from `app-icon-1024.png`, and the 180px apple-touch-icon
+  (`python3 edge.py app-icon-1024.png . ../../apps/web/src/app/apple-icon.png`).
+
 `apps/web/public/logo-mark.png` is the squircle scaled to 256px. It's the logo
 wherever the site shows its logo, from 2026-10-09: the headers (the main site,
 pricing and admin), the landing page and the signed-out pricing page.
 
-`apps/web/src/app/apple-icon.png` is the glass master scaled to 180px. The browser
+`apps/web/src/app/apple-icon.png` is the edge-light icon at 180px. The browser
 tab icon (`apps/web/src/app/icon.png`, 64px) is the "1: Gradient" squircle, from
 2026-10-09. The Android/desktop install icons still use the old white logo.
 A final logo should be drawn as a vector (SVG or PDF), so it's sharp at every
 size and can be layered for the iOS app's icon.
+
+**The iPhone app's icon is different.** Give Icon Composer flat, matte layers: a
+black background and the white figure, with no painted gradient, rim or edge
+light. iOS 26 adds its own glass, specular highlight, shadow and blur to every
+app icon, and it can't be turned off, so anything painted in would show twice.
+The edge light above exists only because a website can give iOS one flat
+image.

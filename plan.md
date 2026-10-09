@@ -382,7 +382,7 @@ Key product rules from design review:
   - the browser tab icon (`src/app/icon.png`)
   - the install icons (`public/icon-192.png`, `icon-512.png`, maskable too)
   - `public/logo.png`
-  - the iOS app's layered icon (Icon Composer)
+  - the iOS app's layered icon (Icon Composer): flat, matte layers (black background, white figure), no painted gradient or edge light. iOS 26 adds its own glass highlight to app icons and it can't be turned off (design/logo/README.md)
   - Clerk's dashboard: the logo and favicon on its sign-in screens and emails
   - RevenueCat's dashboard: the app icon on the project and its paywalls
 
