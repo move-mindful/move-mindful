@@ -28,13 +28,14 @@ export default async function WorkoutsPage() {
     <div className="mx-auto w-full max-w-6xl px-6 pt-6 pb-10 sm:px-8 md:pt-10">
       {/* On a phone the header already says Your plan. */}
       <h1 className="text-2xl font-bold tracking-tight max-md:sr-only">Your plan</h1>
-      <div className="md:mt-6">
+      {/* On a phone the strip is in the header's pane instead (PhoneHeader). */}
+      <div className="hidden md:mt-6 md:block">
         <WeekStrip />
       </div>
       {workouts.length === 0 ? (
-        <p className="mt-6 text-zinc-500 dark:text-zinc-400">No workouts yet.</p>
+        <p className="text-zinc-500 md:mt-6 dark:text-zinc-400">No workouts yet.</p>
       ) : (
-        <div className="mt-6">
+        <div className="md:mt-6">
           <WorkoutCarousel
             workouts={workouts.map((w) => ({
               id: w.id,
