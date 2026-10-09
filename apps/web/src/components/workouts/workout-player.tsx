@@ -1274,9 +1274,18 @@ export function WorkoutPlayer({
     }
   } else if (state.phase === "rundown") {
     // The workout overview: the list over the loops — dimmed the whole way
-    // across, as on a rest (the stage's StepDim) — while the tip plays.
+    // across, as on a rest (the stage's StepDim) — while the tip plays. Taps
+    // as on a rest: the middle pauses it right there (or resumes), the right
+    // goes on to the workout — on the list too (onTap), which takes the finger
+    // to scroll. The left does nothing (desktop's back arrow starts it over).
+    const rundownMiddle = state.paused ? resumePlay : pause;
+    const rundownOn = () => {
+      if (state.paused) resumePlay();
+      act({ type: "next" });
+    };
     screen = (
       <>
+        <TapZones onNext={rundownOn} onMiddle={rundownMiddle} onHold={pause} nextLabel="Start the workout" />
         <RundownScreen
           workout={workout}
           steps={steps}
@@ -1286,9 +1295,10 @@ export function WorkoutPlayer({
           paused={state.paused}
           onPause={pause}
           onResume={resumePlay}
-          onContinue={() => act({ type: "next" })}
+          onContinue={rundownOn}
           tip={workout.rundownTip ? coach(theater) : null}
           theater={theater}
+          onTap={{ middle: rundownMiddle, next: rundownOn }}
         />
       </>
     );
@@ -1297,7 +1307,7 @@ export function WorkoutPlayer({
       beside = (
         <TheaterControls
           onBack={() => act({ type: "restartVideo" })}
-          onNext={() => act({ type: "next" })}
+          onNext={rundownOn}
           backLabel="Start the overview over"
           nextLabel="Start the workout"
           buttons={sideButtons(false)}

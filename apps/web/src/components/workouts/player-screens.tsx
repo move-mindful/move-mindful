@@ -1077,9 +1077,10 @@ const RUNDOWN_SCROLL_MS = 800;
  * way across as on a rest — with the one on screen lit, and kept near the
  * list's middle, while the instructor's tip talks the workout through.
  * Pause holds it all; Continue, filling as the section runs, goes on to the
- * first exercise. Desktop shows the same in the video column. The builder
- * shows it too, recording the tip: its own `controls`, and `onPick` to tap
- * exercises as they're talked about.
+ * first exercise. Desktop shows the same in the video column. In the player
+ * the screen takes taps as the others do (`onTap`): the middle pauses (or
+ * resumes), the right moves on. The builder shows it too, recording the tip:
+ * its own `controls`, and `onPick` to tap exercises as they're talked about.
  */
 export function RundownScreen({
   workout,
@@ -1097,6 +1098,7 @@ export function RundownScreen({
   controls,
   fit = false,
   listWarmup = false,
+  onTap,
 }: {
   workout: PlayerWorkout;
   steps: WorkoutStep[];
@@ -1125,7 +1127,15 @@ export function RundownScreen({
   /** The tip's CoachTip, taking no room: just above the buttons, at the right. */
   tip?: ReactNode;
   theater?: boolean;
+  /**
+   * The player: a tap on the title or the list goes by where it lands, as on
+   * the tap zones (TAP_ZONES) under the rest of the screen — so the list,
+   * which takes the finger to scroll, still pauses and moves on. A swipe
+   * scrolls it, and isn't a tap.
+   */
+  onTap?: { back?: () => void; middle: () => void; next: () => void };
 }) {
+  const root = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLDivElement>(null);
   // A long workout scrolls: as the instructor moves on, the exercise lit
   // glides to the middle of the list (as near as the list's ends allow), so
@@ -1159,14 +1169,22 @@ export function RundownScreen({
   }, [exerciseId]);
   // Fitting, the list's own height counts (flex-auto, not flex-1).
   const grow = fit ? "flex-auto" : "flex-1";
+  // Where a tap on the list landed, across the whole screen: back, the middle, or next.
+  const tap = (e: React.MouseEvent) => {
+    const box = root.current?.getBoundingClientRect();
+    if (!onTap || !box) return;
+    const across = (e.clientX - box.left) / box.width;
+    (across < TAP_ZONES.back ? onTap.back : across < 1 - TAP_ZONES.next ? onTap.middle : onTap.next)?.();
+  };
   return (
     <div
+      ref={root}
       className={`pointer-events-none flex flex-col [&_button]:pointer-events-auto ${
         fit ? "relative min-h-0 flex-auto" : "absolute inset-0"
       } ${theater ? "px-7 pt-12" : "px-4 pt-[calc(max(20px,env(safe-area-inset-top))+4px)]"}`}
     >
       {/* No box: the stage dims the loops behind (not blurred). The title stays put while the list scrolls. */}
-      <div className={`pointer-events-auto flex min-h-0 ${grow} flex-col overflow-hidden`}>
+      <div onClick={onTap ? tap : undefined} className={`pointer-events-auto flex min-h-0 ${grow} flex-col overflow-hidden`}>
         {/* Close under the top (moved up 18px, Oct 2026), so the list has that much more room. */}
         <div className="flex items-baseline justify-between gap-3 px-4 pb-1.5 pt-2">
           {/* Up a third from 17 and 15px (Oct 2026); the time in white, like the title. */}
