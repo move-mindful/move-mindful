@@ -1517,7 +1517,13 @@ export function WorkoutPlayer({
         />
       );
       const begin = (
-        <BeginCard show={beginCard} name={name} amount={amountLabel(set.measure, set.amount)} side={set.side} theater={theater} />
+        <BeginCard
+          show={beginCard}
+          name={name}
+          metric={set.measure === "time" ? { kind: "time", seconds: set.amount } : { kind: "reps", amount: set.amount }}
+          side={set.side}
+          theater={theater}
+        />
       );
       // While the name's up, nothing else: the bar, the info and the buttons
       // stay out of sight until the dim lifts (desktop keeps its arrows and

@@ -156,23 +156,27 @@ export function StepDim({ on }: { on: boolean }) {
 /**
  * As an exercise begins: its name, with the reps (or time) and side under
  * it, big in the middle of the screen over the dim while its voice
- * announcement is said — then gone with the dim. Stays mounted through the
- * set so it can fade out.
+ * announcement is said — then gone with the dim. The reps are set as on the
+ * set screen: the number big, "reps" smaller on its baseline (a time all
+ * big), the side pill centred on "reps". Stays mounted through the set so it
+ * can fade out.
  */
 export function BeginCard({
   show,
   name,
-  amount,
+  metric,
   side,
   theater = false,
 }: {
   show: boolean;
   name: string;
-  /** "10 reps", "0:30". */
-  amount: string;
+  /** Reps to do, or the set's time. */
+  metric: { kind: "reps"; amount: number } | { kind: "time"; seconds: number };
   side: "right" | "left" | null;
   theater?: boolean;
 }) {
+  const number = `font-semibold leading-none tracking-[-0.03em] tabular-nums ${theater ? "text-[72px]" : "text-[56px]"}`;
+  const word = `font-medium ${theater ? "text-[32px]" : "text-[26px]"}`;
   return (
     <div
       aria-hidden={!show || undefined}
@@ -184,11 +188,20 @@ export function BeginCard({
       <h2 className={`text-balance font-semibold leading-[1.1] tracking-[-0.02em] ${theater ? "text-[46px]" : "text-[36px]"}`}>
         {name}
       </h2>
-      <div className="flex items-center gap-3">
-        <span className={`font-medium tabular-nums ${theater ? "text-[38px]" : "text-[32px]"}`}>{amount}</span>
+      <div className="flex items-baseline gap-3">
+        {metric.kind === "reps" ? (
+          <span className={`flex items-baseline ${theater ? "gap-2" : "gap-1.5"}`}>
+            <span className={number}>{metric.amount}</span>
+            <span className={word}>{metric.amount === 1 ? "rep" : "reps"}</span>
+          </span>
+        ) : (
+          <span className={number}>{clock(metric.seconds)}</span>
+        )}
         {side && (
-          <span className="inline-flex h-7 items-center rounded-full bg-[#A99CFF] px-3 text-[13px] font-bold tracking-[0.08em] [text-shadow:none]">
-            {side.toUpperCase()}
+          <span className={word}>
+            <span className="inline-flex h-7 items-center rounded-full bg-[#A99CFF] px-3 align-middle text-[13px] font-bold tracking-[0.08em] [text-shadow:none]">
+              {side.toUpperCase()}
+            </span>
           </span>
         )}
       </div>
