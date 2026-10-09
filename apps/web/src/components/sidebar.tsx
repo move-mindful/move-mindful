@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Menu } from "lucide-react";
+import { LogoMark } from "@/components/logo-mark";
 import { MemberAvatar } from "@/components/member-avatar";
 import { MoreMenu, useAppearance } from "@/components/more-menu";
 import { isCurrent, navItems } from "@/components/nav-items";
@@ -60,7 +60,7 @@ export function Sidebar({ admin }: { admin: boolean }) {
           aria-label="MoveMindful home"
           className="flex h-[84px] shrink-0 items-center px-2.5"
         >
-          <Image src="/logo-mark.png" alt="" width={28} height={28} className="rounded-[7px]" />
+          <LogoMark size={28} />
         </Link>
 
         <div className="my-auto flex flex-col gap-2">
