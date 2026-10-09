@@ -12,6 +12,8 @@ export interface NavItem {
   icon: LucideIcon;
   /** Also current on pages under it (/classes/…). */
   nested?: boolean;
+  /** What the page itself is called, when that isn't its tab's label. */
+  title?: string;
 }
 
 const HOME: NavItem = { href: MEMBER_HOME, label: "Home", icon: House };
@@ -19,7 +21,7 @@ const SECTIONS: NavItem[] = [
   { href: "/classes", label: "Classes", icon: Clapperboard, nested: true },
   // Called Studio in the navigation; the page itself stays at /live.
   { href: "/live", label: "Studio", icon: Radio, nested: true },
-  { href: "/workouts", label: "Workouts", icon: Dumbbell, nested: true },
+  { href: "/workouts", label: "Workouts", icon: Dumbbell, nested: true, title: "Your plan" },
 ];
 
 /**
@@ -43,7 +45,10 @@ const OTHER_PAGES = [
  * for a page outside them (a product's videos, say).
  */
 export function pageTitle(pathname: string): string | null {
-  return [HOME, ...SECTIONS, ...OTHER_PAGES].find((p) => isCurrent(p, pathname))?.label ?? null;
+  const page: { label: string; title?: string } | undefined = [HOME, ...SECTIONS, ...OTHER_PAGES].find((p) =>
+    isCurrent(p, pathname),
+  );
+  return page ? (page.title ?? page.label) : null;
 }
 
 export function isCurrent(item: { href: string; nested?: boolean }, pathname: string) {
