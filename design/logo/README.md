@@ -31,7 +31,11 @@ the iPhone Home Screen icon uses until the new logo is ready before launch
 - `app-icon-gradient-squircle-1024.png`: the same, in the iPhone icon shape
   (a superellipse, n = 5) with clear corners, for showing it rather than
   submitting it (Apple takes the square).
-- `gradient.py`: makes both from `app-icon-1024.png`.
+- `app-icon-gradient-light-1024.png` and `app-icon-gradient-light-squircle-1024.png`:
+  a light version of "1: Gradient", square and squircle. The background goes
+  from white to a soft grey (#E4E4E9), and the figure is near-black (#2C2C32 at
+  the top to #08080A), still lit from above. Dithered.
+- `gradient.py`: makes all four from `app-icon-1024.png`.
 
 - `app-icon-edge-1024.png`: option "2: Gradient + edge light". It's the
   website's iPhone Home Screen icon from 2026-10-09: "1: Gradient" plus a soft
