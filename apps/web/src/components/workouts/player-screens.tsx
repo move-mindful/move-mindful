@@ -1266,6 +1266,7 @@ export function VideoScreen({
   musicOn,
   onMusic,
   hidden,
+  bar = true,
 }: {
   chip: VideoChip;
   name: string;
@@ -1281,10 +1282,12 @@ export function VideoScreen({
   onMusic: () => void;
   /** Controls swiped away: just the label, the name and a small Skip. */
   hidden: boolean;
+  /** Its progress bar along the top, with the times under it — not on the intro or outro. */
+  bar?: boolean;
 }) {
   return (
     <>
-      <VideoProgress seconds={seconds} duration={duration} label={chip.label} />
+      {bar && <VideoProgress seconds={seconds} duration={duration} label={chip.label} />}
       <div className={`absolute inset-x-0 bottom-0 isolate flex flex-col px-5 pointer-events-none [&_button]:pointer-events-auto ${bottomPad}`}>
         <BottomShade />
         <div className="flex flex-col gap-2">

@@ -1171,6 +1171,8 @@ export function WorkoutPlayer({
     const restartLabel = `Restart the ${text.noun}`;
     // The overview lists the warm-up and cool-down, not the intro or outro.
     const withOverview = videoNow === "warmup" || videoNow === "cooldown";
+    // The intro and outro play with nothing along the top (Oct 2026): no bar, no times, no shade for them.
+    const withBar = videoNow === "warmup" || videoNow === "cooldown";
     // Before the exercises, End workout asks what to keep (nothing, yet); after
     // them it's done already, so End goes to the summary.
     const end = isFinished(videoNow) ? () => act({ type: "finish" }) : () => act({ type: "sheet", sheet: "end" });
@@ -1227,8 +1229,8 @@ export function WorkoutPlayer({
     } else if (theater) {
       screen = (
         <>
-          <TopShade tall />
-          <VideoProgress seconds={clip.time} duration={duration} label={text.label} />
+          {withBar && <TopShade tall />}
+          {withBar && <VideoProgress seconds={clip.time} duration={duration} label={text.label} />}
           {/* As on a set: the right skips ahead, the left offers to start over, the middle pauses. */}
           <TapZones
             onBack={askRestartVideo}
@@ -1249,7 +1251,7 @@ export function WorkoutPlayer({
     } else {
       screen = (
         <>
-          <TopShade tall />
+          {withBar && <TopShade tall />}
           <TapZones
             onBack={askRestartVideo}
             onNext={skip}
@@ -1280,6 +1282,7 @@ export function WorkoutPlayer({
             musicOn={musicOn}
             onMusic={toggleMusic}
             hidden={chromeHidden}
+            bar={withBar}
           />
         </>
       );
