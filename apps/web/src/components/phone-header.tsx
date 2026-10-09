@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 import { LogoMark } from "@/components/logo-mark";
 import { MemberAvatar } from "@/components/member-avatar";
 import { pageTitle } from "@/components/nav-items";
@@ -24,8 +23,6 @@ import { MEMBER_HOME } from "@/lib/routes";
  */
 export function PhoneHeader() {
   const pathname = usePathname();
-  // For /workouts' "Max's plan".
-  const { user, isLoaded } = useUser();
 
   return (
     <header className="sticky top-0 z-30 bg-background/70 backdrop-blur-xl backdrop-saturate-150 md:hidden">
@@ -35,7 +32,7 @@ export function PhoneHeader() {
             <LogoMark size={40} />
           </Link>
           <span className="truncate text-[28px] leading-tight font-bold tracking-tight">
-            {pageTitle(pathname, isLoaded ? (user?.firstName ?? null) : undefined) ?? "MoveMindful"}
+            {pageTitle(pathname) ?? "MoveMindful"}
           </span>
         </div>
         <Link
