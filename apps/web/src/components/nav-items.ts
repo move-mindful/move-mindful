@@ -12,8 +12,17 @@ export interface NavItem {
   icon: LucideIcon;
   /** Also current on pages under it (/classes/…). */
   nested?: boolean;
-  /** What the page itself is called, when that isn't its tab's label. */
-  title?: string;
+  /**
+   * What the page itself is called, when that isn't its tab's label — or how
+   * to make it from the member's first name (null when they have none).
+   */
+  title?: string | ((firstName: string | null) => string);
+}
+
+/** /workouts' name: the member's plan, by first name ("Max's plan") when their account has one. */
+export function planTitle(firstName: string | null) {
+  const name = firstName?.trim();
+  return name ? `${name}’s plan` : "Your plan";
 }
 
 const HOME: NavItem = { href: MEMBER_HOME, label: "Home", icon: House };
@@ -21,7 +30,7 @@ const SECTIONS: NavItem[] = [
   { href: "/classes", label: "Classes", icon: Clapperboard, nested: true },
   // Called Studio in the navigation; the page itself stays at /live.
   { href: "/live", label: "Studio", icon: Radio, nested: true },
-  { href: "/workouts", label: "Workout", icon: Dumbbell, nested: true, title: "Your plan" },
+  { href: "/workouts", label: "Workout", icon: Dumbbell, nested: true, title: planTitle },
 ];
 
 /**
@@ -42,13 +51,17 @@ const OTHER_PAGES = [
 
 /**
  * What the phone header calls the current page: its section's name, or null
- * for a page outside them (a product's videos, say).
+ * for a page outside them (a product's videos, say). `firstName` is undefined
+ * while the member's account is still loading; a name made from it is blank
+ * till then, rather than switching from "Your plan" as it arrives.
  */
-export function pageTitle(pathname: string): string | null {
-  const page: { label: string; title?: string } | undefined = [HOME, ...SECTIONS, ...OTHER_PAGES].find((p) =>
+export function pageTitle(pathname: string, firstName?: string | null): string | null {
+  const page: Pick<NavItem, "label" | "title"> | undefined = [HOME, ...SECTIONS, ...OTHER_PAGES].find((p) =>
     isCurrent(p, pathname),
   );
-  return page ? (page.title ?? page.label) : null;
+  if (!page) return null;
+  if (typeof page.title === "function") return firstName === undefined ? "" : page.title(firstName);
+  return page.title ?? page.label;
 }
 
 export function isCurrent(item: { href: string; nested?: boolean }, pathname: string) {

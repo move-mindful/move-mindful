@@ -1,3 +1,4 @@
+import { PlanTitle } from "@/components/workouts/plan-title";
 import { WeekStrip } from "@/components/workouts/week-strip";
 
 /**
@@ -14,8 +15,8 @@ import { WeekStrip } from "@/components/workouts/week-strip";
 export default function Loading() {
   return (
     <div className="mx-auto w-full max-w-6xl px-6 pt-6 sm:px-8 md:pt-10 md:pb-10">
-      {/* On a phone the header already says Your plan, and has the strip. */}
-      <h1 className="text-2xl font-bold tracking-tight max-md:sr-only">Your plan</h1>
+      {/* On a phone the header has the title and the strip. */}
+      <PlanTitle />
       <div className="hidden md:mt-6 md:block">
         <WeekStrip />
       </div>

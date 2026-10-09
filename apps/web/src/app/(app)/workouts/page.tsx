@@ -4,6 +4,7 @@ import { getSessionSummaries, workoutStatuses } from "@/lib/member/sessions-serv
 import { getWorkoutCards } from "@/lib/workouts/member";
 import { getThisWeekIds } from "@/lib/workouts/server";
 import { equipmentPills, levelLabel } from "@/lib/workouts/player";
+import { PlanTitle } from "@/components/workouts/plan-title";
 import { WeekStrip } from "@/components/workouts/week-strip";
 import { WorkoutCarousel } from "@/components/workouts/workout-carousel";
 
@@ -27,8 +28,7 @@ export default async function WorkoutsPage() {
   return (
     // On a phone the page fits the screen: the cards size to it (WorkoutCard).
     <div className="mx-auto w-full max-w-6xl px-6 pt-6 sm:px-8 md:pt-10 md:pb-10">
-      {/* On a phone the header already says Your plan. */}
-      <h1 className="text-2xl font-bold tracking-tight max-md:sr-only">Your plan</h1>
+      <PlanTitle />
       {/* On a phone the strip is in the header's pane instead (PhoneHeader). */}
       <div className="hidden md:mt-6 md:block">
         <WeekStrip />
