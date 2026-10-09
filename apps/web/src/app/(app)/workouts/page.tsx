@@ -7,6 +7,7 @@ import { getWorkoutCards } from "@/lib/workouts/member";
 import { getThisWeekIds } from "@/lib/workouts/server";
 import { levelLabel } from "@/lib/workouts/player";
 import { DoneLabel } from "@/components/workouts/done-label";
+import { WeekStrip } from "@/components/workouts/week-strip";
 
 /**
  * This week's workouts — the published ones picked on the admin workouts
@@ -26,7 +27,11 @@ export default async function WorkoutsPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 pt-6 pb-10 sm:px-8 md:pt-10">
-      <h1 className="text-2xl font-bold tracking-tight">Workouts</h1>
+      {/* On a phone the header already says Workouts. */}
+      <h1 className="text-2xl font-bold tracking-tight max-md:sr-only">Workouts</h1>
+      <div className="md:mt-6">
+        <WeekStrip />
+      </div>
       {workouts.length === 0 ? (
         <p className="mt-6 text-zinc-500 dark:text-zinc-400">No workouts yet.</p>
       ) : (
