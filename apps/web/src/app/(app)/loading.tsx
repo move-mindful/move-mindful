@@ -10,7 +10,7 @@
 export default function Loading() {
   return (
     <div
-      className="mx-auto w-full max-w-6xl animate-pulse px-6 py-10 sm:px-8"
+      className="mx-auto w-full max-w-6xl animate-pulse px-6 pt-6 pb-10 sm:px-8 md:pt-10"
       role="status"
       aria-label="Loading"
     >

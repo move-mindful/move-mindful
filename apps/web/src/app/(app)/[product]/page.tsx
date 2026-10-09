@@ -104,7 +104,7 @@ export default async function ProductPage({
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-6 sm:px-8 py-12">
+    <div className="mx-auto max-w-6xl px-6 sm:px-8 pt-6 pb-12 md:pt-12">
       <header className="max-w-2xl">
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
           {product.title}

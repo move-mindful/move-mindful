@@ -1,6 +1,6 @@
 export default function HelpPage() {
   return (
-    <div className="mx-auto max-w-2xl px-6 py-12">
+    <div className="mx-auto max-w-2xl px-6 pt-6 pb-12 md:pt-12">
       <h1 className="text-3xl font-bold tracking-tight">Help</h1>
 
       <div className="mt-8 rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.03] p-6">

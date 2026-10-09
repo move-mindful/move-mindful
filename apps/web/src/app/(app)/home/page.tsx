@@ -38,7 +38,7 @@ export default async function HomePage() {
 
   return (
     <div
-      className={`${outfit.variable} mx-auto max-w-6xl px-6 py-12 sm:px-8`}
+      className={`${outfit.variable} mx-auto max-w-6xl px-6 pt-6 pb-12 sm:px-8 md:pt-12`}
     >
       {/* No page heading: the section heading below carries it, and "Home"
           above it was a label for a page with one thing on it. */}

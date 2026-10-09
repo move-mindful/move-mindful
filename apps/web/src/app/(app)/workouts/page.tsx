@@ -25,7 +25,7 @@ export default async function WorkoutsPage() {
   const statuses = sessions ? workoutStatuses(workouts, sessions) : null;
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 py-10 sm:px-8">
+    <div className="mx-auto w-full max-w-6xl px-6 pt-6 pb-10 sm:px-8 md:pt-10">
       <h1 className="text-2xl font-bold tracking-tight">Workouts</h1>
       {workouts.length === 0 ? (
         <p className="mt-6 text-zinc-500 dark:text-zinc-400">No workouts yet.</p>
