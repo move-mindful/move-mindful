@@ -200,6 +200,7 @@ move-mindful/
 ├── Paytest.md                  # Manual end-to-end test: ManyChat link → sign-up → purchase → tags
 ├── phase-4-plan.md             # Historical: the approved Phase 4 implementation plan
 ├── TODO.md                     # Running marketing/product to-do list
+├── Project Notes.md            # User's dated notes, newest first (Arizona time)
 ├── CLAUDE.md                   # Instructions for AI coding agents (AGENTS.md is a symlink to it)
 ├── turbo.json                  # Turborepo task config
 ├── tsconfig.base.json          # Shared TypeScript compiler options
