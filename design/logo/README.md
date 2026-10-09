@@ -40,6 +40,13 @@ the iPhone Home Screen icon uses until the new logo is ready before launch
 - `edge.py`: makes it from `app-icon-1024.png`, and the 180px apple-touch-icon
   (`python3 edge.py app-icon-1024.png . ../../apps/web/src/app/apple-icon.png`).
 
+- `glyph-white-1024.png` and `glyph-black-1024.png`: the logo as a one-colour
+  glyph, like Instagram's: just the figure (1.5× lines), no tile, on a clear
+  background, filling a 1024px square with a 4% margin. Use white on dark
+  backgrounds and black on light ones. `glyph-*-preview.png` show each on its
+  background.
+- `glyph.py`: makes them from `source-black.png`.
+
 `apps/web/public/logo-mark.png` is the squircle scaled to 256px. It's the logo
 wherever the site shows its logo, from 2026-10-09: the headers (the main site,
 pricing and admin), the landing page and the signed-out pricing page.
