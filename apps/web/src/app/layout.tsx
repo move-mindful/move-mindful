@@ -14,6 +14,28 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+/**
+ * The installed iPhone app's launch screens: the white logo on the dark
+ * ground with a faint violet glow in two corners, shown from the tap until
+ * the page draws (otherwise iOS shows a blank screen). iOS uses one only if
+ * it matches the screen exactly, so there's one per iPhone size, made by
+ * design/splash/splash.py — keep this list in step with its SIZES.
+ */
+const SPLASH_SIZES: Array<[width: number, height: number, ratio: number]> = [
+  [440, 956, 3],
+  [402, 874, 3],
+  [420, 912, 3],
+  [430, 932, 3],
+  [393, 852, 3],
+  [428, 926, 3],
+  [390, 844, 3],
+  [375, 812, 3],
+  [414, 896, 3],
+  [414, 896, 2],
+  [414, 736, 3],
+  [375, 667, 2],
+];
+
 export const metadata: Metadata = {
   title: "MoveMindful",
   description: "A video fitness platform — on-demand classes, livestreaming, and community.",
@@ -21,6 +43,10 @@ export const metadata: Metadata = {
     capable: true,
     title: "MoveMindful",
     statusBarStyle: "default",
+    startupImage: SPLASH_SIZES.map(([w, h, ratio]) => ({
+      url: `/splash/splash-${w * ratio}x${h * ratio}.png`,
+      media: `(device-width: ${w}px) and (device-height: ${h}px) and (-webkit-device-pixel-ratio: ${ratio}) and (orientation: portrait)`,
+    })),
   },
   formatDetection: {
     email: false,
