@@ -1011,7 +1011,7 @@ export function RestScreen({
       <BottomShade />
       <div className="relative flex items-baseline gap-[11px]">
         {paused && (
-          <span className="absolute bottom-full left-0 mb-2 text-[13px] font-bold uppercase tracking-[0.16em] text-white/75">
+          <span className="absolute bottom-full left-0 mb-2 text-base font-bold uppercase tracking-[0.16em] text-white/75">
             Paused
           </span>
         )}
