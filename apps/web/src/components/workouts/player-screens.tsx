@@ -141,13 +141,15 @@ export function Dim({ strength = 0.66 }: { strength?: number }) {
 
 /**
  * The rest's dim, kept on the stage through the exercises: it carries on
- * from a rest into the exercise after it — under its name (BeginCard) — and
- * fades away from there, or fades in when an exercise follows another.
+ * from a rest into the exercise after it — under its name (BeginCard) — or
+ * fades in when an exercise follows another. It goes at once, with the name,
+ * as the set's controls come back (Oct 2026: fading out, it left them showing
+ * over a still-dark video for a moment).
  */
 export function StepDim({ on }: { on: boolean }) {
   return (
     <div
-      className={`pointer-events-none absolute inset-0 transition-opacity ${on ? "opacity-100 duration-300" : "opacity-0 duration-500"}`}
+      className={`pointer-events-none absolute inset-0 transition-opacity ${on ? "opacity-100 duration-300" : "opacity-0 duration-0"}`}
       style={{ background: "rgba(10,10,26,0.4)" }}
     />
   );
@@ -156,10 +158,10 @@ export function StepDim({ on }: { on: boolean }) {
 /**
  * As an exercise begins: its name, with the reps (or time) and side under
  * it, big in the middle of the screen over the dim while its voice
- * announcement is said — then gone with the dim. The reps are set as on the
- * set screen: the number big, "reps" smaller on its baseline (a time all
- * big), the side pill centred on "reps". Stays mounted through the set so it
- * can fade out.
+ * announcement is said — then gone at once, with the dim. The reps are set
+ * as on the set screen: the number big, "reps" smaller on its baseline (a
+ * time all big), the side pill centred on "reps". Stays mounted through the
+ * set.
  */
 export function BeginCard({
   show,
@@ -181,7 +183,7 @@ export function BeginCard({
     <div
       aria-hidden={!show || undefined}
       className={`pointer-events-none absolute inset-x-0 top-1/2 flex -translate-y-1/2 flex-col items-center gap-3 px-8 text-center transition-[opacity,scale] ${
-        show ? "scale-100 opacity-100 duration-300 starting:scale-95 starting:opacity-0" : "scale-95 opacity-0 duration-500"
+        show ? "scale-100 opacity-100 duration-300 starting:scale-95 starting:opacity-0" : "opacity-0 duration-0"
       }`}
       style={{ textShadow: "0 2px 18px rgba(10,10,26,0.55)" }}
     >
@@ -210,45 +212,16 @@ export function BeginCard({
 }
 
 /**
- * Frosted controls (backdrop blur) in something that fades them in and out —
- * BeginClear, Collapse — go dark while it fades: the fading layer cuts their
- * blur off from the video behind, and iPhones fill it in dark until the fade
- * ends, then it snaps back. So the blur is off while they're hidden (and
- * fading out), and coming back it waits out the fade (`waitMs`) then eases in
- * (`.frost-off`, `.frost-after-fade` in globals.css). The class goes once
- * that's done, so nothing that appears later has its blur held.
- */
-function useFrostAfterFade(hidden: boolean, waitMs: number): { className: string; style: CSSProperties } {
-  const [phase, setPhase] = useState<"settled" | "hidden" | "back">(hidden ? "hidden" : "settled");
-  if (hidden && phase !== "hidden") setPhase("hidden");
-  if (!hidden && phase === "hidden") setPhase("back");
-  useEffect(() => {
-    if (phase !== "back") return;
-    // The wait, the ease (250 ms) and a little over.
-    const id = window.setTimeout(() => setPhase("settled"), waitMs + 300);
-    return () => window.clearTimeout(id);
-  }, [phase, waitMs]);
-  return {
-    className: phase === "hidden" ? "frost-off" : phase === "back" ? "frost-after-fade" : "",
-    style: { "--frost-wait": `${waitMs}ms` } as CSSProperties,
-  };
-}
-
-/**
  * Out of sight while an exercise's name is up (BeginCard) — the progress bar
  * and the set's info and controls — so there's just the video under the dim
- * and the name in the middle; back as the dim lifts. It covers the whole
+ * and the name in the middle; back the moment the dim goes (no fade: their
+ * frosted fills would show over a dim still fading). It covers the whole
  * stage (like Dimmed), so what's inside keeps its place; out of reach while
  * hidden.
  */
 export function BeginClear({ clear, children }: { clear: boolean; children: ReactNode }) {
-  const frost = useFrostAfterFade(clear, 500);
   return (
-    <div
-      inert={clear}
-      style={frost.style}
-      className={`pointer-events-none absolute inset-0 transition-opacity ${clear ? "opacity-0 duration-300" : "opacity-100 duration-500"} ${frost.className}`}
-    >
+    <div inert={clear} className={`pointer-events-none absolute inset-0 ${clear ? "opacity-0" : ""}`}>
       {children}
     </div>
   );
@@ -564,14 +537,12 @@ export function TapZones({
  * tab order and away from screen readers too.
  */
 function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
-  const frost = useFrostAfterFade(!open, 300);
   return (
     <div
       inert={!open}
-      style={frost.style}
       className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
         open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-      } ${frost.className}`}
+      }`}
     >
       <div className="min-h-0 overflow-hidden">{children}</div>
     </div>

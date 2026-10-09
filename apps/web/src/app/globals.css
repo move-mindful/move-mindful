@@ -82,25 +82,6 @@ html[data-player-up] body {
   }
 }
 
-/* The player's frosted controls (backdrop blur) in something fading them in
-   or out — useFrostAfterFade in components/workouts/player-screens.tsx. Mid
-   fade their blur can't reach the video, and iPhones show it dark; so it's
-   off while they're hidden, and coming back it holds off through the fade
-   (--frost-wait) and then eases in. */
-.frost-off [class*="backdrop-blur"] {
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-.frost-after-fade [class*="backdrop-blur"] {
-  animation: frost-in 250ms ease-out var(--frost-wait, 500ms) backwards;
-}
-@keyframes frost-in {
-  from {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-}
-
 /* Fireworks behind the Workout complete screen (Fireworks in
    components/workouts/player-screens.tsx), after Alvaro Montoro's CSS
    fireworks. Each is a dot-sized box whose background is a burst of dots
