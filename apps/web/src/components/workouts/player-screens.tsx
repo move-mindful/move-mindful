@@ -185,13 +185,31 @@ export function BeginCard({
         {name}
       </h2>
       <div className="flex items-center gap-3">
-        <span className={`font-medium tabular-nums ${theater ? "text-[30px]" : "text-[26px]"}`}>{amount}</span>
+        <span className={`font-medium tabular-nums ${theater ? "text-[38px]" : "text-[32px]"}`}>{amount}</span>
         {side && (
           <span className="inline-flex h-7 items-center rounded-full bg-[#A99CFF] px-3 text-[13px] font-bold tracking-[0.08em] [text-shadow:none]">
             {side.toUpperCase()}
           </span>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Out of sight while an exercise's name is up (BeginCard) — the progress bar
+ * and the set's info and controls — so there's just the video under the dim
+ * and the name in the middle; back as the dim lifts. It covers the whole
+ * stage (like Dimmed), so what's inside keeps its place; out of reach while
+ * hidden.
+ */
+export function BeginClear({ clear, children }: { clear: boolean; children: ReactNode }) {
+  return (
+    <div
+      inert={clear}
+      className={`pointer-events-none absolute inset-0 transition-opacity ${clear ? "opacity-0 duration-300" : "opacity-100 duration-500"}`}
+    >
+      {children}
     </div>
   );
 }

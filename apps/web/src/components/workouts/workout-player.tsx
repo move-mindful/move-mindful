@@ -42,6 +42,7 @@ import { OverviewSheet } from "./overview-sheet";
 import { ProgressBar } from "./progress-bar";
 import {
   BeginCard,
+  BeginClear,
   CompleteScreen,
   CooldownPrompt,
   Dim,
@@ -1518,11 +1519,16 @@ export function WorkoutPlayer({
       const begin = (
         <BeginCard show={beginCard} name={name} amount={amountLabel(set.measure, set.amount)} side={set.side} theater={theater} />
       );
+      // While the name's up, nothing else: the bar, the info and the buttons
+      // stay out of sight until the dim lifts (desktop keeps its arrows and
+      // button column, beside the video).
       if (theater) {
         screen = (
           <>
-            <TopShade />
-            {bar}
+            <BeginClear clear={beginCard}>
+              <TopShade />
+              {bar}
+            </BeginClear>
             {zones("Next set")}
             {begin}
             <div className="pointer-events-none absolute bottom-8 right-8 -translate-y-full">
@@ -1546,33 +1552,35 @@ export function WorkoutPlayer({
         );
         beside = (
           <>
-            {info}
+            <BeginClear clear={beginCard}>{info}</BeginClear>
             <TheaterControls onBack={back} onNext={next} nextLabel="Next set" buttons={sideButtons()} />
           </>
         );
       } else {
         screen = (
           <>
-            <TopShade />
-            {bar}
             {zones("Next set")}
             {begin}
-            <SetScreen
-              name={name}
-              metric={metric}
-              side={set.side}
-              groupLine={groupLine}
-              pill={pill}
-              // Moving on by itself (auto-advance, or a timed set): Up next fills as it counts down.
-              fill={state.timer && state.stage === "exercise" ? fill : null}
-              hidden={chromeHidden}
-              onPause={pause}
-              onOverview={openOverview}
-              musicOn={musicOn}
-              onMusic={toggleMusic}
-              tip={coach()}
-              upNext={upNextCard}
-            />
+            <BeginClear clear={beginCard}>
+              <TopShade />
+              {bar}
+              <SetScreen
+                name={name}
+                metric={metric}
+                side={set.side}
+                groupLine={groupLine}
+                pill={pill}
+                // Moving on by itself (auto-advance, or a timed set): Up next fills as it counts down.
+                fill={state.timer && state.stage === "exercise" ? fill : null}
+                hidden={chromeHidden}
+                onPause={pause}
+                onOverview={openOverview}
+                musicOn={musicOn}
+                onMusic={toggleMusic}
+                tip={coach()}
+                upNext={upNextCard}
+              />
+            </BeginClear>
           </>
         );
       }
