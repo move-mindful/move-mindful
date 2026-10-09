@@ -2,7 +2,7 @@
 
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { Menu, type LucideIcon } from "lucide-react";
 import { MoreMenu } from "@/components/more-menu";
 import { isCurrent, navItems, type NavItem } from "@/components/nav-items";
@@ -13,7 +13,8 @@ import { isCurrent, navItems, type NavItem } from "@/components/nav-items";
  * tablet width up). Signed-in only.
  *
  * The sections, then ☰ More — the same menu as the sidebar's, as a sheet from
- * the bottom. Account isn't a tab: it's the photo in the phone header.
+ * the bottom (MoreSheet). Account isn't a tab: it's the photo in the phone
+ * header.
  */
 export function TabBar({ admin }: { admin: boolean }) {
   const pathname = usePathname();
@@ -60,24 +61,126 @@ export function TabBar({ admin }: { admin: boolean }) {
         </nav>
       </div>
 
-      {menuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <button
-            type="button"
-            aria-label="Close menu"
-            onClick={close}
-            className="absolute inset-0 bg-black/40"
-          />
-          <div className="absolute inset-x-0 bottom-0 animate-[sheet-up_0.25s_ease-out] rounded-t-[20px] bg-white px-2 pt-2 pb-[max(32px,env(safe-area-inset-bottom))] dark:bg-[#25292E]">
-            <span
-              aria-hidden="true"
-              className="mx-auto mb-2 block h-[5px] w-9 rounded-full bg-zinc-300 dark:bg-white/20"
-            />
-            <MoreMenu admin={admin} variant="sheet" onClose={close} />
-          </div>
-        </div>
-      )}
+      {menuOpen && <MoreSheet admin={admin} onClose={close} />}
     </>
+  );
+}
+
+/** How long the sheet takes to slide away or spring back, in ms. */
+const SETTLE_MS = 220;
+
+/**
+ * The More menu on a phone: a sheet from the bottom that a downward swipe
+ * dismisses, as iOS sheets do — from anywhere on it, not just the grabber.
+ * Dragged past a quarter of its height, or flicked, it slides away; less, and
+ * it springs back. A tap on the dimmed page behind closes it too.
+ *
+ * A drag only starts once the finger has moved down a few pixels, so taps on
+ * the rows still work — and the click that ends a drag is swallowed, so a
+ * swipe that began on a row never opens it.
+ */
+function MoreSheet({ admin, onClose }: { admin: boolean; onClose: () => void }) {
+  const drag = useRef<{
+    id: number;
+    startY: number;
+    lastY: number;
+    lastT: number;
+    velocity: number;
+    active: boolean;
+  } | null>(null);
+  const dragged = useRef(false);
+  const [offset, setOffset] = useState(0);
+  const [height, setHeight] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [closing, setClosing] = useState(false);
+
+  // Close once the slide-away has played.
+  useEffect(() => {
+    if (!closing) return;
+    const t = setTimeout(onClose, SETTLE_MS);
+    return () => clearTimeout(t);
+  }, [closing, onClose]);
+
+  function onPointerDown(e: PointerEvent<HTMLDivElement>) {
+    if (closing || e.button !== 0) return;
+    dragged.current = false;
+    drag.current = {
+      id: e.pointerId,
+      startY: e.clientY,
+      lastY: e.clientY,
+      lastT: e.timeStamp,
+      velocity: 0,
+      active: false,
+    };
+  }
+
+  function onPointerMove(e: PointerEvent<HTMLDivElement>) {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    const dy = e.clientY - d.startY;
+    if (!d.active) {
+      if (dy < 8) return; // a tap, or not downward: leave it to the rows
+      d.active = true;
+      dragged.current = true;
+      e.currentTarget.setPointerCapture(e.pointerId);
+      setHeight(e.currentTarget.offsetHeight);
+      setDragging(true);
+    }
+    const dt = e.timeStamp - d.lastT;
+    if (dt > 0) d.velocity = (e.clientY - d.lastY) / dt;
+    d.lastY = e.clientY;
+    d.lastT = e.timeStamp;
+    setOffset(Math.max(0, dy));
+  }
+
+  function onPointerEnd(e: PointerEvent<HTMLDivElement>) {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    drag.current = null;
+    if (!d.active) return;
+    setDragging(false);
+    const dy = e.clientY - d.startY;
+    const sheetHeight = e.currentTarget.offsetHeight;
+    // A flick is about half a pixel a millisecond, downward.
+    if (e.type === "pointerup" && (dy > sheetHeight / 4 || d.velocity > 0.5)) {
+      setOffset(sheetHeight);
+      setClosing(true);
+    } else {
+      setOffset(0);
+    }
+  }
+
+  const transition = dragging ? "none" : `transform ${SETTLE_MS}ms ease-out, opacity ${SETTLE_MS}ms ease-out`;
+
+  return (
+    <div className="fixed inset-0 z-50 md:hidden">
+      <button
+        type="button"
+        aria-label="Close menu"
+        onClick={onClose}
+        className="absolute inset-0 touch-none bg-black/40"
+        style={{ opacity: height ? 1 - Math.min(offset / height, 1) : 1, transition }}
+      />
+      <div
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerEnd}
+        onPointerCancel={onPointerEnd}
+        onClickCapture={(e) => {
+          if (!dragged.current) return;
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        className="absolute inset-x-0 bottom-0 animate-[sheet-up_0.25s_ease-out] touch-none rounded-t-[20px] bg-white px-2 pt-2 pb-[max(32px,env(safe-area-inset-bottom))] select-none dark:bg-[#25292E]"
+        style={{ transform: offset ? `translateY(${offset}px)` : undefined, transition }}
+      >
+        <span
+          aria-hidden="true"
+          className="mx-auto mb-2 block h-[5px] w-9 rounded-full bg-zinc-300 dark:bg-white/20"
+        />
+        <MoreMenu admin={admin} variant="sheet" onClose={onClose} />
+      </div>
+    </div>
   );
 }
 
