@@ -23,6 +23,11 @@ the iPhone Home Screen icon uses until the new logo is ready before launch
   `python3 glass.py app-icon-1024.png <out dir>`; the `final` variant is the
   one in use. The rim width and colours are its arguments.
 
+- `app-icon-gradient-1024.png`: option "1: Gradient" from the same review (not
+  in use; kept on request). The background lifts from a very dark grey
+  (#1E1E22) at the top to black, and the figure goes from white to a cool
+  off-white (#E2E2E8), both over the icon's full height.
+
 `apps/web/src/app/apple-icon.png` is the glass master scaled to 180px. The browser
 tab icon and the Android/desktop install icons still use the old white logo.
 A final logo should be drawn as a vector (SVG or PDF), so it's sharp at every
