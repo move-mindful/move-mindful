@@ -26,7 +26,12 @@ the iPhone Home Screen icon uses until the new logo is ready before launch
 - `app-icon-gradient-1024.png`: option "1: Gradient" from the same review (not
   in use; kept on request). The background lifts from a very dark grey
   (#1E1E22) at the top to black, and the figure goes from white to a cool
-  off-white (#E2E2E8), both over the icon's full height.
+  off-white (#E2E2E8), both over the icon's full height. It's dithered: a dark
+  gradient that slow only has about 30 shades, which otherwise show as bands.
+- `app-icon-gradient-squircle-1024.png`: the same, in the iPhone icon shape
+  (a superellipse, n = 5) with clear corners, for showing it rather than
+  submitting it (Apple takes the square).
+- `gradient.py`: makes both from `app-icon-1024.png`.
 
 `apps/web/src/app/apple-icon.png` is the glass master scaled to 180px. The browser
 tab icon and the Android/desktop install icons still use the old white logo.
