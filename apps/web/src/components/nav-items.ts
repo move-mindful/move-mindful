@@ -21,7 +21,7 @@ const SECTIONS: NavItem[] = [
   { href: "/classes", label: "Classes", icon: Clapperboard, nested: true },
   // Called Studio in the navigation; the page itself stays at /live.
   { href: "/live", label: "Studio", icon: Radio, nested: true },
-  { href: "/workouts", label: "Workouts", icon: Dumbbell, nested: true, title: "Your plan" },
+  { href: "/workouts", label: "Workout", icon: Dumbbell, nested: true, title: "Your plan" },
 ];
 
 /**
