@@ -38,7 +38,7 @@ export default async function AppLayout({
               href={signedIn ? MEMBER_HOME : "/"}
               className="flex items-center gap-2 text-lg font-bold tracking-tight"
             >
-              <Image src="/logo.png" alt="MoveMindful" width={32} height={32} />
+              <Image src="/logo-mark.png" alt="MoveMindful" width={32} height={32} />
               MoveMindful
             </Link>
             {/* Signed-out visitors are here for a sales page and have nowhere

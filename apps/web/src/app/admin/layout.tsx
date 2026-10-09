@@ -29,7 +29,7 @@ export default async function AdminLayout({
               href="/admin/workouts"
               className="flex items-center gap-2 text-lg font-bold tracking-tight"
             >
-              <Image src="/logo.png" alt="MoveMindful" width={32} height={32} />
+              <Image src="/logo-mark.png" alt="MoveMindful" width={32} height={32} />
               Admin
             </Link>
             <div className="hidden items-center gap-4 text-sm text-zinc-600 sm:flex">
