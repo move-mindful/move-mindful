@@ -1198,7 +1198,6 @@ export function WorkoutPlayer({
             // (desktop has it in the column beside the video).
             onSettings={theater ? null : openSettings}
             music={theater ? null : { on: musicOn, onClick: toggleMusic }}
-            autoAdvance={null}
             theater={theater}
           />
         </>
@@ -1618,7 +1617,6 @@ export function WorkoutPlayer({
             // Desktop has Settings in the column beside the video instead.
             onSettings={theater ? null : openSettings}
             music={theater ? null : { on: musicOn, onClick: toggleMusic }}
-            autoAdvance={{ on: state.autoAdvance, onChange: setAutoAdvance }}
             theater={theater}
           />
         </>

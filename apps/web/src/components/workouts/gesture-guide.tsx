@@ -185,7 +185,7 @@ const PAGES: Page[] = [
         icon: <Timer size={18} />,
         tint: "bg-[#A99CFF]/25 text-[#C9C0FF]",
         title: "Auto-advance",
-        text: "In Settings, or tap AUTO on the pause screen.",
+        text: "In Settings, under Exercises.",
       },
       {
         icon: <ChevronRight size={20} />,
