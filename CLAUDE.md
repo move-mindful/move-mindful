@@ -18,8 +18,8 @@ A video fitness platform with on-demand classes, exercise-by-exercise workouts, 
 When the owner asks to add to Project Notes, record their note **only in Notion** on [Move Mindful — Project Notes](https://app.notion.com/p/3f4d36c27094817f9fa4eebe4ea5900e?pvs=204) (page ID: `3f4d36c2-7094-817f-9fa4-eebe4ea5900e`). The owner chose Notion only and asked to remove the original Markdown file on 2026-10-09. Do not recreate it or mirror new notes into the repo.
 
 - Read the Notion page before editing, and make targeted inserts rather than rewriting the page, preserving older notes and the note-taking instructions.
-- Group notes by calendar day, using the actual current date and time in Arizona (`America/Phoenix`). Each day has one `## YYYY-MM-DD` heading; days run newest first, directly below the introduction.
-- Give each note a `### HH:mm MST` subheading under its day, newest first. If today's heading already exists, add the note directly under it, above that day's earlier notes; otherwise add a new day heading above all earlier days.
+- Group notes by calendar day, using the actual current date in Arizona (`America/Phoenix`). Each day has one `## YYYY-MM-DD` heading; days run newest first, directly below the introduction.
+- Notes have no time or subheading: a note's bullets go directly under its day heading, above that day's earlier bullets, keeping the note's own bullets in order. If today's heading doesn't exist yet, add it above all earlier days.
 - Lightly trim rambling, repetition and filler words while preserving the owner's meaning and substantive details.
 - Correct voice-transcription mistakes when the intended wording is clear. If a correction or interpretation is uncertain, include the owner's original words in parentheses or alongside the edited wording.
 - A request to add a note records it; it does not by itself ask you to implement tasks described in the note.
