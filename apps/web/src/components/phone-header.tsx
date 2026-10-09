@@ -22,11 +22,11 @@ export function PhoneHeader() {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between bg-background/70 pr-2.5 pl-4 backdrop-blur-xl backdrop-saturate-150 md:hidden">
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 items-center gap-3">
         <Link href={MEMBER_HOME} aria-label="MoveMindful home" className="shrink-0">
-          <LogoMark size={32} />
+          <LogoMark size={40} />
         </Link>
-        <span className="truncate text-lg font-bold tracking-tight">
+        <span className="truncate text-[28px] leading-tight font-bold tracking-tight">
           {pageTitle(pathname) ?? "MoveMindful"}
         </span>
       </div>
