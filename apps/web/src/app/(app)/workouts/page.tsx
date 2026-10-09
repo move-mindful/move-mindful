@@ -26,8 +26,8 @@ export default async function WorkoutsPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 pt-6 pb-10 sm:px-8 md:pt-10">
-      {/* On a phone the header already says Weekly plan. */}
-      <h1 className="text-2xl font-bold tracking-tight max-md:sr-only">Weekly plan</h1>
+      {/* On a phone the header already says Your plan. */}
+      <h1 className="text-2xl font-bold tracking-tight max-md:sr-only">Your plan</h1>
       <div className="md:mt-6">
         <WeekStrip />
       </div>
