@@ -13,6 +13,16 @@ A video fitness platform with on-demand classes, exercise-by-exercise workouts, 
 
 `AGENTS.md` is a symlink to this file, for tools that read that name — edit this one.
 
+## Project Notes
+
+When the owner asks to add to Project Notes, record their note in [Project Notes.md](<./Project Notes.md>) at the project root.
+
+- Put each new entry below the introductory text/comment and above all existing entries, keeping the newest at the top and preserving older notes.
+- Give each entry a heading with the actual current date and time in Arizona (`America/Phoenix`), formatted as `## YYYY-MM-DD HH:mm MST`.
+- Lightly trim rambling, repetition and filler words while preserving the owner's meaning and substantive details.
+- Correct voice-transcription mistakes when the intended wording is clear. If a correction or interpretation is uncertain, include the owner's original words in parentheses or alongside the edited wording.
+- A request to add a note records it; it does not by itself ask you to implement tasks described in the note.
+
 ## Tech Stack
 
 - **Language:** TypeScript (web, mobile, backend)
