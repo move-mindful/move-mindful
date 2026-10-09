@@ -17,7 +17,7 @@ export interface CarouselWorkout {
   /** "21 min · All levels" */
   meta: string;
   status: WorkoutStatus;
-  /** "You'll need" — see equipmentPills. */
+  /** "You'll need", the weights in one pill ("Light / Medium") — see equipmentPills. */
   pills: Array<{ key: string; label: string; icon: EquipmentIcon }>;
 }
 

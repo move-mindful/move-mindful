@@ -42,7 +42,7 @@ export default async function WorkoutsPage() {
               imageUrl: w.imageUrl,
               meta: [`${w.minutes} min`, levelLabel(w.level)].filter(Boolean).join(" · "),
               status: statuses?.get(w.id) ?? null,
-              pills: equipmentPills(w),
+              pills: equipmentPills(w, { combineWeights: true }),
             }))}
           />
         </div>

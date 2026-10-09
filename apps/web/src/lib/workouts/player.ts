@@ -167,15 +167,23 @@ export type EquipmentIcon = "dumbbell" | "mat" | "band" | "chair";
  * "You'll need" pills: one per dumbbell level, so members see every pair they
  * need (a three-level workout never reads "Light & Medium & Heavy"), then the
  * rest of the equipment.
+ *
+ * `combineWeights` puts the levels in one dumbbell pill instead — "Light /
+ * Medium" — for the workout cards on /workouts, where space is tight.
  */
-export function equipmentPills(workout: Pick<PlayerWorkout, "equipment" | "dumbbellLevels">): Array<{
+export function equipmentPills(
+  workout: Pick<PlayerWorkout, "equipment" | "dumbbellLevels">,
+  { combineWeights = false }: { combineWeights?: boolean } = {},
+): Array<{
   key: string;
   label: string;
   icon: EquipmentIcon;
 }> {
   const pills: Array<{ key: string; label: string; icon: EquipmentIcon }> = [];
   const levels = DUMBBELL_LEVELS.filter((l) => workout.dumbbellLevels.includes(l.id));
-  if (levels.length) levels.forEach((l) => pills.push({ key: l.id, label: l.label, icon: "dumbbell" }));
+  if (levels.length && combineWeights) {
+    pills.push({ key: "dumbbells", label: levels.map((l) => l.label).join(" / "), icon: "dumbbell" });
+  } else if (levels.length) levels.forEach((l) => pills.push({ key: l.id, label: l.label, icon: "dumbbell" }));
   else if (workout.equipment.includes("dumbbells")) pills.push({ key: "dumbbells", label: "Dumbbells", icon: "dumbbell" });
   for (const option of EQUIPMENT_OPTIONS) {
     if (option.id === "dumbbells" || !workout.equipment.includes(option.id)) continue;
