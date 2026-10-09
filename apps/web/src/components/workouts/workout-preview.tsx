@@ -82,8 +82,11 @@ export function WorkoutPreview({
       </Link>
       <div className="mx-auto max-w-[560px] pb-32 theater:max-w-none theater:pb-0">
         {/* The cover — on phones pinned at the top while the page scrolls up
-            over it; on desktop, the whole left half, with the details over it. */}
-        <div className="sticky top-0 h-[330px] overflow-hidden theater:fixed theater:inset-y-0 theater:left-0 theater:h-auto theater:w-1/2">
+            over it; on desktop, the whole left half, with the details over it.
+            On phones about half the screen (330 to 460pt; was 330, Oct 2026),
+            so more of the video shows above the details — the same height as
+            (player)/loading.tsx's. */}
+        <div className="sticky top-0 h-[clamp(330px,52svh,460px)] overflow-hidden theater:fixed theater:inset-y-0 theater:left-0 theater:h-auto theater:w-1/2">
           <WorkoutMontage key={workout.id} clips={clips} cover={cover} />
           {/* Phones: just a light shade at the top (the fade into the page
               travels with the content below, so it stays soft as it scrolls). */}
