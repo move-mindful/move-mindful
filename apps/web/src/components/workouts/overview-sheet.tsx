@@ -52,7 +52,7 @@ export function OverviewSheet({
             <span className="shrink-0 text-white/70">{progress.left}</span>
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.14]">
-            <div className="h-1.5 rounded-full bg-[#A99CFF]" style={{ width: `${Math.round(progress.fraction * 100)}%` }} />
+            <div className="h-1.5 rounded-full bg-violet-500" style={{ width: `${Math.round(progress.fraction * 100)}%` }} />
           </div>
         </div>
       </div>

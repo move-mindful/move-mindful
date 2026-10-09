@@ -20,7 +20,7 @@ import { TAP_ZONES, TUTORIAL_CONTROLS } from "./player-screens";
  * ← and → turn the pages; Esc closes it (the player handles that).
  */
 
-const LIT = "bg-[#A99CFF]/25 text-[#C9C0FF]";
+const LIT = "bg-violet-400/25 text-violet-300";
 
 const PAGES: Page[] = [
   {
@@ -105,12 +105,12 @@ export function DesktopGuide({
 
   return (
     <div
-      className="absolute inset-0 z-40 flex items-center justify-center bg-[#08080F]/75 p-6 backdrop-blur-sm"
+      className="absolute inset-0 z-40 flex items-center justify-center bg-black/75 p-6 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label="How to use the player"
     >
-      <div className="relative flex w-full max-w-[560px] flex-col overflow-hidden rounded-[28px] bg-[#1A1A34] shadow-[0_24px_80px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
+      <div className="relative flex w-full max-w-[560px] flex-col overflow-hidden rounded-[28px] bg-[#16191E] shadow-[0_24px_80px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
         {/* ✕ closes the guide from any page. */}
         <button
           type="button"
@@ -158,7 +158,7 @@ export function DesktopGuide({
               type="button"
               autoFocus
               onClick={() => (last ? onDone() : setPage(page + 1))}
-              className="h-12 min-w-[120px] rounded-full bg-white px-7 text-base font-semibold text-[#14142B] transition hover:bg-white/90"
+              className="h-12 min-w-[120px] rounded-full bg-white px-7 text-base font-semibold text-[#0C1014] transition hover:bg-white/90"
             >
               {last ? "Let's go!" : "Next"}
             </button>
@@ -177,7 +177,7 @@ export function DesktopGuide({
 function LayoutDiagram({ focus }: { focus: "move" | "buttons" }) {
   const move = focus === "move";
   const round = (on: boolean) =>
-    `flex size-8 items-center justify-center rounded-full ${on ? "bg-[#A99CFF]/30 text-white ring-2 ring-[#A99CFF]" : "bg-white/10 text-white/50"}`;
+    `flex size-8 items-center justify-center rounded-full ${on ? "bg-violet-400/30 text-white ring-2 ring-violet-400" : "bg-white/10 text-white/50"}`;
   return (
     <div className="flex items-center gap-3">
       {/* The exercise info, left of the video. */}
@@ -191,14 +191,14 @@ function LayoutDiagram({ focus }: { focus: "move" | "buttons" }) {
         <ChevronLeft size={16} />
       </span>
       {/* The video, with its click zones. */}
-      <div className="flex h-[180px] w-[102px] overflow-hidden rounded-xl bg-[#2A2A4E] ring-1 ring-white/15">
+      <div className="flex h-[180px] w-[102px] overflow-hidden rounded-xl bg-[#22262C] ring-1 ring-white/15">
         <Zone width={TAP_ZONES.back} tint={move ? "rgba(76,199,224,0.35)" : undefined} divider>
           <ChevronLeft size={14} />
         </Zone>
         <Zone width={TAP_ZONES.pause} tint={move ? "rgba(255,255,255,0.16)" : undefined} divider>
           <Pause size={12} />
         </Zone>
-        <Zone width={TAP_ZONES.next} tint={move ? "rgba(169,156,255,0.35)" : undefined}>
+        <Zone width={TAP_ZONES.next} tint={move ? "rgba(166,132,255,0.35)" : undefined}>
           <ChevronRight size={14} />
         </Zone>
       </div>

@@ -1,6 +1,11 @@
 import type { WorkoutStep } from "@move-mindful/core";
 
-export const ACCENT = "#A99CFF";
+/**
+ * The player's accent where it's set in code rather than a class: violet-400,
+ * the lighter of the profile ring's violets, so it reads on the dark screens
+ * (Oct 2026; it was a lavender, #A99CFF). Fills use violet-500.
+ */
+export const ACCENT = "var(--color-violet-400, #A684FF)";
 
 /**
  * The story-style bar across the top of the player: one segment per set, all

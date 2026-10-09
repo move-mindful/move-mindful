@@ -124,7 +124,7 @@ export function CoachTip({
       style={{ width: size, height: size, transitionDelay: `${show ? wait : 200}ms` }}
     >
       {/* A soft dark disc, so the bars read over a bright studio. */}
-      <div className="absolute inset-0 rounded-full bg-[#0E0E20]/30 backdrop-blur-sm" />
+      <div className="absolute inset-0 rounded-full bg-[#0C1014]/30 backdrop-blur-sm" />
       <div
         ref={ring}
         className={`absolute inset-0 transition-[scale,opacity] duration-300 ${
@@ -143,7 +143,7 @@ export function CoachTip({
             <div key={i} className="absolute inset-0" style={{ rotate: `${(360 / BARS) * i}deg` }}>
               <span
                 // Hidden, the bars stop where they are (the voice has ended) as the ring fades; held, until it carries on.
-                className={`absolute left-1/2 origin-bottom rounded-full bg-[#A99CFF] animate-[coach-eq_var(--s)_ease-in-out_var(--d)_infinite_alternate] motion-reduce:animate-none motion-reduce:[--voice:0.45] ${
+                className={`absolute left-1/2 origin-bottom rounded-full bg-violet-400 animate-[coach-eq_var(--s)_ease-in-out_var(--d)_infinite_alternate] motion-reduce:animate-none motion-reduce:[--voice:0.45] ${
                   show && !held ? "" : "[animation-play-state:paused]"
                 }`}
                 style={
@@ -173,7 +173,7 @@ export function CoachTip({
         />
       ) : (
         <span
-          className="absolute flex items-center justify-center rounded-full bg-[#A99CFF] font-semibold text-[#14142B] ring-2 ring-white/85"
+          className="absolute flex items-center justify-center rounded-full bg-violet-500 font-semibold text-white ring-2 ring-white/85"
           style={{ width: photo, height: photo, left: gap + bar, top: gap + bar, fontSize: photo * 0.42 }}
         >
           {instructor?.name.trim().charAt(0).toUpperCase() || <Sound />}

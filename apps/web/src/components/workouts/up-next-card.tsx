@@ -104,7 +104,7 @@ export function NextCard({
     >
       {(thumbnail || icon) && (
         <span
-          className={`flex shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/10 text-[#A99CFF] ${
+          className={`flex shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/10 text-violet-400 ${
             large ? "h-[72px] w-14" : "h-16 w-12"
           }`}
         >

@@ -212,7 +212,7 @@ function MontageVideos({ clips }: { clips: PlayerClip[] }) {
           type="button"
           onClick={() => setPaused((value) => !value)}
           aria-label={paused ? "Play exercise preview" : "Pause exercise preview"}
-          className="absolute right-4 top-5 z-20 flex size-11 items-center justify-center rounded-full bg-[#0E0E20]/50 text-white backdrop-blur-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white theater:right-12 theater:top-8"
+          className="absolute right-4 top-5 z-20 flex size-11 items-center justify-center rounded-full bg-[#0C1014]/50 text-white backdrop-blur-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white theater:right-12 theater:top-8"
         >
           {paused ? <Play size={18} /> : <Pause size={18} />}
         </button>

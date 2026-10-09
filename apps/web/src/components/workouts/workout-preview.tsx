@@ -66,8 +66,8 @@ export function WorkoutPreview({
   return (
     // The site's dark-mode background (#0C1014, globals.css), with the profile
     // photo's ring violet (violet-500) as the accent — the design canvas's
-    // "Dark mode · violet accent" row (Oct 2026). The player keeps its own
-    // ink and lavender for now.
+    // "Dark mode · violet accent" row (Oct 2026), as the player is. Unlike
+    // the player, Begin / Resume are violet here, not white.
     // data-no-page-scrollbar: the page scrolls without showing a scroll bar (globals.css).
     <div data-no-page-scrollbar className="relative min-h-dvh bg-[#0C1014] text-white">
       {/* Back sits at the top of the page and scrolls away with it (above the
@@ -309,7 +309,7 @@ function BeginRow({
           <span className="text-[15px] font-semibold" aria-hidden="true">
             Warm-up
           </span>
-          <Switch on={warmup} onChange={onWarmup} label="Warm-up" onClass="bg-violet-500" />
+          <Switch on={warmup} onChange={onWarmup} label="Warm-up" />
         </div>
       )}
     </div>

@@ -164,7 +164,7 @@ export function TheaterSetInfo({
   return (
     <Info gap={4}>
       {groupLine && (
-        <div className="mb-2 flex items-center gap-2 text-[15px] font-semibold tracking-[0.02em] text-[#A99CFF]">
+        <div className="mb-2 flex items-center gap-2 text-[15px] font-semibold tracking-[0.02em] text-violet-400">
           <Loop size={15} />
           {groupLine}
         </div>
@@ -183,7 +183,7 @@ export function TheaterSetInfo({
         )}
         {side && (
           <span className="text-[34px] font-medium">
-            <span className="inline-flex h-8 items-center rounded-full bg-[#A99CFF] px-3.5 align-middle text-sm font-bold tracking-[0.08em] text-white">
+            <span className="inline-flex h-8 items-center rounded-full bg-violet-500 px-3.5 align-middle text-sm font-bold tracking-[0.08em] text-white">
               {side.toUpperCase()}
             </span>
           </span>

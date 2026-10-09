@@ -59,7 +59,7 @@ const PAGES: Page[] = [
       { icon: <Pause size={18} />, title: "Tap the middle", text: "Pause. Press play to resume." },
       {
         icon: <ChevronRight size={20} />,
-        tint: "bg-[#A99CFF]/25 text-[#C9C0FF]",
+        tint: "bg-violet-400/25 text-violet-300",
         title: "Tap the right side",
         text: "Move to next exercise.",
       },
@@ -91,7 +91,7 @@ const PAGES: Page[] = [
       { icon: <Pause size={18} />, title: "Pause", text: "Tap the middle of the screen." },
       {
         icon: <WatchTutorial size={18} />,
-        tint: "bg-[#A99CFF]/25 text-[#C9C0FF]",
+        tint: "bg-violet-400/25 text-violet-300",
         title: "Watch the tutorial",
         text: "From the pause screen, any time.",
       },
@@ -103,7 +103,7 @@ const PAGES: Page[] = [
     rows: [
       {
         icon: <Settings size={18} />,
-        tint: "bg-[#A99CFF]/25 text-[#C9C0FF]",
+        tint: "bg-violet-400/25 text-violet-300",
         title: "Open Settings",
         text: "On the pause screen, top right. Audio is at the top.",
       },
@@ -117,7 +117,7 @@ const PAGES: Page[] = [
     rows: [
       {
         icon: <Bluetooth size={18} />,
-        tint: "bg-[#A99CFF]/25 text-[#C9C0FF]",
+        tint: "bg-violet-400/25 text-violet-300",
         title: "Use them",
         text: "Connect them to your phone before you start.",
       },
@@ -131,7 +131,7 @@ const PAGES: Page[] = [
       <>
         {/* The gear exactly where it sits on the pause screen: top right,
             under the progress bar (see PausedScreen). */}
-        <span className="absolute right-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] flex size-[52px] items-center justify-center rounded-full bg-white/[0.14] ring-2 ring-[#A99CFF]">
+        <span className="absolute right-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] flex size-[52px] items-center justify-center rounded-full bg-white/[0.14] ring-2 ring-violet-400">
           <Settings />
         </span>
         {/* The tutorial modes, in the middle. */}
@@ -140,7 +140,7 @@ const PAGES: Page[] = [
             <span
               key={m}
               className={`rounded-full border-[1.5px] px-3.5 py-1.5 text-sm font-semibold ${
-                i === 0 ? "border-[#A99CFF]/85 bg-[#A99CFF]/[0.14]" : "border-white/[0.18] bg-white/[0.05] text-white/80"
+                i === 0 ? "border-violet-400/85 bg-violet-400/[0.14]" : "border-white/[0.18] bg-white/[0.05] text-white/80"
               }`}
             >
               {m}
@@ -152,7 +152,7 @@ const PAGES: Page[] = [
     rows: [
       {
         icon: <Settings size={18} />,
-        tint: "bg-[#A99CFF]/25 text-[#C9C0FF]",
+        tint: "bg-violet-400/25 text-violet-300",
         title: "Settings",
         text: "On the pause screen, top right.",
       },
@@ -166,7 +166,7 @@ const PAGES: Page[] = [
       // A rep set counting down, with the switch on.
       <div className="flex w-[240px] flex-col items-start gap-3">
         <div className="h-1 w-full overflow-hidden rounded-sm bg-white/30">
-          <div className="h-1 w-3/5 rounded-sm bg-[#A99CFF]" />
+          <div className="h-1 w-3/5 rounded-sm bg-violet-500" />
         </div>
         <span className="flex items-baseline gap-1.5">
           <span className="text-[44px] font-semibold leading-none">10</span>
@@ -174,7 +174,7 @@ const PAGES: Page[] = [
         </span>
         <span className="flex w-full items-center justify-between rounded-2xl bg-white/[0.08] px-3.5 py-2.5 text-[15px] font-semibold">
           Auto-advance
-          <span className="relative h-[26px] w-[44px] rounded-full bg-[#A99CFF]">
+          <span className="relative h-[26px] w-[44px] rounded-full bg-violet-500">
             <span className="absolute right-0.5 top-0.5 size-[22px] rounded-full bg-white" />
           </span>
         </span>
@@ -183,7 +183,7 @@ const PAGES: Page[] = [
     rows: [
       {
         icon: <Timer size={18} />,
-        tint: "bg-[#A99CFF]/25 text-[#C9C0FF]",
+        tint: "bg-violet-400/25 text-violet-300",
         title: "Auto-advance",
         text: "In Settings, under Exercises.",
       },
@@ -220,13 +220,13 @@ export function settingsPage({ mode, autoAdvance }: { mode: TutorialMode; autoAd
     rows: [
       {
         icon: <WatchTutorial size={18} />,
-        tint: "bg-[#A99CFF]/25 text-[#C9C0FF]",
+        tint: "bg-violet-400/25 text-violet-300",
         title: `Tutorials: ${MODE_TEXT[mode].label}`,
         text: MODE_TEXT[mode].text,
       },
       {
         icon: <Timer size={18} />,
-        tint: "bg-[#A99CFF]/25 text-[#C9C0FF]",
+        tint: "bg-violet-400/25 text-violet-300",
         title: `Auto-advance: ${autoAdvance ? "On" : "Off"}`,
         text: autoAdvance
           ? "Rep sets move on by themselves after the time the reps usually take."
@@ -270,7 +270,7 @@ export function GestureGuide({
         {current.picture}
       </div>
 
-      <section className="relative flex flex-col gap-4 rounded-t-[28px] bg-[#1A1A34] px-5 pb-[max(28px,calc(env(safe-area-inset-bottom)+12px))] pt-6">
+      <section className="relative flex flex-col gap-4 rounded-t-[28px] bg-[#16191E] px-5 pb-[max(28px,calc(env(safe-area-inset-bottom)+12px))] pt-6">
         {/* ✕ closes the guide from any page — in the panel's corner, clear of
             the pictures above (the Adjust audio page's gear sits in the screen's corner). */}
         <div className="flex items-start justify-between gap-3">
@@ -316,7 +316,7 @@ export function GestureGuide({
             type="button"
             autoFocus
             onClick={() => (last ? onDone() : setPage(page + 1))}
-            className="h-[54px] flex-1 rounded-full bg-white text-[17px] font-semibold text-[#14142B]"
+            className="h-[54px] flex-1 rounded-full bg-white text-[17px] font-semibold text-[#0C1014]"
           >
             {last ? "Let's go!" : "Next"}
           </button>
@@ -330,11 +330,11 @@ export function GestureGuide({
 export function PausedPicture() {
   return (
     <div className="flex w-[240px] flex-col items-center gap-4">
-      <span className="flex size-16 items-center justify-center rounded-full bg-white text-[#14142B]">
+      <span className="flex size-16 items-center justify-center rounded-full bg-white text-[#0C1014]">
         <Play size={26} />
       </span>
       <span className="text-lg font-semibold">Paused</span>
-      <span className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-white/[0.12] text-[15px] font-semibold ring-2 ring-[#A99CFF]">
+      <span className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-white/[0.12] text-[15px] font-semibold ring-2 ring-violet-400">
         <WatchTutorial size={18} />
         Watch the tutorial
       </span>
@@ -345,14 +345,14 @@ export function PausedPicture() {
 /** The last page's picture: a mini Settings panel showing the current choices. */
 function SettingsPicture({ mode, autoAdvance }: { mode: TutorialMode; autoAdvance: boolean }) {
   return (
-    <div className="flex w-[270px] flex-col gap-3 rounded-[20px] bg-[#1A1A34]/85 p-4 ring-1 ring-white/10">
+    <div className="flex w-[270px] flex-col gap-3 rounded-[20px] bg-[#16191E]/85 p-4 ring-1 ring-white/10">
       <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/60">Tutorials</span>
       <div className="flex gap-2">
         {(["loop", "once", "off"] as const).map((m) => (
           <span
             key={m}
             className={`rounded-full border-[1.5px] px-3 py-1.5 text-sm font-semibold ${
-              m === mode ? "border-[#A99CFF]/85 bg-[#A99CFF]/[0.14]" : "border-white/[0.18] bg-white/[0.05] text-white/70"
+              m === mode ? "border-violet-400/85 bg-violet-400/[0.14]" : "border-white/[0.18] bg-white/[0.05] text-white/70"
             }`}
           >
             {MODE_TEXT[m].label}
@@ -377,11 +377,11 @@ function AudioPicture() {
     <>
       {/* Settings' gear just where it sits on the pause screen: top right, under
           the progress bar (see PausedScreen) — what to tap for the switches below. */}
-      <span className="absolute right-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] flex size-[52px] items-center justify-center rounded-full bg-white/[0.14] ring-2 ring-[#A99CFF]">
+      <span className="absolute right-4 top-[calc(max(20px,env(safe-area-inset-top))+18px)] flex size-[52px] items-center justify-center rounded-full bg-white/[0.14] ring-2 ring-violet-400">
         <Settings />
       </span>
       <div className="flex w-[270px] flex-col gap-4">
-        <div className="flex flex-col gap-2.5 rounded-[20px] bg-[#1A1A34]/85 p-4 ring-1 ring-white/10">
+        <div className="flex flex-col gap-2.5 rounded-[20px] bg-[#16191E]/85 p-4 ring-1 ring-white/10">
           <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/60">Settings · Audio</span>
           {["Music", "Instructor audio", "Voice announcements", "Sound effects"].map((label) => (
             <span key={label} className="flex items-center justify-between text-[15px] font-semibold">
@@ -419,23 +419,23 @@ function EarbudsPicture() {
       <defs>
         <linearGradient id="guide-buds-shell" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#FFFFFF" />
-          <stop offset="0.55" stopColor="#F1F1F6" />
-          <stop offset="1" stopColor="#C9C9D8" />
+          <stop offset="0.55" stopColor="#F2F2F3" />
+          <stop offset="1" stopColor="#CDCED1" />
         </linearGradient>
         <linearGradient id="guide-buds-stem" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stopColor="#FFFFFF" />
-          <stop offset="1" stopColor="#D4D4E0" />
+          <stop offset="1" stopColor="#D8D9DB" />
         </linearGradient>
         <radialGradient id="guide-buds-glow" cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" stopColor="#A99CFF" stopOpacity="0.45" />
-          <stop offset="1" stopColor="#A99CFF" stopOpacity="0" />
+          <stop offset="0" stopColor="#A684FF" stopOpacity="0.45" />
+          <stop offset="1" stopColor="#A684FF" stopOpacity="0" />
         </radialGradient>
         <filter id="guide-buds-shadow" x="-30%" y="-30%" width="160%" height="160%">
           <feDropShadow dx="0" dy="6" stdDeviation="6" floodColor="#000" floodOpacity="0.35" />
         </filter>
       </defs>
       <ellipse cx="120" cy="100" rx="110" ry="90" fill="url(#guide-buds-glow)" />
-      <g fill="none" stroke="#C9C0FF" strokeWidth="3" strokeLinecap="round">
+      <g fill="none" stroke="#C4B4FF" strokeWidth="3" strokeLinecap="round">
         <path d="M104 52a24 24 0 0 1 32 0" />
         <path d="M94 40a38 38 0 0 1 52 0" opacity="0.6" />
       </g>
@@ -450,11 +450,11 @@ function Earbud({ x, turn, mirrored = false }: { x: number; turn: number; mirror
   return (
     <g transform={`translate(${x} 92) rotate(${turn})${mirrored ? " scale(-1 1)" : ""}`} filter="url(#guide-buds-shadow)">
       <rect x="-8" y="2" width="16" height="78" rx="8" fill="url(#guide-buds-stem)" />
-      <rect x="-8" y="70" width="16" height="10" rx="5" fill="#B4B4C6" />
+      <rect x="-8" y="70" width="16" height="10" rx="5" fill="#B9BBBE" />
       <ellipse cx="-2" cy="-4" rx="24" ry="21" fill="url(#guide-buds-shell)" />
-      <ellipse cx="13" cy="-9" rx="11" ry="10" fill="#E4E4EC" />
-      <ellipse cx="14" cy="-9" rx="5" ry="4.5" fill="#3A3A52" opacity="0.8" />
-      <ellipse cx="-12" cy="6" rx="3.2" ry="2.2" fill="#3A3A52" opacity="0.35" />
+      <ellipse cx="13" cy="-9" rx="11" ry="10" fill="#E6E7E9" />
+      <ellipse cx="14" cy="-9" rx="5" ry="4.5" fill="#3A3D42" opacity="0.8" />
+      <ellipse cx="-12" cy="6" rx="3.2" ry="2.2" fill="#3A3D42" opacity="0.35" />
     </g>
   );
 }
@@ -462,7 +462,7 @@ function Earbud({ x, turn, mirrored = false }: { x: number; turn: number; mirror
 /** A small switch for the guide's pictures. */
 function MiniSwitch({ on }: { on: boolean }) {
   return (
-    <span className={`relative h-[26px] w-[44px] shrink-0 rounded-full ${on ? "bg-[#A99CFF]" : "bg-white/25"}`}>
+    <span className={`relative h-[26px] w-[44px] shrink-0 rounded-full ${on ? "bg-violet-500" : "bg-white/25"}`}>
       <span className={`absolute top-0.5 size-[22px] rounded-full bg-white ${on ? "right-0.5" : "left-0.5"}`} />
     </span>
   );
@@ -474,7 +474,7 @@ function MiniSwitch({ on }: { on: boolean }) {
  */
 function PhotoBackdrop({ soft }: { soft: boolean }) {
   return (
-    <div className="absolute inset-0 overflow-hidden bg-[#14142B]" aria-hidden="true">
+    <div className="absolute inset-0 overflow-hidden bg-[#0C1014]" aria-hidden="true">
       <Image
         src={guideBackground}
         alt=""
@@ -485,7 +485,7 @@ function PhotoBackdrop({ soft }: { soft: boolean }) {
         }`}
       />
       <div
-        className={`absolute inset-0 bg-[#14142B] transition-opacity duration-300 ${soft ? "opacity-20" : "opacity-35"}`}
+        className={`absolute inset-0 bg-[#0C1014] transition-opacity duration-300 ${soft ? "opacity-20" : "opacity-35"}`}
       />
     </div>
   );
@@ -497,7 +497,7 @@ function TapZonesBackdrop() {
     <div className="absolute inset-0 flex" aria-hidden="true">
       <Zone width={TAP_ZONES.back} tint="rgba(76,199,224,0.32)" divider />
       <Zone width={TAP_ZONES.pause} tint="rgba(255,255,255,0.14)" divider />
-      <Zone width={TAP_ZONES.next} tint="rgba(169,156,255,0.32)" />
+      <Zone width={TAP_ZONES.next} tint="rgba(166,132,255,0.32)" />
     </div>
   );
 }
@@ -549,7 +549,7 @@ function Tag({ dark = false, children }: { dark?: boolean; children: ReactNode }
   return (
     <span
       className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold shadow-[0_4px_14px_rgba(0,0,0,0.2)] ${
-        dark ? "bg-[#14142B] text-white" : "bg-white text-[#14142B]"
+        dark ? "bg-[#0C1014] text-white" : "bg-white text-[#0C1014]"
       }`}
     >
       {children}

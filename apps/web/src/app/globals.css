@@ -62,7 +62,7 @@ html:has([data-dark-page]) body {
 /* While the workout player is up on a phone (`data-player-up`, set by
    WorkoutPlayer): a black page behind it, for iOS to colour the bar around the
    notch from. The player covers the whole screen, so this shows nowhere else;
-   the bottom strip shows the player's own purple. After the rule above, which
+   the bottom strip shows the player's own dark. After the rule above, which
    it matches in specificity. */
 html[data-player-up],
 html[data-player-up] body {

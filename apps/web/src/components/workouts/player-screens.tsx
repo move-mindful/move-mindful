@@ -81,7 +81,7 @@ export function TopShade({ tall = false }: { tall?: boolean }) {
       className={`pointer-events-none absolute inset-x-0 top-0 ${
         tall ? "h-[calc(max(20px,env(safe-area-inset-top))+66px)]" : "h-[calc(max(20px,env(safe-area-inset-top))+40px)]"
       }`}
-      style={{ background: "linear-gradient(180deg, rgba(14,14,32,0.58) 0%, rgba(14,14,32,0.3) 55%, rgba(14,14,32,0) 100%)" }}
+      style={{ background: "linear-gradient(180deg, rgba(12,16,20,0.58) 0%, rgba(12,16,20,0.3) 55%, rgba(12,16,20,0) 100%)" }}
     />
   );
 }
@@ -102,7 +102,7 @@ function BottomShade() {
       className="pointer-events-none absolute inset-x-0 -top-12 bottom-0 -z-10"
       style={{
         background:
-          "linear-gradient(180deg, rgba(14,14,32,0) 0px, rgba(14,14,32,0.3) 56px, rgba(14,14,32,0.66) 128px, rgba(14,14,32,0.8) 256px)",
+          "linear-gradient(180deg, rgba(12,16,20,0) 0px, rgba(12,16,20,0.3) 56px, rgba(12,16,20,0.66) 128px, rgba(12,16,20,0.8) 256px)",
       }}
     />
   );
@@ -124,7 +124,7 @@ export function LoadingSpinner({ show }: { show: boolean }) {
     >
       {show && (
         <>
-          <span className="flex size-16 items-center justify-center rounded-full bg-[#0E0E20]/45 backdrop-blur-sm">
+          <span className="flex size-16 items-center justify-center rounded-full bg-[#0C1014]/45 backdrop-blur-sm">
             <span className="size-9 animate-spin rounded-full border-[3px] border-white/25 border-t-white" />
           </span>
           <span className="sr-only">Loading</span>
@@ -136,7 +136,7 @@ export function LoadingSpinner({ show }: { show: boolean }) {
 
 /** The dim layer behind rests, pause and the summary. */
 export function Dim({ strength = 0.66 }: { strength?: number }) {
-  return <div className="pointer-events-none absolute inset-0" style={{ background: `rgba(10,10,26,${strength})` }} />;
+  return <div className="pointer-events-none absolute inset-0" style={{ background: `rgba(8,10,13,${strength})` }} />;
 }
 
 /**
@@ -150,7 +150,7 @@ export function StepDim({ on }: { on: boolean }) {
   return (
     <div
       className={`pointer-events-none absolute inset-0 transition-opacity ${on ? "opacity-100 duration-300" : "opacity-0 duration-0"}`}
-      style={{ background: "rgba(10,10,26,0.4)" }}
+      style={{ background: "rgba(8,10,13,0.4)" }}
     />
   );
 }
@@ -185,7 +185,7 @@ export function BeginCard({
       className={`pointer-events-none absolute inset-x-0 top-1/2 flex -translate-y-1/2 flex-col items-center gap-3 px-8 text-center transition-[opacity,scale] ${
         show ? "scale-100 opacity-100 duration-300 starting:scale-95 starting:opacity-0" : "opacity-0 duration-0"
       }`}
-      style={{ textShadow: "0 2px 18px rgba(10,10,26,0.55)" }}
+      style={{ textShadow: "0 2px 18px rgba(8,10,13,0.55)" }}
     >
       <h2 className={`text-balance font-semibold leading-[1.1] tracking-[-0.02em] ${theater ? "text-[46px]" : "text-[36px]"}`}>
         {name}
@@ -201,7 +201,7 @@ export function BeginCard({
         )}
         {side && (
           <span className={word}>
-            <span className="inline-flex h-7 items-center rounded-full bg-[#A99CFF] px-3 align-middle text-[13px] font-bold tracking-[0.08em] [text-shadow:none]">
+            <span className="inline-flex h-7 items-center rounded-full bg-violet-500 px-3 align-middle text-[13px] font-bold tracking-[0.08em] [text-shadow:none]">
               {side.toUpperCase()}
             </span>
           </span>
@@ -631,7 +631,7 @@ export function SetScreen({
       {upNext && <div className="absolute inset-x-5 bottom-full mb-4 flex justify-center">{upNext}</div>}
       {groupLine && (
         <Collapse open={!hidden}>
-          <div className="mb-2 flex items-center gap-[7px] text-[13px] font-semibold tracking-[0.02em] text-[#A99CFF]">
+          <div className="mb-2 flex items-center gap-[7px] text-[13px] font-semibold tracking-[0.02em] text-violet-400">
             <Loop size={14} />
             {groupLine}
           </div>
@@ -658,7 +658,7 @@ export function SetScreen({
             same height beside a time. */}
         {side && (
           <span className="text-[26px] font-medium">
-            <span className="inline-flex h-7 items-center rounded-full bg-[#A99CFF] px-3 align-middle text-[13px] font-bold tracking-[0.08em] text-white">
+            <span className="inline-flex h-7 items-center rounded-full bg-violet-500 px-3 align-middle text-[13px] font-bold tracking-[0.08em] text-white">
               {side.toUpperCase()}
             </span>
           </span>
@@ -921,7 +921,7 @@ function CountdownControls({
           type="button"
           onClick={onGo}
           className={`relative flex h-[58px] flex-[1.4] items-center justify-center gap-2.5 overflow-hidden rounded-full text-[17px] font-semibold ${
-            fill !== null ? "border border-white/20 bg-white/10 backdrop-blur-md" : "bg-white text-[#14142B]"
+            fill !== null ? "border border-white/20 bg-white/10 backdrop-blur-md" : "bg-white text-[#0C1014]"
           }`}
         >
           {fill !== null && <ProgressFill fraction={fill} />}
@@ -949,7 +949,7 @@ function CountdownTitle({ paused, children }: { paused: boolean; children: React
           Paused
         </span>
       )}
-      <span className="block text-[32px] leading-none text-[#A99CFF]">{children}</span>
+      <span className="block text-[32px] leading-none text-violet-400">{children}</span>
     </div>
   );
 }
@@ -997,7 +997,7 @@ export function RestScreen({
 }) {
   const shown = Math.ceil(secondsLeft);
   // With the Up next chime (UP_NEXT.before, 10 s out), REST slides up and away
-  // and a purple GET READY slides up in its place. A rest that short from the
+  // and a violet GET READY slides up in its place. A rest that short from the
   // start just says GET READY.
   const ready = secondsLeft <= UP_NEXT.before;
   const mini = hidden && !paused;
@@ -1029,7 +1029,7 @@ export function RestScreen({
           <span aria-hidden={ready || undefined} className={`${label} ${ready ? "-translate-y-3 opacity-0" : ""}`}>
             Rest
           </span>
-          <span aria-hidden={!ready || undefined} className={`${label} text-[#A99CFF] ${ready ? "" : "translate-y-3 opacity-0"}`}>
+          <span aria-hidden={!ready || undefined} className={`${label} text-violet-400 ${ready ? "" : "translate-y-3 opacity-0"}`}>
             Get ready
           </span>
         </span>
@@ -1395,7 +1395,7 @@ export function ReadyScreen({
               cy="100"
               r="92"
               fill="none"
-              stroke="#A99CFF"
+              stroke="#A684FF"
               strokeWidth="8"
               strokeLinecap="round"
               opacity={paused ? 0.45 : 1}
@@ -1423,7 +1423,7 @@ export function ReadyScreen({
           {(side || setLine || levels) && (
             <div className="mt-1 flex flex-wrap justify-center gap-2">
               {side && (
-                <span className="flex h-[30px] items-center rounded-full bg-[#A99CFF] px-3 text-[13px] font-bold uppercase tracking-[0.06em] text-[#14142B]">
+                <span className="flex h-[30px] items-center rounded-full bg-violet-500 px-3 text-[13px] font-bold uppercase tracking-[0.06em] text-white">
                   {side} side
                 </span>
               )}
@@ -1472,13 +1472,13 @@ export function RestartVideoPrompt({
   onEnd: () => void;
 }) {
   return (
-    <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#0A0A1A]/50 px-6">
+    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50 px-6">
       <button type="button" aria-label="Keep going" onClick={onCancel} className="absolute inset-0 cursor-default" />
       <div
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="restart-video-title"
-        className="relative w-full max-w-[320px] rounded-[24px] bg-[#1A1A34] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.45)] ring-1 ring-white/10"
+        className="relative w-full max-w-[320px] rounded-[24px] bg-[#16191E] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.45)] ring-1 ring-white/10"
       >
         <h2 id="restart-video-title" className="text-center text-xl font-semibold">
           {title}
@@ -1487,7 +1487,7 @@ export function RestartVideoPrompt({
           <button
             type="button"
             onClick={onRestart}
-            className="h-12 rounded-full bg-white text-base font-semibold text-[#14142B]"
+            className="h-12 rounded-full bg-white text-base font-semibold text-[#0C1014]"
           >
             Restart
           </button>
@@ -1534,13 +1534,13 @@ export function CooldownPrompt({
         aria-modal="true"
         aria-labelledby="cooldown-title"
         aria-describedby="cooldown-detail"
-        className="flex w-full max-w-[340px] flex-col items-center gap-5 rounded-[28px] bg-[#1A1A34] p-6 text-center shadow-[0_18px_50px_rgba(0,0,0,0.45)] ring-1 ring-white/10"
+        className="flex w-full max-w-[340px] flex-col items-center gap-5 rounded-[28px] bg-[#16191E] p-6 text-center shadow-[0_18px_50px_rgba(0,0,0,0.45)] ring-1 ring-white/10"
       >
-        <div className="flex size-16 items-center justify-center rounded-full bg-[#A99CFF] text-[#14142B] shadow-[0_0_0_9px_rgba(169,156,255,0.2)]">
+        <div className="flex size-16 items-center justify-center rounded-full bg-violet-500 text-white shadow-[0_0_0_9px_rgba(142,81,255,0.2)]">
           <Check size={30} width={2.6} />
         </div>
         <div className="flex flex-col gap-1.5">
-          <div className="text-[13px] font-bold uppercase tracking-[0.12em] text-[#A99CFF]">Workout complete</div>
+          <div className="text-[13px] font-bold uppercase tracking-[0.12em] text-violet-400">Workout complete</div>
           <h2 id="cooldown-title" className="text-[28px] font-semibold leading-tight tracking-[-0.01em]">
             Cool down?
           </h2>
@@ -1554,7 +1554,7 @@ export function CooldownPrompt({
             type="button"
             autoFocus
             onClick={onYes}
-            className="flex h-[54px] items-center justify-center gap-2 rounded-full bg-white text-[17px] font-semibold text-[#14142B]"
+            className="flex h-[54px] items-center justify-center gap-2 rounded-full bg-white text-[17px] font-semibold text-[#0C1014]"
           >
             Yes, cool down
           </button>
@@ -1630,7 +1630,7 @@ export function PausedScreen({
               aria-label="Resume workout"
               onClick={onResume}
               autoFocus
-              className="flex size-[104px] items-center justify-center rounded-full bg-white text-[#14142B] shadow-[0_12px_36px_rgba(0,0,0,0.35)] short:size-[84px]"
+              className="flex size-[104px] items-center justify-center rounded-full bg-white text-[#0C1014] shadow-[0_12px_36px_rgba(0,0,0,0.35)] short:size-[84px]"
             >
               <Play />
             </button>
@@ -1723,7 +1723,7 @@ export function CompleteScreen({
   theater?: boolean;
 }) {
   const check = (
-    <div className="flex size-[104px] items-center justify-center rounded-full bg-[#A99CFF] text-[#14142B] shadow-[0_0_0_12px_rgba(169,156,255,0.2)]">
+    <div className="flex size-[104px] items-center justify-center rounded-full bg-violet-500 text-white shadow-[0_0_0_12px_rgba(142,81,255,0.2)]">
       <Check size={48} width={2.6} />
     </div>
   );
@@ -1739,7 +1739,7 @@ export function CompleteScreen({
             // Square from its height: 184px, but on a phone short of room (Safari's
             // toolbars) it gives up just what's missing, down to 120px, so the
             // buttons stay on screen; nothing else shrinks. Past that, it scrolls.
-            <div className="-my-3 flex aspect-square h-[184px] min-h-[120px] shrink items-center justify-center bg-[radial-gradient(closest-side,rgba(169,156,255,0.22),transparent)]">
+            <div className="-my-3 flex aspect-square h-[184px] min-h-[120px] shrink items-center justify-center bg-[radial-gradient(closest-side,rgba(142,81,255,0.22),transparent)]">
               <FirstWorkoutBadge fallback={check} className="size-full" />
             </div>
           ) : (
@@ -1761,7 +1761,7 @@ export function CompleteScreen({
             type="button"
             onClick={onDone}
             autoFocus
-            className="h-[58px] rounded-full bg-white text-[17px] font-semibold text-[#14142B]"
+            className="h-[58px] rounded-full bg-white text-[17px] font-semibold text-[#0C1014]"
           >
             Done
           </button>
@@ -1783,7 +1783,7 @@ export function CompleteScreen({
 
 // The fireworks' colours: the badge's gold, the player's lilac, the mark's cyan, and a warm white.
 const GOLD = "#FFD37A";
-const LILAC = "#B7ABFF";
+const LILAC = "#A684FF";
 const CYAN = "#7FE7EC";
 const WHITE = "#FFF4DC";
 
@@ -1896,7 +1896,7 @@ function RateStars({ stars, onRate }: { stars: number | null; onRate: (stars: nu
             onClick={() => onRate(n)}
             onMouseEnter={() => setHover(n)}
             className={`flex size-12 items-center justify-center rounded-full transition ${
-              n <= shown ? "text-[#A99CFF]" : "text-white/40 hover:text-white/60"
+              n <= shown ? "text-violet-400" : "text-white/40 hover:text-white/60"
             }`}
           >
             <Star filled={n <= shown} />
@@ -2034,10 +2034,11 @@ export function Sheet({
   slideIn?: boolean;
 }) {
   const panel = {
-    bottom: `max-h-[88%] w-full rounded-t-[28px] bg-[#1A1A34] pt-2.5 ${bottomPad}`,
-    side: "h-full w-[440px] max-w-full bg-[#17172F] py-7 shadow-[-24px_0_60px_rgba(0,0,0,0.45)]",
+    // A step up from the page (#0C1014), with a hairline top edge, so it reads as raised.
+    bottom: `max-h-[88%] w-full rounded-t-[28px] border-t border-white/[0.08] bg-[#16191E] pt-2.5 ${bottomPad}`,
+    side: "h-full w-[440px] max-w-full bg-[#14171C] py-7 shadow-[-24px_0_60px_rgba(0,0,0,0.45)]",
     dialog:
-      "max-h-[90%] w-[420px] max-w-[calc(100%-32px)] rounded-[28px] bg-[#1A1A34] pb-6 pt-8 shadow-[0_30px_80px_rgba(0,0,0,0.5)]",
+      "max-h-[90%] w-[420px] max-w-[calc(100%-32px)] rounded-[28px] bg-[#16191E] pb-6 pt-8 shadow-[0_30px_80px_rgba(0,0,0,0.5)]",
   }[variant];
   const place = { bottom: "flex-col justify-end", side: "justify-end", dialog: "items-center justify-center" }[variant];
   const panelRef = useRef<HTMLElement>(null);
@@ -2097,7 +2098,7 @@ export function Sheet({
       <div className={`absolute inset-0 z-20 flex ${place}`}>
         <div
           ref={backdropRef}
-          className={`absolute inset-0 ${variant === "bottom" ? "bg-[#080814]/60" : "bg-[#06060E]/55"}`}
+          className="absolute inset-0 bg-black/55"
           onClick={dismiss}
           aria-hidden="true"
         />
@@ -2108,7 +2109,7 @@ export function Sheet({
           aria-label={label}
           className={`relative flex flex-col gap-4 ${panel}`}
         >
-          {variant === "bottom" && <div className="h-[5px] w-10 shrink-0 self-center rounded-full bg-white/[0.28]" />}
+          {variant === "bottom" && <div className="h-[5px] w-9 shrink-0 self-center rounded-full bg-white/25" />}
           {children}
         </section>
       </div>
@@ -2211,7 +2212,7 @@ export function Drawer({
       <div className={`absolute inset-0 z-20 flex flex-col justify-end ${open ? "" : "pointer-events-none"}`} inert={!open}>
         <div
           ref={backdropRef}
-          className="absolute inset-0 bg-[#080814]/60 will-change-[opacity]"
+          className="absolute inset-0 bg-black/55 will-change-[opacity]"
           style={{ opacity: 0 }}
           onClick={onClose}
           aria-hidden="true"
@@ -2222,10 +2223,10 @@ export function Drawer({
           aria-modal={open}
           aria-label={label}
           aria-hidden={!open}
-          className={`relative flex max-h-[88%] w-full flex-col gap-4 rounded-t-[28px] bg-[#1A1A34] pt-2.5 will-change-transform ${bottomPad}`}
+          className={`relative flex max-h-[88%] w-full flex-col gap-4 rounded-t-[28px] border-t border-white/[0.08] bg-[#16191E] pt-2.5 will-change-transform ${bottomPad}`}
           style={{ transform: "translateY(100%)" }}
         >
-          <div className="h-[5px] w-10 shrink-0 self-center rounded-full bg-white/[0.28]" />
+          <div className="h-[5px] w-9 shrink-0 self-center rounded-full bg-white/25" />
           {children}
         </section>
       </div>
@@ -2239,14 +2240,11 @@ export function Switch({
   onChange,
   label,
   disabled = false,
-  onClass = "bg-[#A99CFF]",
 }: {
   on: boolean;
   onChange: (on: boolean) => void;
   label: string;
   disabled?: boolean;
-  /** Its colour when on: the player's lavender, or the preview's violet. */
-  onClass?: string;
 }) {
   return (
     <button
@@ -2256,7 +2254,7 @@ export function Switch({
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!on)}
-      className={`relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200 disabled:cursor-not-allowed ${on ? onClass : "bg-white/20"}`}
+      className={`relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200 disabled:cursor-not-allowed ${on ? "bg-violet-500" : "bg-white/20"}`}
     >
       <span
         className={`absolute left-0.5 top-0.5 size-[27px] rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.3)] transition-transform duration-200 ${
@@ -2282,7 +2280,7 @@ export function SheetClose({ label }: { label: string }) {
     <DismissButton
       aria-label={label}
       autoFocus
-      className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/10"
+      className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/10"
     >
       <Close />
     </DismissButton>
@@ -2326,7 +2324,26 @@ function SheetFrame({
   );
 }
 
-/** A card with a title, an optional line under it, and a switch — Settings and the Audio card. */
+/**
+ * The sheets' settings pattern (the design canvas's V7, Oct 2026): a section's
+ * rows in one card, divided by hairlines that start where the text does, as in
+ * the phone's own Settings. Each row carries its divider (`divide-y` on a row
+ * pulled in by `ml-4`), so the first has none.
+ */
+function Group({ children }: { children: ReactNode }) {
+  return <div className="flex flex-col divide-y divide-white/[0.08] rounded-2xl bg-white/[0.05]">{children}</div>;
+}
+
+/** A section's name over its group: small grey capitals. */
+function SectionTitle({ id, children }: { id: string; children: ReactNode }) {
+  return (
+    <h3 id={id} className="px-1 text-[13px] font-semibold uppercase tracking-[0.1em] text-white/55">
+      {children}
+    </h3>
+  );
+}
+
+/** A row in a Group: a title, an optional line under it, and a switch. */
 function SwitchRow({
   title,
   text,
@@ -2342,13 +2359,13 @@ function SwitchRow({
 }) {
   return (
     <div
-      className={`flex items-center justify-between gap-4 rounded-2xl border-[1.5px] border-white/[0.12] bg-white/[0.04] px-4 py-3.5 transition-opacity ${
+      className={`ml-4 flex min-h-[52px] items-center justify-between gap-4 py-[11px] pr-3.5 transition-opacity ${
         disabled ? "opacity-45" : ""
       }`}
     >
       <span className="flex min-w-0 flex-col gap-[3px]">
-        <span className="text-[17px] font-semibold">{title}</span>
-        {text && <span className="text-sm leading-snug text-white/75">{text}</span>}
+        <span className="text-base font-medium">{title}</span>
+        {text && <span className="text-[13.5px] leading-[1.4] text-white/65">{text}</span>}
       </span>
       <Switch on={on} onChange={onChange} label={title} disabled={disabled} />
     </div>
@@ -2380,26 +2397,29 @@ function AudioSwitches({ muteAll, music, tips, announcements, effects, mix }: Au
   const off = muteAll.on;
   return (
     <>
-      <SwitchRow title="Music" {...music} disabled={off} />
-      <SwitchRow title="Instructor audio" {...tips} disabled={off} />
-      <SwitchRow title="Voice announcements" {...announcements} disabled={off} />
-      <SwitchRow title="Sound effects" {...effects} disabled={off} />
-      {mix && (
-        <SwitchRow
-          title="Keep my music playing"
-          text={
-            <>
-              Audio instructions will play without pausing music from other apps.
-              <span className="mt-1 block font-semibold">Phone silent mode must be OFF.</span>
-            </>
-          }
-          {...mix}
-          disabled={off}
-        />
-      )}
-      <div className="mt-1">
+      <Group>
+        <SwitchRow title="Music" {...music} disabled={off} />
+        <SwitchRow title="Instructor audio" {...tips} disabled={off} />
+        <SwitchRow title="Voice announcements" {...announcements} disabled={off} />
+        <SwitchRow title="Sound effects" {...effects} disabled={off} />
+        {mix && (
+          <SwitchRow
+            title="Keep my music playing"
+            text={
+              <>
+                Audio instructions will play without pausing music from other apps.
+                <span className="mt-1 block font-semibold text-white/80">Phone silent mode must be OFF.</span>
+              </>
+            }
+            {...mix}
+            disabled={off}
+          />
+        )}
+      </Group>
+      {/* A card of its own, under the switches it silences. */}
+      <Group>
         <SwitchRow title="Mute all" text="No sound from the workout at all." {...muteAll} />
-      </div>
+      </Group>
     </>
   );
 }
@@ -2435,31 +2455,27 @@ export function SettingsSheet({
       <div
         data-sheet-scroll
         // Scrolls without showing a scroll bar, like the overviews' lists.
-        className={`flex min-h-0 flex-col gap-[18px] overflow-y-auto overscroll-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
-          variant === "side" ? "px-7" : "px-5"
+        className={`flex min-h-0 flex-col gap-[22px] overflow-y-auto overscroll-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+          variant === "side" ? "px-7" : "px-4"
         }`}
       >
-        <section aria-labelledby="settings-audio" className="flex flex-col gap-3">
-          <h3 id="settings-audio" className="text-base font-semibold">
-            Audio
-          </h3>
+        <section aria-labelledby="settings-audio" className="flex flex-col gap-2">
+          <SectionTitle id="settings-audio">Audio</SectionTitle>
           <AudioSwitches {...audio} />
         </section>
-        <section aria-labelledby="settings-exercises" className="flex flex-col gap-3">
-          <h3 id="settings-exercises" className="text-base font-semibold">
-            Exercises
-          </h3>
-          <SwitchRow
-            title="Auto-advance"
-            text="Rep sets move on by themselves after the time the reps usually take. Tap to move on sooner."
-            {...autoAdvance}
-          />
+        <section aria-labelledby="settings-exercises" className="flex flex-col gap-2">
+          <SectionTitle id="settings-exercises">Exercises</SectionTitle>
+          <Group>
+            <SwitchRow
+              title="Auto-advance"
+              text="Rep sets move on by themselves after the time the reps usually take. Tap to move on sooner."
+              {...autoAdvance}
+            />
+          </Group>
         </section>
         {TUTORIAL_CONTROLS && (
-          <section aria-labelledby="settings-tutorials" className="flex flex-col gap-3">
-            <h3 id="settings-tutorials" className="text-base font-semibold">
-              Tutorials
-            </h3>
+          <section aria-labelledby="settings-tutorials" className="flex flex-col gap-2">
+            <SectionTitle id="settings-tutorials">Tutorials</SectionTitle>
             <fieldset className="flex min-w-0 flex-col gap-2.5">
               <legend className="mb-2.5 text-xs font-semibold uppercase tracking-[0.1em] text-white/70">
                 Before each new exercise
@@ -2472,7 +2488,7 @@ export function SettingsSheet({
                     key={m.id}
                     className={`flex items-start gap-3.5 rounded-2xl border-[1.5px] px-4 py-3.5 ${
                       blocked ? "cursor-not-allowed opacity-50" : "cursor-pointer"
-                    } ${mode === m.id ? "border-[#A99CFF]/85 bg-[#A99CFF]/[0.14]" : "border-white/[0.12] bg-white/[0.04]"}`}
+                    } ${mode === m.id ? "border-violet-400/85 bg-violet-400/[0.14]" : "border-white/[0.12] bg-white/[0.04]"}`}
                   >
                     <input
                       type="radio"
@@ -2481,7 +2497,7 @@ export function SettingsSheet({
                       checked={mode === m.id}
                       disabled={blocked}
                       onChange={() => !blocked && onMode(m.id)}
-                      className="mt-px size-5 shrink-0 accent-[#A99CFF]"
+                      className="mt-px size-5 shrink-0 accent-violet-500"
                     />
                     <span className="flex min-w-0 flex-col gap-[3px]">
                       <span className="text-[17px] font-semibold">{m.title}</span>
@@ -2496,22 +2512,22 @@ export function SettingsSheet({
           </section>
         )}
         {onGuide && (
-          <section aria-labelledby="settings-help" className="flex flex-col gap-3">
-            <h3 id="settings-help" className="text-base font-semibold">
-              Help
-            </h3>
+          <section aria-labelledby="settings-help" className="flex flex-col gap-2">
+            <SectionTitle id="settings-help">Help</SectionTitle>
             <button
               type="button"
               onClick={onGuide}
-              className="flex items-center justify-between gap-4 rounded-2xl border-[1.5px] border-white/[0.12] bg-white/[0.04] px-4 py-3.5 text-left"
+              className="flex items-center justify-between gap-4 rounded-2xl bg-white/[0.05] py-[11px] pl-4 pr-3.5 text-left"
             >
               <span className="flex min-w-0 flex-col gap-[3px]">
-                <span className="text-[17px] font-semibold">How to use the player</span>
-                <span className="text-sm leading-snug text-white/75">
+                <span className="text-base font-medium">How to use the player</span>
+                <span className="text-[13.5px] leading-[1.4] text-white/65">
                   {variant === "bottom" ? "The taps, swipes and settings, again." : "The controls and settings, again."}
                 </span>
               </span>
-              <ChevronRight />
+              <span className="text-white/50">
+                <ChevronRight />
+              </span>
             </button>
           </section>
         )}
@@ -2558,7 +2574,7 @@ export function EndSheet({
             <button
               type="button"
               onClick={() => onEnd(true)}
-              className="h-[54px] rounded-full bg-white text-base font-semibold text-[#14142B]"
+              className="h-[54px] rounded-full bg-white text-base font-semibold text-[#0C1014]"
             >
               Save progress
             </button>

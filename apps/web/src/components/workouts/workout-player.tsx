@@ -351,7 +351,7 @@ export function WorkoutPlayer({
   // home-screen app, it seems: the theme-color alone didn't do it), so both go
   // black — the background by `data-player-up` on <html> (globals.css). The
   // player covers the whole screen, so neither shows anywhere else, and the
-  // strip at the bottom shows the player's own purple. Touch screens only:
+  // strip at the bottom shows the player's own dark. Touch screens only:
   // desktop Safari would tint its tab bar too.
   const inPlayer = state.phase !== "preview";
   useEffect(() => {
@@ -1820,12 +1820,12 @@ export function WorkoutPlayer({
           anything wider. */}
       <div
         aria-hidden={state.phase === "preview"}
-        className={`fixed inset-0 flex select-none justify-center bg-[#08080F] text-white ${
+        className={`fixed inset-0 flex select-none justify-center bg-[#07090B] text-white ${
           state.phase === "preview" ? "pointer-events-none -z-10 opacity-0" : "z-50"
         }`}
         style={{ "--col": "min(100vw, 100dvh * 9 / 16)" } as CSSProperties}
       >
-        <div className="relative h-full w-(--col) overflow-hidden bg-[#14142B]">
+        <div className="relative h-full w-(--col) overflow-hidden bg-[#0C1014]">
           <PoolVideos
             pool={pool}
             className={`transition-[filter,transform] duration-300 ${

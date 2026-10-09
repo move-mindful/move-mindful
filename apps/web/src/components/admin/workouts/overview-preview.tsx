@@ -125,7 +125,7 @@ export function OverviewPreview({
     >
       <p className="max-w-sm text-center text-sm font-medium text-white">{caption}</p>
       <div
-        className={`${outfit.className} relative flex flex-col overflow-hidden rounded-[36px] bg-[#14142B] text-white shadow-2xl`}
+        className={`${outfit.className} relative flex flex-col overflow-hidden rounded-[36px] bg-[#0C1014] text-white shadow-2xl`}
         style={frame}
       >
         {/* A new element per exercise: a cut, as in the player. */}
