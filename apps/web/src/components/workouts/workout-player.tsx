@@ -158,6 +158,17 @@ const GET_READY_MS = 6000;
 // brings it back.
 const GET_READY = false;
 
+/**
+ * One pause screen everywhere (Oct 2026, the owner's call): pausing a rest or
+ * the workout overview opens the same pause screen as an exercise. `true`
+ * brings back holding them right there instead — the countdown stopped,
+ * Pause reading Resume, PAUSED over the time (RestScreen, RundownScreen).
+ */
+const HOLD_COUNTDOWNS = false;
+
+/** The video behind the pause screens, blurred as well as dimmed — off while it's tried without (Oct 2026). */
+const PAUSE_BLUR = false;
+
 /** A random (v4) UUID — randomUUID is only there on https pages, so build one otherwise. */
 function newId(): string {
   if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
@@ -409,7 +420,7 @@ export function WorkoutPlayer({
     state.phase === "rundown" ||
     (state.phase === "workout" && (steps[state.step]?.kind === "rest" || state.stage === "ready"));
   function pause() {
-    setHoldInPlace(onCountdown);
+    setHoldInPlace(HOLD_COUNTDOWNS && onCountdown);
     act({ type: "pause" });
   }
   function resumePlay() {
@@ -520,7 +531,8 @@ export function WorkoutPlayer({
   // Not behind the pause screen, which has a dim of its own.
   const pauseScreen = state.paused && !(holdInPlace && onCountdown);
   const stepDim =
-    state.phase === "rundown" || (state.phase === "workout" && !pauseScreen && (step?.kind === "rest" || beginCard));
+    (state.phase === "rundown" && !pauseScreen) ||
+    (state.phase === "workout" && !pauseScreen && (step?.kind === "rest" || beginCard));
 
   // The countdown over the last seconds of a rest, and of Get ready: a sound
   // effect, off with the Audio card's Sound effects (or Mute all). Timed to
@@ -1181,7 +1193,7 @@ export function WorkoutPlayer({
       />
     );
     if (state.paused) {
-      blurred = true;
+      blurred = PAUSE_BLUR;
       screen = (
         <>
           <Dim />
@@ -1275,15 +1287,37 @@ export function WorkoutPlayer({
   } else if (state.phase === "rundown") {
     // The workout overview: the list over the loops — dimmed the whole way
     // across, as on a rest (the stage's StepDim) — while the tip plays. Taps
-    // as on a rest: the middle pauses it right there (or resumes), the right
-    // goes on to the workout — on the list too (onTap), which takes the finger
-    // to scroll. The left does nothing (desktop's back arrow starts it over).
+    // as on a rest: the middle pauses, the right goes on to the workout — on
+    // the list too (onTap), which takes the finger to scroll. The left does
+    // nothing (desktop's back arrow starts it over).
+    if (pauseScreen) blurred = PAUSE_BLUR;
     const rundownMiddle = state.paused ? resumePlay : pause;
     const rundownOn = () => {
       if (state.paused) resumePlay();
       act({ type: "next" });
     };
-    screen = (
+    screen = pauseScreen ? (
+      // Paused: the pause screen, as on an exercise — Restart overview, Skip
+      // overview, End workout (nothing to keep yet; it asks, as before the
+      // exercises always does).
+      <>
+        <Dim />
+        <PausedScreen
+          subtitle="Workout overview"
+          stats={null}
+          onResume={resumePlay}
+          onRestartSet={() => act({ type: "restartVideo" })}
+          restartSetLabel="Restart overview"
+          onRestartWorkout={null}
+          onWatchTutorial={null}
+          skip={{ label: "Skip overview", onClick: rundownOn }}
+          onEnd={() => act({ type: "sheet", sheet: "end" })}
+          onSettings={theater ? null : openSettings}
+          music={theater ? null : { on: musicOn, onClick: toggleMusic }}
+          theater={theater}
+        />
+      </>
+    ) : (
       <>
         <TapZones onNext={rundownOn} onMiddle={rundownMiddle} onHold={pause} nextLabel="Start the workout" />
         <RundownScreen
@@ -1601,7 +1635,7 @@ export function WorkoutPlayer({
       }
     }
     if (pauseScreen) {
-      blurred = true;
+      blurred = PAUSE_BLUR;
       const canWatch = !!targetExercise?.tutorial;
       screen = (
         <>
@@ -1615,8 +1649,9 @@ export function WorkoutPlayer({
               left: `~${aboutMinutes(secondsLeft(steps, state.step))} min`,
             }}
             onResume={resumePlay}
-            onRestartSet={() => act({ type: "restartSet" })}
-            restartSetLabel={state.stage === "tutorial" ? "Restart tutorial" : "Restart this set"}
+            // On a rest: the rest from its start (restartSet would go on to the set after it).
+            onRestartSet={step.kind === "rest" ? () => act({ type: "jump", step: state.step }) : () => act({ type: "restartSet" })}
+            restartSetLabel={step.kind === "rest" ? "Restart the rest" : state.stage === "tutorial" ? "Restart tutorial" : "Restart this set"}
             onRestartWorkout={() => restartWorkout()}
             // During a tutorial, Restart tutorial already covers it. Hidden with the other tutorial controls.
             onWatchTutorial={
