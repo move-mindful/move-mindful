@@ -2,23 +2,24 @@ import Image from "next/image";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { requireSectionUnlocked } from "@/lib/auth/locked-sections";
-import { isAdmin } from "@/lib/auth/admin";
 import { getSessionSummaries, workoutStatuses } from "@/lib/member/sessions-server";
 import { getWorkoutCards } from "@/lib/workouts/member";
+import { getThisWeekIds } from "@/lib/workouts/server";
 import { levelLabel } from "@/lib/workouts/player";
 import { DoneLabel } from "@/components/workouts/done-label";
 
 /**
- * Every published workout (drafts too, for admins), each with where the
- * member is in it: "Resume · 40%" or "Done · 3 days ago". A plain list for
- * now — where workouts live on /home is decided with their access in plan.md,
- * Phase 4.5 step 6. Admin-only until then, like Classes and Live.
+ * This week's workouts — the published ones picked on the admin workouts
+ * page, in that order — each with where the member is in it: "Resume · 40%"
+ * or "Done · 3 days ago". The rest still play from their links. A plain list
+ * for now — where workouts live on /home is decided with their access in
+ * plan.md, Phase 4.5 step 6. Admin-only until then, like Classes and Live.
  */
 export default async function WorkoutsPage() {
   await requireSectionUnlocked();
-  const [admin, { userId }] = await Promise.all([isAdmin(), auth()]);
+  const { userId } = await auth();
   const [workouts, sessions] = await Promise.all([
-    getWorkoutCards(admin),
+    getThisWeekIds().then(getWorkoutCards),
     userId ? getSessionSummaries(userId) : null,
   ]);
   const statuses = sessions ? workoutStatuses(workouts, sessions) : null;
@@ -43,11 +44,6 @@ export default async function WorkoutsPage() {
                       unoptimized
                       className="object-cover transition duration-300 group-hover:scale-[1.03]"
                     />
-                  )}
-                  {!w.published && (
-                    <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-semibold text-zinc-700">
-                      Draft
-                    </span>
                   )}
                   {/* How far they got, along the bottom of the cover. */}
                   {status?.kind === "resume" && (

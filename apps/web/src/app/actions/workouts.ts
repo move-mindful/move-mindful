@@ -9,7 +9,7 @@ import { requestOrigin } from "@/lib/mux/request-origin";
 import { EXERCISE_STATIC_RENDITIONS, WORKOUT_CLIPS, deleteMuxVideo, syncPendingClips } from "@/lib/exercises/server";
 import { cleanBlocks, readTip, type ExerciseInfo } from "@/lib/workouts/clean";
 import { generateWorkoutDraft, setGeneratorInstructions } from "@/lib/workouts/generate";
-import { getCatalog, getWorkout, getWorkoutVideoRows, toWorkoutVideo } from "@/lib/workouts/server";
+import { getCatalog, getWorkout, getWorkoutVideoRows, setThisWeekIds, toWorkoutVideo } from "@/lib/workouts/server";
 import { getPlayerWorkout } from "@/lib/workouts/member";
 import { workoutAnnouncements } from "@/lib/workouts/announcements";
 import { makeVoiceLines } from "@/lib/workouts/announcements-server";
@@ -249,6 +249,14 @@ export async function setWorkoutPublished(id: string, publish: boolean): Promise
   if (error) return { error: error.message };
   revalidateWorkouts(id);
   return {};
+}
+
+/** Save the workouts picked for this week on the admin workouts page, in order. */
+export async function saveThisWeek(ids: string[]): Promise<{ ids?: string[]; error?: string }> {
+  await requireAdmin();
+  const res = await setThisWeekIds(ids);
+  if (!res.error) revalidatePath("/workouts");
+  return res;
 }
 
 export async function deleteWorkout(id: string): Promise<{ error?: string }> {

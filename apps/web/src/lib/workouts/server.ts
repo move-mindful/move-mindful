@@ -242,3 +242,46 @@ export async function getWorkouts(): Promise<WorkoutListRow[]> {
     };
   });
 }
+
+// ── This week's workouts ──────────────────────────────
+// The workouts /workouts shows members, in order: dragged in on the admin
+// workouts page and kept in app_settings (015_app_settings.sql) as a JSON list
+// of ids. A workout deleted, or moved back to draft, drops out where it's read.
+
+const THIS_WEEK_KEY = "this_weeks_workouts";
+/** More than a week will ever hold; a bad request can't save a huge list. */
+const THIS_WEEK_MAX = 50;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** This week's workout ids, in order; empty before any are picked. */
+export async function getThisWeekIds(): Promise<string[]> {
+  const { data } = await createAdminClient()
+    .from("app_settings")
+    .select("value")
+    .eq("key", THIS_WEEK_KEY)
+    .maybeSingle();
+  try {
+    const ids: unknown = JSON.parse((data?.value as string | undefined) ?? "[]");
+    return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string" && UUID.test(id)) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Save this week's workouts: the ids that are real workouts, in order, each once. */
+export async function setThisWeekIds(ids: unknown): Promise<{ ids?: string[]; error?: string }> {
+  const asked = Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string" && UUID.test(id)) : [];
+  const wanted = [...new Set(asked)].slice(0, THIS_WEEK_MAX);
+  const supabase = createAdminClient();
+  const { data } = wanted.length ? await supabase.from("workouts").select("id").in("id", wanted) : { data: [] };
+  const known = new Set((data ?? []).map((w) => w.id as string));
+  const clean = wanted.filter((id) => known.has(id));
+  const { error } = await supabase
+    .from("app_settings")
+    .upsert({ key: THIS_WEEK_KEY, value: JSON.stringify(clean), updated_at: new Date().toISOString() });
+  if (error) {
+    console.error("[this-week] saving:", error);
+    return { error: "Couldn’t save this week’s workouts." };
+  }
+  return { ids: clean };
+}

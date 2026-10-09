@@ -145,14 +145,19 @@ export const getPlayerWorkout = cache(
   },
 );
 
-/** Published workouts (plus drafts for admins), newest first. */
-export async function getWorkoutCards(includeDrafts: boolean): Promise<WorkoutCard[]> {
-  const supabase = createAdminClient();
+/** The published workouts among `workoutIds`, in that order — this week's, on /workouts. */
+export async function getWorkoutCards(workoutIds: string[]): Promise<WorkoutCard[]> {
+  const wanted = workoutIds.filter((id) => UUID.test(id));
+  if (!wanted.length) return [];
   // Each workout with its blocks, in one query.
-  let query = supabase.from("workouts").select("*, workout_blocks(*)").order("created_at", { ascending: false });
-  if (!includeDrafts) query = query.not("published_at", "is", null);
-  const { data } = await query;
-  const workoutRows = (data ?? []) as Array<WorkoutRow & { workout_blocks: BlockRow[] | null }>;
+  const { data } = await createAdminClient()
+    .from("workouts")
+    .select("*, workout_blocks(*)")
+    .in("id", wanted)
+    .not("published_at", "is", null);
+  const workoutRows = ((data ?? []) as Array<WorkoutRow & { workout_blocks: BlockRow[] | null }>).sort(
+    (a, b) => wanted.indexOf(a.id) - wanted.indexOf(b.id),
+  );
   if (!workoutRows.length) return [];
 
   const workouts = workoutRows.map(({ workout_blocks, ...w }) => toWorkout(w, workout_blocks ?? []));
@@ -179,7 +184,6 @@ export async function getWorkoutCards(includeDrafts: boolean): Promise<WorkoutCa
       imageUrl: w.coverImageUrl ?? stills.get(used[0]) ?? null,
       minutes: aboutMinutes(estimateWorkout(w.blocks, estimates).totalSeconds),
       exerciseCount: used.length,
-      published: !!w.publishedAt,
       // The steps as the player builds them (see assemble), so saved progress matches.
       sequenceKey: sequenceKey(workoutSteps(playableBlocks(w.blocks, playable), estimates)),
     };

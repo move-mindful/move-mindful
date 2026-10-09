@@ -64,7 +64,6 @@ export interface WorkoutCard {
   imageUrl: string | null;
   minutes: number;
   exerciseCount: number;
-  published: boolean;
   /** Its step sequence's fingerprint (see sequenceKey in core), to check saved progress against. */
   sequenceKey: string;
 }
