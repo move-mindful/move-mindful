@@ -38,6 +38,7 @@ wherever the site shows its logo, from 2026-10-09: the headers (the main site,
 pricing and admin), the landing page and the signed-out pricing page.
 
 `apps/web/src/app/apple-icon.png` is the glass master scaled to 180px. The browser
-tab icon and the Android/desktop install icons still use the old white logo.
+tab icon (`apps/web/src/app/icon.png`, 64px) is the "1: Gradient" squircle, from
+2026-10-09. The Android/desktop install icons still use the old white logo.
 A final logo should be drawn as a vector (SVG or PDF), so it's sharp at every
 size and can be layered for the iOS app's icon.
