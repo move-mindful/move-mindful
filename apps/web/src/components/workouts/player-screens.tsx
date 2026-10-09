@@ -949,14 +949,14 @@ function CountdownTitle({ paused, children }: { paused: boolean; children: React
  * same in the video column. Held (Pause), PAUSED floats above the time and
  * Pause reads Resume.
  *
- * Minimised (controls swiped down, phones): the time stays, with a round
- * Continue (a caret) at the end of its line, and the card and buttons fold
- * into one line under it — Up next and what it is, as on a set, with the
- * whole width for the name. Held, the full controls come back (Resume is
- * there), and it folds again as it carries on.
+ * Minimised (controls swiped down, phones): the time stays, and the card and
+ * buttons fold into one line under it — Up next, filling as the rest runs,
+ * and what it is, as on a set (a tap on the right moves on). Held, the full
+ * controls come back (Resume is there), and it folds again as it carries on.
  */
 export function RestScreen({
   secondsLeft,
+  seconds,
   next,
   paused,
   hidden = false,
@@ -967,6 +967,8 @@ export function RestScreen({
   theater = false,
 }: {
   secondsLeft: number;
+  /** The rest's whole length: minimised, Up next fills with how much of it has run. */
+  seconds: number;
   /** `short`: the minimised line's — the name, and the reps or time ("Upright row · 12 reps"). */
   next: { label: string; name: string; detail: string; short: string; thumbnail: string | null } | null;
   /** Held right here (Pause), the countdown stopped — see CountdownControls. */
@@ -1018,20 +1020,18 @@ export function RestScreen({
             Get ready
           </span>
         </span>
-        {/* Minimised: Continue, round, at the end of the time's line (it keeps its place, unseen, otherwise). */}
-        <button
-          type="button"
-          aria-label="Skip the rest"
-          onClick={onContinue}
-          inert={!mini}
-          className={`${round52} ml-auto self-center duration-300 ${mini ? "opacity-100" : "opacity-0"}`}
-        >
-          <ChevronRight size={24} />
-        </button>
       </div>
-      {/* Minimised: what's next on one line. */}
+      {/* Minimised: what's next on one line, Up next filling as the rest runs (as on a set moving on by itself). */}
       <Collapse open={mini}>
-        {next && <LabelLine label="Up next" text={next.short} still={!mini} className="mt-2" />}
+        {next && (
+          <LabelLine
+            label="Up next"
+            text={next.short}
+            fill={seconds ? 1 - secondsLeft / seconds : 0}
+            still={!mini}
+            className="mt-2"
+          />
+        )}
       </Collapse>
       <Collapse open={!mini}>
         {next && (

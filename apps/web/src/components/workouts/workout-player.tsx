@@ -1370,6 +1370,7 @@ export function WorkoutPlayer({
           {zones("Skip the rest")}
           <RestScreen
             secondsLeft={leftMs / 1000}
+            seconds={step.seconds}
             next={
               t
                 ? {
