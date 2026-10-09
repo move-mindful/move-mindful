@@ -17,12 +17,13 @@ export interface NavItem {
 const HOME: NavItem = { href: MEMBER_HOME, label: "Home", icon: House };
 const SECTIONS: NavItem[] = [
   { href: "/classes", label: "Classes", icon: Clapperboard, nested: true },
-  { href: "/live", label: "Live", icon: Radio, nested: true },
+  // Called Studio in the navigation; the page itself stays at /live.
+  { href: "/live", label: "Studio", icon: Radio, nested: true },
   { href: "/workouts", label: "Workouts", icon: Dumbbell, nested: true },
 ];
 
 /**
- * Classes, Live and Workouts are on hold until the membership launches, so
+ * Classes, Studio and Workouts are on hold until the membership launches, so
  * members don't see them. Admins keep them to preview the sections — the pages
  * themselves enforce this via requireSectionUnlocked(). Drop the `admin` check
  * when releasing.
@@ -31,6 +32,20 @@ export function navItems(admin: boolean): NavItem[] {
   return [HOME, ...(admin ? SECTIONS : [])];
 }
 
-export function isCurrent(item: Pick<NavItem, "href" | "nested">, pathname: string) {
+/** Pages with no tab of their own that the phone header still names. */
+const OTHER_PAGES = [
+  { href: "/account", label: "Account" },
+  { href: "/help", label: "Help" },
+];
+
+/**
+ * What the phone header calls the current page: its section's name, or null
+ * for a page outside them (a product's videos, say).
+ */
+export function pageTitle(pathname: string): string | null {
+  return [HOME, ...SECTIONS, ...OTHER_PAGES].find((p) => isCurrent(p, pathname))?.label ?? null;
+}
+
+export function isCurrent(item: { href: string; nested?: boolean }, pathname: string) {
   return pathname === item.href || (!!item.nested && pathname.startsWith(`${item.href}/`));
 }
