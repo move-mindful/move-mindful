@@ -184,10 +184,10 @@ html:has([data-no-page-scrollbar])::-webkit-scrollbar {
   display: none;
 }
 
-/* A page that fits the screen and shouldn't bounce when dragged — Your plan
-   (/workouts) on a phone, via data-no-overscroll. It still scrolls normally
-   if a screen is too short for it. */
-html:has([data-no-overscroll]),
-html:has([data-no-overscroll]) body {
+/* No rubber-band bounce anywhere — at the top or bottom of a page, or on one
+   that fits the screen — the player included (it also takes pull-to-refresh).
+   Up and down only, so a sideways swipe still goes back and forward. */
+html,
+body {
   overscroll-behavior-y: none;
 }

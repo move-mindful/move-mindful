@@ -1194,7 +1194,7 @@ export function RundownScreen({
         {/* It scrolls (a swipe, the wheel, or following the instructor) without showing a scroll bar. */}
         <div
           ref={list}
-          className={`min-h-0 ${grow} overflow-y-auto overscroll-contain px-2 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
+          className={`min-h-0 ${grow} overflow-y-auto overscroll-none px-2 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
         >
           <WorkoutRows workout={workout} steps={steps} position={null} spotlight={{ exerciseId, onPick, listWarmup }} />
         </div>
@@ -2432,7 +2432,7 @@ export function SettingsSheet({
       <div
         data-sheet-scroll
         // Scrolls without showing a scroll bar, like the overviews' lists.
-        className={`flex min-h-0 flex-col gap-[18px] overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+        className={`flex min-h-0 flex-col gap-[18px] overflow-y-auto overscroll-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
           variant === "side" ? "px-7" : "px-5"
         }`}
       >
