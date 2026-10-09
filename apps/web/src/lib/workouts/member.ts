@@ -175,8 +175,17 @@ export async function getWorkoutCards(workoutIds: string[]): Promise<WorkoutCard
     }),
   );
 
+  const byId = new Map(rows.map((e) => [e.id, e]));
+
   return workouts.map((w) => {
     const used = [...exerciseIds(w.blocks)];
+    // What its exercises need, gathered as the player does for "You'll need".
+    const equipment = new Set<string>();
+    const levels = new Set<string>();
+    for (const id of used) {
+      byId.get(id)?.equipment.forEach((x) => equipment.add(x));
+      byId.get(id)?.dumbbellLevels.forEach((x) => levels.add(x));
+    }
     return {
       id: w.id,
       title: w.title,
@@ -184,6 +193,8 @@ export async function getWorkoutCards(workoutIds: string[]): Promise<WorkoutCard
       imageUrl: w.coverImageUrl ?? stills.get(used[0]) ?? null,
       minutes: aboutMinutes(estimateWorkout(w.blocks, estimates).totalSeconds),
       exerciseCount: used.length,
+      equipment: [...equipment],
+      dumbbellLevels: [...levels],
       // The steps as the player builds them (see assemble), so saved progress matches.
       sequenceKey: sequenceKey(workoutSteps(playableBlocks(w.blocks, playable), estimates)),
     };

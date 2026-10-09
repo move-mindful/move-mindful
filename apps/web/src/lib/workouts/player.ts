@@ -64,6 +64,9 @@ export interface WorkoutCard {
   imageUrl: string | null;
   minutes: number;
   exerciseCount: number;
+  /** What its exercises need, for the card's equipment pills (see equipmentPills). */
+  equipment: string[];
+  dumbbellLevels: string[];
   /** Its step sequence's fingerprint (see sequenceKey in core), to check saved progress against. */
   sequenceKey: string;
 }
