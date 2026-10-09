@@ -27,8 +27,7 @@ export default async function WorkoutsPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 pt-6 pb-10 sm:px-8 md:pt-10">
-      {/* Not shown on a phone, where the week strip leads; screen readers
-          still get it. */}
+      {/* On a phone the header already says Workouts. */}
       <h1 className="text-2xl font-bold tracking-tight max-md:sr-only">Workouts</h1>
       <div className="md:mt-6">
         <WeekStrip />
