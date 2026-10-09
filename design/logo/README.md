@@ -45,7 +45,11 @@ the iPhone Home Screen icon uses until the new logo is ready before launch
   background, filling a 1024px square with a 4% margin. Use white on dark
   backgrounds and black on light ones. `glyph-*-preview.png` show each on its
   background.
-- `glyph.py`: makes them from `source-black.png`.
+- `glyph-squircle-white-1024.png` and `glyph-squircle-black-1024.png`: the same,
+  inside an outline of the iPhone icon shape, like Instagram's glyph. The
+  outline is as thick as the figure's lines, and the figure sits inside as it
+  does in the app icon. With previews.
+- `glyph.py`: makes all four from `source-black.png`.
 
 `apps/web/public/logo-mark.png` is the squircle scaled to 256px. It's the logo
 wherever the site shows its logo, from 2026-10-09: the headers (the main site,

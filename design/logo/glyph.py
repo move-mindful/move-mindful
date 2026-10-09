@@ -7,7 +7,10 @@ The lines are 1.5x thick, as in the app icon (option "B").
 
 Writes glyph-white-1024.png and glyph-black-1024.png (the figure centred in a
 1024px square, a 4% margin round its widest side), plus previews of each on
-its background.
+its background. Also glyph-squircle-white/black-1024.png: the figure inside an
+outline of the iPhone icon shape (a superellipse, n = 5), the outline as thick
+as the figure's lines and the figure placed as in the app icon, like
+Instagram's glyph.
 """
 import sys
 import numpy as np
@@ -51,3 +54,34 @@ for name, ink, bg in [("white", (255, 255, 255), (13, 17, 23)), ("black", (0, 0,
     preview.alpha_composite(glyph)
     preview.convert("RGB").save(f"{out}/glyph-{name}-preview.png", optimize=True)
 print("figure", fw, "x", fh, "in", SIZE)
+
+# ── In a squircle outline ──
+OUTER = SIZE * (1 - 2 * MARGIN)                      # the outline's outside edge, 4% in from the canvas
+SRC = im.shape[1]                                    # the source's disc spans its whole width, like the app icon's tile
+k = OUTER / SRC
+off = (SIZE - OUTER) / 2
+line = (51 + 2 * GROW) * k                           # the figure's line weight at this scale (51px in the source)
+
+ss = 4                                               # draw the outline at 4x for a smooth edge
+M = SIZE * ss
+c = (M - 1) / 2
+yy, xx = np.mgrid[0:M, 0:M].astype(np.float32)
+def inside(half):
+    return ((np.abs(xx - c) / half) ** 5 + (np.abs(yy - c) / half) ** 5) <= 1
+ring = inside(OUTER * ss / 2) & ~inside((OUTER / 2 - line) * ss)
+ring = Image.fromarray((ring * 255).astype(np.uint8)).resize((SIZE, SIZE), Image.LANCZOS)
+
+grown = dilate(big, GROW * UP)                       # the figure's area at 2x, as cropped from the source
+fig = Image.fromarray((grown * 255).astype(np.uint8)).resize((round((x1 - x0) * k), round((y1 - y0) * k)), Image.LANCZOS)
+alpha2 = Image.new("L", (SIZE, SIZE), 0)
+alpha2.paste(fig, (round(off + x0 * k), round(off + y0 * k)))
+alpha2 = Image.fromarray(np.maximum(np.asarray(alpha2), np.asarray(ring)))
+
+for name, ink, bg in [("white", (255, 255, 255), (13, 17, 23)), ("black", (0, 0, 0), (255, 255, 255))]:
+    glyph = Image.new("RGBA", (SIZE, SIZE), ink + (0,))
+    glyph.putalpha(alpha2)
+    glyph.save(f"{out}/glyph-squircle-{name}-1024.png", optimize=True)
+    preview = Image.new("RGBA", (SIZE, SIZE), bg + (255,))
+    preview.alpha_composite(glyph)
+    preview.convert("RGB").save(f"{out}/glyph-squircle-{name}-preview.png", optimize=True)
+print("squircle outline", round(line, 1), "px thick")
