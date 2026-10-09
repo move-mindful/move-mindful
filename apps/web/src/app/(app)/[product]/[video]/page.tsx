@@ -45,7 +45,7 @@ export default async function ProductVideoPage({
       <div className="mx-auto max-w-6xl px-6 sm:px-8 py-8">
         <Link
           href={`/${product.slug}`}
-          className="text-sm text-zinc-500 transition hover:text-zinc-800"
+          className="text-sm text-zinc-500 dark:text-zinc-400 transition hover:text-zinc-800 dark:hover:text-zinc-100"
         >
           &larr; {product.title}
         </Link>
@@ -53,7 +53,7 @@ export default async function ProductVideoPage({
           {video.title}
         </h1>
         {video.description && (
-          <p className="mt-3 max-w-2xl text-zinc-600">{video.description}</p>
+          <p className="mt-3 max-w-2xl text-zinc-600 dark:text-zinc-300">{video.description}</p>
         )}
       </div>
     </div>

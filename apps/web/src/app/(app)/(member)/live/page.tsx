@@ -17,7 +17,7 @@ export default async function LivePage() {
 
       {/* Recurring weekly schedule — compact list on mobile, full calendar on sm+ */}
       <div className="mx-auto max-w-6xl px-6 sm:px-8 pt-10 pb-12">
-        <h2 className="mb-6 text-center text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
+        <h2 className="mb-6 text-center text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-3xl">
           Live Schedule
         </h2>
 

@@ -35,9 +35,9 @@ export const LIVE_SCHEDULE: ScheduleEntry[] = [
 // Soft badge colors per class title, in the same style as the intensity badges
 // used elsewhere in the app. Falls back to zinc for any unrecognized title.
 export const classColor: Record<string, string> = {
-  "Relax & Restore": "bg-emerald-100 text-emerald-700",
-  "Yoga with Weights": "bg-violet-100 text-violet-700",
-  "Mobility & Balance": "bg-sky-100 text-sky-700",
-  "Legs Up the Wall Meditation": "bg-teal-100 text-teal-700",
-  "Strength & Sculpt Express": "bg-amber-100 text-amber-700",
+  "Relax & Restore": "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  "Yoga with Weights": "bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300",
+  "Mobility & Balance": "bg-sky-100 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300",
+  "Legs Up the Wall Meditation": "bg-teal-100 dark:bg-teal-500/15 text-teal-700 dark:text-teal-300",
+  "Strength & Sculpt Express": "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300",
 };

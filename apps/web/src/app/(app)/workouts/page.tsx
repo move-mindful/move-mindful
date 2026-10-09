@@ -28,14 +28,14 @@ export default async function WorkoutsPage() {
     <div className="mx-auto w-full max-w-6xl px-6 py-10 sm:px-8">
       <h1 className="text-2xl font-bold tracking-tight">Workouts</h1>
       {workouts.length === 0 ? (
-        <p className="mt-6 text-zinc-500">No workouts yet.</p>
+        <p className="mt-6 text-zinc-500 dark:text-zinc-400">No workouts yet.</p>
       ) : (
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {workouts.map((w) => {
             const status = statuses?.get(w.id) ?? null;
             return (
               <Link key={w.id} href={`/workouts/${w.id}`} className="group flex flex-col gap-2">
-                <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-zinc-200">
+                <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-zinc-200 dark:bg-white/10">
                   {w.imageUrl && (
                     <Image
                       src={w.imageUrl}
@@ -54,14 +54,14 @@ export default async function WorkoutsPage() {
                 </div>
                 <div>
                   <div className="font-semibold leading-snug">{w.title}</div>
-                  <div className="text-sm text-zinc-500">
+                  <div className="text-sm text-zinc-500 dark:text-zinc-400">
                     {[`${w.minutes} min`, levelLabel(w.level)].filter(Boolean).join(" · ")}
                   </div>
                   {status?.kind === "resume" && (
-                    <div className="mt-0.5 text-sm font-semibold text-violet-700">Resume · {status.percent}%</div>
+                    <div className="mt-0.5 text-sm font-semibold text-violet-700 dark:text-violet-300">Resume · {status.percent}%</div>
                   )}
                   {status?.kind === "done" && (
-                    <div className="mt-0.5 text-sm font-medium text-emerald-700">
+                    <div className="mt-0.5 text-sm font-medium text-emerald-700 dark:text-emerald-300">
                       <DoneLabel at={status.at} />
                     </div>
                   )}

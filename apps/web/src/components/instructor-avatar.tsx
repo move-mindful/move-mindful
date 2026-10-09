@@ -32,7 +32,7 @@ export function InstructorAvatar({
   return (
     <span
       aria-hidden
-      className="flex shrink-0 items-center justify-center rounded-full bg-zinc-200 font-medium text-zinc-600"
+      className="flex shrink-0 items-center justify-center rounded-full bg-zinc-200 dark:bg-white/10 font-medium text-zinc-600 dark:text-zinc-300"
       style={{ width: size, height: size, fontSize: Math.round(size * 0.45) }}
     >
       {initial}

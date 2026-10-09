@@ -9,9 +9,9 @@ import { formatClassDate } from "@/lib/format-date";
 import type { BrowseRow } from "@/lib/collections";
 
 const intensityBadge: Record<string, string> = {
-  beginner: "bg-emerald-100 text-emerald-700",
-  intermediate: "bg-amber-100 text-amber-700",
-  advanced: "bg-red-100 text-red-700",
+  beginner: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  intermediate: "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  advanced: "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300",
 };
 
 export function CollectionCarousel({ row }: { row: BrowseRow }) {
@@ -52,7 +52,7 @@ export function CollectionCarousel({ row }: { row: BrowseRow }) {
               onClick={() => scrollByPage(-1)}
               disabled={!canScrollLeft}
               aria-label={`Scroll ${row.title} backward`}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-zinc-600"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.03] text-zinc-600 dark:text-zinc-300 transition hover:bg-zinc-50 dark:hover:bg-white/[0.06] hover:text-zinc-900 dark:hover:text-white disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-white dark:disabled:hover:bg-white/[0.03] disabled:hover:text-zinc-600 dark:disabled:hover:text-zinc-300"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -61,7 +61,7 @@ export function CollectionCarousel({ row }: { row: BrowseRow }) {
               onClick={() => scrollByPage(1)}
               disabled={!canScrollRight}
               aria-label={`Scroll ${row.title} forward`}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-zinc-600"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.03] text-zinc-600 dark:text-zinc-300 transition hover:bg-zinc-50 dark:hover:bg-white/[0.06] hover:text-zinc-900 dark:hover:text-white disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-white dark:disabled:hover:bg-white/[0.03] disabled:hover:text-zinc-600 dark:disabled:hover:text-zinc-300"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -78,9 +78,9 @@ export function CollectionCarousel({ row }: { row: BrowseRow }) {
           <Link
             key={c.id}
             href={`/classes/${c.id}`}
-            className="group w-64 shrink-0 overflow-hidden rounded-xl border border-zinc-200 bg-white transition hover:shadow-md"
+            className="group w-64 shrink-0 overflow-hidden rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.03] transition hover:shadow-md"
           >
-            <div className="relative aspect-video bg-zinc-100">
+            <div className="relative aspect-video bg-zinc-100 dark:bg-white/[0.06]">
               {c.muxPlaybackId ? (
                 <Image
                   src={`https://image.mux.com/${c.muxPlaybackId}/thumbnail.webp?width=512&height=288&fit_mode=smartcrop`}
@@ -90,7 +90,7 @@ export function CollectionCarousel({ row }: { row: BrowseRow }) {
                   className="object-cover transition group-hover:scale-105"
                 />
               ) : (
-                <div className="flex h-full items-center justify-center text-zinc-400">
+                <div className="flex h-full items-center justify-center text-zinc-400 dark:text-zinc-500">
                   No preview
                 </div>
               )}
@@ -103,17 +103,17 @@ export function CollectionCarousel({ row }: { row: BrowseRow }) {
               <div className="flex items-center justify-between gap-2 text-xs">
                 <div className="flex min-w-0 items-center gap-2 overflow-hidden">
                   {c.disciplineLabel && (
-                    <span className="truncate font-medium text-zinc-500">
+                    <span className="truncate font-medium text-zinc-500 dark:text-zinc-400">
                       {c.disciplineLabel}
                     </span>
                   )}
                   {c.intensityLabel && (
                     <>
-                      {c.disciplineLabel && <span className="text-zinc-300">&middot;</span>}
+                      {c.disciplineLabel && <span className="text-zinc-300 dark:text-zinc-600">&middot;</span>}
                       <span
                         className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
                           (c.intensitySlug && intensityBadge[c.intensitySlug]) ||
-                          "bg-zinc-100 text-zinc-600"
+                          "bg-zinc-100 dark:bg-white/[0.06] text-zinc-600 dark:text-zinc-300"
                         }`}
                       >
                         {c.intensityLabel}
@@ -122,10 +122,10 @@ export function CollectionCarousel({ row }: { row: BrowseRow }) {
                   )}
                 </div>
                 {c.classDate && (
-                  <span className="shrink-0 text-zinc-400">{formatClassDate(c.classDate)}</span>
+                  <span className="shrink-0 text-zinc-400 dark:text-zinc-500">{formatClassDate(c.classDate)}</span>
                 )}
               </div>
-              <h3 className="mt-1.5 font-semibold leading-snug group-hover:text-zinc-600">
+              <h3 className="mt-1.5 font-semibold leading-snug group-hover:text-zinc-600 dark:group-hover:text-zinc-300">
                 {c.title}
               </h3>
               {c.instructorName && (
@@ -135,7 +135,7 @@ export function CollectionCarousel({ row }: { row: BrowseRow }) {
                     src={c.instructorAvatarUrl}
                     size={24}
                   />
-                  <p className="truncate text-sm text-zinc-500">{c.instructorName}</p>
+                  <p className="truncate text-sm text-zinc-500 dark:text-zinc-400">{c.instructorName}</p>
                 </div>
               )}
             </div>

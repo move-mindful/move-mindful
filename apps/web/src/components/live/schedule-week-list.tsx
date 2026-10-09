@@ -95,8 +95,8 @@ export function ScheduleWeekList() {
 
   if (!mounted) {
     return (
-      <div className="rounded-xl border border-zinc-200 bg-white">
-        <div className="h-48 animate-pulse rounded-xl bg-zinc-50" />
+      <div className="rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.03]">
+        <div className="h-48 animate-pulse rounded-xl bg-zinc-50 dark:bg-white/[0.04]" />
       </div>
     );
   }
@@ -104,22 +104,22 @@ export function ScheduleWeekList() {
   const localZoneLabel = DateTime.local().toFormat("ZZZZ");
 
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
-      <div className="border-b border-zinc-200 px-4 py-3">
+    <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.03]">
+      <div className="border-b border-zinc-200 dark:border-white/10 px-4 py-3">
         <h2 className="text-lg font-semibold tracking-tight">This week</h2>
       </div>
 
-      <div className="divide-y divide-zinc-100">
+      <div className="divide-y divide-zinc-100 dark:divide-white/[0.06]">
         {days.map((day) => (
           <div key={day.label} className="px-4 py-3">
             <h3
               className={`text-sm font-semibold ${
-                day.isToday ? "text-zinc-900" : "text-zinc-500"
+                day.isToday ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-500 dark:text-zinc-400"
               }`}
             >
               {day.label}
               {day.isToday && (
-                <span className="ml-2 inline-block rounded-full bg-zinc-900 px-2 py-0.5 text-[10px] font-medium text-white">
+                <span className="ml-2 inline-block rounded-full bg-zinc-900 px-2 py-0.5 text-[10px] font-medium text-white dark:bg-zinc-50 dark:text-zinc-900">
                   Today
                 </span>
               )}
@@ -129,7 +129,7 @@ export function ScheduleWeekList() {
                 <div
                   key={i}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 ${
-                    classColor[c.title] ?? "bg-zinc-100 text-zinc-600"
+                    classColor[c.title] ?? "bg-zinc-100 dark:bg-white/[0.06] text-zinc-600 dark:text-zinc-300"
                   }`}
                 >
                   <span className="text-sm font-medium">{c.time}</span>
@@ -144,7 +144,7 @@ export function ScheduleWeekList() {
         ))}
       </div>
 
-      <p className="border-t border-zinc-200 px-4 py-2 text-xs text-zinc-400">
+      <p className="border-t border-zinc-200 dark:border-white/10 px-4 py-2 text-xs text-zinc-400 dark:text-zinc-500">
         Times in your local timezone ({localZoneLabel}). Same classes every week.
       </p>
     </div>

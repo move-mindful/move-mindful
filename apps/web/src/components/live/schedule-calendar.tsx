@@ -106,8 +106,8 @@ export function ScheduleCalendar() {
 
   if (!mounted) {
     return (
-      <div className="rounded-xl border border-zinc-200 bg-white">
-        <div className="h-[28rem] animate-pulse rounded-xl bg-zinc-50" />
+      <div className="rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.03]">
+        <div className="h-[28rem] animate-pulse rounded-xl bg-zinc-50 dark:bg-white/[0.04]" />
       </div>
     );
   }
@@ -133,9 +133,9 @@ export function ScheduleCalendar() {
   const localZoneLabel = DateTime.local().toFormat("ZZZZ"); // e.g. "EDT"
 
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+    <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.03]">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/10 px-4 py-3">
         <h2 className="text-lg font-semibold tracking-tight">
           {MONTH_LABELS[view.month]} {view.year}
         </h2>
@@ -143,14 +143,14 @@ export function ScheduleCalendar() {
           <button
             onClick={() => shiftMonth(-1)}
             aria-label="Previous month"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-zinc-100"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 dark:text-zinc-400 transition hover:bg-zinc-100 dark:hover:bg-white/10"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
           <button
             onClick={() => shiftMonth(1)}
             aria-label="Next month"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-zinc-100"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 dark:text-zinc-400 transition hover:bg-zinc-100 dark:hover:bg-white/10"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
@@ -158,11 +158,11 @@ export function ScheduleCalendar() {
       </div>
 
       {/* Weekday header */}
-      <div className="grid grid-cols-7 border-b border-zinc-200 bg-zinc-50">
+      <div className="grid grid-cols-7 border-b border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/[0.04]">
         {WEEKDAY_LABELS.map((label) => (
           <div
             key={label}
-            className="px-1 py-2 text-center text-xs font-medium uppercase tracking-wide text-zinc-400"
+            className="px-1 py-2 text-center text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500"
           >
             <span className="hidden sm:inline">{label}</span>
             <span className="sm:hidden">{label[0]}</span>
@@ -177,7 +177,7 @@ export function ScheduleCalendar() {
             return (
               <div
                 key={`blank-${i}`}
-                className="min-h-20 border-b border-r border-zinc-100 bg-zinc-50/40 last:border-r-0 sm:min-h-28"
+                className="min-h-20 border-b border-r border-zinc-100 dark:border-white/[0.06] bg-zinc-50/40 dark:bg-white/[0.02] last:border-r-0 sm:min-h-28"
               />
             );
           }
@@ -188,11 +188,11 @@ export function ScheduleCalendar() {
           return (
             <div
               key={day}
-              className="min-h-20 border-b border-r border-zinc-100 p-1.5 last:border-r-0 sm:min-h-28 sm:p-2"
+              className="min-h-20 border-b border-r border-zinc-100 dark:border-white/[0.06] p-1.5 last:border-r-0 sm:min-h-28 sm:p-2"
             >
               <div
                 className={`mb-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium ${
-                  isToday ? "bg-zinc-900 text-white" : "text-zinc-500"
+                  isToday ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900" : "text-zinc-500 dark:text-zinc-400"
                 }`}
               >
                 {day}
@@ -202,7 +202,7 @@ export function ScheduleCalendar() {
                   <div
                     key={idx}
                     className={`rounded px-1 py-0.5 text-[10px] leading-tight sm:text-xs ${
-                      classColor[e.title] ?? "bg-zinc-100 text-zinc-600"
+                      classColor[e.title] ?? "bg-zinc-100 dark:bg-white/[0.06] text-zinc-600 dark:text-zinc-300"
                     }`}
                     title={`${e.title} · ${e.time}`}
                   >
@@ -216,7 +216,7 @@ export function ScheduleCalendar() {
         })}
       </div>
 
-      <p className="border-t border-zinc-200 px-4 py-2 text-xs text-zinc-400">
+      <p className="border-t border-zinc-200 dark:border-white/10 px-4 py-2 text-xs text-zinc-400 dark:text-zinc-500">
         Times shown in your local timezone ({localZoneLabel}). Same classes repeat
         every week.
       </p>

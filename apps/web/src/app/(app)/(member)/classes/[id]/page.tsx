@@ -7,9 +7,9 @@ import { formatClassDate } from "@/lib/format-date";
 import { notFound } from "next/navigation";
 
 const intensityBadge: Record<string, string> = {
-  beginner: "bg-emerald-100 text-emerald-700",
-  intermediate: "bg-amber-100 text-amber-700",
-  advanced: "bg-red-100 text-red-700",
+  beginner: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  intermediate: "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  advanced: "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300",
 };
 
 interface TagRow {
@@ -97,22 +97,22 @@ export default async function ClassDetailPage({
       <div className="mx-auto max-w-6xl px-6 sm:px-8 py-6">
         <div className="flex flex-wrap items-center gap-3">
           {disciplineLabel && (
-            <span className="text-sm font-medium text-zinc-500">{disciplineLabel}</span>
+            <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">{disciplineLabel}</span>
           )}
           {intensity && (
             <span
               className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                intensityBadge[intensity.slug] ?? "bg-zinc-100 text-zinc-600"
+                intensityBadge[intensity.slug] ?? "bg-zinc-100 dark:bg-white/[0.06] text-zinc-600 dark:text-zinc-300"
               }`}
             >
               {intensity.name}
             </span>
           )}
-          <span className="text-sm text-zinc-400">{videoClass.duration_minutes} min</span>
+          <span className="text-sm text-zinc-400 dark:text-zinc-500">{videoClass.duration_minutes} min</span>
           {videoClass.class_date && (
             <>
-              <span className="text-zinc-300">&middot;</span>
-              <span className="text-sm text-zinc-400">
+              <span className="text-zinc-300 dark:text-zinc-600">&middot;</span>
+              <span className="text-sm text-zinc-400 dark:text-zinc-500">
                 {formatClassDate(videoClass.class_date)}
               </span>
             </>
@@ -123,12 +123,12 @@ export default async function ClassDetailPage({
         {instructorName && (
           <div className="mt-2 flex items-center gap-2">
             <InstructorAvatar name={instructorName} src={instructorAvatarUrl} size={32} />
-            <p className="text-zinc-500">with {instructorName}</p>
+            <p className="text-zinc-500 dark:text-zinc-400">with {instructorName}</p>
           </div>
         )}
 
         {videoClass.description && (
-          <p className="mt-4 leading-relaxed text-zinc-600">{videoClass.description}</p>
+          <p className="mt-4 leading-relaxed text-zinc-600 dark:text-zinc-300">{videoClass.description}</p>
         )}
 
         {otherTags.length > 0 && (
@@ -136,7 +136,7 @@ export default async function ClassDetailPage({
             {otherTags.map((t) => (
               <span
                 key={t.id}
-                className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-600"
+                className="rounded-full bg-zinc-100 dark:bg-white/[0.06] px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:text-zinc-300"
               >
                 {t.name}
               </span>

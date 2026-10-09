@@ -85,7 +85,7 @@ export function HomeProducts({
 
   if (items.length === 0) {
     return (
-      <p className="text-zinc-500">
+      <p className="text-zinc-500 dark:text-zinc-400">
         Your videos will appear here. Nothing to show just yet — check back
         soon.
       </p>
@@ -100,7 +100,7 @@ export function HomeProducts({
             <h2 className="text-2xl font-semibold tracking-tight">
               Your library
             </h2>
-            <span className="text-sm text-zinc-400">
+            <span className="text-sm text-zinc-400 dark:text-zinc-500">
               {owned.length} {owned.length === 1 ? "class" : "classes"}
             </span>
           </div>
@@ -159,8 +159,8 @@ function LibraryCard({ product }: { product: Product }) {
   const image = getProductCardImage(product, true);
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white transition hover:shadow-md">
-      <Link href={href} className="relative block aspect-video bg-zinc-100">
+    <div className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/[0.03] transition hover:shadow-md">
+      <Link href={href} className="relative block aspect-video bg-zinc-100 dark:bg-white/[0.06]">
         {image ? (
           <Image
             src={image}
@@ -171,27 +171,27 @@ function LibraryCard({ product }: { product: Product }) {
             className="object-cover transition group-hover:scale-[1.03]"
           />
         ) : (
-          <span className="absolute inset-0 bg-linear-to-br from-zinc-100 to-zinc-200" />
+          <span className="absolute inset-0 bg-linear-to-br from-zinc-100 dark:from-white/5 to-zinc-200 dark:to-white/10" />
         )}
       </Link>
 
       <div className="flex flex-1 flex-col p-5">
         <h3 className="text-base font-semibold tracking-tight">
-          <Link href={href} className="transition hover:text-zinc-600">
+          <Link href={href} className="transition hover:text-zinc-600 dark:hover:text-zinc-300">
             {product.title}
           </Link>
         </h3>
-        <p className="mt-1.5 text-sm leading-relaxed text-zinc-500 text-pretty">
+        <p className="mt-1.5 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400 text-pretty">
           {product.tagline}
         </p>
 
         {/* mt-auto so the buttons line up across cards whose taglines differ
             in length. */}
         <div className="mt-auto flex items-center justify-between gap-4 pt-4">
-          <span className="text-sm text-zinc-500">{libraryMeta(product)}</span>
+          <span className="text-sm text-zinc-500 dark:text-zinc-400">{libraryMeta(product)}</span>
           <Link
             href={href}
-            className="inline-flex shrink-0 rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background transition-colors hover:bg-zinc-700"
+            className="inline-flex shrink-0 rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background transition-colors hover:bg-zinc-700 dark:hover:bg-zinc-300"
           >
             Watch
           </Link>

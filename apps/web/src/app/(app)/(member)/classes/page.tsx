@@ -10,7 +10,7 @@ export default async function ClassesPage() {
   if (rows.length === 0) {
     return (
       <div className="mx-auto max-w-6xl px-6 sm:px-8 py-12">
-        <p className="text-zinc-500">No classes available yet. Check back soon!</p>
+        <p className="text-zinc-500 dark:text-zinc-400">No classes available yet. Check back soon!</p>
       </div>
     );
   }
