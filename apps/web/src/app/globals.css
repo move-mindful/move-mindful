@@ -3,6 +3,31 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  color-scheme: light;
+}
+
+/* Dark mode: the member's choice under More → Switch appearance (Automatic
+   follows the device), applied as a `dark` class on <html> by the script in
+   app/layout.tsx before the page paints — see lib/appearance.ts.
+
+   It only reaches the signed-in shell (`data-app-shell`, (app)/layout.tsx).
+   The marketing pages, the admin area and the player keep their own looks, and
+   a page inside the shell that does too (a product's sales page) opts out with
+   `data-light-page`, which keeps the whole page — sidebar included — light. */
+@custom-variant dark (&:where(.dark [data-app-shell]:not(:has([data-light-page])), .dark [data-app-shell]:not(:has([data-light-page])) *));
+
+/* Instagram's dark background. */
+html.dark:has([data-app-shell]):not(:has([data-light-page])) {
+  --background: #0c1014;
+  --foreground: #f5f5f5;
+  color-scheme: dark;
+}
+
+/* The phone's More menu rises from the bottom (components/more-menu.tsx). */
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
 }
 
 @theme inline {

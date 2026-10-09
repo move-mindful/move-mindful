@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
+import { APPEARANCE_SCRIPT } from "@/lib/appearance";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -44,11 +45,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // suppressHydrationWarning: APPEARANCE_SCRIPT may add `dark` to the class
+    // list before React hydrates. The light color-scheme default lives in
+    // globals.css, where the signed-in shell's dark mode can override it.
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased light`}
-      style={{ colorScheme: "light" }}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        {/* Light or dark before the first paint — see lib/appearance.ts. */}
+        <script dangerouslySetInnerHTML={{ __html: APPEARANCE_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <ClerkProvider>
           {children}
