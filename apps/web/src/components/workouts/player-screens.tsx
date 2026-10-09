@@ -210,6 +210,31 @@ export function BeginCard({
 }
 
 /**
+ * Frosted controls (backdrop blur) in something that fades them in and out —
+ * BeginClear, Collapse — go dark while it fades: the fading layer cuts their
+ * blur off from the video behind, and iPhones fill it in dark until the fade
+ * ends, then it snaps back. So the blur is off while they're hidden (and
+ * fading out), and coming back it waits out the fade (`waitMs`) then eases in
+ * (`.frost-off`, `.frost-after-fade` in globals.css). The class goes once
+ * that's done, so nothing that appears later has its blur held.
+ */
+function useFrostAfterFade(hidden: boolean, waitMs: number): { className: string; style: CSSProperties } {
+  const [phase, setPhase] = useState<"settled" | "hidden" | "back">(hidden ? "hidden" : "settled");
+  if (hidden && phase !== "hidden") setPhase("hidden");
+  if (!hidden && phase === "hidden") setPhase("back");
+  useEffect(() => {
+    if (phase !== "back") return;
+    // The wait, the ease (250 ms) and a little over.
+    const id = window.setTimeout(() => setPhase("settled"), waitMs + 300);
+    return () => window.clearTimeout(id);
+  }, [phase, waitMs]);
+  return {
+    className: phase === "hidden" ? "frost-off" : phase === "back" ? "frost-after-fade" : "",
+    style: { "--frost-wait": `${waitMs}ms` } as CSSProperties,
+  };
+}
+
+/**
  * Out of sight while an exercise's name is up (BeginCard) — the progress bar
  * and the set's info and controls — so there's just the video under the dim
  * and the name in the middle; back as the dim lifts. It covers the whole
@@ -217,10 +242,12 @@ export function BeginCard({
  * hidden.
  */
 export function BeginClear({ clear, children }: { clear: boolean; children: ReactNode }) {
+  const frost = useFrostAfterFade(clear, 500);
   return (
     <div
       inert={clear}
-      className={`pointer-events-none absolute inset-0 transition-opacity ${clear ? "opacity-0 duration-300" : "opacity-100 duration-500"}`}
+      style={frost.style}
+      className={`pointer-events-none absolute inset-0 transition-opacity ${clear ? "opacity-0 duration-300" : "opacity-100 duration-500"} ${frost.className}`}
     >
       {children}
     </div>
@@ -537,12 +564,14 @@ export function TapZones({
  * tab order and away from screen readers too.
  */
 function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
+  const frost = useFrostAfterFade(!open, 300);
   return (
     <div
       inert={!open}
+      style={frost.style}
       className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
         open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-      }`}
+      } ${frost.className}`}
     >
       <div className="min-h-0 overflow-hidden">{children}</div>
     </div>
