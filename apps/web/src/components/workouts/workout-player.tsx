@@ -1820,7 +1820,7 @@ export function WorkoutPlayer({
           anything wider. */}
       <div
         aria-hidden={state.phase === "preview"}
-        className={`fixed inset-0 flex select-none justify-center bg-[#07090B] text-white ${
+        className={`fixed inset-0 flex select-none justify-center bg-[#0C1014] text-white ${
           state.phase === "preview" ? "pointer-events-none -z-10 opacity-0" : "z-50"
         }`}
         style={{ "--col": "min(100vw, 100dvh * 9 / 16)" } as CSSProperties}
