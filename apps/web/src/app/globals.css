@@ -183,3 +183,11 @@ html:has([data-no-page-scrollbar]) {
 html:has([data-no-page-scrollbar])::-webkit-scrollbar {
   display: none;
 }
+
+/* A page that fits the screen and shouldn't bounce when dragged — Your plan
+   (/workouts) on a phone, via data-no-overscroll. It still scrolls normally
+   if a screen is too short for it. */
+html:has([data-no-overscroll]),
+html:has([data-no-overscroll]) body {
+  overscroll-behavior-y: none;
+}

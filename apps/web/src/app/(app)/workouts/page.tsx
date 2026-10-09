@@ -25,7 +25,9 @@ export default async function WorkoutsPage() {
   const statuses = sessions ? workoutStatuses(workouts, sessions) : null;
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 pt-6 pb-10 sm:px-8 md:pt-10">
+    // data-no-overscroll: on a phone the page fits the screen (the cards size
+    // to it — see WorkoutCard), so no rubber-band bounce either (globals.css).
+    <div data-no-overscroll className="mx-auto w-full max-w-6xl px-6 pt-6 sm:px-8 md:pt-10 md:pb-10">
       {/* On a phone the header already says Your plan. */}
       <h1 className="text-2xl font-bold tracking-tight max-md:sr-only">Your plan</h1>
       {/* On a phone the strip is in the header's pane instead (PhoneHeader). */}

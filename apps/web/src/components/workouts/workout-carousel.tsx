@@ -108,12 +108,19 @@ export function WorkoutCarousel({ workouts }: { workouts: CarouselWorkout[] }) {
   );
 }
 
+/**
+ * On a phone a card is 2:3, but never taller than the screen leaves it — so the
+ * page fits without scrolling. 290px is everything else down the screen: the
+ * header with the week strip (~143), the gap above the card (24), the dots
+ * (24) and the room kept for the tab bar (96, `pb-24` in (app)/layout.tsx).
+ * Keep in step with those.
+ */
 function WorkoutCard({ workout: w }: { workout: CarouselWorkout }) {
   const status = w.status;
   return (
     <Link
       href={`/workouts/${w.id}`}
-      className="group relative block aspect-[2/3] overflow-hidden rounded-3xl bg-zinc-900 text-white"
+      className="group relative block aspect-[2/3] overflow-hidden rounded-3xl bg-zinc-900 text-white max-md:max-h-[calc(100svh-290px)]"
     >
       {w.imageUrl && (
         <Image
