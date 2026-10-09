@@ -42,10 +42,10 @@ export function UserMenu({ isAdmin = false }: { isAdmin?: boolean }) {
                 alt={user.fullName || "Profile"}
                 width={36}
                 height={36}
-                className="shrink-0 rounded-full object-cover"
+                className="shrink-0 rounded-full object-cover ring-2 ring-violet-500"
               />
             ) : (
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-sm font-medium text-zinc-600">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-sm font-medium text-zinc-600 ring-2 ring-violet-500">
                 {(user.firstName?.[0] || user.primaryEmailAddress?.emailAddress[0] || "?").toUpperCase()}
               </div>
             )}

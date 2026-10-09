@@ -19,7 +19,7 @@ export function MemberAvatar({ size }: { size: number }) {
         alt=""
         width={size}
         height={size}
-        className="shrink-0 rounded-full object-cover"
+        className="shrink-0 rounded-full object-cover ring-2 ring-violet-500"
         style={{ width: size, height: size }}
       />
     );
@@ -34,7 +34,7 @@ export function MemberAvatar({ size }: { size: number }) {
   return (
     <span
       aria-hidden="true"
-      className="flex shrink-0 items-center justify-center rounded-full bg-zinc-200 font-semibold text-zinc-600 dark:bg-zinc-700 dark:text-zinc-200"
+      className="flex shrink-0 items-center justify-center rounded-full bg-zinc-200 font-semibold text-zinc-600 ring-2 ring-violet-500 dark:bg-zinc-700 dark:text-zinc-200"
       style={{ width: size, height: size, fontSize: Math.round(size * 0.45) }}
     >
       {initial}
