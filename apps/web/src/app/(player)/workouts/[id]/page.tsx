@@ -10,7 +10,7 @@ import { getLastCompleted, getSavedProgress } from "@/lib/member/sessions-server
 import { WorkoutPlayer } from "@/components/workouts/workout-player";
 
 export const viewport: Viewport = {
-  themeColor: "#14142B",
+  themeColor: "#0C1014",
   colorScheme: "dark",
 };
 

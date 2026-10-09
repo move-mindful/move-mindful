@@ -346,7 +346,7 @@ export function WorkoutPlayer({
   }, [begun]);
 
   // On a phone, the bar around the notch goes black while the player is up,
-  // and back to purple on the workout preview. iOS colours it from the page's
+  // and back to the dark of the workout preview. iOS colours it from the page's
   // theme-color in some setups and from the page's background in others (the
   // home-screen app, it seems: the theme-color alone didn't do it), so both go
   // black — the background by `data-player-up` on <html> (globals.css). The

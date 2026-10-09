@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { groupLabels, setStepFor, WARMUP_CUE, type WorkoutStep } from "@move-mindful/core";
 import { amountLabel, clock, type PlayerWorkout } from "@/lib/workouts/player";
 import { ACCENT } from "./progress-bar";
@@ -33,6 +34,7 @@ export function WorkoutRows({
   position,
   onJump,
   warmupOff = false,
+  violet = false,
   spotlight,
 }: {
   workout: PlayerWorkout;
@@ -41,6 +43,12 @@ export function WorkoutRows({
   onJump?: (step: number) => void;
   /** On the preview: the member has switched the warm-up off. */
   warmupOff?: boolean;
+  /**
+   * The preview's look: the profile ring's violet in place of the player's
+   * lavender (a lighter one for what's under way, so it reads on the dark
+   * page) and green.
+   */
+  violet?: boolean;
   /**
    * The workout overview (after the intro): nothing's done or under way yet;
    * instead the exercise on screen is lit — every row of it. With `onPick`
@@ -85,7 +93,11 @@ export function WorkoutRows({
     position?.complete || (cur !== null && index < cur) ? "done" : index === cur ? "now" : "todo";
 
   return (
-    <div role="list" className="flex flex-col gap-1.5">
+    <div
+      role="list"
+      className="flex flex-col gap-1.5"
+      style={{ "--rows-accent": violet ? "var(--color-violet-400, #A684FF)" : ACCENT } as CSSProperties}
+    >
       {workout.warmup && (
         <div role="listitem">
           {position ? (
@@ -114,7 +126,11 @@ export function WorkoutRows({
                   Skipped
                 </span>
               ) : (
-                <span className="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-[#34D399] text-[#14142B]">
+                <span
+                  className={`flex size-[22px] shrink-0 items-center justify-center rounded-full ${
+                    violet ? "bg-violet-500 text-white" : "bg-[#34D399] text-[#14142B]"
+                  }`}
+                >
                   <Check size={13} width={3} />
                   <span className="sr-only">Included</span>
                 </span>
@@ -155,7 +171,7 @@ export function WorkoutRows({
                   : {})}
                 data-spotlit={(spotlight && status === "now") || undefined}
                 className={`flex w-full items-center gap-3 rounded-2xl border-[1.5px] px-2.5 py-2 text-left ${
-                  status === "now" ? "border-[#A99CFF]/60 bg-[#A99CFF]/[0.14]" : "border-transparent"
+                  status === "now" ? "border-(--rows-accent)/60 bg-(--rows-accent)/[0.14]" : "border-transparent"
                 }`}
               >
                 <Circle status={status} />
@@ -163,7 +179,7 @@ export function WorkoutRows({
                   <span className={`text-base font-semibold ${status === "done" ? "text-white/60" : ""}`}>{ex?.name}</span>
                   <span className="text-[13px] text-white/70">{b.sets > 1 ? `${b.sets} sets × ${amount}` : amount}</span>
                   {status === "now" && curSet?.kind === "set" && b.sets > 1 && (
-                    <span className="text-[13px] font-semibold text-[#A99CFF]">
+                    <span className="text-[13px] font-semibold text-(--rows-accent)">
                       Now · Set {curSet.round} of {b.sets}
                     </span>
                   )}
@@ -206,7 +222,7 @@ export function WorkoutRows({
                   : {})}
                 data-spotlit={(spotlight && status === "now") || undefined}
                 className={`flex w-full flex-col gap-1.5 rounded-2xl border-[1.5px] px-2.5 py-2 text-left ${
-                  status === "now" ? "border-[#A99CFF]/60 bg-[#A99CFF]/[0.14]" : spotlight?.listWarmup ? "border-white/[0.12]" : "border-transparent"
+                  status === "now" ? "border-(--rows-accent)/60 bg-(--rows-accent)/[0.14]" : spotlight?.listWarmup ? "border-white/[0.12]" : "border-transparent"
                 }`}
               >
                 <span className="flex w-full items-center gap-3">
@@ -239,7 +255,7 @@ export function WorkoutRows({
             key={i}
             role="listitem"
             className={`flex flex-col gap-1 rounded-2xl border p-2.5 ${
-              status === "now" ? "border-[#A99CFF]/35 bg-white/5" : "border-white/[0.12] bg-white/[0.03]"
+              status === "now" ? "border-(--rows-accent)/35 bg-white/5" : "border-white/[0.12] bg-white/[0.03]"
             }`}
           >
             <div className="flex items-center gap-3 px-0.5 pb-1.5 pt-0.5">
@@ -263,7 +279,7 @@ export function WorkoutRows({
                     ))}
                   </span>
                   {(status === "done" || round !== null) && (
-                    <span className={`text-xs font-semibold ${round !== null ? "text-[#A99CFF]" : "text-white/60"}`}>
+                    <span className={`text-xs font-semibold ${round !== null ? "text-(--rows-accent)" : "text-white/60"}`}>
                       {round !== null ? `Round ${round} of ${b.rounds}` : "Done"}
                     </span>
                   )}
@@ -286,17 +302,21 @@ export function WorkoutRows({
                     : {})}
                   data-spotlit={(spotlight && now) || undefined}
                   className={`flex w-full items-center gap-3 rounded-xl border-[1.5px] px-2 py-1.5 text-left ${
-                    now ? "border-[#A99CFF]/60 bg-[#A99CFF]/[0.14]" : "border-transparent"
+                    now ? "border-(--rows-accent)/60 bg-(--rows-accent)/[0.14]" : "border-transparent"
                   }`}
                 >
-                  <span className="flex size-[26px] shrink-0 items-center justify-center rounded-[7px] bg-white/[0.12] text-[13px] font-bold">
+                  <span
+                    className={`flex size-[26px] shrink-0 items-center justify-center rounded-[7px] text-[13px] font-bold ${
+                      violet ? "bg-white/10 text-violet-400" : "bg-white/[0.12]"
+                    }`}
+                  >
                     {String.fromCharCode(65 + k)}
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col gap-px">
                     <span className={`text-[15px] font-semibold ${status === "done" ? "text-white/60" : ""}`}>{ex?.name}</span>
                     <span className="text-[13px] text-white/70">{amountLabel(m.measure, m.amount, ex?.sided)}</span>
                   </span>
-                  {now && !spotlight && <span className="shrink-0 text-xs font-bold text-[#A99CFF]">Now</span>}
+                  {now && !spotlight && <span className="shrink-0 text-xs font-bold text-(--rows-accent)">Now</span>}
                 </Tag>
               );
             })}
@@ -344,7 +364,7 @@ function RowText({ name, detail, dim = false }: { name: string; detail: string; 
 }
 
 function Pip({ status, radius }: { status: Status; radius: string }) {
-  const bg = status === "done" ? "#ffffff" : status === "now" ? ACCENT : "rgba(255,255,255,0.24)";
+  const bg = status === "done" ? "#ffffff" : status === "now" ? "var(--rows-accent)" : "rgba(255,255,255,0.24)";
   return <span className="size-2" style={{ background: bg, borderRadius: radius }} />;
 }
 
@@ -360,7 +380,7 @@ function Circle({ status, icon }: { status: Status; icon?: "loop" | "sun" | "moo
   }
   if (status === "now") {
     return (
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#A99CFF] text-[#14142B]">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-(--rows-accent) text-[#14142B]">
         {Icon ? <Icon /> : <span className="size-2.5 rounded-full bg-[#14142B]" />}
       </span>
     );

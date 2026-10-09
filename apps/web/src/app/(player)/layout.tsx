@@ -9,7 +9,7 @@ export default function PlayerLayout({ children }: { children: React.ReactNode }
   // `data-dark-page` darkens the whole page behind it (see globals.css), which
   // is what iOS Safari colours its status-bar area from.
   return (
-    <div data-dark-page className={`${outfit.className} flex flex-1 flex-col bg-[#14142B] text-white`}>
+    <div data-dark-page className={`${outfit.className} flex flex-1 flex-col bg-[#0C1014] text-white`}>
       {children}
     </div>
   );

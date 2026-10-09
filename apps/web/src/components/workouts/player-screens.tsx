@@ -2239,11 +2239,14 @@ export function Switch({
   onChange,
   label,
   disabled = false,
+  onClass = "bg-[#A99CFF]",
 }: {
   on: boolean;
   onChange: (on: boolean) => void;
   label: string;
   disabled?: boolean;
+  /** Its colour when on: the player's lavender, or the preview's violet. */
+  onClass?: string;
 }) {
   return (
     <button
@@ -2253,7 +2256,7 @@ export function Switch({
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!on)}
-      className={`relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200 disabled:cursor-not-allowed ${on ? "bg-[#A99CFF]" : "bg-white/20"}`}
+      className={`relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200 disabled:cursor-not-allowed ${on ? onClass : "bg-white/20"}`}
     >
       <span
         className={`absolute left-0.5 top-0.5 size-[27px] rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.3)] transition-transform duration-200 ${

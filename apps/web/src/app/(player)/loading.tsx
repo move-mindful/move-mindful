@@ -5,7 +5,7 @@
  */
 export default function Loading() {
   return (
-    <div className="min-h-dvh animate-pulse bg-[#1F1F3E]" role="status" aria-label="Loading">
+    <div className="min-h-dvh animate-pulse bg-[#0C1014]" role="status" aria-label="Loading">
       <div className="mx-auto max-w-[560px] theater:max-w-none">
         <div className="h-[330px] bg-white/[0.06] theater:fixed theater:inset-y-0 theater:left-0 theater:h-auto theater:w-1/2" />
         <div className="-mt-12 flex flex-col gap-3 px-5 theater:ml-[50%] theater:mt-0 theater:px-20 theater:pt-[88px]">

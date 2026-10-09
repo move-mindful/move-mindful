@@ -64,17 +64,18 @@ export function WorkoutPreview({
   );
 
   return (
-    // The page is a step lighter than the player's ink (#14142B), which the
-    // pinned Begin bar keeps so it matches Safari's toolbar and reads as its
-    // own panel over the list.
+    // The site's dark-mode background (#0C1014, globals.css), with the profile
+    // photo's ring violet (violet-500) as the accent — the design canvas's
+    // "Dark mode · violet accent" row (Oct 2026). The player keeps its own
+    // ink and lavender for now.
     // data-no-page-scrollbar: the page scrolls without showing a scroll bar (globals.css).
-    <div data-no-page-scrollbar className="relative min-h-dvh bg-[#1F1F3E] text-white">
+    <div data-no-page-scrollbar className="relative min-h-dvh bg-[#0C1014] text-white">
       {/* Back sits at the top of the page and scrolls away with it (above the
           pinned cover); on desktop it stays put over the fixed left half. */}
       <Link
         href={backHref}
         aria-label="Back"
-        className="absolute left-4 top-5 z-20 theater:fixed flex size-11 items-center justify-center rounded-full bg-[#0E0E20]/50 backdrop-blur-md theater:left-12 theater:top-8 theater:w-auto theater:gap-1 theater:pl-3 theater:pr-[18px]"
+        className="absolute left-4 top-5 z-20 theater:fixed flex size-11 items-center justify-center rounded-full bg-[#0C1014]/50 backdrop-blur-md theater:left-12 theater:top-8 theater:w-auto theater:gap-1 theater:pl-3 theater:pr-[18px]"
       >
         <ChevronLeft />
         <span className="hidden text-[15px] font-semibold theater:inline">Back</span>
@@ -88,13 +89,13 @@ export function WorkoutPreview({
               travels with the content below, so it stays soft as it scrolls). */}
           <div
             className="absolute inset-0 theater:hidden"
-            style={{ background: "linear-gradient(180deg, rgba(31,31,62,0.25) 0%, rgba(31,31,62,0) 22%)" }}
+            style={{ background: "linear-gradient(180deg, rgba(12,16,20,0.25) 0%, rgba(12,16,20,0) 22%)" }}
           />
           <div
             className="absolute inset-0 hidden theater:block"
             style={{
               background:
-                "linear-gradient(180deg, rgba(31,31,62,0.45) 0%, rgba(31,31,62,0) 16%, rgba(31,31,62,0.2) 34%, rgba(31,31,62,0.86) 56%, #1F1F3E 72%), linear-gradient(90deg, rgba(31,31,62,0) 72%, #1F1F3E 100%)",
+                "linear-gradient(180deg, rgba(12,16,20,0.45) 0%, rgba(12,16,20,0) 16%, rgba(12,16,20,0.2) 34%, rgba(12,16,20,0.86) 56%, #0C1014 72%), linear-gradient(90deg, rgba(12,16,20,0) 72%, #0C1014 100%)",
             }}
           />
 
@@ -111,20 +112,20 @@ export function WorkoutPreview({
             keeps its soft fade rather than meeting a hard edge. */}
         <div
           className="relative z-10 -mt-12 flex flex-col gap-6 px-5 theater:ml-[50%] theater:mt-0 theater:min-h-dvh theater:px-20 theater:pb-16 theater:pt-[88px]"
-          style={{ background: "linear-gradient(180deg, rgba(31,31,62,0.73) 0px, #1F1F3E 48px)" }}
+          style={{ background: "linear-gradient(180deg, rgba(12,16,20,0.73) 0px, #0C1014 48px)" }}
         >
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 -top-[190px] h-[190px] theater:hidden"
             style={{
-              background: "linear-gradient(180deg, rgba(31,31,62,0) 0%, rgba(31,31,62,0.25) 56%, rgba(31,31,62,0.73) 100%)",
+              background: "linear-gradient(180deg, rgba(12,16,20,0) 0%, rgba(12,16,20,0.25) 56%, rgba(12,16,20,0.73) 100%)",
             }}
           />
           <div className="flex flex-col gap-6 theater:hidden">
             <Details workout={workout} level={level} pills={pills} totalSeconds={totalSeconds} exerciseCount={exerciseCount} doneAt={doneAt} />
           </div>
           <section className="flex flex-col gap-2.5 theater:gap-3.5">
-            <h2 className="text-[13px] font-bold uppercase tracking-[0.12em] text-white/65">The workout</h2>
+            <h2 className="text-[13px] font-bold uppercase tracking-[0.12em] text-white/60">The workout</h2>
             {/* With saved progress, what's done is checked off. */}
             <WorkoutRows
               workout={workout}
@@ -133,17 +134,18 @@ export function WorkoutPreview({
                 resume ? { step: resume.step, complete: false, warmup: resume.warmedUp ? "done" : "skipped" } : null
               }
               warmupOff={!warmup}
+              violet
             />
           </section>
         </div>
       </div>
 
-      {/* Begin, pinned to the bottom on phones. The page's own colour, so it runs
-          into Safari's toolbar (which takes its tint from the page), with a
-          hairline edge so the list visibly slides under it.
-          Its background also carries on below it, behind a floating Safari
-          toolbar, so nothing scrolls into view underneath. */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-white/10 bg-[#14142B] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-40 after:bg-[#14142B] theater:hidden">
+      {/* Begin, pinned to the bottom on phones: a frosted pane in the page's
+          colour (like the site's phone header), with a hairline edge, so the
+          list visibly slides under it. Its background also carries on below
+          it, solid, behind a floating Safari toolbar, so nothing scrolls into
+          view underneath. */}
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-white/[0.08] bg-[#0C1014]/75 backdrop-blur-xl backdrop-saturate-150 after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-40 after:bg-[#0C1014] theater:hidden">
         <div className="mx-auto max-w-[560px] px-5 pb-[max(20px,calc(env(safe-area-inset-bottom)+8px))] pt-4">{begin}</div>
       </div>
     </div>
@@ -194,7 +196,7 @@ function Details({
       </div>
 
       <div
-        className={`grid gap-2 rounded-[18px] bg-white/[0.07] px-2 py-3.5 theater:flex theater:gap-10 theater:bg-transparent theater:p-0 ${
+        className={`grid gap-2 rounded-[18px] border border-white/[0.06] bg-white/[0.06] px-2 py-3.5 theater:flex theater:gap-10 theater:border-0 theater:bg-transparent theater:p-0 ${
           level ? "grid-cols-3" : "grid-cols-2"
         }`}
       >
@@ -205,16 +207,19 @@ function Details({
 
       {pills.length > 0 && (
         <section className="flex flex-col gap-2.5">
-          <h2 className="text-[13px] font-bold uppercase tracking-[0.12em] text-white/65">You&rsquo;ll need</h2>
+          <h2 className="text-[13px] font-bold uppercase tracking-[0.12em] text-white/60">You&rsquo;ll need</h2>
           <div className="flex flex-wrap gap-2">
             {pills.map((p) => {
               const Icon = EQUIPMENT_ICONS[p.icon];
               return (
                 <span
                   key={p.key}
-                  className="flex h-9 items-center gap-2 rounded-full bg-white/10 pl-3 pr-3.5 text-sm font-medium theater:h-[38px] theater:bg-white/[0.12] theater:pl-[13px] theater:pr-4 theater:text-[15px]"
+                  className="flex h-9 items-center gap-2 rounded-full bg-white/[0.08] pl-3 pr-3.5 text-sm font-medium theater:h-[38px] theater:bg-white/[0.12] theater:pl-[13px] theater:pr-4 theater:text-[15px]"
                 >
-                  <Icon />
+                  {/* A lighter violet than the button's: thin lines on the dark page. */}
+                  <span className="flex text-violet-400">
+                    <Icon />
+                  </span>
                   {p.label}
                 </span>
               );
@@ -230,7 +235,7 @@ function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex flex-col items-center gap-0.5 text-center theater:items-start theater:text-left">
       <span className="text-[22px] font-semibold theater:text-[26px]">{value}</span>
-      <span className="text-[13px] text-white/70 theater:text-sm">{label}</span>
+      <span className="text-[13px] text-white/65 theater:text-sm">{label}</span>
     </div>
   );
 }
@@ -266,11 +271,11 @@ function BeginRow({
         <button
           type="button"
           onClick={onResume}
-          className="flex h-[58px] min-w-0 flex-1 items-center justify-center gap-2.5 whitespace-nowrap rounded-full bg-white px-4 text-[#14142B] theater:max-w-[320px]"
+          className="flex h-[58px] min-w-0 flex-1 items-center justify-center gap-2.5 whitespace-nowrap rounded-full bg-violet-500 px-4 text-white theater:max-w-[320px]"
         >
           <span className="flex flex-col items-center leading-tight">
             <span className="text-[17px] font-semibold">Resume</span>
-            <span className="text-[13px] font-medium text-[#14142B]/60">{resume.percent}% complete</span>
+            <span className="text-[13px] font-medium text-white/75">{resume.percent}% complete</span>
           </span>
           <ArrowRight />
         </button>
@@ -291,7 +296,7 @@ function BeginRow({
       <button
         type="button"
         onClick={() => onBegin(!!workout.warmup && warmup)}
-        className="flex h-[58px] min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-white px-4 text-[17px] font-semibold text-[#14142B] theater:max-w-[320px]"
+        className="flex h-[58px] min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-violet-500 px-4 text-[17px] font-semibold text-white theater:max-w-[320px]"
       >
         Begin workout
         <ArrowRight />
@@ -301,7 +306,7 @@ function BeginRow({
           <span className="text-[15px] font-semibold" aria-hidden="true">
             Warm-up
           </span>
-          <Switch on={warmup} onChange={onWarmup} label="Warm-up" />
+          <Switch on={warmup} onChange={onWarmup} label="Warm-up" onClass="bg-violet-500" />
         </div>
       )}
     </div>

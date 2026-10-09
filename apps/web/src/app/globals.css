@@ -56,7 +56,7 @@ body {
    — as does an overscroll bounce. */
 html:has([data-dark-page]),
 html:has([data-dark-page]) body {
-  background: #14142b;
+  background: #0c1014;
 }
 
 /* While the workout player is up on a phone (`data-player-up`, set by
