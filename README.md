@@ -2,7 +2,7 @@
 
 A video fitness platform: on-demand classes, exercise-by-exercise workouts, livestreaming, and — later — push notifications and community features. Web and iOS are co-equal platforms: the web is the storefront (where purchases happen), the iOS app will be the logged-in experience.
 
-Project notes live in [Move Mindful — Project Notes on Notion](https://app.notion.com/p/3f4d36c27094817f9fa4eebe4ea5900e?pvs=204), with dated entries kept newest first. New notes are saved only there.
+Project notes live in [Move Mindful — Project Notes on Notion](https://app.notion.com/p/3f4d36c27094817f9fa4eebe4ea5900e?pvs=204), grouped by day and kept newest first. New notes are saved only there.
 
 ## Current Status
 
