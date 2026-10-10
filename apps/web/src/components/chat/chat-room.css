@@ -145,10 +145,15 @@
   -webkit-backdrop-filter: blur(24px) saturate(1.5);
   backdrop-filter: blur(24px) saturate(1.5);
 }
-/* One step more specific than Stream's own `padding: 0` on the same element,
-   which otherwise wins or loses on which style sheet happens to load last. */
-.mm-chat .str-chat__message-list .str-chat__message-list-scroll {
-  padding-bottom: var(--mm-foot, 76px);
+/* The room after the last message, as a spacer rather than padding: Stream
+   stretches this element to the list's height (it's a flex item), so padding
+   would land at the foot of the first screenful, not after the newest
+   message, which then ended up under the composer. A spacer is content, so
+   the list always scrolls that far. */
+.mm-chat .str-chat__message-list .str-chat__message-list-scroll::after {
+  content: "";
+  display: block;
+  height: var(--mm-foot, 76px);
 }
 .mm-chat .str-chat__jump-to-latest-message,
 .mm-chat .str-chat__new-message-notification {
