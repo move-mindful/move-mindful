@@ -183,7 +183,8 @@ function useLongPress(onHold: () => void) {
 
 /**
  * The message's reactions as pills with counts, in our set's order; tapping
- * one adds or takes back your own. The last pill opens the six to choose from.
+ * one adds or takes back your own (yours look like the rest, as the add pill
+ * does). The last pill opens the six to choose from.
  */
 function Reactions() {
   const { message, handleReaction } = useMessageContext("Reactions");
@@ -226,11 +227,7 @@ function Reactions() {
           aria-pressed={mine.has(r.type)}
           aria-label={`${r.name}, ${groups[r.type]?.count}`}
           onClick={react(r.type)}
-          className={`flex h-7 items-center gap-1 rounded-full border px-2.5 text-[13px] font-semibold ${
-            mine.has(r.type)
-              ? "border-violet-500/50 bg-violet-500/10 dark:border-violet-400/60 dark:bg-violet-500/20"
-              : "border-black/[0.08] bg-black/[0.04] dark:border-white/10 dark:bg-white/[0.07]"
-          }`}
+          className="flex h-7 items-center gap-1 rounded-full border border-black/[0.08] bg-black/[0.04] px-2.5 text-[13px] font-semibold dark:border-white/10 dark:bg-white/[0.07]"
         >
           <span aria-hidden="true">{r.emoji}</span>
           <span aria-hidden="true">{groups[r.type]?.count}</span>
