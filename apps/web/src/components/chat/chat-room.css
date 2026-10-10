@@ -154,7 +154,9 @@
   -webkit-backdrop-filter: blur(24px) saturate(1.5);
   backdrop-filter: blur(24px) saturate(1.5);
 }
-.mm-chat .str-chat__message-list-scroll {
+/* One step more specific than Stream's own `padding: 0` on the same element,
+   which otherwise wins or loses on which style sheet happens to load last. */
+.mm-chat .str-chat__message-list .str-chat__message-list-scroll {
   padding-top: var(--mm-head);
   padding-bottom: var(--mm-foot, 76px);
 }
@@ -170,7 +172,7 @@
 }
 @media (min-width: 768px) {
   /* The thread's desktop title bar stays in the flow above its list. */
-  .mm-chat .str-chat__thread-container .str-chat__message-list-scroll {
+  .mm-chat .str-chat__thread-container .str-chat__message-list .str-chat__message-list-scroll {
     padding-top: 0;
   }
 }
