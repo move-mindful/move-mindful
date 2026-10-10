@@ -25,7 +25,7 @@ export default async function ChatPage() {
   const trainer = clerkUser?.publicMetadata.trainer === true;
   const user: ChatUser = {
     id: userId,
-    name: clerkUser ? chatName(clerkUser) : "Member",
+    name: clerkUser ? chatName(clerkUser, trainer) : "Member",
     // Clerk makes up a placeholder picture when there's no photo; Stream's initials look better.
     ...(clerkUser?.hasImage ? { image: clerkUser.imageUrl } : {}),
   };

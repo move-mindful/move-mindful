@@ -154,3 +154,14 @@
 .mm-chat .str-chat__new-message-notification {
   inset-block-end: calc(var(--mm-foot, 76px) + 12px);
 }
+
+/* The lists scroll without showing a scroll bar, like every signed-in page
+   (data-no-page-scrollbar, globals.css), and without the space Stream keeps
+   for one. */
+.mm-chat .str-chat__message-list {
+  scrollbar-width: none;
+  scrollbar-gutter: auto;
+}
+.mm-chat .str-chat__message-list::-webkit-scrollbar {
+  display: none;
+}

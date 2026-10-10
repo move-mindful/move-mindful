@@ -23,8 +23,9 @@ import { REACTION_LIST } from "@/components/chat/reactions";
  * layout, in place of Stream's chat bubbles.
  *
  * Trainers — Stream's admin role, which only our server can give (see
- * joinCommunityChat) — get a Trainer badge, and the words of their posts sit
- * in a violet-to-orchid gradient box; their photos and videos don't.
+ * joinCommunityChat) — go by their full name (set there), and the words of
+ * their posts sit in a violet-to-orchid gradient box; their photos and videos
+ * don't. No badge (tried, and dropped — the owner's call).
  *
  * A run of messages from one person shows the avatar and name once, as Slack
  * does. The message's options (react, reply in a thread, copy, edit, delete,
@@ -71,11 +72,6 @@ export function MessageRow() {
         {!continued && (
           <div className="flex items-center gap-2">
             <span className="truncate text-[15px] font-bold">{name}</span>
-            {trainer && (
-              <span className="shrink-0 rounded-md bg-violet-500/15 px-[7px] py-0.5 text-[11px] font-semibold text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">
-                Trainer
-              </span>
-            )}
             {sent && (
               <time dateTime={sent.toISOString()} className="shrink-0 text-[13px] text-zinc-500 dark:text-zinc-400">
                 {sent.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}

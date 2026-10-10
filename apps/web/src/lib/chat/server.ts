@@ -55,10 +55,19 @@ export interface ChatUser {
   image?: string;
 }
 
-/** How the chat names everyone: first name and last initial, no full stop ("Jess M"), never a full surname. */
-export function chatName(user: { firstName: string | null; lastName: string | null; username: string | null }): string {
+/**
+ * How the chat names people: members by first name and last initial, no full
+ * stop ("Jess M"), never a full surname; trainers by their full name, as the
+ * people leading the room.
+ */
+export function chatName(
+  user: { firstName: string | null; lastName: string | null; username: string | null },
+  trainer = false,
+): string {
   const first = user.firstName?.trim();
-  const initial = user.lastName?.trim().charAt(0).toUpperCase();
+  const last = user.lastName?.trim();
+  if (first && trainer && last) return `${first} ${last}`;
+  const initial = last?.charAt(0).toUpperCase();
   if (first) return initial ? `${first} ${initial}` : first;
   return user.username || "Member";
 }

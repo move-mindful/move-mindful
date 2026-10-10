@@ -6,6 +6,7 @@ import {
   Channel,
   Chat,
   LoadingChannel,
+  Message,
   MessageComposer,
   MessageList,
   SimpleAttachmentSelector,
@@ -14,6 +15,7 @@ import {
   WithComponents,
   useCreateChatClient,
   type DateSeparatorProps,
+  type MessageProps,
 } from "stream-chat-react";
 import "stream-chat-react/dist/css/index.css";
 import "./chat-room.css";
@@ -151,8 +153,10 @@ export function ChatRoom({
             AttachmentSelectorInitiationButtonContents: PhotoIcon,
             // A reply stays in its thread: no "Also send to channel" box.
             SendToChannelCheckbox: Nothing,
-            // A thread opens straight onto its replies, without a "1 reply" bar.
+            // A thread opens straight onto its replies, without a "1 reply" bar,
+            // and its first post has no "Today" over it.
             ThreadStart: Nothing,
+            ThreadHead,
           }}
         >
           <Channel channel={channel}>
@@ -199,6 +203,15 @@ function dayLabel(date: Date): string {
   if (days === 0) return "Today";
   if (days === 1) return "Yesterday";
   return date.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+}
+
+/** The post a thread starts from, as Stream draws it but without the day above it. */
+function ThreadHead(props: MessageProps) {
+  return (
+    <div className="str-chat__parent-message-li">
+      <Message initialMessage threadList {...props} />
+    </div>
+  );
 }
 
 function PhotoIcon() {
