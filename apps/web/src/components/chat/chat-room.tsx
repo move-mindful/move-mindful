@@ -3,7 +3,6 @@
 import { useMemo, useSyncExternalStore } from "react";
 import {
   Channel,
-  ChannelHeader,
   Chat,
   MessageComposer,
   MessageList,
@@ -46,8 +45,8 @@ export function ChatRoom({
     <div className="mm-chat h-full">
       <Chat client={client} theme={dark ? "str-chat__theme-dark" : "str-chat__theme-light"}>
         <Channel channel={channel}>
+          {/* No header bar: there's one room, and the site's own header names the page. */}
           <Window>
-            <ChannelHeader />
             <MessageList />
             <MessageComposer />
           </Window>
