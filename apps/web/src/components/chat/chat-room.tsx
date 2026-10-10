@@ -149,6 +149,24 @@ export function ChatRoom({
     };
   }, [client, channel]);
 
+  // No iPhone text selection anywhere in the chat on a touch screen: holding a
+  // message opens our sheet, and the iPhone's own hold — which fires a moment
+  // later on whatever's under the finger by then, often the sheet's backdrop —
+  // would otherwise select the whole page with its Copy / Look Up bar, or win
+  // the race and cancel the sheet. The CSS stops most of it (chat-room.css);
+  // this catches the rest, wherever it starts. Typing stays selectable.
+  useEffect(() => {
+    if (!isTouch()) return;
+    const stop = (e: Event) => {
+      const node = e.target as Node | null;
+      const el = node instanceof Element ? node : node?.parentElement;
+      if (el?.closest("textarea, input, [contenteditable='true']")) return;
+      e.preventDefault();
+    };
+    document.addEventListener("selectstart", stop);
+    return () => document.removeEventListener("selectstart", stop);
+  }, []);
+
   // What the photo button may pick. Composers pick this up whenever it changes.
   useEffect(() => {
     if (!client) return;

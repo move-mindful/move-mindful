@@ -44,7 +44,11 @@ export function MessageRow() {
   // "8:02 AM" in the viewer's own clock; the day separators give the day.
   const sent = message.created_at ? new Date(message.created_at) : null;
   const [sheet, setSheet] = useState(false);
-  const press = useLongPress(() => setSheet(true));
+  const press = useLongPress(() => {
+    // Anything the iPhone managed to select on the way goes, so its Copy bar doesn't sit over the sheet.
+    window.getSelection()?.removeAllRanges();
+    setSheet(true);
+  });
 
   if (isDateSeparatorMessage(message)) return null;
 
@@ -131,8 +135,8 @@ export function MessageRow() {
   );
 }
 
-/** How long a finger has to stay down for the message's sheet, in ms. */
-const HOLD_MS = 450;
+/** How long a finger has to stay down for the message's sheet, in ms — under the iPhone's own hold (~0.5 s), so ours wins. */
+const HOLD_MS = 400;
 
 /**
  * Press and hold, for touch screens: fires once the finger has stayed put for

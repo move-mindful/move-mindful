@@ -109,7 +109,14 @@ export function BottomSheet({
   const transition = dragging ? "none" : `transform ${SETTLE_MS}ms ease-out, opacity ${SETTLE_MS}ms ease-out`;
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={label} className={`fixed inset-0 z-50 ${className}`}>
+    // Nothing on it selectable, and no iPhone callout — a finger still down
+    // from the hold that opened it lands here (MessageSheet).
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={label}
+      className={`fixed inset-0 z-50 select-none [-webkit-touch-callout:none] ${className}`}
+    >
       <button
         type="button"
         aria-label="Close"
