@@ -117,3 +117,8 @@
     user-select: none;
   }
 }
+
+/* No rule between the messages and the composer: it sits on the page colour. */
+.mm-chat .str-chat .str-chat__message-composer-container {
+  border-top: 0;
+}
