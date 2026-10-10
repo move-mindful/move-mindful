@@ -171,8 +171,9 @@ The app signs in to the **same Clerk accounts as the website** — one login, th
   - Flat, Slack-style rows rather than Stream's default bubbles: avatar, bold name and muted time, then plain text, everything left-aligned.
   - @mentions in the accent color.
   - Reaction pills with counts, plus an add-reaction button.
-  - A "1 • View Thread" link with a line running down from the avatar.
+  - A "4 replies · View thread ›" link (with a caret) and a line running down from the avatar into it.
   - **No header bar** (owner's call, 2026-10-09): one room, and the site's own header already says Chat. A group switcher comes back only if there are several groups.
+  - **A back arrow in place of the logo** in the phone header on the chat pages: from a thread back to the room (titled "Thread"), from the room back to the previous page.
   - A round scroll-to-bottom button.
   - Composer: round photo button, pill-shaped input, round send button in the accent color.
   - **Trainers** (the word, not "coach") — our admins, Stream's `admin` role — carry a **Trainer** badge on their messages.
