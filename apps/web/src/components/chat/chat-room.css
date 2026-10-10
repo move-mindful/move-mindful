@@ -130,20 +130,11 @@
   }
 }
 
-/* ---- Frosted header and composer, floating over the messages ----
-   On a phone the header (chat-headers.tsx, 64px) and the composer sit over
-   the list rather than beside it, so messages scroll under their frost. The
-   list's content gets room at each end to start and finish clear of them:
-   --mm-head for the header (none on desktop, which has no header in the
-   room), --mm-foot for the composer — measured as it grows (chat-room.tsx). */
-.mm-chat {
-  --mm-head: 64px;
-}
-@media (min-width: 768px) {
-  .mm-chat {
-    --mm-head: 0px;
-  }
-}
+/* ---- The frosted composer, floating over the messages ----
+   The composer sits over the bottom of the list rather than below it, so
+   messages scroll under its frost; the list's content keeps room at the end
+   (--mm-foot, the composer's height, measured as it grows in chat-room.tsx)
+   to finish clear of it. The header stays solid, above the list. */
 .mm-chat .str-chat__main-panel > .str-chat__message-composer-container,
 .mm-chat .str-chat__thread-container > .str-chat__message-composer-container {
   position: absolute;
@@ -157,23 +148,9 @@
 /* One step more specific than Stream's own `padding: 0` on the same element,
    which otherwise wins or loses on which style sheet happens to load last. */
 .mm-chat .str-chat__message-list .str-chat__message-list-scroll {
-  padding-top: var(--mm-head);
   padding-bottom: var(--mm-foot, 76px);
-}
-.mm-chat .str-chat__date-separator--floating {
-  top: var(--mm-head);
 }
 .mm-chat .str-chat__jump-to-latest-message,
 .mm-chat .str-chat__new-message-notification {
   inset-block-end: calc(var(--mm-foot, 76px) + 12px);
 }
-.mm-chat .str-chat .str-chat__unread-messages-notification {
-  top: calc(var(--mm-head) + 12px);
-}
-@media (min-width: 768px) {
-  /* The thread's desktop title bar stays in the flow above its list. */
-  .mm-chat .str-chat__thread-container .str-chat__message-list .str-chat__message-list-scroll {
-    padding-top: 0;
-  }
-}
-
