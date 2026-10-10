@@ -77,6 +77,12 @@
 .mm-chat .mm-row__trainer-text + .mm-row__reactions {
   margin-top: 14px;
 }
+/* "N replies · View thread" under reaction pills, with room between them.
+   Stream's reset (`.str-chat button { margin: 0 }`, in a layer that outranks
+   Tailwind's) clears a button's mt-* class, so the gap is set here. */
+.mm-chat .mm-row__reactions + .mm-row__thread-link {
+  margin-top: 12px;
+}
 
 .mm-chat .mm-row__attachments .str-chat__attachment-list {
   border-radius: 14px;

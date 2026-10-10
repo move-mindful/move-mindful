@@ -112,7 +112,7 @@ export function MessageRow() {
               <button
                 type="button"
                 onClick={handleOpenThread}
-                className="mt-3 flex h-5 items-center gap-1.5 text-[14px] font-semibold text-violet-700 dark:text-violet-400"
+                className="mm-row__thread-link mt-3 flex h-5 items-center gap-1.5 text-[14px] font-semibold text-violet-700 dark:text-violet-400"
               >
                 {replies === 1 ? "1 reply" : `${replies} replies`}
                 <span className="flex items-center gap-0.5 font-medium text-zinc-500 dark:text-zinc-400">
