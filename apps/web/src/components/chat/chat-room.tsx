@@ -120,6 +120,35 @@ export function ChatRoom({
     };
   }, [client, channel]);
 
+  // The iPhone's keyboard shrinks what's visible but not the page, so the chat
+  // — pinned to the full screen — would keep its composer down behind the
+  // keyboard. On touch screens, size the chat to the visible area instead
+  // (and follow it as Safari pans), so the composer sits just above the
+  // keyboard; a list that was at its latest message stays there.
+  useEffect(() => {
+    const root = rootRef.current;
+    const view = window.visualViewport;
+    if (!root || !view || !isTouch()) return;
+    const fit = () => {
+      const lists = [...root.querySelectorAll<HTMLElement>(".str-chat__message-list")];
+      const atEnd = lists.map((l) => l.scrollHeight - l.scrollTop - l.clientHeight < 48);
+      root.style.height = `${view.height}px`;
+      root.style.transform = view.offsetTop ? `translateY(${view.offsetTop}px)` : "";
+      lists.forEach((l, i) => {
+        if (atEnd[i]) l.scrollTop = l.scrollHeight;
+      });
+    };
+    fit();
+    view.addEventListener("resize", fit);
+    view.addEventListener("scroll", fit);
+    return () => {
+      view.removeEventListener("resize", fit);
+      view.removeEventListener("scroll", fit);
+      root.style.height = "";
+      root.style.transform = "";
+    };
+  }, [client, channel]);
+
   // What the photo button may pick. Composers pick this up whenever it changes.
   useEffect(() => {
     if (!client) return;
@@ -168,7 +197,8 @@ export function ChatRoom({
               <MessageList />
               <MessageComposer />
             </Window>
-            <Thread />
+            {/* On a phone, opening a thread doesn't pop the keyboard up; tap to type. */}
+            <Thread autoFocus={!isTouch()} />
             {/* An open thread is a step in history: swiping back closes it. */}
             <ThreadHistory />
           </Channel>
@@ -225,6 +255,11 @@ function PhotoIcon() {
 
 function Nothing() {
   return null;
+}
+
+/** A phone or tablet: no hover, a finger for a pointer. */
+function isTouch() {
+  return typeof window !== "undefined" && window.matchMedia("(hover: none) and (pointer: coarse)").matches;
 }
 
 function isDark() {
