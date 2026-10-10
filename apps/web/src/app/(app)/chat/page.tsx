@@ -1,3 +1,4 @@
+import type { Viewport } from "next";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { requireSectionUnlocked } from "@/lib/auth/locked-sections";
 import { noteChatSeen } from "@/lib/chat/dot-server";
@@ -13,6 +14,18 @@ import { ChatRoom } from "@/components/chat/chat-room";
  * (their Stream user, name and photo from Clerk, trainer or not); the browser
  * then connects with a token from getChatToken().
  */
+/**
+ * The bar around an iPhone's notch in the chat's background from the first
+ * paint, by the device's light or dark — the chat then holds it to the
+ * appearance chosen on the site (chat-room.tsx).
+ */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0C1014" },
+    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
+  ],
+};
+
 export default async function ChatPage() {
   await requireSectionUnlocked();
   const { userId } = await auth();

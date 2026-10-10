@@ -68,26 +68,28 @@ export function ChatRoom({
     };
   }, []);
 
-  // On a phone, the bar around the notch in the chat's own background rather
-  // than the site's white theme-color (the player does the same). iPhones take
-  // that colour from the theme-color in some setups and the page in others;
-  // this is the theme-color half. Touch screens only: desktop Safari would
-  // tint its tab bar too.
+  // On a phone, the bar around the notch in the chat's own background: the
+  // iPhone colours it from the theme-color. The page declares one to suit the
+  // device's light or dark (page.tsx); this holds it to the appearance chosen
+  // on the site, and keeps holding it — Next.js puts back its own theme-color
+  // whenever it redraws the head (a thread opening changes the address, for
+  // one), which is what turned the bar white. Touch screens only: desktop
+  // Safari would tint its tab bar too.
   useEffect(() => {
     if (!window.matchMedia("(hover: none) and (pointer: coarse)").matches) return;
-    let metas = [...document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')];
-    const added = metas.length === 0;
-    if (added) {
-      const meta = document.createElement("meta");
-      meta.name = "theme-color";
-      document.head.append(meta);
-      metas = [meta];
-    }
-    const before = metas.map((m) => m.content);
-    metas.forEach((m) => (m.content = dark ? "#0C1014" : "#FFFFFF"));
+    const color = dark ? "#0C1014" : "#FFFFFF";
+    const metas = () => [...document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')];
+    const before = metas().map((m) => [m, m.content] as const);
+    const hold = () => {
+      for (const m of metas()) if (m.content !== color) m.content = color;
+    };
+    hold();
+    const watch = new MutationObserver(hold);
+    watch.observe(document.head, { subtree: true, childList: true, attributes: true, attributeFilter: ["content"] });
     return () => {
-      if (added) metas.forEach((m) => m.remove());
-      else metas.forEach((m, i) => (m.content = before[i]));
+      watch.disconnect();
+      // Leaving the chat, Next.js draws the next page's own; put back what it drew here meanwhile.
+      for (const [m, content] of before) if (m.isConnected) m.content = content;
     };
   }, [dark]);
 
