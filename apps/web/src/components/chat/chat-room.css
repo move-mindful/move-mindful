@@ -72,16 +72,12 @@
   color: #fff;
   font-weight: 700;
 }
-/* Reactions straight under the box get more room than under plain text, so
-   the pills don't crowd it. */
-.mm-chat .mm-row__trainer-text + .mm-row__reactions {
-  margin-top: 14px;
-}
-/* "N replies · View thread" under reaction pills, with room between them.
-   Stream's reset (`.str-chat button { margin: 0 }`, in a layer that outranks
-   Tailwind's) clears a button's mt-* class, so the gap is set here. */
-.mm-chat .mm-row__reactions + .mm-row__thread-link {
-  margin-top: 12px;
+/* "N replies · View thread" sits 10px under whatever comes before it, as on
+   the canvas (14px under a trainer's box, whose own margin is bigger). Stream's
+   reset (`.str-chat button { margin: 0 }`, in a layer that outranks Tailwind's)
+   clears a button's mt-* class, so the gap is set here. */
+.mm-chat .mm-row__thread-link {
+  margin-top: 10px;
 }
 
 .mm-chat .mm-row__attachments .str-chat__attachment-list {

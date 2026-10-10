@@ -53,7 +53,7 @@ export function MessageRow() {
   if (isDateSeparatorMessage(message)) return null;
 
   return (
-    <div {...press} className={`mm-row relative flex gap-3 px-4 ${continued ? "pt-0.5 pb-1" : "pt-3 pb-1"}`}>
+    <div {...press} className={`mm-row relative flex gap-3 px-4 ${continued ? "pt-0.5 pb-1" : "pt-3.5 pb-1"}`}>
       {continued ? (
         <span aria-hidden="true" className="w-9 shrink-0" />
       ) : (
@@ -68,7 +68,7 @@ export function MessageRow() {
         // The line from the avatar down into "N replies".
         <span
           aria-hidden="true"
-          className="absolute top-[56px] bottom-[14px] left-[33px] w-[22px] rounded-bl-xl border-b-2 border-l-2 border-zinc-200 dark:border-white/15"
+          className="absolute top-[58px] bottom-[14px] left-[33px] w-[22px] rounded-bl-xl border-b-2 border-l-2 border-zinc-200 dark:border-white/15"
         />
       )}
 
@@ -85,16 +85,16 @@ export function MessageRow() {
         )}
 
         {deleted ? (
-          <p className="mt-0.5 text-[15px] text-zinc-500 italic dark:text-zinc-400">This message was deleted.</p>
+          <p className="mt-1 text-[15px] text-zinc-500 italic dark:text-zinc-400">This message was deleted.</p>
         ) : (
           <>
             {message.text && (
-              <div className={trainer ? "mm-row__trainer-text mt-3 mb-2 w-fit max-w-full" : "mm-row__text mt-0.5"}>
+              <div className={trainer ? "mm-row__trainer-text mt-3 mb-3.5 w-fit max-w-full" : "mm-row__text mt-1"}>
                 <MessageText message={message} renderText={renderText} />
               </div>
             )}
             {messageHasAttachments(message) && (
-              <div className="mm-row__attachments mt-1.5 max-w-[280px]">
+              <div className="mm-row__attachments mt-2.5 max-w-[280px]">
                 <Attachment attachments={message.attachments ?? []} actionHandler={handleAction} />
               </div>
             )}
@@ -112,7 +112,7 @@ export function MessageRow() {
               <button
                 type="button"
                 onClick={handleOpenThread}
-                className="mm-row__thread-link mt-3 flex h-5 items-center gap-1.5 text-[14px] font-semibold text-violet-700 dark:text-violet-400"
+                className="mm-row__thread-link flex h-5 items-center gap-1.5 text-[14px] font-semibold text-violet-700 dark:text-violet-400"
               >
                 {replies === 1 ? "1 reply" : `${replies} replies`}
                 <span className="flex items-center gap-0.5 font-medium text-zinc-500 dark:text-zinc-400">
@@ -218,7 +218,7 @@ function Reactions() {
   };
 
   return (
-    <div ref={ref} className="mm-row__reactions relative mt-1.5 flex flex-wrap gap-1.5">
+    <div ref={ref} className="mm-row__reactions relative mt-2.5 flex flex-wrap gap-1.5">
       {given.map((r) => (
         <button
           key={r.type}
