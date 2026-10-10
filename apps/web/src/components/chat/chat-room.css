@@ -181,3 +181,18 @@
 .mm-chat .str-chat__message-list::-webkit-scrollbar {
   display: none;
 }
+
+/* The jump-to-latest button, in dark: Stream's is the page colour (we set its
+   base to it), so it all but vanished. The raised grey of the site's floating
+   bars (#25292E), a hairline of light round it and a shadow under, as on the
+   Group Chat canvas; the arrow white. Light mode keeps Stream's white one. */
+.mm-chat .str-chat.str-chat__theme-dark .str-chat__jump-to-latest-message {
+  background-color: #25292e;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.16),
+    0 4px 16px rgba(0, 0, 0, 0.5);
+}
+.mm-chat .str-chat.str-chat__theme-dark .str-chat__jump-to-latest-message__button {
+  color: #fff;
+  --str-chat-icon-color: #fff;
+}
