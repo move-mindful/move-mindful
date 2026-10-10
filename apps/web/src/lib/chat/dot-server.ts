@@ -13,8 +13,10 @@ import { COMMUNITY_CHANNEL, streamServer } from "@/lib/chat/server";
  *
  * What it compares, when a page asks:
  *
- * - when a trainer last posted, and when anyone last posted, from Stream's
- *   message.new webhook (app/api/webhooks/stream), one app_settings row each;
+ * - when a trainer last posted, and when anyone last posted — and who — from
+ *   Stream's message.new webhook (app/api/webhooks/stream), one app_settings
+ *   row each. A post of your own lights nothing for you: you were in the
+ *   chat to write it, so you'd seen everything before it;
  * - when this member last looked, `member_preferences.chat_seen_at`
  *   (025_chat_seen.sql), noted as they open and leave /chat;
  * - past 1, the messages themselves, counted from Stream — only asked for when
@@ -35,28 +37,50 @@ export const DOT_AFTER_MAX = 100;
 /** The column isn't there yet (025_chat_seen.sql not run): PostgREST's and Postgres's codes for it. */
 const NOT_MIGRATED = new Set(["PGRST204", "42703"]);
 
+/** A post as the dot keeps it: when, and whose (a Clerk user id). */
+interface Post {
+  at: string;
+  by?: string;
+}
+
 /**
  * Note a post in the room: when the room last moved, and when a trainer last
- * posted if it's theirs. Each only ever moves forward, should events arrive
- * out of order.
+ * posted if it's theirs, with who posted. Each only ever moves forward,
+ * should events arrive out of order.
  */
-export async function recordRoomMessage(at: string, trainer: boolean): Promise<boolean> {
+export async function recordRoomMessage(at: string, trainer: boolean, by?: string): Promise<boolean> {
   if (Number.isNaN(Date.parse(at))) return true;
-  const saved = await Promise.all([moveForward(LAST_MESSAGE, at), trainer ? moveForward(LAST_TRAINER_POST, at) : true]);
+  const post: Post = { at, by };
+  const saved = await Promise.all([moveForward(LAST_MESSAGE, post), trainer ? moveForward(LAST_TRAINER_POST, post) : true]);
   return saved.every(Boolean);
 }
 
-async function moveForward(key: string, at: string): Promise<boolean> {
+async function moveForward(key: string, post: Post): Promise<boolean> {
   const supabase = createAdminClient();
   const { data, error: readError } = await supabase.from("app_settings").select("value").eq("key", key).maybeSingle();
   if (readError) {
     console.error(`[chat-dot] reading ${key}:`, readError);
     return false;
   }
-  if (data && Date.parse(data.value) >= Date.parse(at)) return true;
-  const { error } = await supabase.from("app_settings").upsert({ key, value: at, updated_at: new Date().toISOString() });
+  const last = readPost(data?.value);
+  if (last && Date.parse(last.at) >= Date.parse(post.at)) return true;
+  const { error } = await supabase
+    .from("app_settings")
+    .upsert({ key, value: JSON.stringify(post), updated_at: new Date().toISOString() });
   if (error) console.error(`[chat-dot] saving ${key}:`, error);
   return !error;
+}
+
+/** A saved post — or, from before posts kept who wrote them, just its time. */
+function readPost(value: unknown): Post | null {
+  if (typeof value !== "string") return null;
+  try {
+    const post: unknown = JSON.parse(value);
+    if (post && typeof post === "object" && typeof (post as Post).at === "string") return post as Post;
+  } catch {
+    // A bare timestamp, below.
+  }
+  return Number.isNaN(Date.parse(value)) ? null : { at: value };
 }
 
 /** The member has the chat in front of them: whatever's there now counts as seen. */
@@ -102,13 +126,15 @@ export async function hasChatDot(userId: string): Promise<boolean> {
   if (settings.error || seen.error) return false;
   const value = (key: string) => settings.data.find((row) => row.key === key)?.value as string | undefined;
   const seenAt: string | null = seen.data?.chat_seen_at ?? null;
-  const since = (at: string | undefined) => !!at && (!seenAt || Date.parse(at) > Date.parse(seenAt));
+  // Someone else's post since you last looked.
+  const news = (post: Post | null) =>
+    !!post && post.by !== userId && (!seenAt || Date.parse(post.at) > Date.parse(seenAt));
 
-  if (since(value(LAST_TRAINER_POST))) return true;
-  if (!since(value(LAST_MESSAGE))) return false;
+  if (news(readPost(value(LAST_TRAINER_POST)))) return true;
+  // The latest post being your own covers everything before it too.
+  if (!news(readPost(value(LAST_MESSAGE)))) return false;
   const dotAfter = cleanDotAfter(value(DOT_AFTER)) ?? DOT_AFTER_DEFAULT;
-  // The room's moved on: at 1 that's enough. (Your own posts come while you're
-  // in the chat, and leaving it notes it seen.)
+  // The room's moved on, and not just by you: at 1 that's enough.
   if (dotAfter <= 1) return true;
   return (await countNewMessages(userId, seenAt, dotAfter)) >= dotAfter;
 }

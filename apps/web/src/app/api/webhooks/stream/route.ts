@@ -15,13 +15,13 @@ interface StreamMessageEvent {
   type?: string;
   cid?: string;
   channel_id?: string;
-  user?: { role?: string };
+  user?: { id?: string; role?: string };
   message?: {
     cid?: string;
     created_at?: string;
     parent_id?: string;
     show_in_channel?: boolean;
-    user?: { role?: string };
+    user?: { id?: string; role?: string };
   };
 }
 
@@ -39,6 +39,8 @@ export async function POST(request: Request) {
   // The room: Stream names it in a couple of places, depending on the payload.
   const channelId = event.channel_id ?? event.cid?.split(":")[1] ?? message?.cid?.split(":")[1];
   const role = message?.user?.role ?? event.user?.role;
+  // Stream user ids are Clerk's, so the dot can tell a member their own post isn't news.
+  const by = message?.user?.id ?? event.user?.id;
   // A post in the room itself: not a reply inside a thread, unless it was
   // also sent to the room. Trainers are Stream's admin role.
   const inRoom = !message?.parent_id || message.show_in_channel === true;
@@ -47,7 +49,7 @@ export async function POST(request: Request) {
   }
 
   // A failure answers 500 so Stream retries; noting the same post twice is harmless.
-  return (await recordRoomMessage(message.created_at, role === "admin"))
+  return (await recordRoomMessage(message.created_at, role === "admin", by))
     ? new Response("OK", { status: 200 })
     : new Response("Save failed", { status: 500 });
 }
