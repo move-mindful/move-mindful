@@ -1,11 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { ChevronLeft, X } from "lucide-react";
 import type { ThreadHeaderProps } from "stream-chat-react";
-import { MemberAvatar } from "@/components/member-avatar";
 import { MEMBER_HOME } from "@/lib/routes";
 
 /**
@@ -17,7 +15,7 @@ import { MEMBER_HOME } from "@/lib/routes";
  * one is showing. Desktop keeps the sidebar and needs no header in the room.
  */
 
-/** The room's header, phones only: back, "Chat", the member's photo (Account). */
+/** The room's header, phones only: back and "Chat" (no profile photo, the owner's call). */
 export function RoomHeader() {
   const router = useRouter();
   return (
@@ -58,7 +56,7 @@ export function ThreadHeader({ closeThread }: ThreadHeaderProps) {
   );
 }
 
-/** The phone header's look (components/phone-header.tsx), with a back arrow where its logo goes. */
+/** The phone header's look (components/phone-header.tsx), with a back arrow where its logo goes and no photo. */
 function PhoneBar({
   title,
   back,
@@ -71,16 +69,11 @@ function PhoneBar({
   className?: string;
 }) {
   return (
-    <header className={`flex h-16 shrink-0 items-center justify-between bg-background pr-2.5 pl-1.5 ${className ?? ""}`}>
-      <div className="flex min-w-0 items-center gap-0.5">
-        <button type="button" onClick={back} aria-label={backLabel} className="flex size-11 shrink-0 items-center justify-center">
-          <ChevronLeft size={28} strokeWidth={2.2} aria-hidden="true" />
-        </button>
-        <span className="truncate text-[28px] leading-tight font-bold tracking-tight">{title}</span>
-      </div>
-      <Link href="/account" aria-label="Account" className="flex size-11 shrink-0 items-center justify-center rounded-full">
-        <MemberAvatar size={32} />
-      </Link>
+    <header className={`flex h-16 shrink-0 items-center gap-0.5 bg-background pr-2.5 pl-1.5 ${className ?? ""}`}>
+      <button type="button" onClick={back} aria-label={backLabel} className="flex size-11 shrink-0 items-center justify-center">
+        <ChevronLeft size={28} strokeWidth={2.2} aria-hidden="true" />
+      </button>
+      <span className="truncate text-[28px] leading-tight font-bold tracking-tight">{title}</span>
     </header>
   );
 }

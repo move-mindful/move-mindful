@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import { ChevronRight, SmilePlus } from "lucide-react";
 import {
   Attachment,
@@ -12,6 +12,7 @@ import {
   messageHasAttachments,
   useMessageContext,
 } from "stream-chat-react";
+import { MessageSheet } from "@/components/chat/message-sheet";
 import { REACTION_LIST } from "@/components/chat/reactions";
 
 /**
@@ -26,14 +27,13 @@ import { REACTION_LIST } from "@/components/chat/reactions";
  * in a violet-to-orchid gradient box; their photos and videos don't.
  *
  * A run of messages from one person shows the avatar and name once, as Slack
- * does. The message menu (react, reply in a thread, edit, delete, flag)
- * appears on hover, or when the row is tapped.
+ * does. The message's options (react, reply in a thread, copy, edit, delete,
+ * report): on a phone, hold the message down for a sheet, as in Ladder
+ * (MessageSheet); on desktop, Stream's menu on hover.
  */
 export function MessageRow() {
   const { message, firstOfGroup, groupedByUser, threadList, handleOpenThread, handleAction, handleRetry, renderText } =
     useMessageContext("MessageRow");
-
-  if (isDateSeparatorMessage(message)) return null;
 
   const deleted = isMessageDeleted(message);
   const trainer = message.user?.role === "admin";
@@ -42,10 +42,13 @@ export function MessageRow() {
   const name = message.user?.name || "Member";
   // "8:02 AM" in the viewer's own clock; the day separators give the day.
   const sent = message.created_at ? new Date(message.created_at) : null;
+  const [sheet, setSheet] = useState(false);
+  const press = useLongPress(() => setSheet(true));
+
+  if (isDateSeparatorMessage(message)) return null;
 
   return (
-    // tabIndex -1: a tap focuses the row, which shows its menu on a phone.
-    <div tabIndex={-1} className={`mm-row relative flex gap-3 px-4 outline-none ${continued ? "pt-0.5 pb-1" : "pt-3 pb-1"}`}>
+    <div {...press} className={`mm-row relative flex gap-3 px-4 ${continued ? "pt-0.5 pb-1" : "pt-3 pb-1"}`}>
       {continued ? (
         <span aria-hidden="true" className="w-9 shrink-0" />
       ) : (
@@ -109,7 +112,7 @@ export function MessageRow() {
               <button
                 type="button"
                 onClick={handleOpenThread}
-                className="mt-1.5 flex h-5 items-center gap-1.5 text-[14px] font-semibold text-violet-700 dark:text-violet-400"
+                className="mt-3 flex h-5 items-center gap-1.5 text-[14px] font-semibold text-violet-700 dark:text-violet-400"
               >
                 {replies === 1 ? "1 reply" : `${replies} replies`}
                 <span className="flex items-center gap-0.5 font-medium text-zinc-500 dark:text-zinc-400">
@@ -127,8 +130,55 @@ export function MessageRow() {
           <MessageActions />
         </div>
       )}
+      {sheet && <MessageSheet onClose={() => setSheet(false)} />}
     </div>
   );
+}
+
+/** How long a finger has to stay down for the message's sheet, in ms. */
+const HOLD_MS = 450;
+
+/**
+ * Press and hold, for touch screens: fires once the finger has stayed put for
+ * HOLD_MS. Moving more than a few pixels (a scroll) calls it off, and the tap
+ * that ends a hold is swallowed, so it doesn't also open a photo or a link.
+ */
+function useLongPress(onHold: () => void) {
+  const timer = useRef<number | undefined>(undefined);
+  const start = useRef<{ x: number; y: number } | null>(null);
+  const held = useRef(false);
+  const cancel = () => {
+    window.clearTimeout(timer.current);
+    start.current = null;
+  };
+  return {
+    onPointerDown(e: PointerEvent<HTMLDivElement>) {
+      if (e.pointerType !== "touch") return;
+      held.current = false;
+      start.current = { x: e.clientX, y: e.clientY };
+      timer.current = window.setTimeout(() => {
+        start.current = null;
+        held.current = true;
+        onHold();
+      }, HOLD_MS);
+    },
+    onPointerMove(e: PointerEvent<HTMLDivElement>) {
+      const s = start.current;
+      if (s && Math.hypot(e.clientX - s.x, e.clientY - s.y) > 10) cancel();
+    },
+    onPointerUp: cancel,
+    onPointerCancel: cancel,
+    onClickCapture(e: MouseEvent<HTMLDivElement>) {
+      if (!held.current) return;
+      held.current = false;
+      e.preventDefault();
+      e.stopPropagation();
+    },
+    // Android's own long-press menu, and iOS's text selection, would fight it.
+    onContextMenu(e: MouseEvent<HTMLDivElement>) {
+      if (window.matchMedia("(hover: none)").matches) e.preventDefault();
+    },
+  };
 }
 
 /**

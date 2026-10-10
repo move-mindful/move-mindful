@@ -79,22 +79,41 @@
   overflow: hidden;
 }
 
-/* The message menu: on hover or keyboard focus, or once a tap has focused
-   the row (a phone), and while it's open. */
+/* The message menu (desktop): on hover or keyboard focus, and while it's open,
+   with the row faintly lit so it's clear which message it's for. */
 .mm-chat .mm-row__menu .str-chat__message-options {
   display: none;
   border-radius: 999px;
   background: var(--str-chat__background-core-elevation-2);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
 }
-.mm-chat .mm-row:hover .mm-row__menu .str-chat__message-options,
 .mm-chat .mm-row:focus-within .mm-row__menu .str-chat__message-options,
 .mm-chat .mm-row__menu .str-chat__message-options--active {
   display: flex;
 }
-.mm-chat .mm-row:hover {
-  background: rgba(0, 0, 0, 0.02);
+@media (hover: hover) {
+  .mm-chat .mm-row:hover .mm-row__menu .str-chat__message-options {
+    display: flex;
+  }
+  .mm-chat .mm-row:hover {
+    background: rgba(0, 0, 0, 0.02);
+  }
+  html.dark .mm-chat .mm-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
 }
-html.dark .mm-chat .mm-row:hover {
-  background: rgba(255, 255, 255, 0.03);
+
+/* Phones hold a message down for its sheet instead (message-sheet.tsx): no
+   menu, and nothing lights up, gets selected or pops a callout under the
+   finger. */
+@media (hover: none) {
+  .mm-chat .mm-row__menu {
+    display: none;
+  }
+  .mm-chat .mm-row {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
 }

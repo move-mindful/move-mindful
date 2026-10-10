@@ -5,6 +5,7 @@ import { ImageIcon } from "lucide-react";
 import {
   Channel,
   Chat,
+  LoadingIndicator as StreamSpinner,
   MessageComposer,
   MessageList,
   SimpleAttachmentSelector,
@@ -18,6 +19,7 @@ import "stream-chat-react/dist/css/index.css";
 import "./chat-room.css";
 import { getChatToken, markChatSeen } from "@/app/actions/chat";
 import { RoomHeader, ThreadHeader } from "@/components/chat/chat-headers";
+import { ChatSkeleton } from "@/components/chat/chat-skeleton";
 import { MessageRow } from "@/components/chat/message-row";
 import { REACTIONS } from "@/components/chat/reactions";
 
@@ -64,6 +66,29 @@ export function ChatRoom({
     };
   }, []);
 
+  // On a phone, the bar around the notch in the chat's own background rather
+  // than the site's white theme-color (the player does the same). iPhones take
+  // that colour from the theme-color in some setups and the page in others;
+  // this is the theme-color half. Touch screens only: desktop Safari would
+  // tint its tab bar too.
+  useEffect(() => {
+    if (!window.matchMedia("(hover: none) and (pointer: coarse)").matches) return;
+    let metas = [...document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')];
+    const added = metas.length === 0;
+    if (added) {
+      const meta = document.createElement("meta");
+      meta.name = "theme-color";
+      document.head.append(meta);
+      metas = [meta];
+    }
+    const before = metas.map((m) => m.content);
+    metas.forEach((m) => (m.content = dark ? "#0C1014" : "#FFFFFF"));
+    return () => {
+      if (added) metas.forEach((m) => m.remove());
+      else metas.forEach((m, i) => (m.content = before[i]));
+    };
+  }, [dark]);
+
   // What the photo button may pick. Composers pick this up whenever it changes.
   useEffect(() => {
     if (!client) return;
@@ -74,9 +99,7 @@ export function ChatRoom({
     return () => client.setMessageComposerSetupFunction(null);
   }, [client, trainer]);
 
-  if (!client || !channel) {
-    return <div role="status" aria-label="Loading" className="h-full animate-pulse bg-zinc-50 dark:bg-white/[0.03]" />;
-  }
+  if (!client || !channel) return <ChatSkeleton />;
 
   return (
     <div className="mm-chat h-full">
@@ -84,6 +107,11 @@ export function ChatRoom({
         <WithComponents
           overrides={{
             MessageUI: MessageRow,
+            // While the room loads: the same placeholder as before it connected.
+            // Only for the room itself — Stream reuses this slot for small
+            // spinners (uploads, videos, older messages), so inside the room
+            // it goes back to Stream's own (below).
+            LoadingIndicator: ChatSkeleton,
             ThreadHeader,
             DateSeparator: DaySeparator,
             reactionOptions: REACTIONS,
@@ -95,12 +123,14 @@ export function ChatRoom({
           }}
         >
           <Channel channel={channel}>
-            <Window>
-              <RoomHeader />
-              <MessageList />
-              <MessageComposer />
-            </Window>
-            <Thread />
+            <WithComponents overrides={{ LoadingIndicator: StreamSpinner }}>
+              <Window>
+                <RoomHeader />
+                <MessageList />
+                <MessageComposer />
+              </Window>
+              <Thread />
+            </WithComponents>
           </Channel>
         </WithComponents>
       </Chat>
