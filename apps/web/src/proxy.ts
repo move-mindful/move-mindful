@@ -45,7 +45,7 @@ const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 
 // Sections that are built but not released to members yet — admins only for now.
 // See lib/auth/locked-sections.ts for the authoritative check and the rationale.
-const isLockedSection = createRouteMatcher(["/classes(.*)", "/live(.*)", "/workouts(.*)"]);
+const isLockedSection = createRouteMatcher(["/classes(.*)", "/live(.*)", "/workouts(.*)", "/chat(.*)"]);
 
 // Sections put away for now, admins included — see hideSection() in the same file.
 const isHiddenSection = createRouteMatcher(["/classes(.*)"]);

@@ -1,0 +1,29 @@
+/* Stream's chat (chat-room.tsx) in the site's own colours and font.
+
+   Stream builds every accent — buttons, links, @mentions, the send button,
+   your own messages — from its blue scale, so swapping that scale for
+   Tailwind's violet repaints the lot, in light and dark alike (dark mode
+   reads the same scale the other way up). Scoped under .mm-chat so it outranks
+   Stream's own .str-chat rules whatever order the style sheets load in. */
+.mm-chat .str-chat {
+  --str-chat__font-family:
+    var(--font-geist-sans), system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --str-chat__blue-50: oklch(96.9% 0.016 293.756);
+  --str-chat__blue-100: oklch(94.3% 0.029 294.588);
+  --str-chat__blue-150: oklch(91.9% 0.043 293.4);
+  --str-chat__blue-200: oklch(89.4% 0.057 293.283);
+  --str-chat__blue-300: oklch(81.1% 0.111 293.571);
+  --str-chat__blue-400: oklch(70.2% 0.183 293.541);
+  --str-chat__blue-500: oklch(60.6% 0.25 292.717);
+  --str-chat__blue-600: oklch(54.1% 0.281 293.009);
+  --str-chat__blue-700: oklch(49.1% 0.27 292.581);
+  --str-chat__blue-800: oklch(43.2% 0.232 292.759);
+  --str-chat__blue-900: oklch(38% 0.189 293.745);
+}
+
+/* The site's dark (#0c1014, globals.css) rather than Stream's black, with the
+   message list on the page colour too instead of a step lighter. */
+.mm-chat .str-chat.str-chat__theme-dark {
+  --str-chat__chrome-0: var(--background);
+  --str-chat__background-core-elevation-1: var(--str-chat__chrome-0);
+}

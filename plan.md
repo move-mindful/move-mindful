@@ -407,6 +407,11 @@ Key product rules from design review:
 
 ### Phase 8 — Group chat
 - [x] Evaluate options — chose Stream Chat with a Ladder-style design (see Group Chat above)
+- [x] Admin-only test room at `/chat` (Oct 2026): one room, Stream's own components in the site's violet, a Chat tab between Workout and Studio, tokens from a server action behind the admin check, and `deleteMemberData()` deleting the Stream user
+- [ ] The Ladder-style design (the custom message row and header)
+- [ ] Open to members: decide one room or several and who gets in, then swap the admin checks (the page, `getChatToken()`, `proxy.ts`, the nav) for the membership one
+- [ ] Moderation before it's public — flag, mute and block in the UI (App Store Guideline 1.2), and a moderator badge for the coach
+- [ ] The Expo app (`stream-chat-expo`), signing out of Stream before Clerk
 - [ ] Build when community engagement becomes a priority
 
 ### Phase 9 — Working out now & cheers
