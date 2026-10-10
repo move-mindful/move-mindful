@@ -174,7 +174,7 @@ The app signs in to the **same Clerk accounts as the website** — one login, th
   - A "4 replies · View thread ›" link (with a caret) and a line running down from the avatar into it.
   - **No header bar** (owner's call, 2026-10-09): one room, and the site's own header already says Chat. A group switcher comes back only if there are several groups.
   - **Press and hold a message (phones)** for a sheet, as in Ladder: the six reactions, then Reply in thread, Copy message, Edit / Delete (as Stream allows) and Report — no grey highlight when a message is touched (owner, 2026-10-09). Desktop keeps the hover menu.
-  - **No profile photo** in the chat's headers (owner, 2026-10-09).
+  - **No profile photo** in the chat's headers (owner, 2026-10-09); the back arrow in a round button; the header and the composer frosted, floating over the messages. Stream's own loading skeleton under our header. The trainer box has no glow.
   - **A back arrow in place of the logo** in the phone header on the chat pages: from a thread back to the room (titled "Thread"), from the room back to the previous page.
   - **No tab bar on the chat pages** (phones): the back arrow is the way out, so the composer sits at the bottom of the screen, just above the home indicator. The tab bar — and the trainer-post dot on its Chat icon — stays on every other page. Desktop keeps its sidebar.
   - A round scroll-to-bottom button.

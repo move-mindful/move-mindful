@@ -89,7 +89,7 @@ export function MessageRow() {
         ) : (
           <>
             {message.text && (
-              <div className={trainer ? "mm-row__trainer-text mt-1 w-fit max-w-full" : "mm-row__text mt-0.5"}>
+              <div className={trainer ? "mm-row__trainer-text mt-2 mb-1 w-fit max-w-full" : "mm-row__text mt-0.5"}>
                 <MessageText message={message} renderText={renderText} />
               </div>
             )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { ImageIcon } from "lucide-react";
 import {
   Channel,
@@ -19,7 +19,7 @@ import "stream-chat-react/dist/css/index.css";
 import "./chat-room.css";
 import { getChatToken, markChatSeen } from "@/app/actions/chat";
 import { RoomHeader, ThreadHeader } from "@/components/chat/chat-headers";
-import { ChatSkeleton } from "@/components/chat/chat-skeleton";
+import { ChatSkeleton, RoomLoading } from "@/components/chat/chat-skeleton";
 import { MessageRow } from "@/components/chat/message-row";
 import { REACTIONS } from "@/components/chat/reactions";
 
@@ -89,6 +89,33 @@ export function ChatRoom({
     };
   }, [dark]);
 
+  // The composers float over the lists (chat-room.css), so each panel — the
+  // room, and a thread — gets its composer's height as --mm-foot, for its list
+  // to finish clear of it however tall it grows (more lines, a photo preview).
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const sizes = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const panel = entry.target.parentElement;
+        panel?.style.setProperty("--mm-foot", `${Math.ceil(entry.target.getBoundingClientRect().height)}px`);
+      }
+    });
+    const watch = () =>
+      root
+        .querySelectorAll(":is(.str-chat__main-panel, .str-chat__thread-container) > .str-chat__message-composer-container")
+        .forEach((el) => sizes.observe(el));
+    watch();
+    // A thread's composer arrives when the thread opens.
+    const added = new MutationObserver(watch);
+    added.observe(root, { childList: true, subtree: true });
+    return () => {
+      sizes.disconnect();
+      added.disconnect();
+    };
+  }, [client, channel]);
+
   // What the photo button may pick. Composers pick this up whenever it changes.
   useEffect(() => {
     if (!client) return;
@@ -102,7 +129,7 @@ export function ChatRoom({
   if (!client || !channel) return <ChatSkeleton />;
 
   return (
-    <div className="mm-chat h-full">
+    <div ref={rootRef} className="mm-chat h-full">
       <Chat client={client} theme={dark ? "str-chat__theme-dark" : "str-chat__theme-light"}>
         <WithComponents
           overrides={{
@@ -111,7 +138,7 @@ export function ChatRoom({
             // Only for the room itself — Stream reuses this slot for small
             // spinners (uploads, videos, older messages), so inside the room
             // it goes back to Stream's own (below).
-            LoadingIndicator: ChatSkeleton,
+            LoadingIndicator: RoomLoading,
             ThreadHeader,
             DateSeparator: DaySeparator,
             reactionOptions: REACTIONS,
