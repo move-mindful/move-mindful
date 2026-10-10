@@ -53,6 +53,14 @@ export function pageTitle(pathname: string): string | null {
   return page ? (page.title ?? page.label) : null;
 }
 
+/**
+ * The chat, which on a phone takes the whole screen with its own header and
+ * back arrow — the site's phone header and tab bar step aside there.
+ */
+export function isChatPage(pathname: string) {
+  return pathname === "/chat" || pathname.startsWith("/chat/");
+}
+
 export function isCurrent(item: { href: string; nested?: boolean }, pathname: string) {
   return pathname === item.href || (!!item.nested && pathname.startsWith(`${item.href}/`));
 }

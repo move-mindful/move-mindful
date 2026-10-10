@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { Menu, type LucideIcon } from "lucide-react";
 import { MoreMenu } from "@/components/more-menu";
-import { isCurrent, navItems, type NavItem } from "@/components/nav-items";
+import { isChatPage, isCurrent, navItems, type NavItem } from "@/components/nav-items";
 
 /**
  * The phone navigation: a floating, frosted tab bar along the bottom, in the
@@ -29,6 +29,9 @@ export function TabBar({ admin }: { admin: boolean }) {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [menuOpen]);
+
+  // The chat's back arrow is the way out of it, so it gets the whole screen.
+  if (isChatPage(pathname)) return null;
 
   return (
     <>

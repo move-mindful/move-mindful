@@ -177,7 +177,7 @@ The app signs in to the **same Clerk accounts as the website** — one login, th
   - **No tab bar on the chat pages** (phones): the back arrow is the way out, so the composer sits at the bottom of the screen, just above the home indicator. The tab bar — and the trainer-post dot on its Chat icon — stays on every other page. Desktop keeps its sidebar.
   - A round scroll-to-bottom button.
   - Composer: round photo button, pill-shaped input, round send button in the accent color.
-  - **Trainers** (the word, not "coach") — our admins, Stream's `admin` role — carry a **Trainer** badge on their messages, and **the words of their posts sit in a box with a violet-to-orchid gradient** (`#7A3CF0` → `#B044C8`, white text; both ends dark enough to read) — just the text: their name, photo, videos and photos, reactions and thread link stay as everyone else's.
+  - **Trainers** (the word, not "coach") — people with `trainer: true` in their Clerk public metadata (Ayla), not every admin; given Stream's `admin` role, which nobody can give themselves, while everyone else is a plain Stream user — carry a **Trainer** badge on their messages, and **the words of their posts sit in a box with a violet-to-orchid gradient** (`#7A3CF0` → `#B044C8`, white text; both ends dark enough to read) — just the text: their name, photo, videos and photos, reactions and thread link stay as everyone else's.
   - The site's own colours: dark `#0C1014` and the violet accent (violet-500, violet-400 for text on dark), and light mode too, following the member's appearance setting.
   - Design canvas: [Group Chat](https://claude.ai/artifact/BCudHm3rfDiD6WUVx9FZKS).
 - **Rules (owner, 2026-10-09):**
@@ -417,8 +417,10 @@ Key product rules from design review:
 - [x] Evaluate options — chose Stream Chat with a Ladder-style design (see Group Chat above)
 - [x] Admin-only test room at `/chat` (Oct 2026): one room, Stream's own components in the site's violet, a Chat tab between Workout and Studio, tokens from a server action behind the admin check, and `deleteMemberData()` deleting the Stream user
 - [x] Names as first name + last initial ("Jess M"), and the reaction picker cut to 💪 🔥 🙌 👏 ❤️ 😂 (see Group Chat → Rules)
-- [ ] The Ladder-style design (the custom message row, the Trainer badge) — on the Group Chat canvas
-- [ ] Photos for members, photos and videos for trainers: the composer's file types by role, plus the before-message-send check on our server
+- [x] The Ladder-style design (Oct 2026): our message row, Trainer badge and gradient box, reaction pills + picker, thread link, day separators, the chat's own phone headers with a back arrow, no tab bar on `/chat`, a 720px desktop column with the thread as a side panel
+- [x] Trainers are a separate flag, not every admin: `trainer: true` in Clerk public metadata → Stream's admin role (owner, 2026-10-09)
+- [x] The photo picker by role: images for members, images or video for trainers
+- [ ] The before-message-send check on our server, so a video from a non-trainer is turned away even outside the picker. Videos go through Stream's own uploads (short clips, under its 100 MB limit — owner, 2026-10-09)
 - [ ] The bubble on the Chat tab (and sidebar icon) when a trainer posts: the `message.new` webhook, last-looked time per member, the dot in the nav
 - [ ] Open to members: decide one room or several and who gets in, then swap the admin checks (the page, `getChatToken()`, `proxy.ts`, the nav) for the membership one
 - [ ] Moderation before it's public — flag, mute and block in the UI (App Store Guideline 1.2)

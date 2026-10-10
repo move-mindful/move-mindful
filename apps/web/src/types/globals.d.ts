@@ -9,4 +9,11 @@ declare global {
       role?: "admin";
     };
   }
+
+  // Set by hand in the Clerk dashboard (Users → the person → Metadata → Public).
+  // `trainer: true` marks a trainer in the chat — see joinCommunityChat().
+  interface UserPublicMetadata {
+    role?: "admin";
+    trainer?: boolean;
+  }
 }

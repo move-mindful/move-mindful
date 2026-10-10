@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoMark } from "@/components/logo-mark";
 import { MemberAvatar } from "@/components/member-avatar";
-import { pageTitle } from "@/components/nav-items";
+import { isChatPage, pageTitle } from "@/components/nav-items";
 import { WeekStrip } from "@/components/workouts/week-strip";
 import { MEMBER_HOME } from "@/lib/routes";
 
@@ -23,6 +23,9 @@ import { MEMBER_HOME } from "@/lib/routes";
  */
 export function PhoneHeader() {
   const pathname = usePathname();
+
+  // The chat draws its own, with a back arrow (components/chat/chat-headers.tsx).
+  if (isChatPage(pathname)) return null;
 
   return (
     <header className="sticky top-0 z-30 bg-background/70 backdrop-blur-xl backdrop-saturate-150 md:hidden">

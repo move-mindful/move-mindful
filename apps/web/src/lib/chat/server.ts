@@ -41,9 +41,15 @@ export function chatName(user: { firstName: string | null; lastName: string | nu
  * Create or refresh the viewer's Stream user (name and photo from Clerk) and
  * make sure they're in the room, creating it the first time. Run each time
  * the page loads, so a changed name or photo carries over.
+ *
+ * Trainers (`trainer: true` in their Clerk public metadata — Ayla) get
+ * Stream's admin role and everyone else, admins of the site included, the
+ * plain user role. The role is how the chat tells a trainer's posts apart
+ * (the badge, the gradient box) because nobody can change their own role on
+ * Stream, whereas a custom field on the user they could.
  */
-export async function joinCommunityChat(server: StreamChat, user: ChatUser, admin: boolean): Promise<void> {
-  await server.upsertUser({ ...user, role: admin ? "admin" : "user" });
+export async function joinCommunityChat(server: StreamChat, user: ChatUser, trainer: boolean): Promise<void> {
+  await server.upsertUser({ ...user, role: trainer ? "admin" : "user" });
 
   const channel = server.channel(COMMUNITY_CHANNEL.type, COMMUNITY_CHANNEL.id, {
     name: COMMUNITY_CHANNEL.name,

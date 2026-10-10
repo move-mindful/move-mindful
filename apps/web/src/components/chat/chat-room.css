@@ -27,3 +27,74 @@
   --str-chat__chrome-0: var(--background);
   --str-chat__background-core-elevation-1: var(--str-chat__chrome-0);
 }
+
+/* ---- The Ladder-style rows (message-row.tsx) and the page around them ---- */
+
+/* Desktop: a column beside the sidebar, wider while a thread is open beside it. */
+@media (min-width: 768px) {
+  .mm-chat {
+    max-width: 720px;
+    margin-inline: auto;
+  }
+  .mm-chat:has(.str-chat__thread-container) {
+    max-width: 1120px;
+  }
+  .mm-chat .str-chat__thread-container {
+    flex: 0 0 380px;
+  }
+}
+
+/* 36px avatars, as on the canvas (Stream's medium is 32). */
+.mm-chat .mm-row__avatar.str-chat__avatar {
+  --avatar-size: 36px;
+}
+
+.mm-chat .mm-row .str-chat__message-text {
+  font-size: 15px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.mm-chat .mm-row .str-chat__message-text p {
+  margin: 0;
+}
+
+/* A trainer's words: a violet-to-orchid box, white text — both ends dark
+   enough for it. Their photos and videos sit outside it, as everyone's do. */
+.mm-chat .mm-row__trainer-text {
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #7a3cf0 0%, #b044c8 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 6px 18px rgba(122, 60, 240, 0.25);
+  color: #fff;
+}
+.mm-chat .mm-row__trainer-text .str-chat__message-mention,
+.mm-chat .mm-row__trainer-text a {
+  color: #fff;
+  font-weight: 700;
+}
+
+.mm-chat .mm-row__attachments .str-chat__attachment-list {
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* The message menu: on hover or keyboard focus, or once a tap has focused
+   the row (a phone), and while it's open. */
+.mm-chat .mm-row__menu .str-chat__message-options {
+  display: none;
+  border-radius: 999px;
+  background: var(--str-chat__background-core-elevation-2);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+.mm-chat .mm-row:hover .mm-row__menu .str-chat__message-options,
+.mm-chat .mm-row:focus-within .mm-row__menu .str-chat__message-options,
+.mm-chat .mm-row__menu .str-chat__message-options--active {
+  display: flex;
+}
+.mm-chat .mm-row:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+html.dark .mm-chat .mm-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
