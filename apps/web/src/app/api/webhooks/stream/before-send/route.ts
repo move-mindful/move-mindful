@@ -1,4 +1,3 @@
-import { noteWebhookTrouble } from "@/lib/chat/dot-server";
 import { readStreamWebhook } from "@/lib/chat/server";
 
 /**
@@ -26,8 +25,6 @@ export async function POST(request: Request) {
   const read = await readStreamWebhook(request);
   if (!read.ok) {
     console.error("[stream-before-send]", read.reason);
-    // Only for calls that look like Stream's, so stray traffic leaves no trace.
-    if (request.headers.has("x-signature")) await noteWebhookTrouble(`before-send: ${read.reason}`);
     return new Response(read.status === 500 ? "Not configured" : "Invalid signature", { status: read.status });
   }
 

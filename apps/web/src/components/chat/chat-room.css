@@ -177,19 +177,3 @@
   }
 }
 
-/* ---- Stream's own loading skeleton (chat-skeleton.tsx) ----
-   Our header sits above it, so its header placeholder goes; on the site's
-   background, with its shimmer in the dark set by the appearance class (it
-   can show before Stream's theme has loaded). */
-.mm-chat .str-chat__loading-channel {
-  height: 100%;
-  background: var(--background);
-}
-.mm-chat .str-chat__loading-channel .str-chat__channel-header--loading {
-  display: none;
-}
-html.dark .mm-chat .str-chat__loading-channel {
-  --str-chat__background-core-surface-default: rgba(255, 255, 255, 0.06);
-  --str-chat__skeleton-loading-base: rgba(255, 255, 255, 0);
-  --str-chat__skeleton-loading-highlight: rgba(255, 255, 255, 0.06);
-}

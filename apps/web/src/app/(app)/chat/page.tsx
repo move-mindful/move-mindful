@@ -52,7 +52,7 @@ export default async function ChatPage() {
 function Notice({ children }: { children: React.ReactNode }) {
   return (
     <div>
-      <RoomHeader />
+      <RoomHeader floating={false} />
       <p className="mx-auto max-w-6xl px-6 pt-4 text-zinc-500 sm:px-8 md:pt-10 dark:text-zinc-400">{children}</p>
     </div>
   );

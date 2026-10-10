@@ -18,7 +18,8 @@ import { MEMBER_HOME } from "@/lib/routes";
 /**
  * The room's header, phones only: back and "Chat" (no profile photo, the
  * owner's call). Frosted and floating over the messages, which scroll under
- * it — except over the loading skeleton, where it just sits on top.
+ * it — except over the page's notices (chat isn't set up, couldn't connect),
+ * where it just sits on top.
  */
 export function RoomHeader({ floating = true }: { floating?: boolean }) {
   const router = useRouter();

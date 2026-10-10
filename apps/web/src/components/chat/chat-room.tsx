@@ -5,7 +5,7 @@ import { ImageIcon } from "lucide-react";
 import {
   Channel,
   Chat,
-  LoadingIndicator as StreamSpinner,
+  LoadingChannel,
   MessageComposer,
   MessageList,
   SimpleAttachmentSelector,
@@ -19,7 +19,6 @@ import "stream-chat-react/dist/css/index.css";
 import "./chat-room.css";
 import { getChatToken, markChatSeen } from "@/app/actions/chat";
 import { RoomHeader, ThreadHeader } from "@/components/chat/chat-headers";
-import { ChatSkeleton, RoomLoading } from "@/components/chat/chat-skeleton";
 import { MessageRow } from "@/components/chat/message-row";
 import { REACTIONS } from "@/components/chat/reactions";
 
@@ -126,7 +125,17 @@ export function ChatRoom({
     return () => client.setMessageComposerSetupFunction(null);
   }, [client, trainer]);
 
-  if (!client || !channel) return <ChatSkeleton />;
+  // While it connects: Stream's own loading skeleton, as Stream ships it — the
+  // same one its Channel shows while the room loads, so the two run together.
+  if (!client || !channel) {
+    return (
+      <div className="mm-chat h-full">
+        <div className={`str-chat h-full ${dark ? "str-chat__theme-dark" : "str-chat__theme-light"}`}>
+          <LoadingChannel />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div ref={rootRef} className="mm-chat h-full">
@@ -134,11 +143,6 @@ export function ChatRoom({
         <WithComponents
           overrides={{
             MessageUI: MessageRow,
-            // While the room loads: the same placeholder as before it connected.
-            // Only for the room itself — Stream reuses this slot for small
-            // spinners (uploads, videos, older messages), so inside the room
-            // it goes back to Stream's own (below).
-            LoadingIndicator: RoomLoading,
             ThreadHeader,
             DateSeparator: DaySeparator,
             reactionOptions: REACTIONS,
@@ -152,14 +156,12 @@ export function ChatRoom({
           }}
         >
           <Channel channel={channel}>
-            <WithComponents overrides={{ LoadingIndicator: StreamSpinner }}>
-              <Window>
-                <RoomHeader />
-                <MessageList />
-                <MessageComposer />
-              </Window>
-              <Thread />
-            </WithComponents>
+            <Window>
+              <RoomHeader />
+              <MessageList />
+              <MessageComposer />
+            </Window>
+            <Thread />
           </Channel>
         </WithComponents>
       </Chat>

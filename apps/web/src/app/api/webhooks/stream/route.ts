@@ -1,4 +1,4 @@
-import { noteWebhookTrouble, recordTrainerPost } from "@/lib/chat/dot-server";
+import { recordTrainerPost } from "@/lib/chat/dot-server";
 import { COMMUNITY_CHANNEL, readStreamWebhook } from "@/lib/chat/server";
 
 /**
@@ -28,8 +28,6 @@ export async function POST(request: Request) {
   const read = await readStreamWebhook(request);
   if (!read.ok) {
     console.error("[stream-webhook]", read.reason);
-    // Only for calls that look like Stream's, so stray traffic leaves no trace.
-    if (request.headers.has("x-signature")) await noteWebhookTrouble(`events: ${read.reason}`);
     return new Response(read.status === 500 ? "Not configured" : "Invalid signature", { status: read.status });
   }
 
@@ -44,7 +42,6 @@ export async function POST(request: Request) {
   // they also sent it to the room.
   const inRoom = !message?.parent_id || message.show_in_channel === true;
   if (channelId !== COMMUNITY_CHANNEL.id || role !== "admin" || !inRoom || !message?.created_at) {
-    await noteWebhookTrouble(`events: skipped a message.new (room ${channelId}, role ${role}, in room ${inRoom})`);
     return new Response("Ignored", { status: 200 });
   }
 

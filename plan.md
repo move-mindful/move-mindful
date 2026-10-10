@@ -174,7 +174,7 @@ The app signs in to the **same Clerk accounts as the website** — one login, th
   - A "4 replies · View thread ›" link (with a caret) and a line running down from the avatar into it.
   - **No header bar** (owner's call, 2026-10-09): one room, and the site's own header already says Chat. A group switcher comes back only if there are several groups.
   - **Press and hold a message (phones)** for a sheet, as in Ladder: the six reactions, then Reply in thread, Copy message, Edit / Delete (as Stream allows) and Report — no grey highlight when a message is touched (owner, 2026-10-09). Desktop keeps the hover menu.
-  - **No profile photo** in the chat's headers (owner, 2026-10-09); the back arrow in a round button; the header and the composer frosted, floating over the messages. Stream's own loading skeleton under our header. The trainer box has no glow.
+  - **No profile photo** in the chat's headers (owner, 2026-10-09); the back arrow in a round button; the header and the composer frosted, floating over the messages. While loading, Stream's own skeleton exactly as shipped, nothing of ours on it (owner, 2026-10-09). The trainer box has no glow.
   - **A back arrow in place of the logo** in the phone header on the chat pages: from a thread back to the room (titled "Thread"), from the room back to the previous page.
   - **No tab bar on the chat pages** (phones): the back arrow is the way out, so the composer sits at the bottom of the screen, just above the home indicator. The tab bar — and the trainer-post dot on its Chat icon — stays on every other page. Desktop keeps its sidebar.
   - A round scroll-to-bottom button.
@@ -423,7 +423,7 @@ Key product rules from design review:
 - [x] Trainers are a separate flag, not every admin: `trainer: true` in Clerk public metadata → Stream's admin role (owner, 2026-10-09)
 - [x] The photo picker by role: images for members, images or video for trainers
 - [x] The before-message-send check on our server (`/api/webhooks/stream/before-send`), so a video from a non-trainer is turned away even outside the picker. Stream lets messages through if the check is down or slow, so it backs up the picker rather than replacing it. Videos go through Stream's own uploads (short clips, under its 100 MB limit — owner, 2026-10-09)
-- [x] The dot on the Chat tab (and sidebar icon) when a trainer posts: the `message.new` webhook (`/api/webhooks/stream`), last-looked time per member (`025_chat_seen.sql`), the dot in the nav with a thin ring of the bar's colour (owner, 2026-10-09). Needs the migration run and `scripts/stream-hooks.mjs` run once
+- [x] The dot on the Chat tab (and sidebar icon) when a trainer posts: the `message.new` webhook (`/api/webhooks/stream`), last-looked time per member (`025_chat_seen.sql`), the dot in the nav with a thin ring of the bar's colour (owner, 2026-10-09). Migration run and hooks pointed at the site 2026-10-09; seen working on the owner's phone the same day
 - [ ] Open to members: decide one room or several and who gets in, then swap the admin checks (the page, `getChatToken()`, `proxy.ts`, the nav) for the membership one
 - [ ] Moderation before it's public — flag, mute and block in the UI (App Store Guideline 1.2)
 - [ ] The Expo app (`stream-chat-expo`), signing out of Stream before Clerk
