@@ -104,16 +104,27 @@
 
 /* Phones hold a message down for its sheet instead (message-sheet.tsx): no
    menu, and nothing lights up, gets selected or pops a callout under the
-   finger. */
+   finger — anywhere in the chat, not just on the rows, or a press between
+   them (around a thread link, say) starts the iPhone's own text selection
+   across the whole screen and cancels the hold. Copy message in the sheet
+   stands in for selecting text. The composer stays selectable and editable. */
 @media (hover: none) {
   .mm-chat .mm-row__menu {
     display: none;
   }
-  .mm-chat .mm-row {
+  .mm-chat,
+  .mm-chat * {
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
+  }
+  .mm-chat textarea,
+  .mm-chat input,
+  .mm-chat [contenteditable="true"] {
+    -webkit-touch-callout: default;
+    -webkit-user-select: text;
+    user-select: text;
   }
 }
 
