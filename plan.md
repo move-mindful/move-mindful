@@ -406,6 +406,47 @@ Key product rules from design review:
 - [ ] Music, as in Ladder (iOS app only; the web keeps today's "Keep my music playing"): **a music-app shortcut** — the member picks Spotify, Apple Music, YouTube Music… once in settings (only the ones installed, via `canOpenURL`), and a button on the workout overview and the pause screen opens it. Plain app links, so no Spotify API, approval or account linking; it could later open a Move Mindful playlist. **Our sound keeps going while they're over there** — background audio, plus a session that mixes with other apps' audio, so starting their music doesn't stop ours and ours doesn't stop theirs; unlike Safari's "ambient" mode it ignores the Silent switch, so no "silent mode must be OFF" note. **The workout keeps running too** (as Ladder's does) — time it from the clock, not by counting ticks, so it stays right if iOS suspends the app during silent exercise loops. **Duck their music under the instructor** — lower it during tutorials and the intro, warm-up, cool-down and outro (the clips with sound), full volume for exercises and rests, switching at those boundaries; iOS picks how far it drops. Setting: pause my music / keep it playing / lower it while the instructor talks
 - [ ] Unpaid-user paywall: **US** — app-to-web checkout button (deep-link to RevenueCat Web Billing, return with entitlement unlocked); **non-US fallback** — generic "membership required" state, no link (anti-steering). Verify App Review + legal status before shipping
 
+
+### App Store requirements (iOS) — checklist before submitting
+Written from Apple's App Review Guidelines as they stood in Oct 2026 (two rewrites that year, February and June); **re-check the live guidelines and App Store Connect's upload rules before submitting**. Numbers are the guideline sections.
+
+**The build and App Store Connect**
+- [ ] Apple Developer Program ($99/yr), and enrol in the App Store Small Business Program (15%)
+- [ ] Built with **Xcode 26 / the iOS 26 SDK or later** — required for uploads since April 2026 (the EAS build image to match)
+- [ ] **Privacy manifests:** Expo's and every SDK's (`PrivacyInfo.xcprivacy` — Clerk, RevenueCat, Stream, Mux and the rest) in the build; App Store Connect turns an upload away if a required-reason API isn't declared
+- [ ] **App Privacy ("nutrition") label**, covering what the app *and* its SDKs collect: name and email, purchases, workout sessions and ratings, chat messages and photos, Health data if used, diagnostics
+- [ ] **Age rating questionnaire** (Apple's newer ratings, 13+ / 16+ / 18+): yes to user-generated content and messaging — the chat
+- [ ] Export compliance: HTTPS only, so `ITSAppUsesNonExemptEncryption` = false
+- [ ] **Accurate listing (2.3):** name, description and keywords that match what's in the app; screenshots of the real app — iPhone 6.9", and iPad 13" since the app is universal; no hidden or unfinished features (2.3.1)
+- [ ] Support URL and privacy policy URL on the listing
+- [ ] **Review notes (2.1):** a working demo account with membership access (not an admin), the backend live, and how the chat is moderated and where reports go
+- [ ] EU: trader status under the Digital Services Act if selling there (contact details then show on the listing)
+
+**In the app — account, privacy, purchases**
+- [ ] **Not a repackaged website (4.2):** native screens, as planned — not the site in a web view
+- [ ] **Privacy policy linked inside the app (5.1.1(i))**, e.g. Settings and sign-up. It covers: what's collected and why; the services that get it (Clerk, Supabase, RevenueCat, Stream, Mux, Mailchimp, ManyChat, ElevenLabs/Anthropic if any member data reaches them); retention and how to delete; that other members see your chat posts and when you're working out
+- [ ] **Account deletion inside the app (5.1.1(v))** — through Clerk, which already clears our data and Stream's (`deleteMemberData()`); it doesn't cancel an Apple subscription, so say so and point to iPhone Settings (see "Across phases")
+- [ ] Sign-in only for account features (5.1.1(v)) — fine, the app is account-based
+- [ ] **Sign in with Apple only if a third-party login is added (4.8):** email-only today needs none; adding Google means adding an equal private option (Sign in with Apple)
+- [ ] **In-app purchase for anything unlocked in the app (3.1.1)**, with a **Restore Purchases** button
+- [ ] **Subscription paywall (3.1.2):** what you get, the price, the length and that it renews, how to cancel, the free trial's terms; links to the Terms of Use (EULA) and the privacy policy on the paywall and in the listing; access on all the member's devices
+- [ ] **Bought elsewhere, buyable here (3.1.3(b)):** anything bought on the website that unlocks in the app (the Posture Reset, a web membership) must also be on sale in the app
+- [ ] **Push notifications (4.5.4):** never required for the app to work; asked for in context; marketing pushes only after an explicit opt-in, with an opt-out in settings
+- [ ] **Permissions never required (5.1.2):** clear purpose strings for Photos/Camera (chat photos) and Health; the app still works if they're refused; no tracking (so no App Tracking Transparency prompt) unless that changes
+- [ ] **HealthKit (5.1.3), if used:** health data never for ads or marketing, not stored in iCloud, only accurate data written (no made-up calories); the privacy policy names what's read and written
+- [ ] **No medical claims (1.4.1):** fitness, not medicine; a "check with your doctor before starting an exercise programme" note in onboarding or the terms
+- [ ] **Background audio (2.5.4)** only for what's playing in a workout (tips, announcements), not kept alive otherwise
+- [ ] **Content rights (5.2):** music in classes and workouts licensed for streaming in an app; releases from instructors on camera
+- [ ] **Contact details in the app** — a support email or page (1.2 asks for it too)
+
+**The chat (1.2, user-generated content)** — every item before members can post (Phase 8 → Moderation):
+- [ ] A filter on what's posted (Stream's blocklist / AutoMod)
+- [x] A way to report a post (press and hold → Report)
+- [ ] **Timely responses to reports** — they reach someone (the `/admin` page and an alert) and get handled; Apple's 2026 wording makes removing violating content the developer's responsibility
+- [ ] Blocking abusive users
+- [ ] Published contact information
+- [ ] Terms / community guidelines agreed before posting, with zero tolerance for objectionable content and abusive users (App Review asks for this alongside 1.2)
+- [ ] Live-stream chat (Phase 7), if it happens, gets the same
 ### Phase 6 — Push notifications
 - [ ] Now Playing (lock screen, Dynamic Island) for a workout: the app publishes one entry itself — the workout's title, instructor, cover and progress, with play/pause and skip wired to the player — set at Begin and updated as it goes, and the tips, countdown, chime, videos and music all play without taking it over. (In iPhone Safari the island comes and goes during a workout, as each of those sounds takes its turn and iOS briefly pauses the music when a video with sound starts. Not fixed on the web: there, iPhones are for testing until the app — see the next item.)
 - [ ] iPhone browsers go to the app: once it's out, an iPhone opening the site (the player above all) is sent to the app (a Smart App Banner, or a prompt) rather than using the web player. Laptops and desktops keep the web version for good
@@ -426,7 +467,12 @@ Key product rules from design review:
 - [x] The before-message-send check on our server (`/api/webhooks/stream/before-send`), so a video from a non-trainer is turned away even outside the picker. Stream lets messages through if the check is down or slow, so it backs up the picker rather than replacing it. Videos go through Stream's own uploads (short clips, under its 100 MB limit — owner, 2026-10-09)
 - [x] The dot on the Chat tab (and sidebar icon) when a trainer posts: the `message.new` webhook (`/api/webhooks/stream`), last-looked time per member (`025_chat_seen.sql`), the dot in the nav with a thin ring of the bar's colour (owner, 2026-10-09). Migration run and hooks pointed at the site 2026-10-09; seen working on the owner's phone the same day
 - [ ] Open to members: decide one room or several and who gets in, then swap the admin checks (the page, `getChatToken()`, `proxy.ts`, the nav) for the membership one
-- [ ] Moderation before it's public — flag, mute and block in the UI (App Store Guideline 1.2)
+- [ ] **Moderation, before the chat is open to members** (Apple's 1.2 — see "App Store requirements" under Phase 5). Today a report (press and hold → Report, built) only lands in Stream's moderation review queue on its dashboard: the message stays up and nobody is told.
+  - [ ] **Reports reach someone:** Stream's `message.flagged` event → our webhook (signature checked, like the others) → a **Reported messages** page in `/admin` — the message, who posted it, who reported it and when, with Delete (the message) and Dismiss — and an alert to the owner as each one comes in (email through a service such as Resend; later a push to the iOS app). Someone looks at least daily: Apple asks for "timely responses".
+  - [ ] **Hidden after several reports:** a message reported by, say, three different people is hidden for everyone until it's reviewed (Stream's moderation rules, or our webhook hiding it).
+  - [ ] **Block a person:** "Block" in the press-and-hold sheet; their messages stop showing for the blocker (Stream's user block), with Unblock in settings. Mute too, if wanted.
+  - [ ] **Filter what gets posted:** Stream's blocklist / AutoMod on the room (a profanity list at least), so the worst never appears.
+  - [ ] **Community guidelines** members agree to before their first post — zero tolerance for objectionable content and abusive users — linked from the chat, with how to reach us.
 - [ ] The Expo app (`stream-chat-expo`), signing out of Stream before Clerk
 - [ ] Build when community engagement becomes a priority
 
