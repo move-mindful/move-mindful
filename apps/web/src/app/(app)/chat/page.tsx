@@ -1,7 +1,7 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { isAdmin } from "@/lib/auth/admin";
 import { requireSectionUnlocked } from "@/lib/auth/locked-sections";
-import { COMMUNITY_CHANNEL, joinCommunityChat, streamServer, type ChatUser } from "@/lib/chat/server";
+import { chatName, COMMUNITY_CHANNEL, joinCommunityChat, streamServer, type ChatUser } from "@/lib/chat/server";
 import { ChatRoom } from "@/components/chat/chat-room";
 
 /**
@@ -24,7 +24,7 @@ export default async function ChatPage() {
   const clerkUser = await currentUser();
   const user: ChatUser = {
     id: userId,
-    name: clerkUser?.fullName || clerkUser?.username || "Member",
+    name: clerkUser ? chatName(clerkUser) : "Member",
     // Clerk makes up a placeholder picture when there's no photo; Stream's initials look better.
     ...(clerkUser?.hasImage ? { image: clerkUser.imageUrl } : {}),
   };

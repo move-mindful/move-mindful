@@ -29,6 +29,14 @@ export interface ChatUser {
   image?: string;
 }
 
+/** How the chat names everyone: first name and last initial, no full stop ("Jess M"), never a full surname. */
+export function chatName(user: { firstName: string | null; lastName: string | null; username: string | null }): string {
+  const first = user.firstName?.trim();
+  const initial = user.lastName?.trim().charAt(0).toUpperCase();
+  if (first) return initial ? `${first} ${initial}` : first;
+  return user.username || "Member";
+}
+
 /**
  * Create or refresh the viewer's Stream user (name and photo from Clerk) and
  * make sure they're in the room, creating it the first time. Run each time

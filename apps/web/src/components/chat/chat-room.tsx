@@ -8,7 +8,10 @@ import {
   MessageList,
   Thread,
   Window,
+  WithComponents,
+  emojiToUnicode,
   useCreateChatClient,
+  type ReactionOptions,
 } from "stream-chat-react";
 import "stream-chat-react/dist/css/index.css";
 import "./chat-room.css";
@@ -44,18 +47,41 @@ export function ChatRoom({
   return (
     <div className="mm-chat h-full">
       <Chat client={client} theme={dark ? "str-chat__theme-dark" : "str-chat__theme-light"}>
-        <Channel channel={channel}>
-          {/* No header bar: there's one room, and the site's own header names the page. */}
-          <Window>
-            <MessageList />
-            <MessageComposer />
-          </Window>
-          <Thread />
-        </Channel>
+        <WithComponents overrides={{ reactionOptions: REACTIONS }}>
+          <Channel channel={channel}>
+            {/* No header bar: there's one room, and the site's own header names the page. */}
+            <Window>
+              <MessageList />
+              <MessageComposer />
+            </Window>
+            <Thread />
+          </Channel>
+        </WithComponents>
       </Chat>
     </div>
   );
 }
+
+/**
+ * The only reactions on offer, in this order — a short, encouraging set
+ * rather than Stream's (which includes 😔 and 😮). Each key is the reaction's
+ * type as Stream stores it, so renaming one orphans the reactions already
+ * given with it.
+ */
+const REACTIONS: ReactionOptions = {
+  quick: Object.fromEntries(
+    (
+      [
+        ["strong", "💪", "Flexed biceps"],
+        ["fire", "🔥", "Fire"],
+        ["raised_hands", "🙌", "Raised hands"],
+        ["clap", "👏", "Clapping"],
+        ["love", "❤️", "Heart"],
+        ["haha", "😂", "Joy"],
+      ] as const
+    ).map(([type, emoji, name]) => [type, { Component: () => emoji, name, unicode: emojiToUnicode(emoji) }]),
+  ),
+};
 
 function isDark() {
   return document.documentElement.classList.contains("dark");

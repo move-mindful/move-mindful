@@ -172,11 +172,17 @@ The app signs in to the **same Clerk accounts as the website** — one login, th
   - @mentions in the accent color.
   - Reaction pills with counts, plus an add-reaction button.
   - A "1 • View Thread" link with a line running down from the avatar.
-  - Header: back button, a pill with the group photo, name and a dropdown to switch groups, and a pill with search and pinned messages.
+  - **No header bar** (owner's call, 2026-10-09): one room, and the site's own header already says Chat. A group switcher comes back only if there are several groups.
   - A round scroll-to-bottom button.
   - Composer: round photo button, pill-shaped input, round send button in the accent color.
-  - The coach's messages carry a badge (Stream's moderator role).
-  - Dark, in Move Mindful's own navy (`#14142B`) and lavender (`#A99CFF`) instead of Ladder's black and lime.
+  - **Trainers** (the word, not "coach") — our admins, Stream's `admin` role — carry a **Trainer** badge on their messages.
+  - The site's own colours: dark `#0C1014` and the violet accent (violet-500, violet-400 for text on dark), and light mode too, following the member's appearance setting.
+  - Design canvas: [Group Chat](https://claude.ai/artifact/BCudHm3rfDiD6WUVx9FZKS).
+- **Rules (owner, 2026-10-09):**
+  - **Names are first name and last initial, no full stop** — "Jess M", never a full surname (`chatName()` in `lib/chat/server.ts`; built).
+  - **A short set of reactions** — 💪 🔥 🙌 👏 ❤️ 😂, nothing else in the picker (`REACTIONS` in `components/chat/chat-room.tsx`; built). Only the picker is limited: Stream doesn't restrict reaction types on its side, and emoji typed from the phone's keyboard into a message can't be. Strip unknown reaction types in the before-send check below if that ever matters.
+  - **Members post photos; trainers post photos and videos.** The composer offers members images only (`image/*`) and trainers images and video. The picker alone isn't enough — anyone with a token can call Stream directly — so enforce it on our server too: Stream's before-message-send webhook (verify its signature with the API secret) rejects a message carrying a video from anyone who isn't a trainer. Stream's own upload limits are app-wide, not per role. Check Stream's CDN size limit (100 MB by default) against trainer clips; if they're longer, trainer videos could go through Mux instead and post as a link card.
+  - **A bubble on the Chat tab only when a trainer posts** — not for member messages. Proposed: a Stream `message.new` webhook (signature verified) records when a trainer last posted (`app_settings`); opening `/chat` records when the member last looked (a column on `member_preferences`, so `deleteMemberData()` already clears it); the signed-in layout shows the bubble when the first is newer. No Stream connection on every page. The same dot on the desktop sidebar's Chat icon. Later, the iOS app gets a push for trainer posts.
 - **Build notes:**
   - Our server creates the member's Stream token only after the Clerk session and `getViewerAccess()` checks, and sets channel membership itself.
   - Messages go from the browser straight to Stream — the one exception to "the browser never writes to the database", governed by that token.
@@ -408,9 +414,12 @@ Key product rules from design review:
 ### Phase 8 — Group chat
 - [x] Evaluate options — chose Stream Chat with a Ladder-style design (see Group Chat above)
 - [x] Admin-only test room at `/chat` (Oct 2026): one room, Stream's own components in the site's violet, a Chat tab between Workout and Studio, tokens from a server action behind the admin check, and `deleteMemberData()` deleting the Stream user
-- [ ] The Ladder-style design (the custom message row and header)
+- [x] Names as first name + last initial ("Jess M"), and the reaction picker cut to 💪 🔥 🙌 👏 ❤️ 😂 (see Group Chat → Rules)
+- [ ] The Ladder-style design (the custom message row, the Trainer badge) — on the Group Chat canvas
+- [ ] Photos for members, photos and videos for trainers: the composer's file types by role, plus the before-message-send check on our server
+- [ ] The bubble on the Chat tab (and sidebar icon) when a trainer posts: the `message.new` webhook, last-looked time per member, the dot in the nav
 - [ ] Open to members: decide one room or several and who gets in, then swap the admin checks (the page, `getChatToken()`, `proxy.ts`, the nav) for the membership one
-- [ ] Moderation before it's public — flag, mute and block in the UI (App Store Guideline 1.2), and a moderator badge for the coach
+- [ ] Moderation before it's public — flag, mute and block in the UI (App Store Guideline 1.2)
 - [ ] The Expo app (`stream-chat-expo`), signing out of Stream before Clerk
 - [ ] Build when community engagement becomes a priority
 
