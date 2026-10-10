@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
-import { ImageIcon } from "lucide-react";
+import { ArrowUp, ImageIcon } from "lucide-react";
 import {
   Channel,
   Chat,
@@ -9,6 +9,7 @@ import {
   Message,
   MessageComposer,
   MessageList,
+  SendButton,
   SimpleAttachmentSelector,
   Thread,
   Window,
@@ -16,6 +17,7 @@ import {
   useCreateChatClient,
   type DateSeparatorProps,
   type MessageProps,
+  type SendButtonProps,
 } from "stream-chat-react";
 import "stream-chat-react/dist/css/index.css";
 import "./chat-room.css";
@@ -201,6 +203,7 @@ export function ChatRoom({
             // One tap opens the photo picker, rather than a menu of files, polls and locations.
             AttachmentSelector: SimpleAttachmentSelector,
             AttachmentSelectorInitiationButtonContents: PhotoIcon,
+            SendButton: SendUp,
             // A reply stays in its thread: no "Also send to channel" box.
             SendToChannelCheckbox: Nothing,
             // A thread opens straight onto its replies, without a "1 reply" bar,
@@ -286,6 +289,15 @@ function ThreadHead(props: MessageProps) {
     <div className="str-chat__parent-message-li">
       <Message initialMessage threadList {...props} />
     </div>
+  );
+}
+
+/** Stream's send button with an up arrow, as in iMessage and the Claude app; chat-room.css keeps it violet when there's nothing to send yet, just faded. */
+function SendUp(props: SendButtonProps) {
+  return (
+    <SendButton {...props}>
+      <ArrowUp size={18} strokeWidth={2.6} aria-hidden="true" />
+    </SendButton>
   );
 }
 

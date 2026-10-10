@@ -206,6 +206,17 @@
   display: none;
 }
 
+/* The send button (SendUp): a violet disc with a white up arrow, faded rather
+   than grey while there's nothing to send. */
+.mm-chat .str-chat .str-chat__send-button.str-chat__button--solid,
+.mm-chat .str-chat .str-chat__send-button.str-chat__button--solid:disabled {
+  background-color: var(--str-chat__button-primary-bg);
+  color: var(--str-chat__button-primary-text-on-accent);
+}
+.mm-chat .str-chat .str-chat__send-button.str-chat__button--solid:disabled {
+  opacity: 0.4;
+}
+
 /* The jump-to-latest button, in dark: Stream's is the page colour (we set its
    base to it), so it all but vanished. The raised grey of the site's floating
    bars (#25292E), a hairline of light round it and a shadow under, as on the
