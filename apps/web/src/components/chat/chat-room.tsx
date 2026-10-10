@@ -207,6 +207,9 @@ export function ChatRoom({
             // and its first post has no "Today" over it.
             ThreadStart: Nothing,
             ThreadHead,
+            // Where new messages begin: a quiet "New" line, nothing to dismiss.
+            UnreadMessagesSeparator: NewLine,
+            UnreadMessagesNotification: Nothing,
           }}
         >
           <Channel channel={channel}>
@@ -231,7 +234,10 @@ export function ChatRoom({
  * Scrolled past one, Stream pins the day at the top of the list (`floating`):
  * there it's a small pill, positioned by Stream's own floating class.
  */
-function DaySeparator({ date, floating }: DateSeparatorProps) {
+function DaySeparator({ date, floating, unread }: DateSeparatorProps) {
+  // Stream adds a second day, the same one again, just before the messages
+  // that came in since you last looked; the "New" line (NewLine) marks those.
+  if (unread) return null;
   if (floating) {
     return (
       <div className="str-chat__date-separator--floating pt-2">
@@ -246,6 +252,22 @@ function DaySeparator({ date, floating }: DateSeparatorProps) {
       <span aria-hidden="true" className="h-px flex-1 bg-zinc-200 dark:bg-white/15" />
       {dayLabel(date)}
       <span aria-hidden="true" className="h-px flex-1 bg-zinc-200 dark:bg-white/15" />
+    </div>
+  );
+}
+
+/**
+ * Where the messages that came in since you last looked begin, as in Slack:
+ * a violet hairline either side of "New". In place of Stream's "1 unread ✕",
+ * which stayed until it was dismissed — opening the chat counts it as read,
+ * so the line is simply gone the next time.
+ */
+function NewLine() {
+  return (
+    <div className="flex items-center gap-3 px-4 pt-4 pb-1 text-xs font-semibold text-violet-700 dark:text-violet-400">
+      <span aria-hidden="true" className="h-px flex-1 bg-violet-500/40" />
+      New
+      <span aria-hidden="true" className="h-px flex-1 bg-violet-500/40" />
     </div>
   );
 }
