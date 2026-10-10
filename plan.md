@@ -413,6 +413,7 @@ Written from Apple's App Review Guidelines as they stood in Oct 2026 (two rewrit
 **The build and App Store Connect**
 - [ ] Apple Developer Program ($99/yr), and enrol in the App Store Small Business Program (15%)
 - [ ] Built with **Xcode 26 / the iOS 26 SDK or later** — required for uploads since April 2026 (the EAS build image to match)
+- [ ] **Match Apple's most current design (Liquid Glass as of iOS 26/27)** — the owner's call (2026-10-10). Apple doesn't require it: App Review judges quality, not style, and only Apple's own parts (native tab bars, top bars, alerts, menus, the keyboard) turn glass by themselves when built with the new SDK. Our own screens (tab bar, chat, player, sheets) don't change by themselves, so build them in the current look on purpose, and re-check Apple's Human Interface Guidelines before submitting. Xcode 27 reportedly ignores the `UIDesignRequiresCompatibility` opt-out (not confirmed against Apple's release notes), so plan on glass for the native parts either way
 - [ ] **Privacy manifests:** Expo's and every SDK's (`PrivacyInfo.xcprivacy` — Clerk, RevenueCat, Stream, Mux and the rest) in the build; App Store Connect turns an upload away if a required-reason API isn't declared
 - [ ] **App Privacy ("nutrition") label**, covering what the app *and* its SDKs collect: name and email, purchases, workout sessions and ratings, chat messages and photos, Health data if used, diagnostics
 - [ ] **Age rating questionnaire** (Apple's newer ratings, 13+ / 16+ / 18+): yes to user-generated content and messaging — the chat
