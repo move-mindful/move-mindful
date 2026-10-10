@@ -11,7 +11,9 @@ import {
   isMessageDeleted,
   messageHasAttachments,
   useMessageContext,
+  WithComponents,
 } from "stream-chat-react";
+import { MediaPager, MediaSheet } from "@/components/chat/media-sheet";
 import { MessageSheet } from "@/components/chat/message-sheet";
 import { REACTION_LIST } from "@/components/chat/reactions";
 
@@ -99,7 +101,9 @@ export function MessageRow() {
             )}
             {messageHasAttachments(message) && (
               <div className="mm-row__attachments mt-2.5 max-w-[280px]">
-                <Attachment attachments={message.attachments ?? []} actionHandler={handleAction} />
+                <WithComponents overrides={MEDIA_VIEWER}>
+                  <Attachment attachments={message.attachments ?? []} actionHandler={handleAction} />
+                </WithComponents>
               </div>
             )}
             <Reactions />
@@ -138,6 +142,9 @@ export function MessageRow() {
     </div>
   );
 }
+
+/** A tapped photo opens in our full-screen sheet rather than Stream's viewer (media-sheet.tsx). */
+const MEDIA_VIEWER = { Modal: MediaSheet, Gallery: MediaPager };
 
 /** How long a finger has to stay down for the message's sheet, in ms — under the iPhone's own hold (~0.5 s), so ours wins. */
 const HOLD_MS = 400;

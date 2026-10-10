@@ -95,6 +95,12 @@
   border-radius: 14px;
   overflow: hidden;
 }
+/* Photos in portrait, 4:5 as on Instagram, rather than Stream's 4:3 crop — the
+   full photo is a tap away (media-sheet.tsx). Two side by side keep 4:3 for
+   the pair, which makes each one portrait already. */
+.mm-chat .mm-row__attachments .str-chat__modal-gallery:not(.str-chat__modal-gallery--two-images) {
+  aspect-ratio: 4 / 5;
+}
 
 /* The message menu (desktop): on hover or keyboard focus, and while it's open,
    with the row faintly lit so it's clear which message it's for. */
