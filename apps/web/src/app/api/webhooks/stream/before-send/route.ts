@@ -1,4 +1,5 @@
-import { streamServer } from "@/lib/chat/server";
+import { noteWebhookTrouble } from "@/lib/chat/dot-server";
+import { readStreamWebhook } from "@/lib/chat/server";
 
 /**
  * Stream's before-message-send hook (scripts/stream-hooks.mjs points it here):
@@ -9,11 +10,11 @@ import { streamServer } from "@/lib/chat/server";
  *
  * To turn a message away, answer 200 with an `error` message whose text the
  * sender sees; anything else lets it through. Stream lets messages through
- * too if this is down or slow (over 1.5 s by default), so it backs up the
- * picker rather than replacing it.
+ * too if this is down or slow, so it backs up the picker rather than
+ * replacing it.
  *
- * Public by necessity — the caller is Stream — so the signature, an HMAC of
- * the body made with our API secret, is checked first.
+ * Public by necessity — the caller is Stream — so nothing is trusted until
+ * readStreamWebhook() has checked the signature.
  */
 
 interface BeforeSend {
@@ -22,20 +23,15 @@ interface BeforeSend {
 }
 
 export async function POST(request: Request) {
-  const server = streamServer();
-  if (!server) return new Response("Not configured", { status: 500 });
-
-  const body = await request.text();
-  const signature = request.headers.get("x-signature");
-  let valid = false;
-  try {
-    valid = !!signature && server.verifyWebhook(body, signature);
-  } catch {
-    valid = false;
+  const read = await readStreamWebhook(request);
+  if (!read.ok) {
+    console.error("[stream-before-send]", read.reason);
+    // Only for calls that look like Stream's, so stray traffic leaves no trace.
+    if (request.headers.has("x-signature")) await noteWebhookTrouble(`before-send: ${read.reason}`);
+    return new Response(read.status === 500 ? "Not configured" : "Invalid signature", { status: read.status });
   }
-  if (!valid) return new Response("Invalid signature", { status: 401 });
 
-  const { message, user } = JSON.parse(body) as BeforeSend;
+  const { message, user } = read.body as BeforeSend;
   const hasVideo = (message?.attachments ?? []).some(
     (a) => a.type === "video" || (a.mime_type ?? "").startsWith("video/"),
   );

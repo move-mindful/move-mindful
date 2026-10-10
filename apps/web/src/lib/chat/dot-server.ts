@@ -37,6 +37,18 @@ export async function recordTrainerPost(at: string): Promise<boolean> {
   return !error;
 }
 
+/**
+ * TEMPORARY, while the webhooks are being proved: the last thing that went
+ * wrong with a call from Stream (a rejected signature, a skipped message),
+ * kept in app_settings under `chat_webhook_trouble` so it can be read back
+ * without Vercel's logs. Remove once the dot is seen working.
+ */
+export async function noteWebhookTrouble(what: string): Promise<void> {
+  await createAdminClient()
+    .from("app_settings")
+    .upsert({ key: "chat_webhook_trouble", value: `${new Date().toISOString()} ${what}`, updated_at: new Date().toISOString() });
+}
+
 /** The member has the chat in front of them: whatever's there now counts as seen. */
 export async function noteChatSeen(userId: string): Promise<void> {
   const { error } = await createAdminClient()

@@ -23,6 +23,32 @@ export function streamServer(): StreamChat | null {
   return StreamChat.getInstance(key, secret);
 }
 
+/**
+ * A call from Stream to one of our webhooks (app/api/webhooks/stream), read and
+ * checked: the raw bytes, unzipped if Stream compressed them (it may, and
+ * reading them as text first garbles them), then the `x-signature` HMAC
+ * checked against our API secret. Only a verified body is returned.
+ */
+export async function readStreamWebhook(
+  request: Request,
+): Promise<{ ok: true; body: unknown } | { ok: false; status: 401 | 500; reason: string }> {
+  const server = streamServer();
+  if (!server) return { ok: false, status: 500, reason: "the Stream keys are not set" };
+  const signature = request.headers.get("x-signature");
+  const bytes = Buffer.from(await request.arrayBuffer());
+  if (!signature) return { ok: false, status: 401, reason: "no x-signature header" };
+  try {
+    return { ok: true, body: server.verifyAndParseWebhook(bytes, signature) };
+  } catch (error) {
+    const encoding = request.headers.get("content-encoding") ?? "none";
+    return {
+      ok: false,
+      status: 401,
+      reason: `${(error as Error).message} (content-encoding ${encoding}, ${bytes.length} bytes, starts ${bytes.subarray(0, 2).toString("hex")})`,
+    };
+  }
+}
+
 export interface ChatUser {
   id: string;
   name: string;
