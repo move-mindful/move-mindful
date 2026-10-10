@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { ChevronLeft, X } from "lucide-react";
 import type { ThreadHeaderProps } from "stream-chat-react";
+import { leaveThread } from "@/components/chat/thread-history";
 import { MEMBER_HOME } from "@/lib/routes";
 
 /**
@@ -38,14 +39,16 @@ export function RoomHeader() {
  * a panel beside the room, a slim title bar with a close button.
  */
 export function ThreadHeader({ closeThread }: ThreadHeaderProps) {
+  // Through history, so the arrow does what the iPhone's back swipe does (ThreadHistory).
+  const close = () => leaveThread(closeThread);
   return (
     <>
-      <PhoneBar title="Thread" back={closeThread} backLabel="Back to the chat" className="md:hidden" />
+      <PhoneBar title="Thread" back={close} backLabel="Back to the chat" className="md:hidden" />
       <div className="hidden h-14 shrink-0 items-center justify-between border-b border-zinc-200 pr-2 pl-4 md:flex dark:border-white/10">
         <span className="text-lg font-bold tracking-tight">Thread</span>
         <button
           type="button"
-          onClick={closeThread}
+          onClick={close}
           aria-label="Close thread"
           className="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/10"
         >

@@ -23,6 +23,7 @@ import { getChatToken, markChatSeen } from "@/app/actions/chat";
 import { RoomHeader, ThreadHeader } from "@/components/chat/chat-headers";
 import { MessageRow } from "@/components/chat/message-row";
 import { REACTIONS } from "@/components/chat/reactions";
+import { ThreadHistory } from "@/components/chat/thread-history";
 
 /**
  * The chat room, in the Ladder-style design (plan.md → Group Chat; the Group
@@ -166,6 +167,8 @@ export function ChatRoom({
               <MessageComposer />
             </Window>
             <Thread />
+            {/* An open thread is a step in history: swiping back closes it. */}
+            <ThreadHistory />
           </Channel>
         </WithComponents>
       </Chat>
