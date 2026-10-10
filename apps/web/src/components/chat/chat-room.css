@@ -122,3 +122,11 @@
 .mm-chat .str-chat .str-chat__message-composer-container {
   border-top: 0;
 }
+
+/* On a phone the thread fills the screen, so the rule that divides it from
+   the room on desktop would just be a line down the left edge. */
+@media (max-width: 767px) {
+  .mm-chat .str-chat__thread-container {
+    border-inline-start: 0;
+  }
+}

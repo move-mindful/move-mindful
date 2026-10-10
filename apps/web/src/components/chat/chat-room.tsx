@@ -120,6 +120,8 @@ export function ChatRoom({
             AttachmentSelectorInitiationButtonContents: PhotoIcon,
             // A reply stays in its thread: no "Also send to channel" box.
             SendToChannelCheckbox: Nothing,
+            // A thread opens straight onto its replies, without a "1 reply" bar.
+            ThreadStart: Nothing,
           }}
         >
           <Channel channel={channel}>
