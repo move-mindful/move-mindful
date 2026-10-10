@@ -72,6 +72,11 @@
   color: #fff;
   font-weight: 700;
 }
+/* Reactions straight under the box get more room than under plain text, so
+   the pills don't crowd it. */
+.mm-chat .mm-row__trainer-text + .mm-row__reactions {
+  margin-top: 14px;
+}
 
 .mm-chat .mm-row__attachments .str-chat__attachment-list {
   border-radius: 14px;

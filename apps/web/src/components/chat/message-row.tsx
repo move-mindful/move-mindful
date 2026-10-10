@@ -218,7 +218,7 @@ function Reactions() {
   };
 
   return (
-    <div ref={ref} className="relative mt-1.5 flex flex-wrap gap-1.5">
+    <div ref={ref} className="mm-row__reactions relative mt-1.5 flex flex-wrap gap-1.5">
       {given.map((r) => (
         <button
           key={r.type}
