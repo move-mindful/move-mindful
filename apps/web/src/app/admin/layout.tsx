@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/admin";
+import { MEMBER_HOME } from "@/lib/routes";
 import { UserMenu } from "@/components/user-menu";
 
 const navItems = [
@@ -46,7 +47,7 @@ export default async function AdminLayout({
           </div>
           <div className="flex items-center gap-4">
             <Link
-              href="/classes"
+              href={MEMBER_HOME}
               className="text-sm text-zinc-500 transition hover:text-zinc-800"
             >
               &larr; Member site

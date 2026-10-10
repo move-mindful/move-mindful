@@ -1,4 +1,4 @@
-import { Clapperboard, Dumbbell, House, Radio, type LucideIcon } from "lucide-react";
+import { Dumbbell, House, Radio, type LucideIcon } from "lucide-react";
 import { MEMBER_HOME } from "@/lib/routes";
 
 /**
@@ -17,15 +17,16 @@ export interface NavItem {
 }
 
 const HOME: NavItem = { href: MEMBER_HOME, label: "Home", icon: House };
+// Classes ({ href: "/classes", label: "Classes", icon: Clapperboard, nested: true })
+// is put away for now, admins included — see hideSection() in lib/auth/locked-sections.ts.
 const SECTIONS: NavItem[] = [
-  { href: "/classes", label: "Classes", icon: Clapperboard, nested: true },
   // Called Studio in the navigation; the page itself stays at /live.
   { href: "/live", label: "Studio", icon: Radio, nested: true },
   { href: "/workouts", label: "Workout", icon: Dumbbell, nested: true, title: "Your plan" },
 ];
 
 /**
- * Classes, Studio and Workouts are on hold until the membership launches, so
+ * Studio and Workouts are on hold until the membership launches, so
  * members don't see them. Admins keep them to preview the sections — the pages
  * themselves enforce this via requireSectionUnlocked(). Drop the `admin` check
  * when releasing.

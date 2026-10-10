@@ -47,6 +47,9 @@ const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 // See lib/auth/locked-sections.ts for the authoritative check and the rationale.
 const isLockedSection = createRouteMatcher(["/classes(.*)", "/live(.*)", "/workouts(.*)"]);
 
+// Sections put away for now, admins included — see hideSection() in the same file.
+const isHiddenSection = createRouteMatcher(["/classes(.*)"]);
+
 export default clerkMiddleware(async (auth, req) => {
   // A ManyChat DM link lands on a public product page carrying
   // `?mc=<contact id>`. Stash it in a first-party cookie the moment it arrives:
@@ -94,7 +97,7 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Same optimistic-only deal: requireSectionUnlocked() in each locked page is
   // the real boundary. This just avoids rendering the shell for members.
-  if (isLockedSection(req) && !admin) {
+  if ((isLockedSection(req) && !admin) || isHiddenSection(req)) {
     return carry(NextResponse.redirect(new URL(MEMBER_HOME, req.url)));
   }
 

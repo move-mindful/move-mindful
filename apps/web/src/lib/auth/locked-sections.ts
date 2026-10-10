@@ -24,3 +24,14 @@ export async function requireSectionUnlocked(): Promise<void> {
   if (await isAdmin()) return;
   redirect(MEMBER_HOME);
 }
+
+/**
+ * A section put away for now, admins included: the class library (Oct 2026,
+ * the owner's call), out of the navigation too. Everyone goes to Home; classes
+ * are still managed under /admin/classes. To bring it back, swap this for
+ * requireSectionUnlocked() and restore its nav item in components/nav-items.ts
+ * (and drop it from `isHiddenSection` in proxy.ts).
+ */
+export async function hideSection(): Promise<void> {
+  redirect(MEMBER_HOME);
+}
