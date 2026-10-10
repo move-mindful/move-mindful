@@ -11,6 +11,7 @@ const navItems = [
   { href: "/admin/tags", label: "Tags" },
   { href: "/admin/instructors", label: "Instructors" },
   { href: "/admin/collections", label: "Collections" },
+  { href: "/admin/chat", label: "Chat" },
 ];
 
 export default async function AdminLayout({

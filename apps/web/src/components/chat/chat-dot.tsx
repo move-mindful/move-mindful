@@ -7,8 +7,8 @@ import { isChatPage } from "@/components/nav-items";
 
 /**
  * Whether the Chat tab (and the sidebar's Chat icon) shows its violet dot:
- * a trainer has posted since the member last had the chat open
- * (lib/chat/dot-server.ts). Asked after each page change and when the tab
+ * since the member last had the chat open, a trainer has posted or the room
+ * has the admin's number of new messages (lib/chat/dot-server.ts). Asked after each page change and when the tab
  * comes back into view, so it never holds up a page; off on the chat itself.
  * Only for people who can open the chat (admins, for now).
  */
@@ -64,7 +64,7 @@ export function NavDot({ ringClass }: { ringClass: string }) {
         aria-hidden="true"
         className={`absolute top-0 -right-0.5 size-2 rounded-full bg-violet-500 ring-[1.5px] ${ringClass}`}
       />
-      <span className="sr-only">, new post from a trainer</span>
+      <span className="sr-only">, new messages</span>
     </>
   );
 }

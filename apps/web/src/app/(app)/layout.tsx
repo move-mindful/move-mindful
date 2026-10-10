@@ -60,7 +60,7 @@ export default async function AppLayout({
     // page, not into it). data-no-page-scrollbar: the page scrolls without
     // showing a scroll bar, like the player (globals.css).
     <div data-app-shell data-no-page-scrollbar className="flex flex-1 flex-col md:pl-[72px]">
-      {/* The Chat tab's dot when a trainer has posted — admins only while chat is. */}
+      {/* The Chat tab's dot for new messages — admins only while chat is. */}
       <ChatDotProvider enabled={admin}>
         <Sidebar admin={admin} />
         <PhoneHeader />
