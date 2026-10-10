@@ -80,7 +80,7 @@ export function chatName(
  * Trainers (`trainer: true` in their Clerk public metadata — Ayla) get
  * Stream's admin role and everyone else, admins of the site included, the
  * plain user role. The role is how the chat tells a trainer's posts apart
- * (the badge, the gradient box) because nobody can change their own role on
+ * (the star by their name, the gradient box) because nobody can change their own role on
  * Stream, whereas a custom field on the user they could.
  */
 export async function joinCommunityChat(server: StreamChat, user: ChatUser, trainer: boolean): Promise<void> {

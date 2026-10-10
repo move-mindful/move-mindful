@@ -25,7 +25,8 @@ import { REACTION_LIST } from "@/components/chat/reactions";
  * Trainers — Stream's admin role, which only our server can give (see
  * joinCommunityChat) — go by their full name (set there), and the words of
  * their posts sit in a violet-to-orchid gradient box; their photos and videos
- * don't. No badge (tried, and dropped — the owner's call).
+ * don't. A small star in the same gradient follows their name (the canvas's
+ * "A · Star"); a "Trainer" text badge was tried and dropped.
  *
  * A run of messages from one person shows the avatar and name once, as Slack
  * does. The message's options (react, reply in a thread, copy, edit, delete,
@@ -75,7 +76,10 @@ export function MessageRow() {
       <div className="min-w-0 flex-1">
         {!continued && (
           <div className="flex items-center gap-2">
-            <span className="truncate text-[15px] font-bold">{name}</span>
+            <span className="flex min-w-0 items-center gap-[5px]">
+              <span className="truncate text-[15px] font-bold">{name}</span>
+              {trainer && <span role="img" aria-label="Trainer" className="mm-row__trainer-star" />}
+            </span>
             {sent && (
               <time dateTime={sent.toISOString()} className="shrink-0 text-[13px] text-zinc-500 dark:text-zinc-400">
                 {sent.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
