@@ -27,6 +27,10 @@ const isPublicRoute = createRouteMatcher([
   // rather than an auth error — a confusing way to lose events silently.
   "/api/webhooks/clerk",
   "/api/webhooks/revenuecat",
+  // Stream's message.new events (the Chat tab's dot) and its before-send
+  // check (videos for trainers only): both check Stream's body signature.
+  "/api/webhooks/stream",
+  "/api/webhooks/stream/before-send",
   // A marketing URL for the free routine, separate from the product's own slug
   // so the advertised address can change without touching the product. Public
   // for the same reason the sales pages below are.

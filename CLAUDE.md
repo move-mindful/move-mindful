@@ -93,6 +93,6 @@ The owner's call (2026-10-01), and an exception to the global "never push unless
 - No secret keys in `NEXT_PUBLIC_` env vars
 - Supabase RLS enabled on all tables; member-owned tables (`member_preferences`, `workout_sessions`, `workout_ratings`) and admin settings (`app_settings`) have no policies and are only read and written on the server
 - Gate paid content on the server before rendering (`getViewerAccess()` / `viewerCanAccess()`), so Mux playback ids never reach a browser that isn't entitled to them
-- Verify every webhook's sender before trusting it: Clerk by its Svix signature, RevenueCat by its shared secret — and Stripe with `constructEvent()` if its webhooks are ever consumed directly
+- Verify every webhook's sender before trusting it: Clerk by its Svix signature, RevenueCat by its shared secret, Stream by its `x-signature` HMAC (`verifyWebhook()`) — and Stripe with `constructEvent()` if its webhooks are ever consumed directly
 - A new table keyed by a Clerk user id must be cleared in `deleteMemberData()` (`lib/member/delete-server.ts`), so deleting an account deletes its data
 - Every AI feature follows README → "Building AI features": prompt caching on the stable start of each request (system prompt and repeated context marked with `cache_control`, the changing request last), token use logged per request, Claude called only server-side behind auth, and structured answers re-validated on the server

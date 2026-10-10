@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
+import { ChatDotProvider } from "@/components/chat/chat-dot";
 import { PhoneHeader } from "@/components/phone-header";
 import { Sidebar } from "@/components/sidebar";
 import { TabBar } from "@/components/tab-bar";
@@ -59,14 +60,17 @@ export default async function AppLayout({
     // page, not into it). data-no-page-scrollbar: the page scrolls without
     // showing a scroll bar, like the player (globals.css).
     <div data-app-shell data-no-page-scrollbar className="flex flex-1 flex-col md:pl-[72px]">
-      <Sidebar admin={admin} />
-      <PhoneHeader />
-      {/* flex column so a nested layout's full-height states (e.g. the
-          entitlement gate's spinner) can stretch to fill the viewport. On
-          phones, room at the bottom so the tab bar never covers the end of a
-          page. */}
-      <main className="flex flex-1 flex-col pb-24 md:pb-0">{children}</main>
-      <TabBar admin={admin} />
+      {/* The Chat tab's dot when a trainer has posted — admins only while chat is. */}
+      <ChatDotProvider enabled={admin}>
+        <Sidebar admin={admin} />
+        <PhoneHeader />
+        {/* flex column so a nested layout's full-height states (e.g. the
+            entitlement gate's spinner) can stretch to fill the viewport. On
+            phones, room at the bottom so the tab bar never covers the end of a
+            page. */}
+        <main className="flex flex-1 flex-col pb-24 md:pb-0">{children}</main>
+        <TabBar admin={admin} />
+      </ChatDotProvider>
     </div>
   );
 }

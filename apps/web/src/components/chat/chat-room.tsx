@@ -16,7 +16,7 @@ import {
 } from "stream-chat-react";
 import "stream-chat-react/dist/css/index.css";
 import "./chat-room.css";
-import { getChatToken } from "@/app/actions/chat";
+import { getChatToken, markChatSeen } from "@/app/actions/chat";
 import { RoomHeader, ThreadHeader } from "@/components/chat/chat-headers";
 import { MessageRow } from "@/components/chat/message-row";
 import { REACTIONS } from "@/components/chat/reactions";
@@ -49,6 +49,20 @@ export function ChatRoom({
   const client = useCreateChatClient({ apiKey, tokenOrProvider: getChatToken, userData: user });
   const channel = useMemo(() => client?.channel(room.type, room.id), [client, room.type, room.id]);
   const dark = useSyncExternalStore(subscribeDark, isDark, () => false);
+
+  // Whatever's in the room counts as seen when the member leaves or puts the
+  // chat away, which clears the Chat tab's dot (lib/chat/dot-server.ts). The
+  // page notes it on opening too.
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden") void markChatSeen();
+    };
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      void markChatSeen();
+    };
+  }, []);
 
   // What the photo button may pick. Composers pick this up whenever it changes.
   useEffect(() => {

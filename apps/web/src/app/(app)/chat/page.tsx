@@ -1,5 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { requireSectionUnlocked } from "@/lib/auth/locked-sections";
+import { noteChatSeen } from "@/lib/chat/dot-server";
 import { chatName, COMMUNITY_CHANNEL, joinCommunityChat, streamServer, type ChatUser } from "@/lib/chat/server";
 import { RoomHeader } from "@/components/chat/chat-headers";
 import { ChatRoom } from "@/components/chat/chat-room";
@@ -30,7 +31,8 @@ export default async function ChatPage() {
   };
 
   try {
-    await joinCommunityChat(server, user, trainer);
+    // Opening the chat sees what's there: the Chat tab's dot goes.
+    await Promise.all([joinCommunityChat(server, user, trainer), noteChatSeen(userId)]);
   } catch (error) {
     console.error("[chat] joining the room:", error);
     return <Notice>Chat couldn&rsquo;t connect just now. Try again in a moment.</Notice>;

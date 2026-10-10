@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Menu } from "lucide-react";
+import { NavDot, useChatDot } from "@/components/chat/chat-dot";
 import { LogoMark } from "@/components/logo-mark";
 import { MemberAvatar } from "@/components/member-avatar";
 import { MoreMenu, useAppearance } from "@/components/more-menu";
@@ -23,6 +24,7 @@ import { MEMBER_HOME } from "@/lib/routes";
  */
 export function Sidebar({ admin }: { admin: boolean }) {
   const pathname = usePathname();
+  const chatDot = useChatDot();
   const [menuOpen, setMenuOpen] = useState(false);
   const ref = useRef<HTMLElement>(null);
 
@@ -69,11 +71,14 @@ export function Sidebar({ admin }: { admin: boolean }) {
             const Icon = item.icon;
             return (
               <SideLink key={item.href} href={item.href} label={item.label} on={on}>
-                {on && item.href === MEMBER_HOME ? (
-                  <HouseFilled />
-                ) : (
-                  <Icon size={24} strokeWidth={on ? 2.5 : 2} className="shrink-0" aria-hidden="true" />
-                )}
+                <span className="relative flex shrink-0">
+                  {on && item.href === MEMBER_HOME ? (
+                    <HouseFilled />
+                  ) : (
+                    <Icon size={24} strokeWidth={on ? 2.5 : 2} className="shrink-0" aria-hidden="true" />
+                  )}
+                  {item.href === "/chat" && chatDot && <NavDot ringClass="ring-background" />}
+                </span>
               </SideLink>
             );
           })}
