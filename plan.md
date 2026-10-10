@@ -174,6 +174,7 @@ The app signs in to the **same Clerk accounts as the website** — one login, th
   - A "4 replies · View thread ›" link (with a caret) and a line running down from the avatar into it.
   - **No header bar** (owner's call, 2026-10-09): one room, and the site's own header already says Chat. A group switcher comes back only if there are several groups.
   - **A back arrow in place of the logo** in the phone header on the chat pages: from a thread back to the room (titled "Thread"), from the room back to the previous page.
+  - **No tab bar on the chat pages** (phones): the back arrow is the way out, so the composer sits at the bottom of the screen, just above the home indicator. The tab bar — and the trainer-post dot on its Chat icon — stays on every other page. Desktop keeps its sidebar.
   - A round scroll-to-bottom button.
   - Composer: round photo button, pill-shaped input, round send button in the accent color.
   - **Trainers** (the word, not "coach") — our admins, Stream's `admin` role — carry a **Trainer** badge on their messages, and **the words of their posts sit in a box with a violet-to-orchid gradient** (`#7A3CF0` → `#B044C8`, white text; both ends dark enough to read) — just the text: their name, photo, videos and photos, reactions and thread link stay as everyone else's.
